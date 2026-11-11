@@ -104,6 +104,9 @@ void App::onKeyDown() {
         else if (e.key.key == SDLK_ESCAPE) stopSquadRename(false);
         return;
     }
+    // A count being typed into the spawn list (the Developer panel's, or the level editor's)
+    if (screen == Screen::Playing && !editing && devSpawn.open && spawnPickerKey(devSpawn)) return;
+    if (screen == Screen::Playing && editing && spawnPickerKey(editor.spawn)) return;
     // The Developer panel stays open while the game is played; Escape puts down its pick, then closes it
     if (screen == Screen::Playing && !editing && devSpawn.open && e.key.key == SDLK_ESCAPE) {
         if (devSpawn.tool != EditorTool::None) {
@@ -124,6 +127,13 @@ void App::onKeyDown() {
     if (screen == Screen::Playing && factionRulesOpen) {
         if (e.key.key == SDLK_ESCAPE) {
             factionRulesOpen = false;
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
+    if (screen == Screen::Playing && craftUi.open) {
+        if (e.key.key == SDLK_ESCAPE) {
+            craftUi = CraftUi{};
             playSfx(Sfx::UiBack);
         }
         return;
@@ -356,6 +366,10 @@ void App::onMouseWheel() {
     }
     if (screen == Screen::Playing && squadsUi.open) {
         scrollManageSquads(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+        return;
+    }
+    if (screen == Screen::Playing && craftUi.open) {
+        scrollCraftWindow(e.wheel.y);
         return;
     }
     if (screen == Screen::Playing && !editing && devSpawn.open) {
@@ -665,6 +679,7 @@ void App::onMouseButtonUp() {
         session.disbandHeldAt = 0;
         return;
     }
+    if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && adjustRelease()) return;
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && buildRelease()) return;
     if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
         squadThumbDrag = false;
@@ -812,6 +827,12 @@ void App::onMouseButtonUp() {
 }
 
 void App::onMouseMotion() {
+    // The Adjust tool's widget, dragged
+    if (screen == Screen::Playing && propAdjust.drag >= 0) {
+        if (e.motion.state & SDL_BUTTON_LMASK) adjustMotion(e.motion.x, e.motion.y);
+        else propAdjust.drag = -1;
+        return;
+    }
     if (themeUi.dragRow >= 0 && (screen == Screen::WorldGen || (screen == Screen::Playing && editing))) {
         themeDragAt(e.motion.x);
         return;

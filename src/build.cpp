@@ -77,6 +77,8 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
     const std::vector<Claim> claims = claimsOf(w);
 
     if (const Claim* held = claimAt(claims, x, z); held && held->owner != builder) return BuildCheck::EnemySealed;
+    // A Bedroll: only by a Campfire, or in your Altar's claim
+    if (propInfo(kind).needsCamp && !campSheltered(w, claims, x, z, builder)) return BuildCheck::NoCamp;
 
     if (propInfo(kind).claimsLand) {
         for (const Claim& c : claims) {
@@ -97,7 +99,7 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 }
 
 bool buildAnywhere(const BuildPick& pick) {
-    return pick.tool == BuildPick::Tool::Destroy || (pick.placing() && propInfo(pick.kind).buildAnywhere);
+    return pick.tool == BuildPick::Tool::Destroy || pick.adjusting() || (pick.placing() && propInfo(pick.kind).buildAnywhere);
 }
 
 bool selectionInClaim(World& w) {
@@ -116,11 +118,28 @@ const char* buildRefusalKey(BuildCheck c) {
     case BuildCheck::EnemySealed: return "MISC_BUILD_SEALED";
     case BuildCheck::ClaimOverlap: return "MISC_BUILD_CLAIM_OVERLAP";
     case BuildCheck::AltarTaken: return "MISC_BUILD_ALTAR_TAKEN";
+    case BuildCheck::NoCamp: return "MISC_BUILD_NEEDS_CAMP";
     case BuildCheck::NoFloor: return "MISC_BUILD_NO_FLOOR";
     case BuildCheck::Indoors: return "MISC_BUILD_OUTDOORS_ONLY";
     case BuildCheck::Ok: break;
     }
     return "";
+}
+
+void onPropSpawned(World& w, ObjectId e) {
+    Prop* p = w.get<Prop>(e);
+    const Transform* at = w.get<Transform>(e);
+    if (!p || !at) return;
+    const PropInfo& info = propInfo(p->kind);
+    if (info.randomYaw) {
+        // A way of its own to face, the same each time for the spot it stands on
+        std::uint32_t h = (std::uint32_t)(std::int32_t)std::floor(at->x * 4.0f) * 73856093u ^
+                          (std::uint32_t)(std::int32_t)std::floor(at->z * 4.0f) * 19349663u ^ ((std::uint32_t)idx(p->kind) + 1u) * 83492791u;
+        h ^= h >> 15;
+        h *= 2246822519u;
+        h ^= h >> 13;
+        p->yaw = (float)(h % 3600u) / 3600.0f * 6.2831853f;
+    }
 }
 
 ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
@@ -140,8 +159,14 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
         w.add(e, Fuel{});
         w.add(e, PropWork{});
     }
+    // An Advanced Crafting prop: what it makes waits in its output to be carried out
+    if (info.advanced) {
+        w.add(e, Output{});
+        w.add(e, PropWork{});
+    }
     if (info.lockLevel > 0) w.add(e, Lock{ true, info.lockLevel });
     if (propInfo(kind).claimsLand) w.add(e, Health{});
+    onPropSpawned(w, e);
     return e;
 }
 
@@ -152,6 +177,8 @@ ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, floa
     if (storey > 0) y = t.heightAt(x, z) + storeyBaseHeight(storey);
     const ObjectId e = makeProp(w, kind, Transform{ x, y, z }, yaw);
     if (storey > 0) w.add(e, Storey{ storey });
+    // One that needs a camp is its placer's, so it is known whose camp it must stay in
+    if (info.needsCamp) w.add(e, Owner{ owner });
     if (!info.built) {
         claimOwnership(w, e);
         return e;

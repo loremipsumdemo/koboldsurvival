@@ -65,7 +65,7 @@ int main(int, char**) {
     // A new prop needs only a row
     const std::string realProps = pakText("data/props.txt");
     const int propsBefore = propKindCount();
-    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tmodel_99.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\t12\t0\tfurniture\n";
+    const std::string extra = realProps + "Birdbath\tPROP_BIRDBATH\tbirdbath.glb\t1\toccupy\tnone\t0\t0\t0\t0\tany\t1\t0\t0\t1\t5\t5\tnone\tItemMove\tnone\tseat\t0\t0\t12\t0\tfurniture\n";
     check(loadPropTableText(extra, err), "a new prop loads " + err);
     const PropKind added = (PropKind)propsBefore;
     check(propKindCount() == propsBefore + 1 && propInfo(added).key == "Birdbath" && isSeat(added) && isBed(added) &&
@@ -77,8 +77,9 @@ int main(int, char**) {
     {
         // Under the Claims heading: Destroy, then the Bedroll, Campfire and Altar in the table's order; Developer last
         const std::vector<BuildRow> rows = buildRows();
-        check(rows.size() > 4 && rows[0].heading && rows[0].group == BuildGroup::Claims && rows[1].pick == BuildPick::destroy() &&
-                  rows[2].pick.places(PropKind::Bedroll) && rows[4].pick.places(PropKind::Altar),
+        check(rows.size() > 6 && rows[0].heading && rows[0].group == BuildGroup::Tools && rows[1].pick == BuildPick::destroy() &&
+                  rows[2].pick.adjusting() && rows[3].heading && rows[3].group == BuildGroup::Claims &&
+                  rows[4].pick.places(PropKind::Bedroll) && rows[6].pick.places(PropKind::Altar),
               "the Build tab is sorted under its headings, following the table");
         check(rows.back().developer && propInfo(PropKind::Forge).group == BuildGroup::Crafting &&
                   propInfo(PropKind::Wagon).group == BuildGroup::Vehicles && propInfo(PropKind::Wagon).pulled,

@@ -3,6 +3,7 @@
 #include "world_labels.h"
 #include "taming.h"
 #include "faction_rules.h"
+#include "recipes.h"
 #include "commerce.h"
 
 using namespace systems_detail;
@@ -103,6 +104,21 @@ ObjectId groundHaulTarget(World& w, const std::vector<Claim>& claims, ObjectId u
         if (best == NO_OBJECT || d2 < bestD2) {
             best = g;
             bestD2 = d2;
+        }
+    }
+    // What an Advanced Crafting prop has made waits in it like an item on the ground: carried out, if a haul task
+    // could put it away and the unit has room
+    if (best == NO_OBJECT) {
+        const ObjectId bench = craftOutputToHaul(w, u, taken);
+        const Output* out = bench != NO_OBJECT ? w.get<Output>(bench) : nullptr;
+        for (size_t i = 0; out && i < out->slots.size() && best == NO_OBJECT; ++i) {
+            const ItemStack& s = out->slots[i];
+            if (s.count <= 0) continue;
+            bool stored = false;
+            for (const BehaviorRule& r : b.rules) stored = stored || (r.on && isHaul(r.kind) && storeCouldTake(w, claims, u, r, s.item));
+            if (!stored) continue;
+            if (fullFor(w, u, s.item)) why = BehaviorWait::CarryFull;
+            else best = bench;
         }
     }
     if (best != NO_OBJECT) why = BehaviorWait::None;
@@ -291,6 +307,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
     if (r.kind == BehaviorKind::AutoHaulStall) return startStallHaulStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::ManStall) return startManStallStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::DealWithDowned) return startDealStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::AutoCraft) return startCraftStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::AutoHaulGround) {
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
         const ObjectId item = groundHaulTarget(w, claims, u, b, r.why);
@@ -439,9 +456,10 @@ void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
         w.remove<SoloMove>(u);
         w.remove<Route>(u);
     }
-    if (w.has<BuildJob>(u) || w.has<StallJob>(u)) {
+    if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<CraftJob>(u)) {
         w.remove<BuildJob>(u);
         w.remove<StallJob>(u);
+        w.remove<CraftJob>(u);
         w.remove<SoloMove>(u);
         w.remove<Route>(u);
     }
@@ -593,7 +611,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         }
         // A building task, a Stall order or a Deal with Downed trip runs by itself (buildJobSystem, commerce, dealJobSystem),
         // and ends its own step
-        if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<DealJob>(u)) continue;
+        if (w.has<BuildJob>(u) || w.has<StallJob>(u) || w.has<DealJob>(u) || w.has<CraftJob>(u)) continue;
         // A Deal with Downed trip ended by an order of yours meanwhile
         if (b->busy && b->step.kind == BehaviorKind::DealWithDowned) {
             b->busy = false;
@@ -716,6 +734,22 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
         // Fetching an item off the ground: picked up within reach, given up if it is gone or out of reach
+        if (b->busy && b->step.kind == BehaviorKind::AutoHaulGround && w.has<Output>(b->stepProp) && w.has<Prop>(b->stepProp)) {
+            // Carrying out what an Advanced Crafting prop has made
+            const SoloMove* so = w.get<SoloMove>(u);
+            const bool walking = (so && so->next < so->waypoints.size()) || w.has<Route>(u) || w.has<Climbing>(u);
+            if (flatGap(w, u, b->stepProp) <= PROP_REACH + 0.3f) {
+                takeCraftOutput(w, u, b->stepProp);
+                w.remove<SoloMove>(u);
+                b->busy = false;
+                continue;
+            }
+            if (walking && !outputEmpty(w, b->stepProp)) continue;
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+            continue;
+        }
         if (b->busy && b->step.kind == BehaviorKind::AutoHaulGround) {
             const Transform* it = w.get<Transform>(b->stepProp);
             GroundItem* gi = w.get<GroundItem>(b->stepProp);

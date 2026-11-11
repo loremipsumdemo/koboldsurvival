@@ -1,6 +1,9 @@
 # Unit models. Tab-separated: key, file under data/model, what it is.
 # Every key must be listed once. The last column is only a note. A missing model is drawn as a pink square.
-# Props name their models in props.txt, and mobs in mobs.txt. The keys are the party menu's Model names, and each
+# Props name their models in props.txt, and mobs in mobs.txt (data/model/mob). Every model file is named for what it
+# is, in lowercase with underscores: chair.glb, prisoner_cage.glb. A building piece has one file for each material
+# (wall_wood.glb, wall_stone.glb, wall_metal.glb, wall_crystal.glb), a wall one more for each shape
+# (wall_wood_corner.glb), and Stairs are drawn a step at a time from stair_step_<material>.glb. The keys are the party menu's Model names, and each
 # key's profile picture is data/profile/<key>.png. f is feminine, m masculine, a androgynous.
 # Saves store a unit's model by its place in this list (f1 = 1, m1 = 2, a1 = 3, f2 = 4, ...), so the order is fixed
 # in src/game_tables.cpp: new models go on the end.

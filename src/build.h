@@ -12,6 +12,7 @@ enum class BuildCheck {
     EnemySealed,
     ClaimOverlap,
     AltarTaken,
+    NoCamp,
     NoFloor,
     Indoors,
 };
@@ -27,6 +28,11 @@ bool selectionInClaim(World& w);
 const char* buildRefusalKey(BuildCheck c);
 
 // A prop with the parts its kind starts with
+// Every prop comes into being here, however it does: built, placed, spawned, scattered by a new level, left as debris
+// or bones, or read back from a save. It ends by calling onPropSpawned.
 ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw = 0.0f);
+// What happens to any prop as it comes into being, whatever made it: one flagged random_yaw in props.txt (a tree, a
+// boulder, debris) is turned to face a way of its own. Checks for a new prop belong here.
+void onPropSpawned(World& w, ObjectId e);
 ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner = FACTION_PLAYER,
                         int storey = 0);

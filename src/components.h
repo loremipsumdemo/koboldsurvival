@@ -333,6 +333,32 @@ struct Prop {
     float yaw = 0.0f;
 };
 
+// How a prop is drawn apart from where it stands (the Build tab's Adjust tool): moved up to half a tile each way,
+// turned about its middle (degrees round x, y and z), and stretched from half to one and a half times its size along
+// each. Only how it looks and where it is clicked: it stands, blocks and is walked to on its own tile as before.
+inline constexpr float PROP_VISUAL_MOVE = 0.5f;
+inline constexpr float PROP_VISUAL_SCALE_MIN = 0.5f, PROP_VISUAL_SCALE_MAX = 1.5f;
+struct PropVisual {
+    float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+    float rx = 0.0f, ry = 0.0f, rz = 0.0f;
+    float sx = 1.0f, sy = 1.0f, sz = 1.0f;
+    bool plain() const {
+        return dx == 0.0f && dy == 0.0f && dz == 0.0f && rx == 0.0f && ry == 0.0f && rz == 0.0f && sx == 1.0f && sy == 1.0f && sz == 1.0f;
+    }
+};
+inline float wrapDegrees(float d) {
+    d = d - 360.0f * (float)(int)(d / 360.0f);
+    return d < 0.0f ? d + 360.0f : d;
+}
+inline PropVisual clampPropVisual(PropVisual v) {
+    auto move = [](float a) { return a < -PROP_VISUAL_MOVE ? -PROP_VISUAL_MOVE : a > PROP_VISUAL_MOVE ? PROP_VISUAL_MOVE : a; };
+    auto size = [](float a) { return a < PROP_VISUAL_SCALE_MIN ? PROP_VISUAL_SCALE_MIN : a > PROP_VISUAL_SCALE_MAX ? PROP_VISUAL_SCALE_MAX : a; };
+    v.dx = move(v.dx); v.dy = move(v.dy); v.dz = move(v.dz);
+    v.rx = wrapDegrees(v.rx); v.ry = wrapDegrees(v.ry); v.rz = wrapDegrees(v.rz);
+    v.sx = size(v.sx); v.sy = size(v.sy); v.sz = size(v.sz);
+    return v;
+}
+
 struct Lock {
     bool locked = true;
     int level = 1;

@@ -11,10 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, TameAnimals, DealWithDowned, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, TameAnimals, DealWithDowned, AutoCraft, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
                                                  "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
-                                                 "AutoHaulStall", "ManStall", "TameAnimals", "DealWithDowned" };
+                                                 "AutoHaulStall", "ManStall", "TameAnimals", "DealWithDowned", "AutoCraft" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -56,6 +56,7 @@ enum class BehaviorWait : int {
     NoCagedAnimal,   // (Tame Animals, a task no longer used: taming takes time alone)
     NoRawMeat,       // Tame Animals: no raw meat carried or in your stores
     NoDowned,        // Deal with Downed: no knocked-out enemy near, or the faction's rules leave them be
+    NoCraftOrder,    // Auto-Craft: no Crafting Order is short of stock with its ingredients in your stores
 };
 
 constexpr float PATROL_PAUSE_MIN = 4.0f, PATROL_PAUSE_MAX = 12.0f;
@@ -124,6 +125,7 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::NoCagedAnimal: return lang("UILABEL_WAIT_NO_CAGED_ANIMAL");
     case BehaviorWait::NoRawMeat: return lang("UILABEL_WAIT_NO_RAW_MEAT");
     case BehaviorWait::NoDowned: return lang("UILABEL_WAIT_NO_DOWNED");
+    case BehaviorWait::NoCraftOrder: return lang("UILABEL_WAIT_NO_CRAFT_ORDER");
     }
     return std::string();
 }
@@ -144,7 +146,7 @@ inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
            k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall || k == BehaviorKind::TameAnimals ||
-           k == BehaviorKind::DealWithDowned;
+           k == BehaviorKind::DealWithDowned || k == BehaviorKind::AutoCraft;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -197,6 +199,7 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL", { propName });
     case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS");
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED");
+    case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -227,6 +230,7 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL_TIP", { propName });
     case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS_TIP");
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED_TIP");
+    case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -278,7 +282,7 @@ inline TaskCategory taskCategory(BehaviorKind k) {
     case BehaviorKind::Group: return TaskCategory::Groups;
     case BehaviorKind::Patrol: case BehaviorKind::Roam: case BehaviorKind::PatrolSpawn: return TaskCategory::Movement;
     case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: return TaskCategory::Building;
-    case BehaviorKind::AutoHarvest: return TaskCategory::Harvesting;
+    case BehaviorKind::AutoHarvest: case BehaviorKind::AutoCraft: return TaskCategory::Harvesting;
     case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: case BehaviorKind::AutoHaulStall:
         return TaskCategory::Hauling;
     case BehaviorKind::ManStall: return TaskCategory::Movement;
@@ -334,7 +338,7 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
                 BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::AutoHaulStall,
-                BehaviorKind::DealWithDowned, BehaviorKind::Patrol, BehaviorKind::Roam };
+                BehaviorKind::DealWithDowned, BehaviorKind::AutoCraft, BehaviorKind::Patrol, BehaviorKind::Roam };
         return out;
     }
     // Patrol Spawn (keeping near where it appeared) is for wild mobs

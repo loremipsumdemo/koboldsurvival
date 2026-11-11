@@ -11,6 +11,7 @@
 #include "npc_camps.h"
 #include "taming.h"
 #include "faction_rules.h"
+#include "recipes.h"
 #include "combat.h"
 #include "factions.h"
 #include "hostility.h"
@@ -97,7 +98,9 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("buildingSystem", buildingSystem(w, t, dt));
     PROFILED("tamingSystem", tamingSystem(w, dt * GAME_SECONDS_PER_REAL_SECOND));
     PROFILED("dealJobSystem", dealJobSystem(w, t, dt));
+    PROFILED("craftJobSystem", craftJobSystem(w, t, dt));
     PROFILED("factionRulesSystem", factionRulesSystem(w, dt));
+    campPropSystem(w, dt);
     PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
     PROFILED("npcCampSystem", npcCampSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));

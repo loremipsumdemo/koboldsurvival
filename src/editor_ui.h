@@ -90,6 +90,11 @@ struct SpawnPicker {
     int faction = 0;     // what a unit, mob or built prop placed belongs to (FACTION_PLAYER at first); Factionless: a wild mob
     int listScroll = 0;
     int cluster = 1;     // how many each click places
+    int stack = 1;       // an item's count in each stack placed, up to its stack limit
+    bool stackMax = false;   // Max was pressed: each item picked is placed as a full stack
+    enum class Typing { None, Cluster, Stack };
+    Typing typing = Typing::None;   // a count being typed into its box
+    std::string typed;
     float yaw = 0.0f;
 };
 
@@ -99,6 +104,8 @@ struct SpawnPickerLayout {
     Rect tabs[3];
     Rect factionLabel, factionDown, factionBox, factionUp;
     Rect clusterLabel, clusterDown, clusterBox, clusterUp;
+    // The Items tab's row, where the other tabs have the faction's: the stack's - and + around its count, then 1 and Max
+    Rect stackLabel, stackDown, stackBox, stackUp, stackOne, stackMax;
     Rect listArea;
     std::vector<Rect> rows;
 };

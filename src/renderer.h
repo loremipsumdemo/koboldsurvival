@@ -267,6 +267,16 @@ public:
     void hoverFrameStart() { hoverAny_ = false; }
     bool hoverFrameEnd();
     void drawRect(const Rect& r, RGBA c);
+    // The fires of the props in view this frame (props.txt flag fire): flames, and a warm glow as their light
+    struct FireSpot {
+        float x, y, z, size, seed;
+    };
+    std::vector<FireSpot> fires_;
+    TextTex glow_;   // a soft round spot, bright in the middle
+    void drawFires(const Camera& cam);
+    // A straight line and a filled circle, in pixels (the Adjust tool's widget)
+    void drawLine2D(float x0, float y0, float x1, float y1, float thick, RGBA c);
+    void drawDisc(float x, float y, float radius, RGBA c);
     void drawRoundedRect(const Rect& r, float radius, RGBA c);
     void drawUiIcon(int icon, const Rect& r, RGBA tint = RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     void drawIconText(float x, float y, float h, int icon, const std::string& text, RGBA tint);

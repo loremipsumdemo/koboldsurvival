@@ -105,6 +105,9 @@ struct SaveProp {
     std::optional<double> outdoorHours;   // from version 15: a bedroll or campfire out in the open
     std::vector<ItemStack> bonesItems;
     std::optional<Health> health;
+    std::optional<PropVisual> visual;   // from version 17: how it is drawn apart from where it stands
+    std::string craftRecipe;            // from version 17: an Advanced Crafting prop's order: its recipe's key, or empty
+    int craftKeep = 0;                  //   and the stock it keeps
     std::optional<Foundation> foundation;
     std::optional<Blueprint> blueprint;
     int material = 0;
@@ -131,6 +134,7 @@ struct SaveData {
     std::string rngState;
     std::map<int, int> reputation;
     std::map<int, FactionRules> factionRules;   // the factions whose rules were changed in play
+    std::vector<std::pair<int, std::string>> researched;   // a faction and the key of a recipe it has researched
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
     std::vector<Ghost> ghosts;

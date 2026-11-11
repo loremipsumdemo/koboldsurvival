@@ -1,4 +1,4 @@
-"""Makes simple low-poly prop models: the data/model/model_<n>.glb files that data/props.txt names for each prop.
+"""Makes simple low-poly prop models: the data/model/<name>.glb files that data/props.txt names for each prop.
 
 Run it with:  python tools/make_models.py     (needs Python 3 and Pillow: pip install pillow)
 Then build the game, which packs data/ into data.pak. The game only reads the finished .glb files and never runs this script.
@@ -141,7 +141,8 @@ def campfire():
     for i in range(3):
         t = 2 * math.pi * i / 3
         parts.append(rod((0.28 * math.cos(t), 0.03, 0.28 * math.sin(t)), (-0.03 * math.cos(t), 0.26, -0.03 * math.sin(t)), 0.07, BARK, 'cylinder'))
-    return parts + flame(0, 0.03, 0, 0.3, 0.65)
+    # No flame: the game draws the fire itself (the fire flag in data/props.txt), over a bed of embers
+    return parts + [cyl(0, 0, 0, 0.42, 0.05, 0.42, (58, 44, 40)), cyl(0, 0.05, 0, 0.26, 0.03, 0.26, GLOW)]
 
 
 def bedroll():
@@ -191,13 +192,6 @@ def bones():
         for s in (-1, 1):
             parts.append(rod((x, 0.04, 0), (x, 0.17, s * 0.13), 0.022, BONE))
             parts.append(rod((x, 0.17, s * 0.13), (x, 0.01, s * 0.2), 0.022, BONE))
-    return parts
-
-
-def wall():
-    parts = [box(0, 0, 0, 2.0, 0.15, 0.42, DARK_STONE), box(0, 0.15, 0, 1.9, 0.9, 0.34, STONE), box(0, 1.05, 0, 2.0, 0.08, 0.4, DARK_STONE)]
-    for x in (-0.75, -0.25, 0.25, 0.75):
-        parts.append(box(x, 1.13, 0, 0.3, 0.17, 0.36, STONE))
     return parts
 
 
@@ -291,10 +285,65 @@ def round_table():
             cyl(0, 0.7, 0, 1.2, 0.05, 1.2, WOOD), cyl(0.2, 0.75, 0.15, 0.2, 0.03, 0.2, IRON), cyl(-0.22, 0.75, -0.1, 0.08, 0.1, 0.08, PALE_WOOD)]
 
 
-def metal_table():
-    return legs(0.68, 0.33, 0.72, 0.06, IRON) + [
-        box(0, 0.72, 0, 1.5, 0.05, 0.78, STEEL), box(0, 0.25, 0, 1.36, 0.025, 0.66, IRON), box(0.3, 0.275, 0, 0.28, 0.07, 0.13, STEEL),
-        box(-0.3, 0.77, 0.1, 0.32, 0.025, 0.03, WOOD), box(-0.14, 0.77, 0.1, 0.05, 0.05, 0.1, IRON)]
+def research_table():
+    """A wooden drafting table: a tilted board with a blueprint, loose paper and a pencil on it, and a stool tucked under."""
+    paper, blue, ink = (236, 230, 212), (74, 112, 176), (220, 232, 250)
+    parts = legs(0.6, 0.3, 0.7, 0.07, DARK_WOOD) + [
+        box(0, 0.32, 0, 1.2, 0.05, 0.56, DARK_WOOD), box(0, 0.7, 0, 1.4, 0.05, 0.74, WOOD),
+        # The board, tilted up at the back
+        box(0, 0.75, -0.06, 1.26, 0.04, 0.6, PALE_WOOD, 0, -14),
+        box(-0.1, 0.8, -0.05, 0.78, 0.012, 0.46, blue, 0, -14),
+        box(-0.32, 0.815, -0.1, 0.24, 0.006, 0.02, ink, 0, -14), box(-0.1, 0.815, 0.02, 0.4, 0.006, 0.02, ink, 0, -14),
+        box(0.08, 0.815, -0.14, 0.02, 0.006, 0.26, ink, 0, -14), box(-0.24, 0.815, 0.1, 0.02, 0.006, 0.14, ink, 0, -14),
+        # Loose paper, a pencil and a ruler
+        box(0.46, 0.79, 0.02, 0.26, 0.012, 0.34, paper, 12, -14), box(0.5, 0.8, 0.08, 0.22, 0.01, 0.3, paper, -8, -14),
+        box(0.3, 0.79, 0.3, 0.3, 0.02, 0.025, (222, 178, 60), 20, 0), box(0.44, 0.79, 0.26, 0.04, 0.02, 0.025, (60, 50, 50), 20, 0),
+        box(-0.2, 0.78, 0.31, 0.5, 0.012, 0.05, BRASS), cyl(0.56, 0.75, -0.26, 0.09, 0.1, 0.09, IRON)]
+    return parts
+
+
+def workbench(top_color):
+    """A stout bench with a shelf under it, shared by the three workbenches."""
+    return legs(0.62, 0.3, 0.68, 0.09, DARK_WOOD) + [
+        box(0, 0.68, 0, 1.45, 0.08, 0.74, top_color), box(0, 0.22, 0, 1.3, 0.04, 0.6, WOOD),
+        box(0, 0.5, -0.36, 1.45, 0.4, 0.03, DARK_WOOD)]
+
+
+def weapon_workbench():
+    """A bench with an anvil and hammer, a sword blade being made, and blades hung on its back board."""
+    parts = workbench(WOOD) + [
+        box(-0.38, 0.76, 0.02, 0.36, 0.08, 0.2, IRON), box(-0.38, 0.84, 0.02, 0.2, 0.08, 0.14, IRON), box(-0.38, 0.92, 0.02, 0.5, 0.07, 0.18, STEEL),
+        box(0.2, 0.765, 0.1, 0.6, 0.02, 0.06, STEEL, 12), box(0.5, 0.765, 0.04, 0.12, 0.03, 0.03, DARK_WOOD, 12), box(0.42, 0.765, 0.055, 0.03, 0.03, 0.16, BRASS, 12),
+        box(0.1, 0.77, -0.16, 0.26, 0.04, 0.04, DARK_WOOD), box(0.26, 0.77, -0.16, 0.08, 0.08, 0.1, IRON),
+        box(0, 0.76, -0.33, 1.45, 0.5, 0.03, DARK_WOOD)]
+    for x in (-0.45, -0.15, 0.15, 0.45):
+        parts += [box(x, 0.86, -0.31, 0.05, 0.34, 0.015, STEEL), box(x, 0.82, -0.31, 0.14, 0.03, 0.02, BRASS)]
+    return parts
+
+
+def armor_workbench():
+    """A bench with a breastplate on a stand, a helm, a roll of hide and a mallet."""
+    parts = workbench(PALE_WOOD) + [
+        cyl(-0.35, 0.76, 0.0, 0.08, 0.3, 0.08, DARK_WOOD), ball(-0.35, 0.98, 0.0, 0.4, 0.42, 0.26, STEEL), box(-0.35, 1.0, 0.13, 0.26, 0.26, 0.02, IRON),
+        ball(0.2, 0.76, 0.08, 0.26, 0.24, 0.26, STEEL), box(0.2, 0.8, 0.2, 0.2, 0.05, 0.03, IRON),
+        cyl(0.5, 0.82, -0.14, 0.14, 0.4, 0.14, (150, 110, 80), 0, 90),
+        box(0.02, 0.77, -0.2, 0.22, 0.04, 0.04, DARK_WOOD), box(0.14, 0.77, -0.2, 0.1, 0.1, 0.12, WOOD)]
+    return parts
+
+
+def ammunition_workbench():
+    """A bench with a sheaf of arrow shafts, a bowl of arrowheads, feathers, and a quiver standing on it."""
+    parts = workbench(WOOD) + [
+        cyl(0.48, 0.76, -0.1, 0.2, 0.42, 0.2, (120, 84, 56)), box(0.48, 0.76, 0.0, 0.03, 0.42, 0.02, DARK_WOOD),
+        cyl(-0.45, 0.76, 0.12, 0.26, 0.06, 0.26, DARK_STONE), cone(-0.45, 0.82, 0.12, 0.2, 0.08, 0.2, STEEL)]
+    for i in range(5):
+        parts.append(box(-0.05, 0.765, -0.16 + 0.07 * i, 0.62, 0.02, 0.02, PALE_WOOD, 4 * (i - 2)))
+        parts.append(box(-0.32, 0.765, -0.16 + 0.07 * i, 0.08, 0.03, 0.035, STEEL, 4 * (i - 2)))
+        parts.append(box(0.2, 0.775, -0.16 + 0.07 * i, 0.1, 0.03, 0.035, (228, 228, 236), 4 * (i - 2)))
+    for dx in (-0.05, 0.0, 0.05):
+        parts.append(box(0.48 + dx, 1.18, -0.1, 0.02, 0.16, 0.02, PALE_WOOD))
+        parts.append(box(0.48 + dx, 1.3, -0.1, 0.05, 0.08, 0.02, RED))
+    return parts
 
 
 def standing_torch():
@@ -302,7 +351,7 @@ def standing_torch():
     for i in range(3):
         t = 2 * math.pi * i / 3
         parts.append(rod((0.28 * math.cos(t), 0, 0.28 * math.sin(t)), (0, 0.3, 0), 0.035, DARK_WOOD))
-    return parts + flame(0, 1.14, 0, 0.17, 0.46)
+    return parts + [cyl(0, 1.14, 0, 0.14, 0.05, 0.14, (58, 44, 40))]   # the game draws its fire
 
 
 def support_beam():
@@ -375,7 +424,6 @@ def water_pump():
 def forge():
     return [box(-0.2, 0, 0, 1.15, 0.9, 0.86, DARK_STONE), box(-0.2, 0.9, 0, 1.2, 0.07, 0.92, STONE), box(-0.2, 0.97, -0.1, 0.42, 0.63, 0.38, DARK_STONE),
             box(-0.2, 0.15, 0.43, 0.6, 0.6, 0.03, (48, 44, 44)), box(-0.2, 0.2, 0.45, 0.46, 0.2, 0.02, GLOW),
-            cone(-0.2, 0.25, 0.46, 0.16, 0.3, 0.02, FLAME), cone(-0.32, 0.25, 0.46, 0.1, 0.2, 0.02, FLAME), cone(-0.08, 0.25, 0.46, 0.1, 0.2, 0.02, FLAME),
             cyl(0.6, 0, 0.2, 0.28, 0.3, 0.28, BARK), box(0.6, 0.3, 0.2, 0.2, 0.05, 0.12, IRON), box(0.6, 0.35, 0.2, 0.09, 0.07, 0.08, IRON), box(0.6, 0.42, 0.2, 0.3, 0.05, 0.1, IRON)]
 
 
@@ -384,19 +432,13 @@ def altar():
              box(0, 0.62, 0, 0.8, 0.07, 0.6, STONE), cyl(0, 0.69, 0, 0.1, 0.1, 0.1, IRON), cyl(0, 0.79, 0, 0.42, 0.09, 0.42, IRON)]
     parts += [rod((-0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255)), rod((0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255))]
     parts += [rod((-0.5, 0.06, 0.32), (-0.2, 0.06, 0.32), 0.1, BARK, 'cylinder'), rod((-0.48, 0.06, 0.42), (-0.2, 0.06, 0.42), 0.1, BARK, 'cylinder')]
-    return parts + flame(0, 0.88, 0, 0.28, 0.32)
+    return parts + [cyl(0, 0.88, 0, 0.3, 0.03, 0.3, (58, 44, 40))]   # the game draws its fire
 
 
 def debris():
     return [cyl(0, 0, 0, 1.0, 0.03, 1.0, SOIL), ball(-0.12, 0, 0.03, 0.55, 0.3, 0.42, STONE), ball(0.2, 0, -0.12, 0.38, 0.26, 0.34, DARK_STONE),
             box(0.26, 0.04, 0.24, 0.24, 0.13, 0.17, STONE, 22), box(-0.3, 0.02, -0.26, 0.24, 0.12, 0.16, DARK_STONE, -28),
             rod((-0.42, 0.04, 0.2), (0.06, 0.44, -0.08), 0.06, DARK_WOOD), rod((0.42, 0.04, 0.08), (-0.02, 0.33, 0.22), 0.05, WOOD)]
-
-
-def shop():
-    return [box(0, 0, 0, 1.4, 0.1, 1.1, DARK_STONE), box(0, 0.1, 0, 1.3, 0.95, 1.0, PALE_WOOD), pyramid(0, 1.05, 0, 1.5, 0.55, 1.2, RED),
-            box(-0.25, 0.42, 0.502, 0.56, 0.42, 0.01, (40, 34, 30)), box(-0.25, 0.4, 0.58, 0.68, 0.05, 0.17, WOOD), box(-0.25, 0.86, 0.58, 0.72, 0.04, 0.18, BLUE),
-            box(0.42, 0.1, 0.505, 0.32, 0.8, 0.015, WOOD), box(0.53, 0.48, 0.52, 0.04, 0.04, 0.02, BRASS)]
 
 
 def farm():
@@ -486,9 +528,9 @@ WOOD_PAL = (WOOD, DARK_WOOD, PALE_WOOD, DARK_STONE)
 STONE_PAL = ((158, 152, 140), (112, 108, 100), (192, 186, 172), (82, 80, 78))
 IRON_PAL = ((132, 138, 150), (84, 88, 100), (178, 184, 196), (70, 72, 80))   # shown as Metal; made of Iron Ingots
 CRYSTAL_PAL = ((150, 92, 212), (98, 54, 152), (206, 166, 252), (72, 52, 92))
-# Each material's models sit beside the plain (wood) one: <model>_iron.glb, <model>_crystal_straight.glb and so on.
+# Each material's models sit beside the wood one: wall_wood.glb has wall_metal.glb, wall_crystal_straight.glb and so on.
 # The game also lays each material's texture over them (tools/make_building_textures.py).
-MATERIALS = {'_stone': STONE_PAL, '_iron': IRON_PAL, '_crystal': CRYSTAL_PAL}
+MATERIALS = {'_stone': STONE_PAL, '_metal': IRON_PAL, '_crystal': CRYSTAL_PAL}
 
 
 def foundation(pal=WOOD_PAL):
@@ -584,7 +626,7 @@ def wood_wall(pal=WOOD_PAL):
 
 
 # Each material's wall is a design of its own, not the wood one in other colours
-WALL_STYLES = {'': (wall_tile, WOOD_PAL), '_stone': (stone_wall_tile, STONE_PAL), '_iron': (metal_wall_tile, IRON_PAL),
+WALL_STYLES = {'': (wall_tile, WOOD_PAL), '_stone': (stone_wall_tile, STONE_PAL), '_metal': (metal_wall_tile, IRON_PAL),
                '_crystal': (crystal_wall_tile, CRYSTAL_PAL)}
 
 # The wall's other shapes, written next to its model: <model>_end.glb and so on. Each is drawn for its arms east (+x),
@@ -660,15 +702,36 @@ def crystal_door(pal=CRYSTAL_PAL):
 
 
 # Each material's door is a design of its own
-DOOR_STYLES = {'': wood_door, '_stone': stone_door, '_iron': metal_door, '_crystal': crystal_door}
+DOOR_STYLES = {'': wood_door, '_stone': stone_door, '_metal': metal_door, '_crystal': crystal_door}
 
 
 def dragon_crystal():
-    """A cluster of glowing purple crystals on a rock. Rare: a new level has one."""
-    parts = [box(0, 0, 0, 1.0, 0.18, 0.9, DARK_STONE)]
-    for x, z, h, w, yaw in ((0, 0, 1.2, 0.34, 0.2), (0.24, 0.12, 0.8, 0.24, 0.9), (-0.22, -0.1, 0.9, 0.26, 2.0), (0.05, -0.26, 0.6, 0.2, 1.3)):
-        parts.append(box(x, 0.18, z, w, h * 0.7, w, (150, 92, 212), yaw))
-        parts.append(pyramid(x, 0.18 + h * 0.7, z, w, h * 0.3, w, (206, 166, 252), yaw, 0))
+    """A geode: a ring of dark rock split open round a crown of purple crystal spires, one tall in the middle and the
+    rest leaning out, each a six-sided shaft under a pale point. Rare: a new level has one."""
+    deep, mid, pale, rock, rock2 = (98, 54, 152), (150, 92, 212), (214, 180, 255), (72, 66, 78), (96, 90, 100)
+    parts = [cyl(0, 0, 0, 1.0, 0.1, 0.92, rock)]
+    # The broken rock round the rim
+    for i in range(7):
+        t = 2 * math.pi * i / 7 + 0.3
+        r = 0.4
+        parts.append(ball(r * math.cos(t), 0.04, r * math.sin(t) * 0.92, 0.3, 0.2 + 0.1 * (i % 3), 0.28, rock2 if i % 2 else rock))
+
+    def spire(x, z, lean_x, lean_z, height, width, color):
+        base = (x, 0.1, z)
+        top = (x + lean_x * height, 0.1 + height * 0.74, z + lean_z * height)
+        tip = (x + lean_x * height * 1.3, 0.1 + height, z + lean_z * height * 1.3)
+        parts.append(rod(base, top, width, color, 'cylinder'))
+        parts.append(rod(top, tip, width, pale, 'cone'))
+
+    spire(0, 0, 0.03, -0.02, 1.2, 0.26, mid)
+    for i, (h, w) in enumerate(((0.8, 0.2), (0.62, 0.16), (0.9, 0.2), (0.55, 0.15), (0.72, 0.18), (0.48, 0.14))):
+        t = 2 * math.pi * i / 6 + 0.55
+        cx, cz = 0.2 * math.cos(t), 0.2 * math.sin(t)
+        spire(cx, cz, 0.42 * math.cos(t), 0.42 * math.sin(t), h, w, deep if i % 2 else mid)
+    # Small shards at the foot
+    for i in range(5):
+        t = 2 * math.pi * i / 5 + 1.1
+        parts.append(pyramid(0.34 * math.cos(t), 0.1, 0.3 * math.sin(t), 0.1, 0.2, 0.1, pale, 40 * i, 0))
     return parts
 
 
@@ -721,12 +784,12 @@ def stair_step(pal=WOOD_PAL):
 
 BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
-    'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Wall': wall, 'Stall': stall, 'LockedChest': locked_chest,
+    'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Stall': stall, 'LockedChest': locked_chest,
     'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'EndTable': end_table,
-    'RoundTable': round_table, 'MetalTable': metal_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
+    'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
-    'Shop': shop, 'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'Airship': airship, 'Foundation': foundation,
+    'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'WeaponBench': weapon_workbench, 'ArmorBench': armor_workbench, 'AmmoBench': ammunition_workbench, 'Airship': airship, 'Foundation': foundation,
     'WoodWall': wood_wall, 'WoodDoor': wood_door, 'Ladder': ladder, 'UpperFloor': upper_floor,
     'DragonCrystal': dragon_crystal, 'WoodStockpile': wood_stockpile, 'StoneStockpile': stone_stockpile,
     'Wheelbarrow': wheelbarrow, 'TamingCage': taming_cage,
@@ -903,14 +966,17 @@ def main():
                     extra[mat] = (lambda f, pl: lambda: f(pl))(DOOR_STYLES[mat], pal)
                 else:
                     extra[mat] = (lambda f, pl: lambda: f(pl))(BUILDERS[key], pal)
+        # A material's file takes the wood one's name with its own material: wall_wood_end.glb, wall_stone_end.glb
+        base = stem[:-5] if stem.endswith('_wood') else stem
         for suffix, build in extra.items():
             shaped = build()
-            tris = write_glb(os.path.join(DATA, 'model', stem + suffix + '.glb'), shaped)
-            print(f'{key + suffix:22s} {stem + suffix + ".glb":26s} {len(shaped):3d} parts  {tris:4d} triangles')
+            name = (base if suffix.split('_')[1] in ('stone', 'metal', 'crystal') else stem) + suffix + '.glb'
+            tris = write_glb(os.path.join(DATA, 'model', name), shaped)
+            print(f'{key + suffix:22s} {name:26s} {len(shaped):3d} parts  {tris:4d} triangles')
     if not only or 'Stairs' in only:
         # Stairs are drawn by the game, a step at a time, each this model stretched to its height: stair_step.glb and
         # one beside it in each material
-        for mat, pal in [('', WOOD_PAL)] + list(MATERIALS.items()):
+        for mat, pal in [('_wood', WOOD_PAL)] + list(MATERIALS.items()):
             parts = stair_step(pal)
             name = 'stair_step' + mat + '.glb'
             tris = write_glb(os.path.join(DATA, 'model', name), parts)

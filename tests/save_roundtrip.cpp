@@ -37,6 +37,7 @@
 #include "wheelbarrow.h"
 #include "faction_rules.h"
 #include "level_file.h"
+#include "recipes.h"
 
 namespace {
 
@@ -115,6 +116,7 @@ int stacksIn(const Storage& st) {
 } // namespace
 
 int main(int, char**) {
+    std::setvbuf(stdout, nullptr, _IONBF, 0);   // each line as it is printed, so a crash shows where it got to
     const char* base = SDL_GetBasePath();
     if (!pakOpen(std::string(base ? base : "") + "data.pak")) {
         std::printf("FAIL: data.pak not found\n");
@@ -127,7 +129,7 @@ int main(int, char**) {
             return 1;
         }
         check(sfxInfo(Sfx::Recovers).file == "sfx_56.mp3" && sfxInfo(Sfx::UiClick).ui && !sfxInfo(Sfx::Hit).ui, "sfx.txt reaches the sounds");
-        check(propModelFile(PropKind::Stove) == "model_42.glb" && unitModelFile(3) == "unit/a1.glb" && unitModelKey(4) == "f2", "models.txt reaches the props and units");
+        check(propModelFile(PropKind::Stove) == "stove.glb" && unitModelFile(3) == "unit/a1.glb" && unitModelKey(4) == "f2", "models.txt reaches the props and units");
         check(emoteFile(16) == "emote_16.png" && iconFile(51) == "icon_51.png", "emotes.txt and icons.txt give each id its picture");
         check(mobInfo(MobKind::Bat).hover > 0.0f && mobBones(MobKind::Frog) == 150 && mobTemperament(MobKind::Cow) == MobTemperament::Passive,
               "mobs.txt reaches the mobs");
@@ -347,9 +349,10 @@ int main(int, char**) {
         addBehavior(list, chop, BEHAVIOR_GROUP_TASKS);
         addBehavior(list, haul, BEHAVIOR_GROUP_TASKS);
         const size_t n = list.size();
-        check(n >= 6 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
-              list[n - 3].kind == BehaviorKind::AutoHaulGround && list[n - 4].kind == BehaviorKind::AutoHaul &&
-              list[n - 5].kind == BehaviorKind::AutoHaulStall && list[n - 6].kind == BehaviorKind::AutoConstruct,
+        check(n >= 7 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
+              list[n - 3].kind == BehaviorKind::AutoCraft && list[n - 4].kind == BehaviorKind::AutoHaulGround &&
+              list[n - 5].kind == BehaviorKind::AutoHaul && list[n - 6].kind == BehaviorKind::AutoHaulStall &&
+              list[n - 7].kind == BehaviorKind::AutoConstruct,
               "hauling (to stores, then off the ground) and harvesting sort in after building and before movement");
         check(!isNightAt(START_CLOCK_SECONDS) && isNightAt(18.0 * SECONDS_PER_HOUR) && isNightAt(3.0 * SECONDS_PER_HOUR) &&
               !isNightAt(17.9 * SECONDS_PER_HOUR), "night runs from 18:00 to 06:00");
@@ -876,6 +879,143 @@ int main(int, char**) {
         fw.get<Coloration>(boss)->hue = 123;
         tamingSystem(fw, 3.0 * 3600.0);
         check(fw.has<Taming>(boss) && std::fabs(fw.get<Taming>(boss)->hours - 3.0) < 1e-6, "a boss can be tamed too");
+
+        // Props as they come into being: a tree faces a way of its own by where it stands, a chair the way it was put
+        const ObjectId tree1 = makeProp(fw, PropKind::Tree, Transform{ cx + 20.5f, 0.0f, cz + 3.5f });
+        const ObjectId tree2 = makeProp(fw, PropKind::Tree, Transform{ cx + 22.5f, 0.0f, cz + 7.5f });
+        const ObjectId tree1Again = makeProp(fw, PropKind::Tree, Transform{ cx + 20.5f, 0.0f, cz + 3.5f }, 1.0f);
+        const ObjectId chair = makeProp(fw, PropKind::Chair, Transform{ cx + 24.5f, ground.heightAt(cx + 24.5f, cz + 3.5f), cz + 3.5f }, 1.25f);
+        check(propInfo(PropKind::Tree).randomYaw && propInfo(PropKind::Debris).randomYaw && propInfo(PropKind::Boulder).randomYaw &&
+                  !propInfo(PropKind::Chair).randomYaw,
+              "props.txt turns trees, boulders and debris a way of their own, and not chairs");
+        check(fw.get<Prop>(tree1)->yaw != fw.get<Prop>(tree2)->yaw && fw.get<Prop>(tree1)->yaw == fw.get<Prop>(tree1Again)->yaw &&
+                  fw.get<Prop>(chair)->yaw == 1.25f,
+              "a new tree faces a way of its own, the same for the same spot; a chair faces as it was placed");
+        fw.destroy(tree1Again);
+        // The Adjust tool's change to how a prop is drawn: kept in range, and kept by saves and level files
+        PropVisual wild;
+        wild.dx = 3.0f;
+        wild.sy = 9.0f;
+        wild.rx = 540.0f;
+        const PropVisual kept = clampPropVisual(wild);
+        check(kept.dx == PROP_VISUAL_MOVE && kept.sy == PROP_VISUAL_SCALE_MAX && std::fabs(kept.rx - 180.0f) < 1e-3f && PropVisual{}.plain(),
+              "an adjusted prop moves half a tile at most, stretches from half to one and a half, and turns any way");
+        PropVisual upsideDown;
+        upsideDown.rx = 180.0f;
+        upsideDown.dx = 0.25f;
+        upsideDown.sz = 1.5f;
+        fw.add(chair, upsideDown);
+        LevelData propLevel = captureLevel(fw, "test");
+        LevelData propLevelBack;
+        bool levelKeeps = levelFromText(levelToText(propLevel), propLevelBack, err);
+        bool levelFound = false;
+        for (const LevelObject& o : propLevelBack.objects) {
+            levelFound = levelFound || (o.type == LevelObject::Type::Prop && o.kind == idx(PropKind::Chair) && std::fabs(o.visual.rx - 180.0f) < 0.1f &&
+                                        std::fabs(o.visual.dx - 0.25f) < 1e-3f && std::fabs(o.visual.sz - 1.5f) < 1e-3f);
+        }
+        check(levelKeeps && levelFound, "a level file keeps how a prop was adjusted");
+        LevelData oldShop;
+        check(levelFromText("format 1\nmap test\nnext 2\nprop 1 Shop 5.50 5.50 0.000 0\n", oldShop, err) && oldShop.objects.size() == 1 &&
+                  oldShop.objects[0].kind == idx(PropKind::Stall),
+              "a level's Shop, a prop that is gone, loads as a Stall");
+        LevelData oldProps;
+        check(levelFromText("format 1\nmap test\nnext 3\nprop 1 Wall 5.50 5.50 0.000 -1\nprop 2 MetalTable 7.50 5.50 0.000 -1\n", oldProps, err) &&
+                  oldProps.objects.size() == 2 && oldProps.objects[0].kind == idx(PropKind::Debris) &&
+                  oldProps.objects[1].kind == idx(PropKind::ResearchTable),
+              "a level's Barrier loads as Debris, and its Metal Table as a Research Table");
+        check(breakableKind(PropKind::Chair) && breakableKind(PropKind::Tree) && !breakableKind(PropKind::Debris),
+              "any prop but Debris can be broken from the right-click menu");
+        check(propInfo(PropKind::Campfire).fire && propInfo(PropKind::StandingTorch).fire && propInfo(PropKind::Altar).fire &&
+                  !propInfo(PropKind::Chair).fire && propInfo(PropKind::StandingTorch).fireY > 1.0f,
+              "props.txt gives the Campfire, Standing Torch and Altar a fire, at its place on each");
+
+        // A Bedroll: only by a Campfire or in an Altar's claim, and Debris once it has neither
+        const float farX = cx + 30.5f, farZ = cz + 0.5f;
+        check(propInfo(PropKind::Bedroll).needsCamp && checkBuildSpot(fw, ground, PropKind::Bedroll, farX, farZ, 0) == BuildCheck::NoCamp &&
+                  checkBuildSpot(fw, ground, PropKind::Bedroll, cx - 2.5f, cz + 6.5f, 0) != BuildCheck::NoCamp,
+              "a Bedroll can't be laid away from a camp, and can in your Altar's claim");
+        const ObjectId campfire = placeBuiltProp(fw, ground, PropKind::Campfire, farX + 2.0f, farZ, 0.0f, FACTION_PLAYER);
+        check(checkBuildSpot(fw, ground, PropKind::Bedroll, farX, farZ, 0) != BuildCheck::NoCamp, "nor away from it by a Campfire");
+        const ObjectId bedroll = placeBuiltProp(fw, ground, PropKind::Bedroll, farX, farZ, 0.0f, FACTION_PLAYER);
+        run(2.0f);
+        check(fw.has<Prop>(bedroll) && fw.get<Prop>(bedroll)->kind == PropKind::Bedroll, "a Bedroll by its Campfire stays");
+        destroyBuilding(fw, campfire);
+        run(2.0f);
+        bool bedrollLeft = fw.has<Prop>(bedroll) && fw.get<Prop>(bedroll)->kind == PropKind::Bedroll;
+        int debrisThere = 0;
+        for (ObjectId e : fw.view<Prop, Transform>()) {
+            const Transform* dt = fw.get<Transform>(e);
+            debrisThere += fw.get<Prop>(e)->kind == PropKind::Debris && std::fabs(dt->x - farX) < 0.1f && std::fabs(dt->z - farZ) < 0.1f ? 1 : 0;
+        }
+        check(!bedrollLeft && debrisThere == 1, "a Bedroll whose Campfire is gone falls to Debris");
+
+        // Recipes, research and Crafting Orders
+        PropKind weaponBench = PropKind::Wagon;
+        const int knifeRecipe = recipeNamed("Knife"), swordRecipe = recipeNamed("ShortSword");
+        int gizmo = 0;
+        for (const ItemDef& d : itemDatabase()) {
+            if (isGizmo(d.id)) gizmo = d.id;
+        }
+        check(propKindNamed("WeaponBench", weaponBench) && propInfo(weaponBench).advanced && propInfo(PropKind::Stove).advanced && knifeRecipe >= 0 &&
+                  swordRecipe >= 0 && recipes()[(size_t)swordRecipe].station == weaponBench && gizmo > 0,
+              "recipes.txt has recipes for the Weapon Workbench, an Advanced Crafting prop, and there is a Gizmo");
+        bool cooks = false;
+        for (const Recipe& r : recipes()) cooks = cooks || (r.station == PropKind::Stove && r.gizmos == 0 && r.count == 5);
+        check(cooks, "every cookable item is a Stove recipe, five at a time");
+        check(recipeUnlocked(fw, FACTION_PLAYER, knifeRecipe) && !recipeUnlocked(fw, FACTION_PLAYER, swordRecipe), "a recipe that costs Gizmos is locked at first");
+        const ObjectId desk = placeBuiltProp(fw, ground, PropKind::ResearchTable, cx - 4.5f, cz - 6.5f, 0.0f, FACTION_PLAYER);
+        check(fw.has<Storage>(desk) && propAcceptsItem(PropKind::ResearchTable, gizmo) && !propAcceptsItem(PropKind::ResearchTable, food),
+              "a Research Table holds Gizmos and nothing else");
+        check(!researchRecipe(fw, desk, swordRecipe, FACTION_PLAYER), "with no Gizmos in it, nothing is researched");
+        addToStore(*fw.get<Storage>(desk), gizmo, 3);
+        check(researchRecipe(fw, desk, swordRecipe, FACTION_PLAYER) && recipeUnlocked(fw, FACTION_PLAYER, swordRecipe) && gizmosIn(fw, desk) == 2 &&
+                  !recipeUnlocked(fw, red, swordRecipe),
+              "Gizmos in a Research Table are spent to unlock a recipe for your faction, and not for another's");
+        const ObjectId benchProp = placeBuiltProp(fw, ground, weaponBench, cx - 2.5f, cz - 6.5f, 0.0f, FACTION_PLAYER);
+        check(fw.has<Output>(benchProp) && fw.has<Storage>(benchProp) && craftBlock(fw, benchProp) != nullptr, "a Weapon Workbench starts with no order");
+        check(!setCraftOrder(fw, benchProp, recipeNamed("WoodArrows"), 0) && setCraftOrder(fw, benchProp, knifeRecipe, 1),
+              "its order takes a recipe of its own, and not another prop's");
+        const int ingot = recipes()[(size_t)knifeRecipe].inputs[0].item;
+        const ObjectId pantry = placeBuiltProp(fw, ground, PropKind::Barrel, cx - 0.5f, cz - 6.5f, 0.0f, FACTION_PLAYER);
+        fw.get<Storage>(pantry)->slots[0] = ItemStack{ ingot, 4 };
+        const ObjectId smith = spawnUnit(fw, ground, frng, FACTION_PLAYER, cx - 2.5f, cz - 4.5f);
+        *fw.get<Inventory>(smith) = Inventory{};
+        Stats skilled = *fw.get<Stats>(smith);
+        skilled.xp[idx(StatId::Forging)] = xpForLevel(MAX_LEVEL);
+        fw.add(smith, skilled);
+        BehaviorRule craftTask;
+        craftTask.kind = BehaviorKind::AutoCraft;
+        fw.get<Behaviors>(smith)->rules = { craftTask };
+        run(300.0f);
+        const int knifeItem = recipes()[(size_t)knifeRecipe].item;
+        // Made, and perhaps carried out to a store already by a citizen hauling: wherever it is now, one was made
+        int knives = factionStock(fw, FACTION_PLAYER, knifeItem);
+        for (ObjectId u : fw.view<Entity, Inventory>()) {
+            if (factionOf(fw, u) == FACTION_PLAYER) knives += carriedCount(*fw.get<Inventory>(u), knifeItem);
+        }
+        check(knives >= 1 && countInSlots(fw.get<Storage>(pantry)->slots.data(), (int)fw.get<Storage>(pantry)->slots.size(), ingot) < 4,
+              "Auto-Craft fetches the ingredients from your store and works the prop into a batch");
+        // One batch at a time: with its ingredients in it and a batch in its output, nothing more is made
+        fw.get<Behaviors>(smith)->rules.clear();
+        fw.remove<CraftJob>(smith);
+        fw.remove<Working>(smith);
+        *fw.get<Output>(benchProp) = Output{};
+        *fw.get<Storage>(benchProp) = Storage{};
+        fw.get<CraftOrder>(benchProp)->keep = 0;
+        addToStore(*fw.get<Storage>(benchProp), ingot, 2);
+        check(craftBlock(fw, benchProp) == nullptr, "with its recipe's ingredients in it, the prop can be worked");
+        finishCraft(fw, benchProp, smith);
+        check(countInSlots(fw.get<Output>(benchProp)->slots.data(), STORAGE_SLOTS, knifeItem) == 1 &&
+                  countInSlots(fw.get<Storage>(benchProp)->slots.data(), (int)fw.get<Storage>(benchProp)->slots.size(), ingot) == 1,
+              "a batch takes its ingredients and goes into the prop's output");
+        check(craftBlock(fw, benchProp) != nullptr && std::string(craftBlock(fw, benchProp)) == "MISC_CRAFT_OUTPUT_FULL",
+              "nothing more is made until that is carried out");
+        *fw.get<Inventory>(smith) = Inventory{};
+        check(takeCraftOutput(fw, smith, benchProp) == 1 && outputEmpty(fw, benchProp) && carriedCount(*fw.get<Inventory>(smith), knifeItem) == 1 &&
+                  craftBlock(fw, benchProp) == nullptr,
+              "once its output is carried out, it can be worked again");
+        if (Taming* bossTaming = fw.get<Taming>(boss)) bossTaming->hours = 3.0;   // as it was before the hours above went by
+        fw.get<CraftOrder>(benchProp)->keep = 3;
         const std::string tameFile = "roundtrip_taming.sav";
         check(writeSaveFile(tameFile, captureWorld(fw, gs, cam, frng, 1000, "test", map)), "the taming game is saved");
         SaveData tameData;
@@ -889,6 +1029,21 @@ int main(int, char**) {
             found = found || (tameBack.get<Coloration>(u)->hue == 123 && tm && std::fabs(tm->hours - 3.0) < 1e-3);
         }
         check(found, "a boss's Coloration and its hours of taming come back from a save");
+        bool orderBack = false;
+        for (ObjectId e : tameBack.view<CraftOrder, Prop>()) {
+            const CraftOrder* co = tameBack.get<CraftOrder>(e);
+            orderBack = orderBack || (tameBack.get<Prop>(e)->kind == weaponBench && co->recipe == knifeRecipe && co->keep == 3);
+        }
+        check(orderBack && recipeUnlocked(tameBack, FACTION_PLAYER, swordRecipe) && !recipeUnlocked(tameBack, red, swordRecipe),
+              "a Crafting Order and the recipes a faction has researched come back from a save");
+        bool chairBack = false, treeBack = false;
+        for (ObjectId e : tameBack.view<Prop, Transform>()) {
+            const Prop* pr = tameBack.get<Prop>(e);
+            const PropVisual* pv = tameBack.get<PropVisual>(e);
+            chairBack = chairBack || (pr->kind == PropKind::Chair && pv && pv->rx == 180.0f && pv->dx == 0.25f && pv->sz == 1.5f && pr->yaw == 1.25f);
+            treeBack = treeBack || (pr->kind == PropKind::Tree && pr->yaw == fw.get<Prop>(tree1)->yaw);
+        }
+        check(chairBack && treeBack, "an adjusted prop and the way a tree faces come back from a save");
         std::remove(tameFile.c_str());
     }
 

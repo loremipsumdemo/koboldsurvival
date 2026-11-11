@@ -1,3 +1,4 @@
+#include "prop_visual.h"
 #include "renderer_internal.h"
 #include <unordered_set>
 #include "airship.h"
@@ -444,6 +445,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         float x0, y0, z0, x1, y1, z1;
     };
     std::vector<PlannedBox> plannedBoxes;
+    fires_.clear();
     Batch stairSteps;   // stairs, drawn as plain steps, and the mooring ropes of Airships nobody is aboard
     // A thin square rope from a to b
     auto rope = [&](V3 a, V3 b, float r, RGBA col) {
@@ -600,8 +602,26 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             rope(top, low, 0.025f, ropeColor);
             rope(V3{ low.x, low.y - 0.05f, low.z }, V3{ low.x, low.y + 0.3f, low.z }, 0.05f, stake);
         }
+        // Adjusted with the Build tab's Adjust tool: moved, turned and stretched from where it stands
+        const PropVisual* visual = w.get<PropVisual>(e);
+        if (visual && visual->plain()) visual = nullptr;
+        if (info.fire) {
+            // Its fire, at its spot on the prop as the prop is turned
+            const float c = std::cos(yaw), sn = std::sin(yaw);
+            FireSpot f{ px + c * info.fireX + sn * info.fireZ, py + info.fireY, pz - sn * info.fireX + c * info.fireZ, info.fireSize,
+                        (float)(e % 97u) * 0.37f };
+            if (visual) {
+                f.x += visual->dx;
+                f.y += visual->dy;
+                f.z += visual->dz;
+            }
+            fires_.push_back(f);
+        }
         if (const Model* made = info.door || info.upperFloor || info.ladder ? materialModel(0) : nullptr) {
             queueModel(*made, px, py, pz, info.size, yaw);
+        } else if (modelled && visual) {
+            queueModelMatrix(propModel(kind), propVisualMatrix(propModel(kind), px, py, pz, info.size, yaw, *visual),
+                             RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
         } else if (modelled) {
             queuePropModel(kind, px, py, pz, info.size, yaw);
         } else {
@@ -680,6 +700,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUseProgram(glyphProgram_);
         glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
     }
+    drawFires(cam);
     drawBuildPreview(t);
     drawClouds(cam);
     grabScene();
@@ -1058,4 +1079,53 @@ ObjectId Renderer::nearestGroundItem(const std::vector<ObjectId>& items, World& 
         }
     }
     return best;
+}
+
+// Fires: each a few soft flames rising and fading, over a warm glow on the ground and round the fire that stands in
+// for its light, and shows more the darker it is. Added to what is behind them, so they brighten and never darken.
+void Renderer::drawFires(const Camera& cam) {
+    if (fires_.empty() || !glow_.tex) return;
+    (void)cam;
+    const float now = (float)(SDL_GetTicks() % 3600000u) / 1000.0f;
+    // How dark it is: none at midday, all once the sun is low
+    const float dark = std::clamp(1.0f - skySun_[1] * 2.5f, 0.2f, 1.0f);
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glDepthMask(GL_FALSE);
+    for (const FireSpot& f : fires_) {
+        const float flicker = 0.88f + 0.12f * std::sin(now * 11.0f + f.seed * 5.0f) * std::sin(now * 7.3f + f.seed);
+        // The glow on the ground under it
+        const float reach = (2.0f + f.size * 5.0f) * flicker;
+        const float gy = f.y - std::min(f.y, 0.0f) * 0.0f;
+        const float ground[4 * 5] = {
+            f.x - reach, gy + 0.03f, f.z - reach, 0.0f, 0.0f,
+            f.x + reach, gy + 0.03f, f.z - reach, 1.0f, 0.0f,
+            f.x + reach, gy + 0.03f, f.z + reach, 1.0f, 1.0f,
+            f.x - reach, gy + 0.03f, f.z + reach, 0.0f, 1.0f
+        };
+        drawQuadVerts(glow_.tex, ground, RGBA{ 1.0f, 0.62f, 0.28f, (0.10f + 0.45f * dark) * flicker });
+        // The glow round the fire itself
+        const float halo = f.size * 4.5f;
+        drawGlyph(glow_, f.x, f.y + f.size * 0.4f - halo * 0.5f, f.z, halo, RGBA{ 1.0f, 0.55f, 0.2f, (0.12f + 0.3f * dark) * flicker });
+        // The flames: each rises from the fire's foot, drifting in, shrinking and reddening as it goes
+        constexpr int FLAMES = 9;
+        for (int i = 0; i < FLAMES; ++i) {
+            const float seed = f.seed + (float)i * 0.618f;
+            const float life = std::fmod(now * (0.75f + 0.05f * (float)(i % 3)) + seed, 1.0f);
+            const float sway = std::sin(seed * 40.0f + now * 2.3f);
+            const float sway2 = std::cos(seed * 23.0f + now * 1.9f);
+            const float spread = f.size * 0.32f * (1.0f - life * 0.8f);
+            const float px = f.x + sway * spread, pz = f.z + sway2 * spread;
+            const float py = f.y + life * f.size * 1.7f;
+            const float side = f.size * (0.95f - 0.6f * life);
+            const RGBA tint{ 1.0f, 0.85f - 0.55f * life, 0.35f - 0.3f * life, (1.0f - life) * 0.75f };
+            drawGlyph(glow_, px, py - side * 0.3f, pz, side, tint);
+        }
+    }
+    glDepthMask(GL_TRUE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
+    glUniform4f(uTint_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
 }

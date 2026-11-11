@@ -121,6 +121,10 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.outdoorHours) w.line("outdoor", i, *p.outdoorHours);
     for (const ItemStack& s : p.bonesItems) w.line("bonesitem", i, s.item, s.count);
     if (p.health) w.line("health", i, p.health->value, p.health->max);
+    if (p.visual) {
+        const PropVisual& v = *p.visual;
+        w.line("visual", i, v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz);
+    }
     if (p.foundation) {
         std::ostringstream gates;
         for (size_t k = 0; k < p.foundation->entrances.size(); ++k) gates << (k ? "," : "") << p.foundation->entrances[k];
@@ -130,6 +134,7 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
     if (p.material > 0) w.line("material", i, p.material);
     if (p.storeFilter) w.line("storefilter", i, *p.storeFilter);
+    if (!p.craftRecipe.empty() || p.craftKeep > 0) w.line("craftorder", i, p.craftRecipe.empty() ? std::string("-") : p.craftRecipe, p.craftKeep);
     if (p.bedPublic) w.line("bedpublic", i);
     if (p.stallPayment) w.line("stallpay", i, *p.stallPayment);
     for (const auto& r : p.stallRequests) w.line("stallreq", i, r[0], r[1], r[2]);
@@ -149,6 +154,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     w.line("rng", d.rngState);
     for (const auto& [faction, value] : d.reputation) w.line("rep", faction, value);
     for (const auto& [faction, rules] : d.factionRules) w.line("factionrules", faction, factionRulesText(rules));
+    for (const auto& [faction, key] : d.researched) w.line("research", faction, key);
     for (size_t k = 0; k < d.squadNames.size(); ++k) {
         if (!d.squadNames[k].empty()) w.line("squadname", k, d.squadNames[k]);
     }
@@ -273,7 +279,9 @@ const std::unordered_map<std::string, Handler>& handlers() {
             SaveProp p;
             std::string key;
             PropKind kind = PropKind::Wagon;
-            if (!l.read(key, p.at.x, p.at.y, p.at.z, p.yaw, p.owner) || !propKindNamed(key, kind)) return false;
+            if (!l.read(key, p.at.x, p.at.y, p.at.z, p.yaw, p.owner)) return false;
+            key = currentPropKey(key);   // a prop that is gone loads as the one that took its place
+            if (!propKindNamed(key, kind)) return false;
             p.kind = idx(kind);
             l.d.props.push_back(std::move(p));
             return true;
@@ -320,6 +328,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             ItemStack s;
             if (!p || !l.read(s.item, s.count)) return false;
             p->bonesItems.push_back(s);
+            return true;
+        } },
+        { "visual", [](Line& l) {
+            SaveProp* p = l.prop();
+            PropVisual v;
+            if (!p || !l.read(v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz)) return false;
+            p->visual = clampPropVisual(v);
             return true;
         } },
         { "health", [](Line& l) {
@@ -460,6 +475,22 @@ const std::unordered_map<std::string, Handler>& handlers() {
                 }
             }
             p->foundation = std::move(f);
+            return true;
+        } },
+        { "craftorder", [](Line& l) {
+            SaveProp* p = l.prop();
+            std::string key;
+            int keep = 0;
+            if (!p || !l.read(key, keep)) return false;
+            p->craftRecipe = key == "-" ? std::string() : key;
+            p->craftKeep = std::clamp(keep, 0, 999);
+            return true;
+        } },
+        { "research", [](Line& l) {
+            int faction = 0;
+            std::string key;
+            if (!l.read(faction, key)) return false;
+            l.d.researched.push_back({ faction, key });
             return true;
         } },
         { "storefilter", [](Line& l) {

@@ -4,6 +4,7 @@
 #include "systems_internal.h"
 #include "wheelbarrow.h"
 #include "taming.h"
+#include "recipes.h"
 #include "build.h"
 #include "hostility.h"
 #include <sstream>
@@ -62,6 +63,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         s.kind = idx(p->kind);
         s.at = *w.get<Transform>(e);
         s.yaw = p->yaw;
+        if (const PropVisual* pv = w.get<PropVisual>(e); pv && !pv->plain()) s.visual = *pv;
         if (const Owner* own = w.get<Owner>(e)) s.owner = own->faction;
         if (const Lock* lock = w.get<Lock>(e)) s.lock = *lock;
         if (const Storage* st = w.get<Storage>(e)) s.storage = occupiedSlots(st->slots);
@@ -81,6 +83,10 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         if (const Blueprint* bp = w.get<Blueprint>(e)) s.blueprint = *bp;
         s.material = (int)materialOf(w, e);
         if (const StoreFilter* f = w.get<StoreFilter>(e)) s.storeFilter = f->allowed;
+        if (const CraftOrder* co = w.get<CraftOrder>(e)) {
+            if (co->recipe >= 0 && co->recipe < (int)recipes().size()) s.craftRecipe = recipes()[(size_t)co->recipe].key;
+            s.craftKeep = co->keep;
+        }
         s.bedPublic = w.has<BedPublic>(e);
         if (const StallStock* ss = w.get<StallStock>(e)) s.stallPayment = ss->payment;
         d.props.push_back(std::move(s));
@@ -246,6 +252,8 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
     props.reserve(d.props.size());
     for (const SaveProp& s : d.props) {
         const ObjectId e = makeProp(world, (PropKind)s.kind, s.at, s.yaw);
+        world.get<Prop>(e)->yaw = s.yaw;   // as it was saved, whatever way a new one would face
+        if (s.visual) world.add(e, *s.visual);
         props.push_back(e);
         if (s.owner >= 0) world.add(e, Owner{ s.owner });
         if (s.lock) world.add(e, *s.lock);
@@ -271,6 +279,12 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
         if (s.blueprint) world.add(e, *s.blueprint);
         if (s.material > 0) world.add(e, Material{ (BuildMaterial)s.material });
         if (s.storeFilter) world.add(e, StoreFilter{ *s.storeFilter });
+        // Its order, if the recipe is still one made at it (a recipe gone from recipes.txt leaves it with none)
+        if (!s.craftRecipe.empty() || s.craftKeep > 0) {
+            const int recipe = recipeNamed(s.craftRecipe);
+            const bool fits = recipe >= 0 && recipes()[(size_t)recipe].station == (PropKind)s.kind;
+            world.add(e, CraftOrder{ fits ? recipe : -1, s.craftKeep });
+        }
         if (s.blueprint && propInfo((PropKind)s.kind).door) world.remove<Lock>(e);
         if (s.bedPublic) world.add(e, BedPublic{});
         if (StallStock* ss = world.get<StallStock>(e); ss && s.stallPayment) ss->payment = *s.stallPayment;
@@ -413,6 +427,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
     world = World{};
     setPlayerReputation(world, d.reputation);
     setChangedFactionRules(world, d.factionRules);
+    for (const auto& [faction, key] : d.researched) setResearched(world, faction, key);
     SquadBook& book = world.resource<SquadBook>();
     book.names = d.squadNames;
     book.current = std::clamp(d.currentSquad, 0, SQUAD_COUNT - 1);
@@ -462,6 +477,9 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.gs = gs;
     d.reputation = playerReputation(w);
     d.factionRules = changedFactionRules(w);
+    for (const FactionDef& f : factions()) {
+        for (const std::string& key : researchedRecipes(w, f.id)) d.researched.push_back({ f.id, key });
+    }
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
     d.ghosts = w.resource<Graveyard>().ghosts;

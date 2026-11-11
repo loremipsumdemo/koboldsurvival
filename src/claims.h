@@ -27,6 +27,11 @@ struct Claim {
 
 std::vector<Claim> claimsOf(World& w);
 const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int owner = -1);
+// A spot a faction's Bedroll may lie on (props.txt flag needs_camp): in a claim of the faction's (its Altar's, or a
+// camp's), or within a camp's reach of a Campfire that is the faction's or no one's
+bool campSheltered(World& w, const std::vector<Claim>& claims, float x, float z, int faction);
+// Props that need a camp and have lost theirs fall to Debris (looked at once a second)
+void campPropSystem(World& w, float dt);
 // Two claims, of these radii, would share land
 bool claimsOverlap(float ax, float az, float ar, float bx, float bz, float br);
 // The claim this prop holds (an Altar's, or a camp's campfire), or null

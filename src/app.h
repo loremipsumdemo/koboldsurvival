@@ -258,6 +258,9 @@ struct App : AppSession {
     std::vector<EditorEntry> spawnEntries(EditorTab tab);
     void drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L);
     bool spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y);   // true when a row was picked
+    // A key while a count is being typed into the spawn list: true if it took the key
+    bool spawnPickerKey(SpawnPicker& p);
+    void spawnPickerCommit(SpawnPicker& p, bool keep);
     void spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y, float notches);
     int spawnAt(SpawnPicker& p, float x, float z, bool levelIds);   // places the pick (a cluster of them); how many
     void openDeveloper();
@@ -409,6 +412,23 @@ struct App : AppSession {
     void scrollManageSquads(float x, float y, float notches);
     void applySquadMoves();
     void drawManageSquads();
+    // The Build tab's Adjust tool (app_prop_adjust.cpp)
+    struct AdjustView;
+    AdjustView adjustView();
+    int adjustHandleAt(const AdjustView& v, float mx, float my);
+    bool adjustPress(float mx, float my);
+    // A press on the widget's buttons or handles, which are drawn over the panels and so come before them
+    bool pressOnAdjustWidget();
+    void adjustMotion(float mx, float my);
+    bool adjustRelease();
+    void endPropAdjust(bool keep);
+    void drawPropAdjust();
+    // Research and Crafting Order (app_crafting.cpp)
+    std::vector<int> craftRows();
+    void openCraftWindow(ObjectId prop, bool research);
+    bool pressOnCraftWindow();
+    void scrollCraftWindow(float notches);
+    void drawCraftWindow();
     // Faction Rules: your faction's rules for outsiders (app_faction_rules.cpp)
     void openFactionRules();
     bool pressOnFactionRules();
@@ -521,6 +541,24 @@ struct App : AppSession {
     AltarUi altar;
     SquadsUi squadsUi;
     bool factionRulesOpen = false;
+    // The Research or Crafting Order window, and the prop it is for
+    struct CraftUi {
+        bool open = false;
+        ObjectId prop = NO_OBJECT;
+        bool research = false;
+        int scroll = 0;
+    };
+    CraftUi craftUi;
+    // The prop the Adjust tool has hold of, how it was before, and the handle being dragged
+    struct PropAdjustUi {
+        enum class Mode { Move = 0, Rotate, Scale };
+        ObjectId prop = NO_OBJECT;
+        PropVisual before;
+        Mode mode = Mode::Move;
+        int drag = -1;   // 0 to 2: the x, y or z arm or ring. 3: the middle. -1: none.
+        float lastX = 0.0f, lastY = 0.0f;
+    };
+    PropAdjustUi propAdjust;
     SpawnPicker devSpawn;   // the Build tab's Developer panel
     std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;

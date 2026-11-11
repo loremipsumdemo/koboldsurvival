@@ -120,8 +120,8 @@ bool App::mouseDownOnPanels() {
                             session.askKind = pick.kind;
                         } else {
                             session.buildPick = pick;
-                            showNotice(lang(!pick.placing() ? "UILABEL_BUILD_DESTROY_HINT"
-                                                                  : "UILABEL_BUILD_PLACE_HINT"), 4.0f);
+                            showNotice(lang(pick.adjusting() ? "UILABEL_BUILD_ADJUST_HINT"
+                                            : !pick.placing() ? "UILABEL_BUILD_DESTROY_HINT" : "UILABEL_BUILD_PLACE_HINT"), 4.0f);
                         }
                         playSfx(Sfx::UiClick);
                         break;
@@ -214,6 +214,10 @@ bool App::mouseDownOnPanels() {
             return true;
         }
 
+        if (session.buildPick.adjusting() && session.dialogueUnit == NO_OBJECT && !mapOpen) {
+            adjustPress(mx, my);
+            return true;
+        }
         if (session.buildPick.any() && session.dialogueUnit == NO_OBJECT && !mapOpen) {
             if (!session.buildPick.placing()) {
                 ObjectId target = NO_OBJECT;

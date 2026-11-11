@@ -24,7 +24,6 @@ enum class PropKind : int {
     Boulder,
     Mushroom,
     Bones,
-    Wall,
     Stall,
     LockedChest,
     PrisonerCage,
@@ -34,7 +33,7 @@ enum class PropKind : int {
     Table,
     EndTable,
     RoundTable,
-    MetalTable,
+    ResearchTable,
     StandingTorch,
     SupportBeam,
     TrainingDummy,
@@ -47,7 +46,6 @@ enum class PropKind : int {
     Forge,
     Altar,
     Debris,
-    Shop,
     Farm,
     Turbine,
     Stove,
@@ -65,15 +63,26 @@ enum class PropKind : int {
     NamedCount
 };
 constexpr int PROP_NAMED_KIND_COUNT = idx(PropKind::NamedCount);
+// The key a save or level's prop goes by now: props that are gone load as the ones that took their place (the Shop as
+// the Stall, the Metal Table as the Research Table), or as Debris (the Barrier)
+inline std::string currentPropKey(const std::string& key) {
+    if (key == "Shop") return "Stall";
+    if (key == "MetalTable") return "ResearchTable";
+    if (key == "Wall") return "Debris";
+    return key;
+}
 // How many kinds data/props.txt has
 int propKindCount();
 struct BuildPick {
-    enum class Tool { None, Destroy, Place };
+    enum class Tool { None, Destroy, Place, Adjust };
     Tool tool = Tool::None;
     PropKind kind = PropKind::Wagon;
 
     static BuildPick destroy() { return BuildPick{ Tool::Destroy }; }
     static BuildPick place(PropKind k) { return BuildPick{ Tool::Place, k }; }
+    // Adjust: how a prop is drawn apart from where it stands (app_prop_adjust.cpp)
+    static BuildPick adjust() { return BuildPick{ Tool::Adjust }; }
+    bool adjusting() const { return tool == Tool::Adjust; }
     bool any() const { return tool != Tool::None; }
     bool placing() const { return tool == Tool::Place; }
     bool places(PropKind k) const { return tool == Tool::Place && kind == k; }
@@ -82,18 +91,18 @@ struct BuildPick {
 };
 enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting };
 
-// The Build tab's headings, in the order listed. props.txt's group column names one for each prop; Developer is the
-// tab's own (the spawn panel) and holds no prop.
-enum class BuildGroup : int { Claims = 0, Crafting, Storage, Settlement, Furniture, Cages, Vehicles, Nature, Developer, Count };
-inline constexpr const char* BUILD_GROUP_KEYS[] = { "claims", "crafting", "storage", "settlement", "furniture", "cages",
+// The Build tab's headings, in the order listed. props.txt's group column names one for each prop; Tools (Destroy and
+// Adjust Position) and Developer (the spawn panel) are the tab's own and hold no prop.
+enum class BuildGroup : int { Tools = 0, Claims, Crafting, Storage, Settlement, Furniture, Cages, Vehicles, Nature, Developer, Count };
+inline constexpr const char* BUILD_GROUP_KEYS[] = { "tools", "claims", "crafting", "storage", "settlement", "furniture", "cages",
                                                     "vehicles", "nature", "developer" };
-inline constexpr const char* BUILD_GROUP_LABELS[] = { "UILABEL_BUILD_GROUP_CLAIMS", "UILABEL_BUILD_GROUP_CRAFTING",
+inline constexpr const char* BUILD_GROUP_LABELS[] = { "UILABEL_BUILD_GROUP_TOOLS", "UILABEL_BUILD_GROUP_CLAIMS", "UILABEL_BUILD_GROUP_CRAFTING",
                                                       "UILABEL_BUILD_GROUP_STORAGE", "UILABEL_BUILD_GROUP_SETTLEMENT",
                                                       "UILABEL_BUILD_GROUP_FURNITURE", "UILABEL_BUILD_GROUP_CAGES",
                                                       "UILABEL_BUILD_GROUP_VEHICLES", "UILABEL_BUILD_GROUP_NATURE",
                                                       "UILABEL_BUILD_GROUP_DEVELOPER" };
 
-enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone };
+enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone, Gizmo };
 
 // The kinds of item a general store (a Barrel, a chest: storage that takes any item) can be set to allow, from its
 // right-click menu's Allowed Items. By default it takes all but Wood Logs and Stone, which have stockpiles of their
@@ -118,6 +127,7 @@ inline const char* itemFilterKey(ItemFilter f) {
     case ItemFilter::Water: return "FILTER_WATER";
     case ItemFilter::Wood: return "FILTER_WOOD";
     case ItemFilter::Stone: return "FILTER_STONE";
+    case ItemFilter::Gizmo: return "FILTER_GIZMO";
     default: return "";
     }
 }
@@ -189,6 +199,11 @@ struct PropInfo {
     bool stairs = false;         // a ladder 3 tiles long that is walked up: from its foot to the floor above past its top
     bool upperFloor = false;     // a floor at wall height
     bool rare = false;           // a new level scatters only one
+    bool randomYaw = false;      // faces a way of its own, by where it stands, whenever one comes into being
+    bool advanced = false;       // an Advanced Crafting prop: it makes the recipe picked for it (src/recipes.h)
+    bool needsCamp = false;      // placed only by a Campfire or in an Altar's claim of its faction; it falls to Debris outside one
+    bool fire = false;           // a fire burns on it: drawn as flames and a glow, at this spot from its base, this big
+    float fireX = 0.0f, fireY = 0.0f, fireZ = 0.0f, fireSize = 0.4f;
     double materials = 0.0;      // building material a blueprint needs (Wood Logs, or the material picked); 0: placed finished
     double buildSeconds = 0.0;   // building it needs at Carpentry 1 (per tile for a foundation)
     int slots = 12;              // a store's slots (props.txt's optional slots column; STORAGE_SLOTS by default)
@@ -222,13 +237,16 @@ constexpr double DEBRIS_CLEAR_HOURS = 1.0;
 constexpr float DEBRIS_CLEAR_XP = 20.0f;
 constexpr int BONES_ITEM_COUNT = 3;
 inline bool destroyedByHand(PropKind kind) { return propInfo(kind).byHand; }
+// Broken with the right-click menu's Break: every prop but Debris itself (worked to clear it). One destroyed by hand
+// leaves its item or bones; any other leaves Debris.
+inline bool breakableKind(PropKind kind) { return !propInfo(kind).debris; }
 
 inline bool yieldsItems(PropKind kind) { return propInfo(kind).use == PropUse::Resource && propInfo(kind).item > 0; }
 
 inline bool isWorkProp(PropUse use) { return use == PropUse::Resource || use == PropUse::Crafting; }
 inline bool hasStorage(const PropInfo& info) {
     return info.use == PropUse::Storage || info.use == PropUse::PassiveCrafting || info.wheelbarrow ||
-           (info.use == PropUse::Crafting && info.input != 0);
+           (info.use == PropUse::Crafting && info.input != 0) || info.advanced;
 }
 inline bool isSeat(PropKind kind) { return propInfo(kind).seat; }
 
@@ -249,7 +267,10 @@ inline std::vector<BuildRow> buildRows() {
     for (int g = 0; g < (int)BuildGroup::Count; ++g) {
         const BuildGroup group = (BuildGroup)g;
         rows.push_back(BuildRow{ group, true, false, {} });
-        if (group == BuildGroup::Claims) rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
+        if (group == BuildGroup::Tools) {
+            rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
+            rows.push_back(BuildRow{ group, false, false, BuildPick::adjust() });
+        }
         if (group == BuildGroup::Developer) rows.push_back(BuildRow{ group, false, true, {} });
         for (PropKind k : propKindsListed()) {
             if (propInfo(k).group == group) rows.push_back(BuildRow{ group, false, false, BuildPick::place(k) });

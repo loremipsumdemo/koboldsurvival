@@ -2,6 +2,7 @@
 #include "building.h"
 #include "camera_limit.h"
 #include "prop_info.h"
+#include "recipes.h"
 #include "profile.h"
 
 using namespace play;
@@ -153,6 +154,10 @@ void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
             refuse(lang("MISC_PROP_TAKEN"));
         } else if (a.taken) {
             refuse(langf("MISC_PROP_WORKERS_FULL", { std::to_string(info.workers) }));
+        } else if (info.advanced && a.craft == WorkStart::NoInput) {
+            // An Advanced Crafting prop: why its order can't be worked
+            const char* why = craftBlock(world, a.prop);
+            refuse(lang(why ? why : "MISC_CRAFT_MISSING"));
         } else if (info.use == PropUse::Crafting && a.craft == WorkStart::NoInput) {
             refuse(langf("MISC_CRAFT_NEEDS", { info.input == INPUT_COOKABLE ? std::string(lang("MISC_FOOD_TO_COOK"))
                                                                                  : itemNameOf(info.input) }));

@@ -303,9 +303,11 @@ void App::drawPlayingScreen() {
                                  mouseX, mouseY);
     }
     if (mapOpen) drawWorldMapPopup();
+    drawPropAdjust();
     drawAltar();
     drawManageSquads();
     drawFactionRules();
+    drawCraftWindow();
     drawDeveloper();
     drawGhosts();
     drawBehaviorGroups();

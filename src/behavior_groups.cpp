@@ -51,12 +51,13 @@ void resetBehaviorGroups(BehaviorGroups& g) {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
     // Each sorts into its place by its category (Auto-Haul to Stalls is in the defaults already)
-    BehaviorRule sleep, build, ground, patrol;
+    BehaviorRule sleep, build, ground, patrol, craft;
+    craft.kind = BehaviorKind::AutoCraft;   // fills the Crafting Orders that keep a stock
     sleep.kind = BehaviorKind::Sleep;
     build.kind = BehaviorKind::AutoConstruct;
     ground.kind = BehaviorKind::AutoHaulGround;
     patrol.kind = BehaviorKind::Patrol;
-    for (const BehaviorRule& r : { sleep, build, ground, patrol }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
+    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
     g.listedStores.clear();
     g.storesListed = false;
     g.groups.assign(1, { groupTask(GROUP_REF_CITIZEN) });
