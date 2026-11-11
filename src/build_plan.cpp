@@ -162,6 +162,7 @@ std::string planToText(const BuildPlan& plan) {
     std::ostringstream out;
     char line[200];
     out << "format 1\nname " << plan.name << "\n";
+    out << "npcs " << (plan.npcAllowed ? 1 : 0) << "\n";
     std::snprintf(line, sizeof line, "size %d %d %d\n", plan.w, plan.d, plan.floors);
     out << line;
     // Foundation and upper floor tiles go in runs along a row; everything else one to a line, with its adjusting after it
@@ -219,6 +220,10 @@ bool planFromText(const std::string& text, BuildPlan& out, std::string& err) {
             ok = (bool)(ls >> format);
         } else if (key == "name") {
             std::getline(ls >> std::ws, plan.name);
+        } else if (key == "npcs") {
+            int allowed = 1;
+            ok = (bool)(ls >> allowed);
+            plan.npcAllowed = allowed != 0;
         } else if (key == "size") {
             ok = (bool)(ls >> plan.w >> plan.d >> plan.floors) && plan.w >= PLAN_SIZE_MIN && plan.w <= PLAN_SIZE_MAX &&
                  plan.d >= PLAN_SIZE_MIN && plan.d <= PLAN_SIZE_MAX && plan.floors >= 1 && plan.floors <= PLAN_FLOORS_MAX;
@@ -292,6 +297,15 @@ std::vector<std::string> listPlanFiles() {
     }
     std::sort(out.begin(), out.end());
     return out;
+}
+
+bool setPlanNpcAllowed(const std::string& name, bool allowed, std::string& err) {
+    BuildPlan plan;
+    if (!readPlanFile(planFilePath(name), plan, err)) return false;
+    plan.npcAllowed = allowed;
+    if (!writePlanFile(planFilePath(name), plan, err)) return false;
+    reloadPlanLibrary();
+    return true;
 }
 
 bool deletePlanFile(const std::string& name, std::string& err) {

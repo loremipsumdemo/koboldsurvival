@@ -63,10 +63,12 @@ BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui) {
     L.cancel = Rect{ L.hold.x + half + gap, L.hold.y, half, btnH };
     L.list = Rect{ L.panel.x, L.panel.y + L.panel.h + gap, w, 2.0f * pad + shown * rowH };
     const int top = std::clamp(ui.listScroll, 0, std::max(0, count - shown));
-    // Each plan's row, and its X to delete it at the right
+    // Each plan's row, its toggle for whether NPCs may build it, and its X to delete it at the right
+    const float toggleW = 74.0f * s;
     for (int i = 0; i < shown && top + i < count; ++i) {
         const float ry = L.list.y + pad + i * rowH;
-        L.rows.push_back(Rect{ L.list.x + pad, ry, inner - rowH - gap, rowH });
+        L.rows.push_back(Rect{ L.list.x + pad, ry, inner - rowH - toggleW - 2.0f * gap, rowH });
+        L.rowToggle.push_back(Rect{ L.list.x + pad + inner - rowH - gap - toggleW, ry, toggleW, rowH });
         L.rowDelete.push_back(Rect{ L.list.x + pad + inner - rowH, ry, rowH, rowH });
     }
     return L;
@@ -164,6 +166,37 @@ void App::blueprintClear() {
     playSfx(Sfx::UiBack);
 }
 
+// The plans in the Load list, each with whether NPCs may build it and whether it could be built by them at all
+void App::refreshPlanList() {
+    bpEdit.plans = listPlanFiles();
+    bpEdit.planNpc.assign(bpEdit.plans.size(), 0);
+    bpEdit.planSound.assign(bpEdit.plans.size(), 0);
+    for (size_t i = 0; i < bpEdit.plans.size(); ++i) {
+        BuildPlan plan;
+        std::string err;
+        if (!readPlanFile(planFilePath(bpEdit.plans[i]), plan, err)) continue;
+        bpEdit.planSound[i] = planProblem(plan).empty() ? 1 : 0;
+        bpEdit.planNpc[i] = plan.npcAllowed && bpEdit.planSound[i] ? 1 : 0;
+    }
+}
+
+// The NPC toggle of a plan in the list: saved to its file at once
+void App::blueprintToggleNpc(size_t index) {
+    if (index >= bpEdit.plans.size()) return;
+    if (!bpEdit.planSound[index]) {
+        refuse(lang("MISC_BLUEPRINT_NPC_UNSOUND"));
+        return;
+    }
+    const bool allow = !bpEdit.planNpc[index];
+    std::string err;
+    if (!setPlanNpcAllowed(bpEdit.plans[index], allow, err)) {
+        refuse(err);
+        return;
+    }
+    bpEdit.planNpc[index] = allow ? 1 : 0;
+    playSfx(Sfx::UiClick);
+}
+
 // Deletes a saved plan's file, after its X was held, and brings the list up to date
 void App::blueprintDelete(const std::string name) {   // by value: it is called with bpEdit.deleteName, which is cleared below
     bpEdit.deleteName.clear();
@@ -173,7 +206,7 @@ void App::blueprintDelete(const std::string name) {   // by value: it is called 
         return;
     }
     reloadPlanLibrary();
-    bpEdit.plans = listPlanFiles();
+    refreshPlanList();
     bpEdit.listScroll = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
     if (bpEdit.plans.empty()) bpEdit.listOpen = false;
     // Deleting the plan that is open: what stands in the editor goes with it, to a blank plan under a new name
@@ -205,7 +238,7 @@ bool App::blueprintSave(bool overwriteConfirmed) {
         refuse(langf("MISC_BLUEPRINT_OUTSIDE", { std::to_string(outside) }));
         return false;
     }
-    const BuildPlan plan = blueprintPlan();
+    BuildPlan plan = blueprintPlan();
     const std::string problem = planProblem(plan);
     if (!problem.empty()) {
         refuse(lang(problem.c_str()));
@@ -226,12 +259,17 @@ bool App::blueprintSave(bool overwriteConfirmed) {
     bpEdit.overwriteAsk = false;
     bpEdit.holding = false;
     std::string err;
+    // Whether NPCs may build it stays as the file has it (the Load list's toggle); a new plan is not open to them until it is toggled on
+    plan.npcAllowed = false;
+    BuildPlan before;
+    if (std::filesystem::exists(planFilePath(name), exists) && readPlanFile(planFilePath(name), before, err)) plan.npcAllowed = before.npcAllowed;
+    err.clear();
     if (!writePlanFile(planFilePath(name), plan, err)) {
         refuse(err);
         return false;
     }
     reloadPlanLibrary();
-    bpEdit.savedText = planToText(plan);
+    bpEdit.savedText = blueprintText();   // the scene, which is what the plan was written from (the flag is not part of what is compared)
     bpEdit.savedName = name;
     bpEdit.dirtyRev = 0;
     bpEdit.exitWarned = false;
@@ -331,6 +369,10 @@ bool App::pressOnBlueprint() {
         if (e.button.button != SDL_BUTTON_LEFT) return true;
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
+            if (L.rowToggle[i].contains(x, y)) {
+                blueprintToggleNpc((size_t)top + i);
+                break;
+            }
             if (L.rowDelete[i].contains(x, y)) {
                 bpEdit.deleteName = bpEdit.plans[(size_t)top + i];
                 bpEdit.holding = false;
@@ -391,7 +433,7 @@ bool App::pressOnBlueprint() {
     } else if (L.load.contains(x, y)) {
         bpEdit.listOpen = !bpEdit.listOpen;
         if (bpEdit.listOpen) {
-            bpEdit.plans = listPlanFiles();
+            refreshPlanList();
             bpEdit.listScroll = 0;
             if (bpEdit.plans.empty()) {
                 bpEdit.listOpen = false;
@@ -459,6 +501,13 @@ void App::drawBlueprintPanel() {
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
             renderer.drawButton(L.rows[i], renderer.fitListText(bpEdit.plans[(size_t)top + i], L.rows[i].w - 12.0f * s), true, L.rows[i].contains(mouseX, mouseY));
+            const bool sound = bpEdit.planSound[(size_t)top + i] != 0;
+            renderer.drawButton(L.rowToggle[i], std::string(bpEdit.planNpc[(size_t)top + i] ? "[x] " : "[ ] ") + lang("UILABEL_BLUEPRINT_NPC"), sound,
+                                L.rowToggle[i].contains(mouseX, mouseY));
+            if (L.rowToggle[i].contains(mouseX, mouseY)) {
+                renderer.noteTip(lang(!sound ? "MISC_BLUEPRINT_NPC_UNSOUND" : bpEdit.planNpc[(size_t)top + i] ? "UILABEL_BLUEPRINT_NPC_TIP_ON" : "UILABEL_BLUEPRINT_NPC_TIP_OFF"),
+                                 L.rowToggle[i]);
+            }
             renderer.drawButton(L.rowDelete[i], "X", true, L.rowDelete[i].contains(mouseX, mouseY));
         }
     }

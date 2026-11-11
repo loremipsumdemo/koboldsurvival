@@ -261,6 +261,7 @@ struct BuildRow {
     bool heading = false;
     bool developer = false;
     BuildPick pick;
+    bool blueprints = false;   // the Building Blueprint entry (under Adjust Position), which opens the plans popout
 };
 inline std::vector<BuildRow> buildRows() {
     std::vector<BuildRow> rows;
@@ -272,6 +273,9 @@ inline std::vector<BuildRow> buildRows() {
         if (group == BuildGroup::Tools) {
             rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
             rows.push_back(BuildRow{ group, false, false, BuildPick::adjust() });
+            BuildRow plans{ group, false, false, {} };
+            plans.blueprints = true;
+            rows.push_back(plans);
         }
         if (group == BuildGroup::Developer) rows.push_back(BuildRow{ group, false, true, {} });
         for (PropKind k : propKindsListed()) {

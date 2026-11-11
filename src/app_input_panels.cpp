@@ -108,8 +108,14 @@ bool App::mouseDownOnPanels() {
                             else openDeveloper();
                             break;
                         }
+                        if (rows[i].blueprints) {
+                            // Building Blueprint: the popout of saved plans
+                            togglePlanPopup();
+                            break;
+                        }
                         const BuildPick pick = rows[i].pick;
                         if (!pick.any()) break;
+                        cancelPlanPick();
                         if (!buildAnywhere(pick) && !selectionInClaim(world) && !bpEdit.active) break;
                         if (session.buildPick == pick) {
                             session.buildPick = {};
@@ -214,6 +220,10 @@ bool App::mouseDownOnPanels() {
             return true;
         }
 
+        if (planPick.active && session.dialogueUnit == NO_OBJECT && !mapOpen) {
+            placePlanPick(mx, my);
+            return true;
+        }
         if (session.buildPick.adjusting() && session.dialogueUnit == NO_OBJECT && !mapOpen) {
             adjustPress(mx, my);
             return true;

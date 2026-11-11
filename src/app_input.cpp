@@ -109,6 +109,7 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Playing && bpEdit.active && blueprintKeyDown()) return;
+    if (planPopupKey()) return;
     // A count being typed into the spawn list (the Developer panel's, or the level editor's)
     if (screen == Screen::Playing && !editing && devSpawn.open && spawnPickerKey(devSpawn)) return;
     if (screen == Screen::Playing && editing && spawnPickerKey(editor.spawn)) return;
@@ -267,6 +268,17 @@ void App::onKeyDown() {
         }
         return;
     }
+    // A Building Blueprint taken up to be laid: R turns it a quarter, Escape puts it down
+    if (screen == Screen::Playing && !editing && planPick.active && e.key.key == SDLK_R && !e.key.repeat) {
+        planPick.turns = (planPick.turns + 1) % 4;
+        playSfx(Sfx::UiClick);
+        return;
+    }
+    if (screen == Screen::Playing && planPick.active && e.key.key == SDLK_ESCAPE) {
+        cancelPlanPick();
+        playSfx(Sfx::UiBack);
+        return;
+    }
     if (screen == Screen::Playing && session.buildPick.any() && e.key.key == SDLK_ESCAPE) {
         session.buildPick = {};
         playSfx(Sfx::UiBack);
@@ -344,6 +356,10 @@ void App::onKeyDown() {
 }
 
 void App::onMouseWheel() {
+    if (screen == Screen::Playing && planPopup.open) {
+        scrollPlanPopup(e.wheel.y);
+        return;
+    }
     if (wheelOnFormMenu()) return;
     const bool wheelOverMap = mapOpen && screen == Screen::Playing
                               && worldMapFor(winW, winH).window.contains(e.wheel.mouse_x, e.wheel.mouse_y);
@@ -483,6 +499,11 @@ void App::onMouseButtonDown() {
             if (pl.ok.contains(e.button.x, e.button.y)) answerPercentPrompt(true);
             else if (pl.cancel.contains(e.button.x, e.button.y) || !pl.box.contains(e.button.x, e.button.y)) answerPercentPrompt(false);
         }
+        return;
+    }
+    if (planPick.active && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {
+        cancelPlanPick();
+        playSfx(Sfx::UiBack);
         return;
     }
     if (session.buildPick.any() && screen == Screen::Playing && e.button.button == SDL_BUTTON_RIGHT) {

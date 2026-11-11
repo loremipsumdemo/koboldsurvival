@@ -342,6 +342,7 @@ bool App::pressToGrabPanel() {
 }
 
 bool App::mouseDownOnPopups() {
+    if (pressOnPlanPopup()) return true;
     if (pressOnAdjustWidget()) return true;
     if (pressOnRename()) return true;
     if (pressOnMaterialAsk()) return true;

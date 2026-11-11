@@ -575,7 +575,8 @@ def stone_wall_tile(arms, pal=STONE_PAL):
     courses = 7
     ch = (cap - 0.06 - 0.05) / courses
     for dx, dz in arms:
-        parts.append(arm_box(dx, dz, 0.33, 0.30, 0.05, cap - 0.06, dark))   # the mortar core
+        # The mortar core stops a hair under the coping's top (cap - 0.01), or the two tops share a plane and flicker
+        parts.append(arm_box(dx, dz, 0.33, 0.30, 0.05, cap - 0.07, dark))   # the mortar core
         for i in range(courses):
             # Alternate courses stand a hair further out, so no two block faces share a plane
             proud = 0.34 if i % 2 else 0.335
