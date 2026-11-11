@@ -1,4 +1,4 @@
-"""Draws the game's item sprites: data/item/item_<id>.png, 64 x 64 pixels.
+"""Draws the game's item sprites: data/item/<picture>.png (leather_cap.png), 64 x 64 pixels.
 
 Run it with:  python tools/make_items.py     (needs Python 3 and Pillow: pip install pillow)
 Then build the game, which packs data/ into data.pak. The game only reads the finished PNGs and never runs this script.
@@ -1696,6 +1696,11 @@ PLAIN = {
 }
 
 
+def slug(text):
+    """A name as a file name, the way src/items.h's fileSlug does: great_helm."""
+    return re.sub(r'_+', '_', re.sub(r'[^a-z0-9]', '_', text.lower())).strip('_')
+
+
 def read_items():
     text = open(os.path.join(ROOT, 'itemdb.txt'), encoding='utf-8').read()
     parts = re.split(r'^\[(\d+)\]\s*$', text, flags=re.M)
@@ -1706,7 +1711,7 @@ def read_items():
             if '=' in line and not line.startswith('#'):
                 k, v = line.split('=', 1)
                 d[k.strip()] = v.strip()
-        out.append((int(parts[i]), d.get('name', ''), d.get('material', '')))
+        out.append((int(parts[i]), d.get('name', ''), d.get('material', ''), d.get('picture') or slug(d.get('material', '') + ' ' + d.get('name', '')) + '.png'))
     return out
 
 
@@ -1734,11 +1739,11 @@ def main():
     rows = (len(items) + cols - 1) // cols
     sheet = Image.new('RGB', (cols * CELL, rows * (CELL + 12)), (41, 18, 22))
     dr = ImageDraw.Draw(sheet)
-    for i, (n, name, material) in enumerate(items):
+    for i, (n, name, material, picture) in enumerate(items):
         c = C()
         draw_item(c, name, material)
         out = finish(c)
-        out.save(os.path.join(OUT, f'item_{n}.png'))
+        out.save(os.path.join(OUT, picture))
         x, y = (i % cols) * CELL + 4, (i // cols) * (CELL + 12) + 2
         sheet.paste(out, (x, y), out)
         dr.text((x, y + 64), str(n), fill=(255, 255, 255))

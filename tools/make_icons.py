@@ -1,4 +1,4 @@
-"""Draws the game's UI icons: data/icon/icon_<n>.png, 32 x 32 pixels.
+"""Draws the game's UI icons: data/icon/<key>.png (equipment.png), 32 x 32 pixels.
 
 Run it with:  python tools/make_icons.py     (needs Python 3 and Pillow: pip install pillow)
 Then build the game, which packs data/ into data.pak. The game only reads the finished PNGs and never runs this script.
@@ -15,7 +15,7 @@ What is in this file:
   - ICONS maps an icon's number to the function that draws it, in color with an outline.
   - GEAR_ICONS does the same for the eight empty gear slots, which are plain white with no outline because the game
     tints them faint.
-  - The number is the id in src/game_tables.cpp, and data/icons.txt says which file each key uses.
+  - The number is the id in src/game_tables.cpp, and data/icons.txt says which file each key uses (asset_names.py).
 
 To add an icon: write a function, add it to ICONS under the next free number, add its key to ICON_KEYS in
 src/game_tables.cpp and a row to data/icons.txt, then run this script.
@@ -26,6 +26,8 @@ number out of ICONS or GEAR_ICONS. A preview of them all is written to out/art_p
 import math
 import os
 from PIL import Image, ImageDraw, ImageFilter
+
+from asset_names import numbered_files
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, 'data', 'icon')
@@ -528,6 +530,7 @@ ICONS = {
 }
 
 def main():
+    files = numbered_files('icons.txt', 'ICON_KEYS')
     ids = sorted(ICONS)
     cols = 10
     SHOW = 72
@@ -538,7 +541,7 @@ def main():
         c = C()
         ICONS[n](c)
         out = finish(c)
-        out.save(os.path.join(OUT, f'icon_{n}.png'))
+        out.save(os.path.join(OUT, files[n]))
         x, y = (i % cols) * (SHOW + 44) + 4, (i // cols) * (SHOW + 22) + 2
         big = out.resize((SHOW, SHOW), Image.BICUBIC)
         sheet.paste(big, (x, y), big)
@@ -549,7 +552,7 @@ def main():
     for n, draw in GEAR_ICONS.items():
         im = Image.new('RGBA', (32 * S, 32 * S), (255, 255, 255, 0))
         draw(ImageDraw.Draw(im))
-        im.resize((32, 32), Image.LANCZOS).save(os.path.join(OUT, f'icon_{n}.png'))
+        im.resize((32, 32), Image.LANCZOS).save(os.path.join(OUT, files[n]))
     print(len(ids) + len(GEAR_ICONS), 'icons written')
 
 

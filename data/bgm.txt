@@ -6,4 +6,4 @@ Settings	keep	keep	Settings
 ScenarioSelect	keep	keep	New Game: choosing a scenario
 PartySetup	keep	keep	New Game: the party menu
 Pause	keep	keep	The game menu
-Playing	bgm_01.mp3	amb_01.mp3	In game
+Playing	playing.mp3	playing_ambient.mp3	In game

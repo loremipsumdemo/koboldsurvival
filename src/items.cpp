@@ -43,6 +43,7 @@ bool setField(ItemDef& item, const std::string& key, const std::string& val, std
 
     if (key == "type") item.typeId = val;
     else if (key == "name") item.baseName = val;
+    else if (key == "picture") item.picture = val;
     else if (key == "description") item.description = val;
     else if (key == "material") item.material = val;
     else if (key == "equip_slot") item.equipSlot = val;
@@ -100,6 +101,7 @@ bool finishItem(ItemDef& item, std::string& err) {
 
     item.name = item.material.empty() ? item.baseName : item.material + " " + item.baseName;
     if (item.tier > 0) item.name += " +" + std::to_string(item.tier);
+    if (item.picture.empty()) item.picture = fileSlug(item.material.empty() ? item.baseName : item.material + " " + item.baseName) + ".png";
     return true;
 }
 }
@@ -184,6 +186,12 @@ int itemTagged(const char* tag) {
         if (hasTag(d, tag)) return d.id;
     }
     return 0;
+}
+
+const std::string& itemPictureFile(int id) {
+    static const std::string none;
+    const ItemDef* d = findItem(id);
+    return d ? d->picture : none;
 }
 
 const ItemDef* findItem(int id) {
