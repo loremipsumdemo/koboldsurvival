@@ -68,6 +68,43 @@ void giveBuilders(World& w, int faction) {
         if (!has) addBehavior(b->rules, build);
     }
 }
+
+// Auto-Haul Ground Items and an Auto-Haul to each of the faction's stores in its claim, for its citizens, so what lies on the
+// ground in its claim is put away, as it is for yours (behavior_groups.cpp). Stores that are gone leave their lists.
+void giveHaulers(World& w, const std::vector<Claim>& claims, int faction) {
+    std::vector<BehaviorRule> wanted;
+    BehaviorRule ground;
+    ground.kind = BehaviorKind::AutoHaulGround;
+    wanted.push_back(ground);
+    for (ObjectId p : w.view<Prop, Storage, Transform>()) {
+        if (w.has<Blueprint>(p)) continue;
+        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+        if (info.use != PropUse::Storage || info.claimsLand || info.stall) continue;
+        const Owner* own = w.get<Owner>(p);
+        if (own && own->faction != faction) continue;
+        const Transform* t = w.get<Transform>(p);
+        if (!claimAt(claims, t->x, t->z, faction)) continue;
+        BehaviorRule haul;
+        haul.kind = BehaviorKind::AutoHaul;
+        haul.prop = p;
+        haul.propKind = idx(w.get<Prop>(p)->kind);
+        wanted.push_back(haul);
+    }
+    for (ObjectId u : w.view<Citizen, Behaviors>()) {
+        if (factionOf(w, u) != faction || w.has<Corpse>(u)) continue;
+        Behaviors* b = w.get<Behaviors>(u);
+        bool changed = false;
+        const size_t before = b->rules.size();
+        b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(),
+                                      [&](const BehaviorRule& r) { return r.kind == BehaviorKind::AutoHaul && !w.has<Storage>(r.prop); }),
+                       b->rules.end());
+        changed = b->rules.size() != before;
+        for (const BehaviorRule& r : wanted) {
+            if (!holdsBehavior(b->rules, r) && addBehavior(b->rules, r)) changed = true;
+        }
+        if (changed) b->pending = true;
+    }
+}
 }
 
 bool npcNextMaterial(const NpcBuildCount& have, BuildMaterial& out) {
@@ -97,11 +134,9 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     clock.timer = 0.0f;
     clock.hours = 0.0;
     const std::vector<Claim> claims = claimsOf(w);
-    bool any = false;
-    for (const Claim& c : claims) any = any || npcAltarClaim(c);
-    if (!any) return;
 
-    // The buildings under way: lay the next stage of each when the last is built, or give up on it
+    // The buildings under way, NPC factions' and yours (laid from the Build tab's Building Blueprint): lay the next stage of each
+    // when the last is built, or give up on it
     std::unordered_set<int> building;
     for (ObjectId e : w.view<PlanSite, Prop>()) {
         const int faction = ownerOf(w, e);
@@ -144,6 +179,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     for (const Claim& c : claims) {
         if (!npcAltarClaim(c)) continue;
         giveBuilders(w, c.owner);
+        giveHaulers(w, claims, c.owner);
         if (building.count(c.owner)) continue;
         if (!mapped) {
             map = buildingMap(w);
@@ -167,6 +203,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         // The plans it has the stock for, one of them by chance
         std::vector<const BuildPlan*> plans;
         for (const BuildPlan& plan : planLibrary()) {
+            if (!plan.npcAllowed) continue;   // the Load list's NPC toggle is off: only you place it
             const PlanCost cost = planCost(plan);
             const bool enough = material == BuildMaterial::Wood ? haveMaterial >= cost.material + cost.logs
                                                                 : haveMaterial >= cost.material && haveLogs >= cost.logs;

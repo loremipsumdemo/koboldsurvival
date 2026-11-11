@@ -132,6 +132,7 @@ target_link_libraries(kobold_sim PUBLIC SDL3::SDL3)
 add_executable(koboldsurvival
     src/play_state.cpp
     src/app_blueprint.cpp
+    src/app_plan_popup.cpp
     src/storage.cpp
     src/trade.cpp
     src/selection.cpp

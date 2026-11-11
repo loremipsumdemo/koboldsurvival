@@ -1,6 +1,7 @@
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include "building.h"
+#include "build_plan.h"
 #include <cstddef>
 
 using namespace render_detail;
@@ -410,6 +411,121 @@ void Renderer::drawModelPreview(const Model* m, const Rect& r, float yaw) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_SCISSOR_TEST);
     glViewport(0, 0, uiW_, uiH_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
+}
+
+void Renderer::drawPlanPreview(const BuildPlan& plan, const Rect& r, float yaw) {
+    if (r.w < 1.0f || r.h < 1.0f) return;
+    const std::string key = plan.name + "|" + std::to_string(plan.pieces.size()) + "|" + std::to_string(plan.w) + "x" + std::to_string(plan.d);
+    if (key != planKey_) {
+        planKey_ = key;
+        planInst_.clear();
+        constexpr float QUARTER_TURN = 1.5707963f;
+        auto dirOf = [&](float y) { return (((int)std::lround(y / QUARTER_TURN)) % 4 + 4) % 4; };
+        // Where the walls, doors and foundation are, so a wall takes its shape and a door its way across as in the game
+        std::unordered_set<long long> walls, foundation;
+        int topLevel = 0;
+        for (const PlanPiece& p : plan.pieces) {
+            const PropInfo& info = propInfo(p.kind);
+            const int x = (int)std::floor(p.x), z = (int)std::floor(p.z);
+            if (info.wallRule || info.door) walls.insert(levelKey(x, z, p.level));
+            if (info.foundation) foundation.insert(tileKey(x, z));
+            topLevel = std::max(topLevel, info.upperFloor ? p.level + 1 : p.level);
+        }
+        auto add = [&](const Model& m, const Mat4& place) {
+            if (m.vao) planInst_.push_back({ &m, place });
+        };
+        auto addModel = [&](const Model& m, float x, float y, float z, float size, float turn) {
+            if (!m.vao) return;
+            const ModelPlacement placed = placeModel(m, x, y, z, size, turn);
+            if (placed.ok) add(m, placementMatrix(placed));
+        };
+        for (const PlanPiece& p : plan.pieces) {
+            if (idx(p.kind) < 0 || idx(p.kind) >= propKindCount()) continue;
+            const PropInfo& info = propInfo(p.kind);
+            const int tx = (int)std::floor(p.x), tz = (int)std::floor(p.z), lv = p.level;
+            const float cx = (float)tx + 0.5f, cz = (float)tz + 0.5f;
+            if (info.foundation) {
+                addModel(propModel(p.kind), cx, 0.0f, cz, info.size, 0.0f);
+            } else if (info.stairs) {
+                // Three steps up toward the way they face, each a third of the way to the floor above
+                const int d = dirOf(p.yaw);
+                const float base = storeyBaseHeight(lv), rise = storeyBaseHeight(lv + 1) - base;
+                const Model& s = stairSteps_[0];
+                if (!s.vao || !(s.maxX > s.minX && s.maxY > s.minY && s.maxZ > s.minZ)) continue;
+                for (int i = 0; i < 3; ++i) {
+                    const float x0 = (float)(tx + (i - 1) * STAIRS_DX[d]), z0 = (float)(tz + (i - 1) * STAIRS_DZ[d]);
+                    const float top = base + rise * (float)(i + 1) / 3.0f;
+                    const float sx = 1.0f / (s.maxX - s.minX), sy = (top - base) / (s.maxY - s.minY), sz = 1.0f / (s.maxZ - s.minZ);
+                    Mat4 place{};
+                    place.m[0] = sx;
+                    place.m[5] = sy;
+                    place.m[10] = sz;
+                    place.m[12] = x0 - s.minX * sx;
+                    place.m[13] = base - s.minY * sy;
+                    place.m[14] = z0 - s.minZ * sz;
+                    place.m[15] = 1.0f;
+                    add(s, place);
+                }
+            } else if (info.upperFloor) {
+                addModel(propModel(p.kind), cx, floorSlabHeight(lv + 1), cz, info.size, 0.0f);
+            } else if (info.wallRule) {
+                const int mask = (walls.count(levelKey(tx, tz - 1, lv)) ? 1 : 0) | (walls.count(levelKey(tx + 1, tz, lv)) ? 2 : 0) |
+                                 (walls.count(levelKey(tx, tz + 1, lv)) ? 4 : 0) | (walls.count(levelKey(tx - 1, tz, lv)) ? 8 : 0);
+                const WallShape shape = wallShapeFor(mask);
+                const Model* m = &propModel(p.kind);
+                if (shape.shape > 0 && (size_t)idx(p.kind) < wallShapes_.size() && wallShapes_[(size_t)idx(p.kind)][(size_t)shape.shape - 1].vao) {
+                    m = &wallShapes_[(size_t)idx(p.kind)][(size_t)shape.shape - 1];
+                }
+                addModel(*m, cx, storeyBaseHeight(lv), cz, info.size, shape.yaw);
+            } else if (info.door) {
+                // Across the doorway: in line with the walls beside it, or along the building's edge
+                const bool ns = walls.count(levelKey(tx, tz - 1, lv)) || walls.count(levelKey(tx, tz + 1, lv));
+                const bool ew = walls.count(levelKey(tx - 1, tz, lv)) || walls.count(levelKey(tx + 1, tz, lv));
+                const bool edge = !foundation.count(tileKey(tx - 1, tz)) || !foundation.count(tileKey(tx + 1, tz));
+                const float turn = ((ns && !ew) || (!ns && !ew && edge)) ? QUARTER_TURN : 0.0f;
+                addModel(propModel(p.kind), cx, storeyBaseHeight(lv), cz, info.size, turn);
+            } else {
+                // Props and ladders: where they stand, turned as they were, adjusted as they were
+                const float y = lv > 0 ? storeyBaseHeight(lv) : foundation.count(tileKey(tx, tz)) ? DECK_HEIGHT : 0.0f;
+                const Model& m = propModel(p.kind);
+                if (!p.visual.plain() && m.vao) add(m, propVisualMatrix(m, p.x, y, p.z, info.size, p.yaw, p.visual));
+                else addModel(m, info.ladder ? cx : p.x, y, info.ladder ? cz : p.z, info.size, p.yaw);
+            }
+        }
+        const float high = storeyBaseHeight(topLevel + 1);
+        planFocus_[0] = (float)plan.w * 0.5f;
+        planFocus_[1] = high * 0.5f;
+        planFocus_[2] = (float)plan.d * 0.5f;
+        planSpan_ = std::max(1.0f, 0.5f * std::sqrt((float)(plan.w * plan.w + plan.d * plan.d) + high * high));
+    }
+    if (planInst_.empty()) return;
+
+    const int vx = (int)std::lround(r.x), vy = (int)std::lround((float)uiH_ - r.y - r.h);
+    const int vw = (int)std::lround(r.w), vh = (int)std::lround(r.h);
+    glViewport(vx, vy, vw, vh);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(vx, vy, vw, vh);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    const float aspect = r.w / r.h;
+    const float fov = 35.0f * PI / 180.0f;
+    const float dist = planSpan_ / std::sin(std::min(fov * 0.5f, std::atan(std::tan(fov * 0.5f) * aspect))) * 1.05f;
+    const float pitch = 0.62f;
+    const float ex = planFocus_[0] + dist * std::sin(yaw) * std::cos(pitch);
+    const float ey = planFocus_[1] + dist * std::sin(pitch);
+    const float ez = planFocus_[2] + dist * std::cos(yaw) * std::cos(pitch);
+    const Mat4 savedViewProj = viewProj_;
+    viewProj_ = mul(perspective(fov, aspect, 0.1f, dist * 4.0f), lookAt(ex, ey, ez, planFocus_[0], planFocus_[1], planFocus_[2], 0.0f, 1.0f, 0.0f));
+    for (const PlanInstance& i : planInst_) queueModelMatrix(*i.model, i.place, RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
+    drawModelInstances();
+    viewProj_ = savedViewProj;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glViewport(0, 0, uiW_, uiH_);
+    glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, pixels_.m);
 }
 

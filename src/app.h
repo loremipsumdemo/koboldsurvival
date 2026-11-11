@@ -610,6 +610,45 @@ struct App : AppSession {
     void blueprintExit();
     bool blueprintSave(bool overwriteConfirmed = false);
     void blueprintDelete(const std::string name);
+    void refreshPlanList();
+    void blueprintToggleNpc(size_t index);
+    // The Build tab's Building Blueprint popout and the plan taken up from it to be laid in your claim (app_plan_popup.cpp)
+    struct PlanPopup {
+        bool open = false;
+        int selected = 0, scroll = 0;
+        int material = 0;   // a BuildMaterial
+    };
+    PlanPopup planPopup;
+    struct PlanPick {
+        bool active = false;
+        BuildPlan plan;
+        int turns = 0;
+        int material = 0;
+        BuildPlan turned;                // the plan turned that many times, with its footprint and foundation rectangles
+        std::vector<bool> footprint;
+        std::vector<PlanRect> rects;
+        int turnedFor = -1;
+    };
+    PlanPick planPick;
+    struct PlanSpotCache {
+        bool filled = false, ok = false;
+        int x = 0, z = 0, turns = 0;
+        std::uint64_t props = 0, foundations = 0;
+        Uint64 tick = 0;
+    };
+    PlanSpotCache planSpot;
+    void togglePlanPopup();
+    void closePlanPopup();
+    bool pressOnPlanPopup();
+    void scrollPlanPopup(float wheel);
+    bool planPopupKey();
+    void drawPlanPopup();
+    void startPlanPick();
+    void cancelPlanPick();
+    bool planPickOrigin(float mx, float my, int& x, int& z);
+    bool planSpotFree(const BuildPlan& turned, int x, int z, const std::vector<Claim>& claims, bool cached);
+    void previewPlanPick(BuildPreview& bp, const std::vector<Claim>& claims);
+    bool placePlanPick(float mx, float my);
     bool blueprintLoad(const std::string& name);
     void blueprintClear();
     bool blueprintKeyDown();

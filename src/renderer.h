@@ -28,6 +28,7 @@
 
 class LoadStages;
 class Terrain;
+struct BuildPlan;
 struct FloatingNumber;
 struct TradeLabel;
 struct Puff;
@@ -141,6 +142,7 @@ public:
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setDeveloperOpen(bool on) { developerOpen_ = on; }
+    void setPlanPopupOpen(bool on) { planPopupOpen_ = on; }
     void setBuildPreview(BuildPreview p) { buildPreview_ = std::move(p); }
     // The cutaway: inside a building, what stands on the floors above the one looked at is left out, drawn and picked
     struct Cutaway {
@@ -251,6 +253,11 @@ public:
     void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
     void drawMobPreview(MobKind kind, const Rect& r, float yaw);
     void drawModelPreview(const Model* m, const Rect& r, float yaw);
+    // A Building Blueprint's pieces drawn as the game draws them, turned by yaw about the middle of the building and looked down
+    // on, in r (the Build tab's Building Blueprint popout). The pieces' places are worked out once for each plan (forgetPlanPreview
+    // makes it do so again).
+    void drawPlanPreview(const BuildPlan& plan, const Rect& r, float yaw);
+    void forgetPlanPreview() { planKey_.clear(); }
     const TextTex& mobPicture(MobKind kind) const;
 
     void beginUi(int winW, int winH);
@@ -445,6 +452,7 @@ private:
     GLuint dynVao_ = 0, dynVbo_ = 0;
     BuildPick buildSelected_;
     bool buildInClaim_ = false;
+    bool planPopupOpen_ = false;   // the Build tab's Building Blueprint popout is open
     bool developerOpen_ = false;   // the Build tab's Developer spawn panel is open
     BuildPreview buildPreview_;
     Cutaway cutaway_;
@@ -638,6 +646,14 @@ private:
     std::unordered_map<const Model*, size_t> instSlot_;
     std::vector<ModelInstance> instUpload_;
     GLuint modelInstVao(const Model& m);
+    struct PlanInstance {
+        const Model* model;
+        Mat4 place;
+    };
+    std::vector<PlanInstance> planInst_;   // the plan shown in the popout, as copies of models
+    std::string planKey_;
+    float planFocus_[3] = {};              // the middle of it, and how far across it is
+    float planSpan_ = 1.0f;
     void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
     void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);

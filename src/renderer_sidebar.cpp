@@ -338,16 +338,17 @@ void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
             continue;
         }
         const BuildPick pick = br.pick;
-        const bool usable = br.developer || buildInClaim_ || buildAnywhere(pick);
-        const bool picked = br.developer ? developerOpen_ : pick == buildSelected_;
+        const bool entry = br.developer || br.blueprints;   // opens a panel rather than picking a tool
+        const bool usable = entry || buildInClaim_ || buildAnywhere(pick);
+        const bool picked = br.developer ? developerOpen_ : br.blueprints ? planPopupOpen_ : pick == buildSelected_;
         const bool hovered = usable && row.contains(mx, my);
         if (hovered) drawRect(row, RGBA{ 1.0f, 1.0f, 1.0f, 0.06f });
         const Rect btn{ row.x + 2.0f * s, row.y + 2.0f * s, btnW, row.h - 4.0f * s };
-        drawSmallButton(btn, lang(picked ? (br.developer ? "UILABEL_BUILD_OPEN" : "UILABEL_BUILD_PICKED")
-                                         : (br.developer ? "UILABEL_BUILD_OPEN_IT" : "UILABEL_BUILD_SELECT")), usable, hovered);
+        drawSmallButton(btn, lang(picked ? (entry ? "UILABEL_BUILD_OPEN" : "UILABEL_BUILD_PICKED")
+                                         : (entry ? "UILABEL_BUILD_OPEN_IT" : "UILABEL_BUILD_SELECT")), usable, hovered);
         const RGBA tone = !usable ? theme::alpha(theme::ASH, 0.5f) : picked ? theme::GOLD : WHITE;
-        std::string label = br.developer ? lang("UILABEL_BUILD_DEVELOPER") : pickName(pick);
-        if (!br.developer && pick.placing() && propInfo(pick.kind).materials > 0.0) {
+        std::string label = br.developer ? lang("UILABEL_BUILD_DEVELOPER") : br.blueprints ? lang("UILABEL_BUILD_BLUEPRINTS") : pickName(pick);
+        if (!entry && pick.placing() && propInfo(pick.kind).materials > 0.0) {
             // What it costs to build: logs, or logs a tile for a foundation or an upper floor
             const PropInfo& pi = propInfo(pick.kind);
             label = langf(pi.foundation || pi.upperFloor ? "UILABEL_BUILD_COST_TILE" : "UILABEL_BUILD_COST",

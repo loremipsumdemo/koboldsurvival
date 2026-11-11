@@ -196,6 +196,8 @@ struct BlueprintUi {
     float grabX = 0.0f, grabY = 0.0f;
     bool listOpen = false;          // the plans to open
     std::vector<std::string> plans;
+    std::vector<char> planNpc;      // for each plan in the list: whether NPCs may build it (its toggle)
+    std::vector<char> planSound;    // and whether it could be (a 3 by 3 foundation at least, and a door): else the toggle is greyed
     int listScroll = 0;
     std::string savedName;          // the plan's name as last opened or saved here: saving under it again is no overwrite to ask about
     bool overwriteAsk = false;      // a plan of this name is already saved: the Overwrite button is held for BLUEPRINT_HOLD_MS to go on
@@ -211,7 +213,17 @@ struct BlueprintLayout {
     Rect floorsLabel, floorsDown, floorsBox, floorsUp;
     Rect save, load, clear, exit, status;
     Rect list;                      // the plans to open, under the panel
-    std::vector<Rect> rows, rowDelete;
+    std::vector<Rect> rows, rowToggle, rowDelete;
     Rect confirm, confirmText, hold, cancel;   // asking whether to overwrite a saved plan, under the panel
 };
 BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui);
+
+// The Build tab's Building Blueprint popout (app_plan_popup.cpp): the saved plans in a scrolling list on the left, and on the right
+// the selected one drawn as a model, what it is and costs, what to make it of, and the button that takes it up to be laid.
+struct PlanPopupLayout {
+    Rect panel, title, close, list, track, thumb, preview, info, place;
+    Rect mats[4];
+    std::vector<Rect> rows;
+    int shown = 0, first = 0, total = 0;
+};
+PlanPopupLayout layoutPlanPopup(int W, int H, int count, int scroll);

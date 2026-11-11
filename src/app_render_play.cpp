@@ -310,6 +310,7 @@ void App::drawPlayingScreen() {
     drawCraftWindow();
     drawDeveloper();
     drawBlueprintPanel();
+    drawPlanPopup();
     drawGhosts();
     drawBehaviorGroups();
     drawStoreFilter();

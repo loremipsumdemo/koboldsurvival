@@ -30,6 +30,8 @@ struct BuildPlan {
     std::string name;
     int w = PLAN_SIZE_MIN, d = PLAN_SIZE_MIN;   // the box, in tiles
     int floors = 1;
+    // Whether NPC factions may build it (the Load list's NPC toggle). A file with no npcs line predates the toggle, and is allowed.
+    bool npcAllowed = true;
     std::vector<PlanPiece> pieces;
 };
 
@@ -64,6 +66,8 @@ bool writePlanFile(const std::string& path, const BuildPlan& plan, std::string& 
 bool readPlanFile(const std::string& path, BuildPlan& out, std::string& err);
 std::vector<std::string> listPlanFiles();
 bool deletePlanFile(const std::string& name, std::string& err);
+// Reads a saved plan, sets whether NPCs may build it, and writes it back at once (no scene needed)
+bool setPlanNpcAllowed(const std::string& name, bool allowed, std::string& err);
 // Every plan in MAP/BLUEPRINT that reads and is sound (a 3 by 3 foundation at least, a door), read once. Asking again after a plan is saved
 // or deleted needs reloadPlanLibrary.
 const std::vector<BuildPlan>& planLibrary();

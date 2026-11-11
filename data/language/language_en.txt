@@ -957,10 +957,25 @@ UILABEL_BLUEPRINT_OVERWRITE_WARN	A plan named {0} is already saved. Hold the but
 UILABEL_BLUEPRINT_OVERWRITE_HOLD	Hold to overwrite
 UILABEL_BLUEPRINT_DELETE_WARN	This deletes the saved plan {0} for good. Hold the button for {1} seconds to go through.
 UILABEL_BLUEPRINT_DELETE_HOLD	Hold to delete
+UILABEL_BLUEPRINT_NPC	NPC
+UILABEL_BLUEPRINT_NPC_TIP_ON	NPC factions may build this plan. Click to stop them.
+UILABEL_BLUEPRINT_NPC_TIP_OFF	NPC factions will not build this plan. Click to allow them.
+UILABEL_BUILD_BLUEPRINTS	Building Blueprint
+UILABEL_PLAN_TITLE	Building Blueprints
+UILABEL_PLAN_NONE	No Building Blueprints are saved yet. Make them in the Building Blueprints editor from the main menu.
+UILABEL_PLAN_SIZE	{0} x {1} tiles, {2} floor(s)
+UILABEL_PLAN_COST	Cost: {0} building material, {1} logs
+UILABEL_PLAN_NPCS_ON	NPC factions may build this
+UILABEL_PLAN_NPCS_OFF	NPC factions will not build this
+UILABEL_PLAN_PLACE	Place Blueprint
 UILABEL_BLUEPRINT_HELP	Build in the marked box with the Build tab: pieces go down finished. Only what is inside the box is saved.
 MISC_BLUEPRINT_SAVED	Saved {0}
 MISC_BLUEPRINT_LOADED	Opened {0}
 MISC_BLUEPRINT_DELETED	Deleted {0}
+MISC_BLUEPRINT_NPC_UNSOUND	NPCs cannot build this plan: it needs a foundation of 3 by 3 or more and a door on the ground floor
+MISC_PLAN_PLACE_HINT	Click to lay its foundation in your claim. R turns it. Right-click or Escape puts it down.
+MISC_PLAN_BLOCKED	It cannot go there: it must lie wholly inside your claim, on clear ground
+MISC_PLAN_LAID	{0} laid: your citizens will build it
 MISC_BLUEPRINT_NEEDS_NAME	Give the plan a name first
 MISC_BLUEPRINT_OUTSIDE	{0} pieces are outside the box and will not be saved: press Save again to save without them
 MISC_BLUEPRINT_NO_PLANS	No plans are saved yet

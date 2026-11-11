@@ -550,6 +550,11 @@ void App::updateHover() {
         if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing && !bpEdit.active) session.buildPick = {};
         renderer.setBuildInClaim(inClaim || bpEdit.active);
         renderer.setDeveloperOpen(devSpawn.open);
+        if (screen != Screen::Playing || editing) {
+            planPick.active = false;
+            planPopup.open = false;
+        }
+        renderer.setPlanPopupOpen(planPopup.open);
         float bmx = 0.0f, bmy = 0.0f;
         SDL_GetMouseState(&bmx, &bmy);
         const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
@@ -636,6 +641,10 @@ void App::updateHover() {
                 }
             }
             bp.marks.insert(bp.marks.end(), bpBoxMarks.begin(), bpBoxMarks.end());
+        }
+        // A Building Blueprint taken up from the Build tab: its foundation under the pointer
+        if (planPick.active && screen == Screen::Playing && !panelOpen && !mapOpen && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {
+            previewPlanPick(bp, claims);
         }
         renderer.setBuildPreview(std::move(bp));
         renderer.setBuildSelected(session.buildPick);
