@@ -10,7 +10,7 @@
 constexpr double ALTAR_HEALTH = 10.0;
 constexpr double ALTAR_RECOVER_PER_HOUR = 1.0;
 constexpr float CLAIM_RADIUS = 25.0f;
-// A camp: another faction's campfire, away from its Altar's claim, claims this much land around it (it locks nothing)
+// A camp: a campfire away from its own faction's Altar claim claims this much land around it (it locks nothing)
 constexpr float CAMP_CLAIM_RADIUS = 10.0f;
 constexpr double ALTAR_DECAY_HOURS = 48.0;
 constexpr int BUILT_LOCK_LEVEL = 5;

@@ -22,12 +22,12 @@ std::vector<Claim> claimsOf(World& w) {
         c.owner = w.get<Owner>(e)->faction;
         out.push_back(c);
     }
-    // Camps: a campfire of another faction (not yours) that stands outside its own faction's Altar claim
+    // Camps: a campfire (yours or another faction's) that stands outside its own faction's Altar claim
     const size_t altars = out.size();
     for (ObjectId e : w.view<Prop, Transform, Owner>()) {
         if (w.get<Prop>(e)->kind != PropKind::Campfire || w.has<Blueprint>(e)) continue;
         const int faction = w.get<Owner>(e)->faction;
-        if (faction == FACTION_PLAYER || !factionCanClaim(faction)) continue;
+        if (!factionCanClaim(faction)) continue;
         const Transform* t = w.get<Transform>(e);
         bool atHome = false;
         for (size_t i = 0; i < altars && !atHome; ++i) {
@@ -44,7 +44,11 @@ std::vector<Claim> claimsOf(World& w) {
         c.camp = true;
         out.push_back(c);
     }
-    std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) { return a.altar < b.altar; });
+    // Altars first: where an Altar's claim and a camp's overlap, the Altar's land is the one found
+    std::sort(out.begin(), out.end(), [](const Claim& a, const Claim& b) {
+        if (a.camp != b.camp) return !a.camp;
+        return a.altar < b.altar;
+    });
     return out;
 }
 
@@ -267,9 +271,11 @@ void breakBuilding(World& w, ObjectId e) {
     releaseProp(w, e);
     const std::vector<Claim> claims = claimsOf(w);
     const Claim* heldClaim = claimOf(claims, e);
-    const int altarOwner = heldClaim ? heldClaim->owner : -1;
-    const float heldRadius = heldClaim ? heldClaim->radius : 0.0f;
+    const bool heldAltar = heldClaim && !heldClaim->camp;
+    const int altarOwner = heldAltar ? heldClaim->owner : -1;
+    const float heldRadius = heldAltar ? heldClaim->radius : 0.0f;
     w.destroy(e);
+    // A camp's campfire claims what is in it but never strips its owners: what it sheltered falls on its own
     if (altarOwner >= 0) abandonClaim(w, at.x, at.z, heldRadius, altarOwner);
     dropStacks(w, at, held, storey);
     // The debris stands on the floor the remains are on, as if it had been placed there
@@ -318,8 +324,9 @@ void removeProp(World& w, ObjectId e) {
     const std::vector<ItemStack> held = propHoldings(w, e);
     const std::vector<Claim> claims = claimsOf(w);
     const Claim* c = claimOf(claims, e);
-    const int owner = c ? c->owner : -1;
-    const float radius = c ? c->radius : 0.0f;
+    const bool altar = c && !c->camp;
+    const int owner = altar ? c->owner : -1;
+    const float radius = altar ? c->radius : 0.0f;
     releaseProp(w, e);
     w.destroy(e);
     if (owner >= 0) abandonClaim(w, at.x, at.z, radius, owner);

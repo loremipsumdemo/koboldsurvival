@@ -522,9 +522,29 @@ void App::updateHover() {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
-        // Hovering an Altar, or the campfire of another faction's camp: its claim, with the others around it
+        const std::vector<Claim> claims = bp.on || !placing ? claimsOf(world) : std::vector<Claim>{};
+        // A Campfire being placed: its own claim, unless it stands in its faction's Altar claim (which it then adds nothing to)
+        if (bp.on && session.buildPick.kind == PropKind::Campfire) {
+            const Claim* home = claimAt(claims, bp.x, bp.z, FACTION_PLAYER);
+            if (!home || home->camp) {
+                bp.ringR = CAMP_CLAIM_RADIUS;
+                bp.ringTone = bp.valid ? 1 : 2;
+            }
+        }
+        // A Bedroll being placed: the shelter it needs, a Campfire's reach (the camps' and Altars' claims are shown too)
+        if (bp.on && propInfo(session.buildPick.kind).needsCamp) {
+            bp.ringR = CAMP_CLAIM_RADIUS;
+            bp.ringTone = bp.valid ? 1 : 2;
+            for (ObjectId e : world.view<Prop, Transform>()) {
+                if (world.get<Prop>(e)->kind != PropKind::Campfire || world.has<Blueprint>(e)) continue;
+                if (const Owner* own = world.get<Owner>(e); own && own->faction != FACTION_PLAYER) continue;
+                if (claimOf(claims, e)) continue;
+                const Transform* t = world.get<Transform>(e);
+                bp.otherRings.push_back({ t->x, t->z, CAMP_CLAIM_RADIUS });
+            }
+        }
+        // Hovering an Altar, or a campfire's claim: its ring, with the others around it
         ObjectId hoverAltar = NO_OBJECT;
-        const std::vector<Claim> claims = bp.ringR > 0.0f || !placing ? claimsOf(world) : std::vector<Claim>{};
         if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
             for (ObjectId e : propsAt(bmx, bmy)) {
                 const Claim* c = claimOf(claims, e);

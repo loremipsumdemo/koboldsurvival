@@ -83,7 +83,15 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
     if (propInfo(kind).claimsLand) {
         for (const Claim& c : claims) {
             if (c.owner == builder && !c.camp) return BuildCheck::AltarTaken;
-            if (claimsOverlap(x, z, CLAIM_RADIUS, c.x, c.z, c.radius)) return BuildCheck::ClaimOverlap;
+            // A camp's land gives way to an Altar's: the Altar may stand over it
+            if (!c.camp && claimsOverlap(x, z, CLAIM_RADIUS, c.x, c.z, c.radius)) return BuildCheck::ClaimOverlap;
+        }
+    }
+    // A Campfire's claim may not share land with another camp's, or with an Altar that is not the builder's own
+    if (kind == PropKind::Campfire) {
+        for (const Claim& c : claims) {
+            if (!c.camp && c.owner == builder) continue;
+            if (claimsOverlap(x, z, CAMP_CLAIM_RADIUS, c.x, c.z, c.radius)) return BuildCheck::ClaimOverlap;
         }
     }
 
