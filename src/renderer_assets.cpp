@@ -81,6 +81,14 @@ void Renderer::loadMobArt(LoadStages& stages) {
     for (int i = 1; i <= mobKindCount(); ++i) {
         const std::string path = "data/mob/" + mobInfo((MobKind)i).picture;
         mobSprites_.push_back(loadOptionalImage(path.c_str()));
+        // Its profile picture is named for its model (griffin.glb: griffin.png), or for its picture (mob_1.png) when it has none
+        const MobInfo& info = mobInfo((MobKind)i);
+        std::string stem = info.model.empty() ? info.picture : info.model;
+        stem = stem.substr(stem.find_last_of('/') == std::string::npos ? 0 : stem.find_last_of('/') + 1);
+        if (!info.model.empty()) stem = stem.substr(0, stem.find_last_of('.'));
+        else if (stem.size() > 4 && stem.compare(stem.size() - 4, 4, ".png") == 0) stem.resize(stem.size() - 4);
+        const std::string profile = "data/profile/" + stem + ".png";
+        mobProfiles_.push_back(loadOptionalImage(profile.c_str()));
         stages.step(0.5f + 0.05f * (float)i / (float)mobKindCount(), i);
     }
 }

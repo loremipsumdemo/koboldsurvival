@@ -201,7 +201,7 @@ void applyParty(World& w, const Party& p) {
         const PartyMember& m = *people[i];
         const std::string name = cleanName(m.name);
         w.add(u, Name{ name.empty() ? std::string(lang("UILABEL_UNNAMED_UNIT")) : name });
-        w.add(u, UnitSprite{ m.sprite });
+        w.add(u, UnitSprite{ modelForBody(m.body, modelRow(m.sprite)) });
         w.add(u, Body{ m.body });
         w.add(u, m.stats);
         Needs needs;

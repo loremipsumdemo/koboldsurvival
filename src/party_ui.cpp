@@ -46,7 +46,11 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     case DropKind::None:
         break;
     case DropKind::Sprite:
-        for (int i = 1; i <= UNIT_SPRITE_COUNT; ++i) out.push_back(DropEntry{ modelLabel(i), i });
+        // Only the models of its body: f1 f2 f3 for Feminine, m1 m2 m3 for Masculine, a1 a2 a3 for Androgynous
+        for (int row = 0; row < UNIT_SPRITE_COUNT / UNIT_MODEL_ROW; ++row) {
+            const int model = modelForBody(pickedMember(p, ui).body, row);
+            out.push_back(DropEntry{ modelLabel(model), model });
+        }
         break;
     case DropKind::Body:
         for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey((BodyType)i)), i });

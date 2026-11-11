@@ -31,7 +31,7 @@ void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool pl
     rng.gen.seed(seed);
     setupWorld(world, terrain, rng, playerCamp);
     stages.stage(0.85f, "LOADING_GROUND_ITEMS");
-    spawnGroundItems(world, terrain, rng, ITEM_COPIES_PER_LEVEL);
+    spawnStartItems(world, terrain, rng, START_ITEM_COUNT, START_ITEM_RANGE);
 }
 
 void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, const LevelData& level) {

@@ -101,8 +101,8 @@ bool App::partyAction(Action action, int param) {
     case Action::PartySpriteBox:
         stopNameEdit();
         partyUi.dropKind = DropKind::Sprite;
-        partyUi.dropScroll = clampDropScroll(pickedMember(party, partyUi).sprite - 1 - DROP_VISIBLE_ROWS / 2,
-                                             UNIT_SPRITE_COUNT);
+        partyUi.dropScroll = clampDropScroll(modelRow(pickedMember(party, partyUi).sprite) - DROP_VISIBLE_ROWS / 2,
+                                             UNIT_SPRITE_COUNT / UNIT_MODEL_ROW);
         return true;
     case Action::PartyMobBox:
         if (!partyUi.mobKindEditable) return true;

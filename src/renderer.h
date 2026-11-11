@@ -568,6 +568,7 @@ private:
     float titleMouse_ = 0.0f;
     unsigned long long titleMouseAt_ = 0;
     std::vector<TextTex> mobSprites_;
+    std::vector<TextTex> mobProfiles_;   // data/profile/<its model, or its picture>.png, by kind
     std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
     const TextTex& unitPortrait(World& w, ObjectId e) const;
     const TextTex& unitPicture(int n) const;

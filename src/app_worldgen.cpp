@@ -280,7 +280,7 @@ void App::drawThemePanel(const Rect& area) {
 void App::themeDragAt(float x) {
     const float s = uiScaleFor(winH);
     const Rect area = editing ? layoutEditor(winW, winH, true).themeArea
-                    : devThemeShown() ? layoutDeveloper(winW, winH, true).themeArea
+                    : devThemeShown() ? layoutDeveloper(winW, winH, EditorTab::Theme).themeArea
                     : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
     const float labelW = area.w * 0.52f, controlX = area.x + labelW, controlW = area.w - labelW;
     (void)s;

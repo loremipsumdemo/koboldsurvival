@@ -565,6 +565,22 @@ struct App : AppSession {
         float lastX = 0.0f, lastY = 0.0f;
     };
     PropAdjustUi propAdjust;
+    KillUi devKill;     // the Developer panel's Kill Entity tab
+    SweepUi devClean;   // and its Clean tab
+    DestroyUi devDestroy;   // and its Destroy tab
+    SweepUi& sweepUi();
+    void sweepClick(const DeveloperLayout& L, float x, float y);
+    bool killEntity(ObjectId u);
+    bool cleanItem(ObjectId g);
+    int killAt(float mx, float my);
+    int cleanAt(float mx, float my);
+    int killAll();
+    int cleanAll();
+    bool destroyProp(ObjectId e);
+    int destroyAt(float mx, float my);
+    int destroyAll();
+    void updateSweepHold();
+    void drawSweepTab(const DeveloperLayout& L);
     SpawnPicker devSpawn;   // the Build tab's Developer panel (its Theme tab edits the world's theme, temporarily)
     // The Developer panel's theme: what the world has saved, and what is shown now. Changes are temporary until made permanent.
     bool devThemeLoaded = false;

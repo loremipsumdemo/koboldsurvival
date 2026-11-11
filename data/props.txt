@@ -80,7 +80,7 @@ Barrel	PROP_BARREL	barrel.glb	0.7	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	Item
 Ore	PROP_ORE	ore.glb	1.0	resource	Mining	1	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
 Tree	PROP_TREE	tree.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	WorkWoodcutting	DoneTree	Woodcutting	scatter,random_yaw	0	0	12	0	nature
 Boulder	PROP_BOULDER	boulder.glb	1.2	resource	Mining	161	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
-Mushroom	PROP_MUSHROOM	mushroom.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter	0	0	12	0	nature
+Mushroom	PROP_MUSHROOM	mushroom.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter,random_yaw	0	0	12	0	nature
 Bones	PROP_BONES	bones.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,random_yaw	0	0	12	0	nature
 Stall	PROP_STALL	stall.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,stall	0	0	1000	1000	storage
 LockedChest	PROP_LOCKED_CHEST	locked_chest.glb	0.9	storage	none	0	0	0	5	any	1	0	0	1	0	0	none	ItemMove	none	scatter	0	0	12	0	storage

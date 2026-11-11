@@ -429,7 +429,12 @@ const TextTex& Renderer::unitPicture(int n) const {
 }
 
 const TextTex& Renderer::unitPortrait(World& w, ObjectId e) const {
-    if (w.has<Mob>(e)) return unitGlyph(w, e);
+    if (const Mob* m = w.get<Mob>(e)) {
+        // The profile picture made for it; the whole sprite, or nothing for a model, only when there is none
+        const int i = idx(m->kind) - 1;
+        if (i >= 0 && i < (int)mobProfiles_.size() && mobProfiles_[(size_t)i].tex) return mobProfiles_[(size_t)i];
+        return unitGlyph(w, e);
+    }
     const UnitSprite* us = w.get<UnitSprite>(e);
     return unitPicture(us ? us->id : 1);
 }

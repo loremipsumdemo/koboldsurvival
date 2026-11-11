@@ -401,6 +401,7 @@ void App::playQueuedSounds() {
 
 void App::update() {
     updateDeleteHold();
+    updateSweepHold();
 
     const Uint64 now = SDL_GetTicksNS();
     dt = (float)((double)(now - lastTicks) / 1e9);

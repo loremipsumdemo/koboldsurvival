@@ -376,11 +376,11 @@ void App::onMouseWheel() {
     }
     if (screen == Screen::Playing && !editing && devSpawn.open) {
         const bool themeTab = devSpawn.tab == EditorTab::Theme;
-        const DeveloperLayout L = layoutDeveloper(winW, winH, themeTab);
+        const DeveloperLayout L = layoutDeveloper(winW, winH, devSpawn.tab);
         if (L.panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
             if (themeTab) {
                 if (L.themeArea.contains(e.wheel.mouse_x, e.wheel.mouse_y)) themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
-            } else {
+            } else if (devSpawn.tab != EditorTab::Kill) {
                 spawnPickerWheel(devSpawn, L.picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
             }
             return;
