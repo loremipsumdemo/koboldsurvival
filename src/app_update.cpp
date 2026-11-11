@@ -238,7 +238,7 @@ void App::updateCamera() {
     if (session.dialogueUnit == NO_OBJECT && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NO_OBJECT && !followUnitCamera(world, cam, followUnit)) followUnit = NO_OBJECT;
     if (!editing && !bpEdit.active) keepCameraNearUnits(world, cam);
-    updateFloorView();
+    PROFILED("floorView", updateFloorView());
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
 }
@@ -246,7 +246,7 @@ void App::updateCamera() {
 void App::stepSimulation() {
     if (screen != Screen::Playing || session.paused || editing) return;
     if (bpEdit.active) {
-        updateBlueprintEditor();
+        PROFILED("blueprintEditor", updateBlueprintEditor());
         return;
     }
     const float frameDt = dt;
@@ -449,13 +449,42 @@ void App::updateHover() {
     mouseOnPanels.reset();
     unitsUnderMouse.clear();
     itemsUnderMouse.clear();
+    // What is under a pointer that has not moved, with the camera still, is looked for again every HOVER_REUSE_MS rather than
+    // every frame: the ray tests over every unit, item and prop are the dearest thing an idle frame does
+    constexpr Uint64 HOVER_REUSE_MS = 100;
+    const Uint64 hoverNow = SDL_GetTicks();
+    const bool hoverStill = hover.filled && hover.x == mouseX && hover.y == mouseY && hover.screen == screen && hover.winW == winW &&
+                            hover.winH == winH && hover.focusX == cam.focusX && hover.focusY == cam.focusY && hover.focusZ == cam.focusZ &&
+                            hover.yaw == cam.yaw && hover.pitch == cam.pitch && hover.distance == cam.distance && hover.lift == cam.lift &&
+                            hover.revision == world.revision<Transform>() && hoverNow - hover.tick < HOVER_REUSE_MS;
+    if (!hoverStill) {
+        hover = HoverCache{};
+        hover.filled = true;
+        hover.x = mouseX;
+        hover.y = mouseY;
+        hover.screen = screen;
+        hover.winW = winW;
+        hover.winH = winH;
+        hover.focusX = cam.focusX;
+        hover.focusY = cam.focusY;
+        hover.focusZ = cam.focusZ;
+        hover.yaw = cam.yaw;
+        hover.pitch = cam.pitch;
+        hover.distance = cam.distance;
+        hover.lift = cam.lift;
+        hover.revision = world.revision<Transform>();
+        hover.tick = hoverNow;
+    }
     std::vector<ObjectId> propsUnder;
-    bool propsFound = false;
     auto propsAt = [&](float x, float y) -> const std::vector<ObjectId>& {
-        if (!propsFound || x != mouseX || y != mouseY) {
-            propsUnder = renderer.propsAtPixel(world, cam, x, y, winW, winH);
-            propsFound = x == mouseX && y == mouseY;
+        if (x == mouseX && y == mouseY) {
+            if (!hover.hasProps) {
+                hover.props = renderer.propsAtPixel(world, cam, x, y, winW, winH);
+                hover.hasProps = true;
+            }
+            return hover.props;
         }
+        propsUnder = renderer.propsAtPixel(world, cam, x, y, winW, winH);
         return propsUnder;
     };
     if (screen == Screen::Playing && world.resource<Graveyard>().haunted) {
@@ -463,11 +492,26 @@ void App::updateHover() {
     }
     if (screen == Screen::Playing) {
         std::vector<HudEntry> under;
-        unitsUnderMouse = renderer.entitiesAtPixel(world, cam, mouseX, mouseY, winW, winH);
+        if (!hover.hasUnits) {
+            hover.units = renderer.entitiesAtPixel(world, cam, mouseX, mouseY, winW, winH);
+            hover.hasUnits = true;
+        }
+        // A unit may have gone since it was looked for
+        unitsUnderMouse.clear();
+        for (ObjectId u : hover.units) {
+            if (world.has<Name>(u)) unitsUnderMouse.push_back(u);
+        }
         for (ObjectId u : unitsUnderMouse)
             under.push_back({ world.get<Name>(u)->text, HUD_UNIT_COLOR });
 
-        itemsUnderMouse = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+        if (!hover.hasItems) {
+            hover.items = renderer.groundItemsAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
+            hover.hasItems = true;
+        }
+        itemsUnderMouse.clear();
+        for (ObjectId g : hover.items) {
+            if (world.has<GroundItem>(g)) itemsUnderMouse.push_back(g);
+        }
         std::vector<ObjectId> items = itemsUnderMouse;
         if ((SDL_GetModState() & SDL_KMOD_ALT) != 0) {
             const ObjectId labelled = renderer.groundItemAtPixel(world, terrain, cam, mouseX, mouseY, winW, winH);
@@ -500,7 +544,9 @@ void App::updateHover() {
     }
 
     {
-        const bool inClaim = selectionInClaim(world);
+        // The claims are worked out once for everything below (the selection, the spot checked, the rings drawn)
+        const std::vector<Claim> claims = claimsOf(world);
+        const bool inClaim = selectionInClaim(world, claims);
         if (session.buildPick.any() && !buildAnywhere(session.buildPick) && !inClaim && !editing && !bpEdit.active) session.buildPick = {};
         renderer.setBuildInClaim(inClaim || bpEdit.active);
         renderer.setDeveloperOpen(devSpawn.open);
@@ -516,18 +562,15 @@ void App::updateHover() {
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
                 bp.lift = storeyBaseHeight(storey);
-                bp.valid = checkBuildSpot(world, terrain, session.buildPick.kind, bp.x, bp.z, storey) == BuildCheck::Ok;
+                bp.valid = buildSpotOk(session.buildPick.kind, bp.x, bp.z, storey, claims);
             }
         }
         if (placing) updateBuildPaint();
         else session.foundationDrag = session.floorDrag = session.paintPiece = false;
-        {
-        }
         if (bp.on && propInfo(session.buildPick.kind).claimsLand) {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
         }
-        const std::vector<Claim> claims = bp.on || !placing ? claimsOf(world) : std::vector<Claim>{};
         // A Campfire being placed: its own claim, unless it stands in its faction's Altar claim (which it then adds nothing to)
         if (bp.on && session.buildPick.kind == PropKind::Campfire) {
             const Claim* home = claimAt(claims, bp.x, bp.z, FACTION_PLAYER);
@@ -540,13 +583,25 @@ void App::updateHover() {
         if (bp.on && propInfo(session.buildPick.kind).needsCamp) {
             bp.ringR = CAMP_CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;
-            for (ObjectId e : world.view<Prop, Transform>()) {
-                if (world.get<Prop>(e)->kind != PropKind::Campfire || world.has<Blueprint>(e)) continue;
-                if (const Owner* own = world.get<Owner>(e); own && own->faction != FACTION_PLAYER) continue;
-                if (claimOf(claims, e)) continue;
-                const Transform* t = world.get<Transform>(e);
-                bp.otherRings.push_back({ t->x, t->z, CAMP_CLAIM_RADIUS });
+            // The campfires' rings are kept until the props change, or for a moment (a claim can change without one)
+            const Uint64 now = SDL_GetTicks();
+            if (!campRingsValid || campRingsProps != world.revision<Prop>() || campRingsOwners != world.revision<Owner>() ||
+                campRingsBlueprints != world.revision<Blueprint>() || now - campRingsTick >= 250) {
+                campRings.clear();
+                for (ObjectId e : world.view<Prop, Transform>()) {
+                    if (world.get<Prop>(e)->kind != PropKind::Campfire || world.has<Blueprint>(e)) continue;
+                    if (const Owner* own = world.get<Owner>(e); own && own->faction != FACTION_PLAYER) continue;
+                    if (claimOf(claims, e)) continue;
+                    const Transform* t = world.get<Transform>(e);
+                    campRings.push_back({ t->x, t->z, CAMP_CLAIM_RADIUS });
+                }
+                campRingsValid = true;
+                campRingsProps = world.revision<Prop>();
+                campRingsOwners = world.revision<Owner>();
+                campRingsBlueprints = world.revision<Blueprint>();
+                campRingsTick = now;
             }
+            bp.otherRings.insert(bp.otherRings.end(), campRings.begin(), campRings.end());
         }
         // Hovering an Altar, or a campfire's claim: its ring, with the others around it
         ObjectId hoverAltar = NO_OBJECT;
@@ -568,15 +623,21 @@ void App::updateHover() {
             }
         }
         if (bpEdit.active) {
-            // The plan's box, marked on the ground by its edge
-            for (int i = 0; i < bpEdit.w; ++i) {
-                for (int j = 0; j < bpEdit.d; ++j) {
-                    if (i != 0 && j != 0 && i != bpEdit.w - 1 && j != bpEdit.d - 1) continue;
-                    bp.marks.push_back(BuildPreview::Mark{ BLUEPRINT_CORNER + i, BLUEPRINT_CORNER + j, 0.02f, 0, true });
+            // The plan's box, marked on the ground by its edge: made again only when its size changes
+            if (bpBoxW != bpEdit.w || bpBoxD != bpEdit.d || bpBoxMarks.empty()) {
+                bpBoxW = bpEdit.w;
+                bpBoxD = bpEdit.d;
+                bpBoxMarks.clear();
+                for (int i = 0; i < bpEdit.w; ++i) {
+                    for (int j = 0; j < bpEdit.d; ++j) {
+                        if (i != 0 && j != 0 && i != bpEdit.w - 1 && j != bpEdit.d - 1) continue;
+                        bpBoxMarks.push_back(BuildPreview::Mark{ BLUEPRINT_CORNER + i, BLUEPRINT_CORNER + j, 0.02f, 0, true });
+                    }
                 }
             }
+            bp.marks.insert(bp.marks.end(), bpBoxMarks.begin(), bpBoxMarks.end());
         }
-        renderer.setBuildPreview(bp);
+        renderer.setBuildPreview(std::move(bp));
         renderer.setBuildSelected(session.buildPick);
     }
 }

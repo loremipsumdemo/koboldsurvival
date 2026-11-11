@@ -370,7 +370,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             }
         }
 
-        if (skyBakeWanted_ && (skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy)) bakeSky(skyKind, zen, horDusk, starAlpha);
+        if (skyBakeWanted_ && SDL_GetTicks() >= skyBakeNotBefore_ && (skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy)) bakeSky(skyKind, zen, horDusk, starAlpha);
         glUseProgram(skyProgram_);
         glUniformMatrix4fv(uSkyInvVP_, 1, GL_FALSE, invSky);
         glUniform3fv(uSunDir_, 1, sunDir);

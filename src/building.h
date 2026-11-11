@@ -155,6 +155,18 @@ struct BuildingMap {
     std::unordered_map<long long, ObjectId> stairTop;     // levelKey: the top step of stairs, a tile of the floor above them
 };
 BuildingMap buildingMap(World& w);
+// The same map kept until the props, foundations or floors change (their component revisions say so), and the foundation tiles
+// joined to a tile kept with it, so a check made many times in a frame (the placement preview) works the world out once. Only
+// to be read at once: what it gives is replaced when the buildings change, so don't hold it across a change to them.
+const BuildingMap& cachedBuildingMap(World& w);
+const std::vector<long long>& cachedBuildingTiles(World& w, int x, int z);
+// Changes when anything cachedBuildingMap is made from does
+struct BuildingStamp {
+    std::uint64_t props = 0, foundations = 0, storeys = 0;
+    bool operator==(const BuildingStamp& o) const { return props == o.props && foundations == o.foundations && storeys == o.storeys; }
+    bool operator!=(const BuildingStamp& o) const { return !(*this == o); }
+};
+BuildingStamp buildingStamp(World& w);
 // A finished floor of owner's (any owner for -1) on this tile and level: the foundation for level 0, else an upper floor
 // or the top step of stairs from the floor below
 bool floorSurfaceOn(World& w, const BuildingMap& m, int x, int z, int level, int owner = -1);

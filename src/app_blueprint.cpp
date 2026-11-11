@@ -55,9 +55,20 @@ BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui) {
     const float rowH = 28.0f * s;
     const int count = (int)ui.plans.size();
     const int shown = std::min(8, std::max(1, count));
+    // Asking whether to overwrite a saved plan: the warning, and the hold button beside Cancel
+    const float warnH = 3.0f * 20.0f * s;
+    L.confirm = Rect{ L.panel.x, L.panel.y + L.panel.h + gap, w, 2.0f * pad + warnH + gap + btnH };
+    L.confirmText = Rect{ L.confirm.x + pad, L.confirm.y + pad, inner, warnH };
+    L.hold = Rect{ L.confirm.x + pad, L.confirmText.y + warnH + gap, half, btnH };
+    L.cancel = Rect{ L.hold.x + half + gap, L.hold.y, half, btnH };
     L.list = Rect{ L.panel.x, L.panel.y + L.panel.h + gap, w, 2.0f * pad + shown * rowH };
     const int top = std::clamp(ui.listScroll, 0, std::max(0, count - shown));
-    for (int i = 0; i < shown && top + i < count; ++i) L.rows.push_back(Rect{ L.list.x + pad, L.list.y + pad + i * rowH, inner, rowH });
+    // Each plan's row, and its X to delete it at the right
+    for (int i = 0; i < shown && top + i < count; ++i) {
+        const float ry = L.list.y + pad + i * rowH;
+        L.rows.push_back(Rect{ L.list.x + pad, ry, inner - rowH - gap, rowH });
+        L.rowDelete.push_back(Rect{ L.list.x + pad + inner - rowH, ry, rowH, rowH });
+    }
     return L;
 }
 
@@ -110,29 +121,76 @@ void App::updateBlueprintEditor() {
             bpEdit.dragging = false;
         }
     }
-    bpEdit.dirtyIn -= dt;
-    if (bpEdit.dirtyIn <= 0.0f) {
+    // The overwrite button held down: the three seconds go through, letting go or moving off it cancels the hold
+    if (bpEdit.holding) {
+        float hx = 0.0f, hy = 0.0f;
+        const bool held = (SDL_GetMouseState(&hx, &hy) & SDL_BUTTON_LMASK) != 0;
+        if (!(bpEdit.overwriteAsk || !bpEdit.deleteName.empty()) || !held || !layoutBlueprint(winW, winH, bpEdit).hold.contains(hx, hy)) {
+            bpEdit.holding = false;
+        } else if (SDL_GetTicks() - bpEdit.holdStart >= BLUEPRINT_HOLD_MS) {
+            bpEdit.holding = false;
+            if (!bpEdit.deleteName.empty()) blueprintDelete(bpEdit.deleteName);
+            else blueprintSave(true);
+        }
+    }
+    // Whether it differs from what was saved is worked out (the whole box read off and written out) only when the pieces or the
+    // box's size have changed, not on a timer. Every change to a piece adds or removes a component, so the revisions say so.
+    const std::uint64_t rev = world.revision<Prop>() + world.revision<Storey>() + world.revision<PropVisual>() + world.revision<Foundation>();
+    if (bpEdit.dirtyRev != rev || bpEdit.dirtyW != bpEdit.w || bpEdit.dirtyD != bpEdit.d) {
         bpEdit.dirty = blueprintText() != bpEdit.savedText;
-        bpEdit.dirtyIn = 0.5f;
+        bpEdit.dirtyRev = rev;
+        bpEdit.dirtyW = bpEdit.w;
+        bpEdit.dirtyD = bpEdit.d;
     }
     // What was put down is built, and the ground and the walls are brought up to date
-    finishAllBlueprints(world, terrain);
+    if (world.count<Blueprint>() > 0) finishAllBlueprints(world, terrain);
     refreshBuildingTiles(world, terrain);
 }
 
 void App::blueprintClear() {
+    // Everything but the Altar: pieces, props, debris and what was left lying about
     for (ObjectId e : world.view<Prop>()) {
         if (propInfo(world.get<Prop>(e)->kind).claimsLand) continue;
+        releasePropLinks(world, e);
         world.destroy(e);
     }
-    world.resource<BuildingsChanged>().dirty = true;
+    for (ObjectId g : world.view<GroundItem>()) world.destroy(g);
+    // The closed tiles and foundation decks are worked out again from what is left now: the editor never runs the game's
+    // building system, so without this the old plan's walls and decks stay on the ground and keep a loaded plan from fitting
+    rebuildBlocking(world, terrain);
     hoverProp = NO_OBJECT;
     bpEdit.exitWarned = false;
     bpEdit.saveWarned = false;
     playSfx(Sfx::UiBack);
 }
 
-bool App::blueprintSave() {
+// Deletes a saved plan's file, after its X was held, and brings the list up to date
+void App::blueprintDelete(const std::string name) {   // by value: it is called with bpEdit.deleteName, which is cleared below
+    bpEdit.deleteName.clear();
+    std::string err;
+    if (!deletePlanFile(name, err)) {
+        refuse(err);
+        return;
+    }
+    reloadPlanLibrary();
+    bpEdit.plans = listPlanFiles();
+    bpEdit.listScroll = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
+    if (bpEdit.plans.empty()) bpEdit.listOpen = false;
+    // Deleting the plan that is open: what stands in the editor goes with it, to a blank plan under a new name
+    if (bpEdit.savedName == name) {
+        blueprintClear();
+        bpEdit.savedName.clear();
+        bpEdit.name = lang("UILABEL_BLUEPRINT_DEFAULT_NAME") + std::to_string((uint32_t)SDL_GetTicksNS() | 1u);
+        bpEdit.savedText = blueprintText();
+        bpEdit.dirtyRev = 0;
+        bpEdit.exitWarned = false;
+        bpEdit.saveWarned = false;
+    }
+    showNotice(langf("MISC_BLUEPRINT_DELETED", { name }));
+    playSfx(Sfx::UiBack);
+}
+
+bool App::blueprintSave(bool overwriteConfirmed) {
     std::string name = safeFileName(bpEdit.name);
     std::replace(name.begin(), name.end(), ' ', '_');
     if (name.empty()) {
@@ -147,13 +205,26 @@ bool App::blueprintSave() {
         refuse(langf("MISC_BLUEPRINT_OUTSIDE", { std::to_string(outside) }));
         return false;
     }
-    bpEdit.saveWarned = false;
     const BuildPlan plan = blueprintPlan();
     const std::string problem = planProblem(plan);
     if (!problem.empty()) {
         refuse(lang(problem.c_str()));
         return false;
     }
+    // A plan of this name that wasn't opened or saved here is overwritten only by holding the button for three seconds
+    std::error_code exists;
+    if (!overwriteConfirmed && name != bpEdit.savedName && std::filesystem::exists(planFilePath(name), exists)) {
+        bpEdit.overwriteAsk = true;
+        bpEdit.holding = false;
+        bpEdit.listOpen = false;
+        if (bpEdit.editingName) SDL_StopTextInput(window);
+        bpEdit.editingName = false;
+        playSfx(Sfx::UiError);
+        return false;
+    }
+    bpEdit.saveWarned = false;
+    bpEdit.overwriteAsk = false;
+    bpEdit.holding = false;
     std::string err;
     if (!writePlanFile(planFilePath(name), plan, err)) {
         refuse(err);
@@ -161,6 +232,8 @@ bool App::blueprintSave() {
     }
     reloadPlanLibrary();
     bpEdit.savedText = planToText(plan);
+    bpEdit.savedName = name;
+    bpEdit.dirtyRev = 0;
     bpEdit.exitWarned = false;
     showNotice(langf("MISC_BLUEPRINT_SAVED", { name }));
     playSfx(Sfx::UiSaved);
@@ -179,9 +252,12 @@ bool App::blueprintLoad(const std::string& name) {
     bpEdit.d = plan.d;
     bpEdit.floors = BLUEPRINT_MOST_FLOORS;
     bpEdit.name = name;
+    bpEdit.savedName = name;
+    bpEdit.overwriteAsk = bpEdit.holding = false;
     placePlanInstant(world, terrain, plan, BLUEPRINT_CORNER, BLUEPRINT_CORNER, FACTION_PLAYER);
     finishAllBlueprints(world, terrain);
     bpEdit.savedText = blueprintText();
+    bpEdit.dirtyRev = 0;
     bpEdit.exitWarned = false;
     bpEdit.listOpen = false;
     showNotice(langf("MISC_BLUEPRINT_LOADED", { name }));
@@ -214,7 +290,10 @@ bool App::blueprintKeyDown() {
         return true;
     }
     if (k == SDLK_ESCAPE) {
-        if (bpEdit.listOpen) bpEdit.listOpen = false;
+        if (bpEdit.overwriteAsk || !bpEdit.deleteName.empty()) {
+            bpEdit.overwriteAsk = bpEdit.holding = false;
+            bpEdit.deleteName.clear();
+        } else if (bpEdit.listOpen) bpEdit.listOpen = false;
         else if (session.buildPick.any()) session.buildPick = {};
         else blueprintExit();
         return true;
@@ -230,11 +309,38 @@ bool App::pressOnBlueprint() {
     if (screen != Screen::Playing || !bpEdit.active) return false;
     const float x = e.button.x, y = e.button.y;
     const BlueprintLayout L = layoutBlueprint(winW, winH, bpEdit);
+    // Asked about: overwriting a saved plan, or deleting one from the list. Held for three seconds to go through.
+    if (bpEdit.overwriteAsk || !bpEdit.deleteName.empty()) {
+        if (!bpEdit.folded && L.confirm.contains(x, y)) {
+            if (e.button.button != SDL_BUTTON_LEFT) return true;
+            if (L.hold.contains(x, y)) {
+                bpEdit.holding = true;
+                bpEdit.holdStart = SDL_GetTicks();
+            } else if (L.cancel.contains(x, y)) {
+                bpEdit.overwriteAsk = bpEdit.holding = false;
+                bpEdit.deleteName.clear();
+                playSfx(Sfx::UiBack);
+            }
+            return true;
+        }
+        // A press anywhere else puts the question away, and then does what it was for
+        bpEdit.overwriteAsk = bpEdit.holding = false;
+        bpEdit.deleteName.clear();
+    }
     if (!bpEdit.folded && bpEdit.listOpen && L.list.contains(x, y)) {
         if (e.button.button != SDL_BUTTON_LEFT) return true;
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
-            if (L.rows[i].contains(x, y)) blueprintLoad(bpEdit.plans[(size_t)top + i]);
+            if (L.rowDelete[i].contains(x, y)) {
+                bpEdit.deleteName = bpEdit.plans[(size_t)top + i];
+                bpEdit.holding = false;
+                playSfx(Sfx::UiClick);
+                break;
+            }
+            if (L.rows[i].contains(x, y)) {
+                blueprintLoad(bpEdit.plans[(size_t)top + i]);
+                break;
+            }
         }
         return true;
     }
@@ -333,11 +439,27 @@ void App::drawBlueprintPanel() {
         renderer.drawListText(text, L.status.x, y, gray);
         y += textH + 2.0f * s;
     }
-    if (bpEdit.listOpen) {
+    const bool deleting = !bpEdit.deleteName.empty();
+    if (bpEdit.overwriteAsk || deleting) {
+        renderer.drawThemedPanel(L.confirm);
+        const std::string warn = deleting ? langf("UILABEL_BLUEPRINT_DELETE_WARN", { bpEdit.deleteName, std::to_string(BLUEPRINT_HOLD_MS / 1000) })
+                                          : langf("UILABEL_BLUEPRINT_OVERWRITE_WARN", { bpEdit.name, std::to_string(BLUEPRINT_HOLD_MS / 1000) });
+        float wy = L.confirmText.y;
+        for (const std::string& text : renderer.wrapListText(warn, L.confirmText.w)) {
+            renderer.drawListText(text, L.confirmText.x, wy, gold);
+            wy += textH + 2.0f * s;
+        }
+        const float fill = bpEdit.holding ? std::min(1.0f, (float)(SDL_GetTicks() - bpEdit.holdStart) / (float)BLUEPRINT_HOLD_MS) : 0.0f;
+        renderer.drawHoldButton(L.hold, lang(deleting ? "UILABEL_BLUEPRINT_DELETE_HOLD" : "UILABEL_BLUEPRINT_OVERWRITE_HOLD"), fill);
+        renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
+    }
+    // The plans to open, each with an X to delete it; while one is asked about, its question takes the list's place
+    if (bpEdit.listOpen && !deleting) {
         renderer.drawThemedPanel(L.list);
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
             renderer.drawButton(L.rows[i], renderer.fitListText(bpEdit.plans[(size_t)top + i], L.rows[i].w - 12.0f * s), true, L.rows[i].contains(mouseX, mouseY));
+            renderer.drawButton(L.rowDelete[i], "X", true, L.rowDelete[i].contains(mouseX, mouseY));
         }
     }
 }

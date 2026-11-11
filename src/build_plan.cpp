@@ -294,6 +294,16 @@ std::vector<std::string> listPlanFiles() {
     return out;
 }
 
+bool deletePlanFile(const std::string& name, std::string& err) {
+    std::error_code ec;
+    const bool gone = fs::remove(fs::u8path(planFilePath(name)), ec);
+    if (ec || !gone) {
+        err = "could not delete " + planFilePath(name);
+        return false;
+    }
+    return true;
+}
+
 namespace {
 std::vector<BuildPlan>& libraryStore() {
     static std::vector<BuildPlan> plans;

@@ -187,8 +187,9 @@ struct BlueprintUi {
     std::string savedText;          // the plan as last saved or opened, to tell what has changed
     bool exitWarned = false;
     bool saveWarned = false;        // Save was pressed with pieces outside the box: pressed again, it saves anyway
-    bool dirty = false;             // changed since it was saved or opened, looked at twice a second
-    float dirtyIn = 0.0f;
+    bool dirty = false;             // changed since it was saved or opened, looked at when the world or the box changes
+    std::uint64_t dirtyRev = 0;     // the world's revision when dirty was last worked out (0: work it out again)
+    int dirtyW = 0, dirtyD = 0;     // and the box's size then
     float x = -1.0f, y = -1.0f;     // where the panel is: -1, the top left corner
     bool folded = false;            // only its title bar shows
     bool dragging = false;          // the title bar is held, to move the panel
@@ -196,7 +197,13 @@ struct BlueprintUi {
     bool listOpen = false;          // the plans to open
     std::vector<std::string> plans;
     int listScroll = 0;
+    std::string savedName;          // the plan's name as last opened or saved here: saving under it again is no overwrite to ask about
+    bool overwriteAsk = false;      // a plan of this name is already saved: the Overwrite button is held for BLUEPRINT_HOLD_MS to go on
+    std::string deleteName;         // a plan in the list whose X was pressed: held for BLUEPRINT_HOLD_MS to delete it
+    bool holding = false;
+    unsigned long long holdStart = 0;
 };
+inline constexpr unsigned long long BLUEPRINT_HOLD_MS = 3000;
 struct BlueprintLayout {
     Rect panel, title, fold, nameBox;
     Rect widthLabel, widthDown, widthBox, widthUp;
@@ -204,6 +211,7 @@ struct BlueprintLayout {
     Rect floorsLabel, floorsDown, floorsBox, floorsUp;
     Rect save, load, clear, exit, status;
     Rect list;                      // the plans to open, under the panel
-    std::vector<Rect> rows;
+    std::vector<Rect> rows, rowDelete;
+    Rect confirm, confirmText, hold, cancel;   // asking whether to overwrite a saved plan, under the panel
 };
 BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui);

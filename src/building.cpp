@@ -543,6 +543,52 @@ BuildingMap buildingMap(World& w) {
     return m;
 }
 
+BuildingStamp buildingStamp(World& w) {
+    return BuildingStamp{ w.revision<Prop>(), w.revision<Foundation>(), w.revision<Storey>() };
+}
+
+namespace {
+struct MapCache {
+    const World* world = nullptr;
+    BuildingStamp stamp;
+    bool filled = false;
+    BuildingMap map;
+    std::unordered_map<long long, size_t> clusterOf;   // tileKey of a foundation tile -> its building in clusters
+    std::vector<std::vector<long long>> clusters;
+};
+MapCache& mapCache() {
+    static thread_local MapCache c;
+    return c;
+}
+MapCache& freshMapCache(World& w) {
+    MapCache& c = mapCache();
+    const BuildingStamp now = buildingStamp(w);
+    if (c.filled && c.world == &w && c.stamp == now) return c;
+    c.map = buildingMap(w);
+    c.clusterOf.clear();
+    c.clusters.clear();
+    c.world = &w;
+    c.stamp = now;
+    c.filled = true;
+    return c;
+}
+}
+
+const BuildingMap& cachedBuildingMap(World& w) {
+    return freshMapCache(w).map;
+}
+
+const std::vector<long long>& cachedBuildingTiles(World& w, int x, int z) {
+    static const std::vector<long long> none;
+    MapCache& c = freshMapCache(w);
+    const long long k = tileKey(x, z);
+    if (!c.map.foundation.count(k)) return none;
+    if (const auto it = c.clusterOf.find(k); it != c.clusterOf.end()) return c.clusters[it->second];
+    c.clusters.push_back(buildingTiles(c.map, x, z));
+    for (long long t : c.clusters.back()) c.clusterOf[t] = c.clusters.size() - 1;
+    return c.clusters.back();
+}
+
 bool floorSurfaceOn(World& w, const BuildingMap& m, int x, int z, int level, int owner) {
     return mapFloorSurface(w, m, x, z, level, owner);
 }
@@ -816,7 +862,7 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
 
 PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int level, int dir) {
     const PropInfo& info = propInfo(kind);
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);   // checked for many tiles in a frame by the placement preview
     if (info.stairs) {
         // Three tiles of this floor in a row, with nothing on them and no floor over them, in one building of yours. The
         // bottom step is stepped onto from the floor beside it; the top step is a tile of the floor above.
@@ -824,7 +870,7 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
         dir = ((dir % 4) + 4) % 4;
         const ObjectId mid = mapGet(m.foundation, tileKey(x, z));
         if (mid == NO_OBJECT || ownerOf(w, mid) != owner) return PieceCheck::NeedsFoundation;
-        const std::vector<long long> tiles = buildingTiles(m, x, z);
+        const std::vector<long long>& tiles = cachedBuildingTiles(w, x, z);
         const std::unordered_set<long long> in(tiles.begin(), tiles.end());
         for (int i = -1; i <= 1; ++i) {
             const int tx = x + i * STAIRS_DX[dir], tz = z + i * STAIRS_DZ[dir];
@@ -846,7 +892,7 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
         // A floor over this one, on the level above
         if (level + 1 > STOREY_MAX) return PieceCheck::NeedsFloor;
         // It may span a hole in this floor, as over a ladder from the floor below: the walls round it hold it up
-        if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner) && !anyFloorOn(w, m, buildingTiles(m, x, z), level, owner)) {
+        if (level > 0 && !mapFloorSurface(w, m, x, z, level, owner) && !anyFloorOn(w, m, cachedBuildingTiles(w, x, z), level, owner)) {
             return PieceCheck::NeedsFloor;
         }
         if (mapGet(m.floor, levelKey(x, z, level + 1)) != NO_OBJECT) return PieceCheck::Taken;

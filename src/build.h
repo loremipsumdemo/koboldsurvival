@@ -21,10 +21,13 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
 
 // storey: the floor it goes on (0 the ground; above that, it must stand on a finished upper floor of yours)
 // builder: the faction placing it (yours by default)
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0, int builder = FACTION_PLAYER);
+// claims: the claims in the world when the caller has them at hand (claimsOf), else they are worked out here
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0, int builder = FACTION_PLAYER,
+                          const std::vector<Claim>* claims = nullptr);
 
 bool buildAnywhere(const BuildPick& pick);
 bool selectionInClaim(World& w);
+bool selectionInClaim(World& w, const std::vector<Claim>& claims);
 
 const char* buildRefusalKey(BuildCheck c);
 

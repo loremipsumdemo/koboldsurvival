@@ -73,7 +73,7 @@ void App::drawMaterialAsk() {
 // the top floor under its pivot (the ground floor outside a building). Inside a building, the cutaway leaves out what
 // stands on the floors above it.
 void App::updateFloorView() {
-    const BuildingMap m = buildingMap(world);
+    const BuildingMap& m = cachedBuildingMap(world);
     const int px = tileOf(cam.focusX), pz = tileOf(cam.focusZ);
     const bool inside = m.foundation.count(tileKey(px, pz)) > 0;
     int top = 0;
@@ -98,11 +98,16 @@ void App::updateFloorView() {
     }
     cam.floorLift += (rise - cam.floorLift) * std::min(1.0f, dt * 10.0f);
     if (std::abs(rise - cam.floorLift) < 0.001f) cam.floorLift = rise;
+    // The cutaway only changes with the building under the pivot, the floor looked at or the buildings themselves
+    const CutawayKey key{ buildingStamp(world), inside ? px : 0, inside ? pz : 0, inside ? session.floorLevel : 0, inside };
+    if (cutawayKeyValid && key == cutawayKey) return;
+    cutawayKey = key;
+    cutawayKeyValid = true;
     Renderer::Cutaway cut;
     if (inside) {
         cut.on = true;
         cut.level = session.floorLevel;
-        const std::vector<long long> tiles = buildingTiles(m, px, pz);
+        const std::vector<long long>& tiles = cachedBuildingTiles(world, px, pz);
         cut.tiles.insert(tiles.begin(), tiles.end());
     }
     renderer.setCutaway(std::move(cut));
@@ -165,7 +170,7 @@ std::optional<std::pair<float, float>> App::pickFloor(float mx, float my, int& s
     storey = 0;
     const auto ground = pickGround(cam, terrain, mx, my, winW, winH);
     if (!ground) return ground;
-    const BuildingMap m = buildingMap(world);
+    const BuildingMap& m = cachedBuildingMap(world);
     if (m.floor.empty() && m.stairTop.empty()) return ground;
     for (int level = STOREY_MAX; level >= 0; --level) {
         // Stairs standing on this floor: their middle step, then their bottom one
@@ -211,7 +216,7 @@ std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
     }
     session.buildLevel = 0;
     if (info.foundation || info.claimsLand) return hit;
-    const BuildingMap m = buildingMap(world);
+    const BuildingMap& m = cachedBuildingMap(world);
     for (int level = STOREY_MAX; level >= 1 && !m.floor.empty(); --level) {
         const auto up = pickAbove(mx, my, hit, storeyBaseHeight(level));
         if (!up) continue;
@@ -385,6 +390,32 @@ void App::updateBuildPaint() {
     if (checkPiece(world, session.buildPick.kind, tx, tz, FACTION_PLAYER, session.buildLevel) == PieceCheck::Ok) {
         placePiece(world, terrain, session.buildPick.kind, tx, tz, FACTION_PLAYER, (BuildMaterial)session.buildMaterial, session.buildLevel);
     }
+}
+
+// Whether a prop may go here, kept for the spot it was asked about until the props change or a quarter second passes (a claim
+// can change without a prop being added or removed). The pointer rests on one spot for most frames, and the check walks every prop.
+bool App::buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims) {
+    SpotCache& c = spotCache;
+    const std::uint64_t props = world.revision<Prop>(), owners = world.revision<Owner>(), foundations = world.revision<Foundation>(),
+                        storeys = world.revision<Storey>(), blueprints = world.revision<Blueprint>();
+    const Uint64 now = SDL_GetTicks();
+    if (c.filled && c.kind == kind && c.x == x && c.z == z && c.storey == storey && c.props == props && c.owners == owners &&
+        c.foundations == foundations && c.storeys == storeys && c.blueprints == blueprints && now - c.tick < 250) {
+        return c.ok;
+    }
+    c.filled = true;
+    c.kind = kind;
+    c.x = x;
+    c.z = z;
+    c.storey = storey;
+    c.props = props;
+    c.owners = owners;
+    c.foundations = foundations;
+    c.storeys = storeys;
+    c.blueprints = blueprints;
+    c.tick = now;
+    c.ok = checkBuildSpot(world, terrain, kind, x, z, storey, FACTION_PLAYER, &claims) == BuildCheck::Ok;
+    return c.ok;
 }
 
 bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
