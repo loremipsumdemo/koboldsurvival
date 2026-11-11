@@ -1095,7 +1095,7 @@ void Renderer::drawFires(const Camera& cam) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glDepthMask(GL_FALSE);
     for (const FireSpot& f : fires_) {
-        const float flicker = 0.88f + 0.12f * std::sin(now * 11.0f + f.seed * 5.0f) * std::sin(now * 7.3f + f.seed);
+        const float flicker = 0.88f + 0.12f * std::sin(now * 3.0f + f.seed * 5.0f) * std::sin(now * 2.0f + f.seed);
         // The glow on the ground under it
         const float reach = (2.0f + f.size * 5.0f) * flicker;
         const float gy = f.y - std::min(f.y, 0.0f) * 0.0f;
@@ -1113,7 +1113,7 @@ void Renderer::drawFires(const Camera& cam) {
         constexpr int FLAMES = 9;
         for (int i = 0; i < FLAMES; ++i) {
             const float seed = f.seed + (float)i * 0.618f;
-            const float life = std::fmod(now * (0.75f + 0.05f * (float)(i % 3)) + seed, 1.0f);
+            const float life = std::fmod(now * (1.6f + 0.15f * (float)(i % 3)) + seed, 1.0f);
             const float sway = std::sin(seed * 40.0f + now * 2.3f);
             const float sway2 = std::cos(seed * 23.0f + now * 1.9f);
             const float spread = f.size * 0.32f * (1.0f - life * 0.8f);
