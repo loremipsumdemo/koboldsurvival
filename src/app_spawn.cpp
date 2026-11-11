@@ -46,18 +46,32 @@ SpawnPickerLayout layoutSpawnPicker(const Rect& area, float s) {
     return L;
 }
 
-DeveloperLayout layoutDeveloper(int W, int H) {
+DeveloperLayout layoutDeveloper(int W, int H, bool themeTab) {
     const float s = uiScaleFor((float)H);
-    const float m = 10.0f * s, pad = 10.0f * s, line = 28.0f * s;
+    const float m = 10.0f * s, pad = 10.0f * s, line = 28.0f * s, gap = 6.0f * s;
     DeveloperLayout L;
     const float w = 300.0f * s, h = std::min((float)H - 2.0f * m - 60.0f * s, 620.0f * s);
     L.panel = Rect{ m, std::floor((H - h) * 0.5f), w, h };
     L.title = Rect{ L.panel.x + pad, L.panel.y + pad, w - 2.0f * pad - line, line };
     L.close = Rect{ L.panel.x + w - pad - line, L.panel.y + pad, line, line };
-    const float helpH = 44.0f * s;
-    L.help = Rect{ L.panel.x + pad, L.panel.y + h - pad - helpH, w - 2.0f * pad, helpH };
-    const float top = L.title.y + line + 8.0f * s;
-    L.picker = layoutSpawnPicker(Rect{ L.panel.x + pad, top, w - 2.0f * pad, L.help.y - 6.0f * s - top }, s);
+    const float tabW = (w - 2.0f * pad - gap) * 0.5f;
+    L.spawnTab = Rect{ L.panel.x + pad, L.title.y + line + gap, tabW, line };
+    L.themeTab = Rect{ L.spawnTab.x + tabW + gap, L.spawnTab.y, tabW, line };
+    const float top = L.spawnTab.y + line + gap;
+    // The bottom of the list: above the help text, or above the theme's status and buttons
+    float listBottom = 0.0f;
+    if (themeTab) {
+        L.makePermanent = Rect{ L.panel.x + pad, L.panel.y + h - pad - line, w - 2.0f * pad, line };
+        L.revert = Rect{ L.panel.x + pad, L.makePermanent.y - gap - line, w - 2.0f * pad, line };
+        L.status = Rect{ L.panel.x + pad, L.revert.y - gap - line, w - 2.0f * pad, line };
+        listBottom = L.status.y - gap;
+    } else {
+        const float helpH = 44.0f * s;
+        L.help = Rect{ L.panel.x + pad, L.panel.y + h - pad - helpH, w - 2.0f * pad, helpH };
+        listBottom = L.help.y - 6.0f * s;
+    }
+    L.themeArea = Rect{ L.panel.x + pad, top, w - 2.0f * pad, listBottom - top };
+    L.picker = layoutSpawnPicker(L.themeArea, s);
     return L;
 }
 
@@ -382,23 +396,43 @@ void App::closeDeveloper() {
     devSpawn.open = false;
     devSpawn.tool = EditorTool::None;
     devSpawn.picked = 0;
+    devSpawn.tab = EditorTab::Entities;
+    devThemeConfirm = false;
     playSfx(Sfx::UiBack);
 }
 
 bool App::pressOnDeveloper() {
     if (screen != Screen::Playing || editing || !devSpawn.open) return false;
     const float x = e.button.x, y = e.button.y;
-    const DeveloperLayout L = layoutDeveloper(winW, winH);
+    const bool themeTab = devSpawn.tab == EditorTab::Theme;
+    const DeveloperLayout L = layoutDeveloper(winW, winH, themeTab);
     if (L.panel.contains(x, y)) {
         if (e.button.button != SDL_BUTTON_LEFT) return true;
         if (L.close.contains(x, y)) {
             closeDeveloper();
             return true;
         }
+        if (L.spawnTab.contains(x, y) || L.themeTab.contains(x, y)) {
+            const bool toTheme = L.themeTab.contains(x, y);
+            devSpawn.tool = EditorTool::None;
+            devSpawn.picked = 0;
+            devSpawn.tab = toTheme ? EditorTab::Theme : EditorTab::Entities;
+            devThemeConfirm = false;
+            if (toTheme) openDevTheme();
+            playSfx(Sfx::UiTab);
+            return true;
+        }
+        if (themeTab) {
+            if (L.makePermanent.contains(x, y)) devThemeMakePermanent();
+            else if (L.revert.contains(x, y)) devThemeRevert();
+            else if (L.themeArea.contains(x, y)) themeClick(L.themeArea, x, y);
+            else devThemeConfirm = false;
+            return true;
+        }
         spawnPickerClick(devSpawn, L.picker, x, y);
         return true;
     }
-    if (devSpawn.tool == EditorTool::None) return false;
+    if (themeTab || devSpawn.tool == EditorTool::None) return false;
     // With something picked, a right-click puts it down again and a left-click places it
     if (e.button.button == SDL_BUTTON_RIGHT) {
         devSpawn.tool = EditorTool::None;
@@ -415,16 +449,29 @@ bool App::pressOnDeveloper() {
 
 void App::drawDeveloper() {
     if (screen != Screen::Playing || editing || !devSpawn.open) return;
-    const DeveloperLayout L = layoutDeveloper(winW, winH);
+    const bool themeTab = devSpawn.tab == EditorTab::Theme;
+    const DeveloperLayout L = layoutDeveloper(winW, winH, themeTab);
+    const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
     const float textH = renderer.listTextHeight("Ag");
     renderer.drawThemedPanel(L.panel);
     renderer.drawListText(renderer.fitListText(lang("UILABEL_BUILD_DEVELOPER"), L.title.w), L.title.x,
-                          L.title.y + (L.title.h - textH) * 0.5f, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
+                          L.title.y + (L.title.h - textH) * 0.5f, gold);
     renderer.drawCloseButton(L.close);
+    renderer.drawButton(L.spawnTab, (themeTab ? "" : "> ") + lang("UILABEL_DEV_TAB_SPAWN"), true, L.spawnTab.contains(mouseX, mouseY));
+    renderer.drawButton(L.themeTab, (themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_THEME"), true, L.themeTab.contains(mouseX, mouseY));
+    if (themeTab) {
+        drawThemePanel(L.themeArea);
+        const bool confirm = devThemeConfirm;
+        renderer.drawListText(renderer.fitListText(lang(confirm ? "UILABEL_DEV_THEME_CONFIRM" : "UILABEL_DEV_THEME_TEMP"), L.status.w),
+                              L.status.x, L.status.y + (L.status.h - textH) * 0.5f, confirm ? gold : gray);
+        renderer.drawButton(L.revert, lang("UILABEL_DEV_REVERT"), true, L.revert.contains(mouseX, mouseY));
+        renderer.drawButton(L.makePermanent, lang("UILABEL_DEV_MAKE_PERMANENT"), true, L.makePermanent.contains(mouseX, mouseY));
+        return;
+    }
     drawSpawnPicker(devSpawn, L.picker);
     float y = L.help.y;
     for (const std::string& line : renderer.wrapListText(lang("UILABEL_DEVELOPER_HELP"), L.help.w)) {
-        renderer.drawListText(line, L.help.x, y, RGBA{ 0.80f, 0.72f, 0.64f, 1.0f });
+        renderer.drawListText(line, L.help.x, y, gray);
         y += textH + 2.0f;
     }
 }

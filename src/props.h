@@ -266,6 +266,8 @@ inline std::vector<BuildRow> buildRows() {
     std::vector<BuildRow> rows;
     for (int g = 0; g < (int)BuildGroup::Count; ++g) {
         const BuildGroup group = (BuildGroup)g;
+        // Nature is spawned from the Developer Menu only
+        if (group == BuildGroup::Nature) continue;
         rows.push_back(BuildRow{ group, true, false, {} });
         if (group == BuildGroup::Tools) {
             rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });

@@ -111,12 +111,15 @@ struct SpawnPickerLayout {
 };
 SpawnPickerLayout layoutSpawnPicker(const Rect& area, float scale);
 
-// The Developer panel in a game: its title and close button over the spawn list
+// The Developer panel in a game: its title and close button, the Spawn and Theme tabs, then either the spawn list with
+// its help, or (on the Theme tab) the theme panel with the temporary-theme status and its buttons
 struct DeveloperLayout {
     Rect panel, title, close, help;
+    Rect spawnTab, themeTab;
     SpawnPickerLayout picker;
+    Rect themeArea, status, revert, makePermanent;
 };
-DeveloperLayout layoutDeveloper(int W, int H);
+DeveloperLayout layoutDeveloper(int W, int H, bool themeTab = false);
 
 struct LevelEditorUi {
     bool useOwnUi = true;

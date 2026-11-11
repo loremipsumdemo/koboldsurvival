@@ -243,6 +243,10 @@ struct App : AppSession {
     MapTheme& themeBeingEdited();
     int& themePresetBeingEdited();
     void themeEdited();
+    bool devThemeShown() const;
+    void openDevTheme();
+    void devThemeRevert();
+    void devThemeMakePermanent();
     void drawThemePanel(const Rect& area);
     bool themeClick(const Rect& area, float x, float y);
     void themeDragAt(float x);
@@ -559,7 +563,14 @@ struct App : AppSession {
         float lastX = 0.0f, lastY = 0.0f;
     };
     PropAdjustUi propAdjust;
-    SpawnPicker devSpawn;   // the Build tab's Developer panel
+    SpawnPicker devSpawn;   // the Build tab's Developer panel (its Theme tab edits the world's theme, temporarily)
+    // The Developer panel's theme: what the world has saved, and what is shown now. Changes are temporary until made permanent.
+    bool devThemeLoaded = false;
+    bool devThemeConfirm = false;   // Make permanent was pressed once: a second press changes the world's theme
+    MapTheme devSavedTheme;
+    int devSavedPreset = 0;
+    MapTheme devTheme;
+    int devThemePreset = 0;
     std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;
     StoreFilterUi storeFilterUi;

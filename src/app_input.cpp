@@ -373,9 +373,14 @@ void App::onMouseWheel() {
         return;
     }
     if (screen == Screen::Playing && !editing && devSpawn.open) {
-        const DeveloperLayout L = layoutDeveloper(winW, winH);
+        const bool themeTab = devSpawn.tab == EditorTab::Theme;
+        const DeveloperLayout L = layoutDeveloper(winW, winH, themeTab);
         if (L.panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
-            spawnPickerWheel(devSpawn, L.picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+            if (themeTab) {
+                if (L.themeArea.contains(e.wheel.mouse_x, e.wheel.mouse_y)) themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
+            } else {
+                spawnPickerWheel(devSpawn, L.picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
+            }
             return;
         }
     }
@@ -833,7 +838,7 @@ void App::onMouseMotion() {
         else propAdjust.drag = -1;
         return;
     }
-    if (themeUi.dragRow >= 0 && (screen == Screen::WorldGen || (screen == Screen::Playing && editing))) {
+    if (themeUi.dragRow >= 0 && (screen == Screen::WorldGen || (screen == Screen::Playing && editing) || devThemeShown())) {
         themeDragAt(e.motion.x);
         return;
     }

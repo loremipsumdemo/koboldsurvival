@@ -141,14 +141,76 @@ ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float s) {
 // ---- The Theme tab
 
 MapTheme& App::themeBeingEdited() {
+    if (devThemeShown()) return devTheme;
     return editing ? editor.map.theme : worldGenUi.settings.theme;
 }
 
 int& App::themePresetBeingEdited() {
+    if (devThemeShown()) return devThemePreset;
     return editing ? editor.map.themePreset : worldGenUi.settings.themePreset;
 }
 
+// The Developer panel's Theme tab in a game: the world's theme, changed temporarily
+bool App::devThemeShown() const {
+    return screen == Screen::Playing && !editing && devSpawn.open && devSpawn.tab == EditorTab::Theme;
+}
+
+// Loads what the world has saved, once for a game; changes made since stay until made permanent or the game ends
+void App::openDevTheme() {
+    if (!devThemeLoaded) {
+        WorldGenSettings saved;
+        std::string err;
+        if (readMapFile(mapFilePath(currentMap.stem), saved, err)) {
+            devSavedTheme = saved.theme;
+            devSavedPreset = saved.themePreset;
+        }
+        devTheme = devSavedTheme;
+        devThemePreset = devSavedPreset;
+        devThemeLoaded = true;
+    }
+    devThemeConfirm = false;
+    renderer.setMapTheme(devTheme);
+}
+
+void App::devThemeRevert() {
+    devTheme = devSavedTheme;
+    devThemePreset = devSavedPreset;
+    devThemeConfirm = false;
+    renderer.setMapTheme(devTheme);
+    playSfx(Sfx::UiBack);
+}
+
+// Pressed once asks; pressed again writes the theme into the world's map file
+void App::devThemeMakePermanent() {
+    if (!devThemeConfirm) {
+        devThemeConfirm = true;
+        playSfx(Sfx::UiClick);
+        return;
+    }
+    devThemeConfirm = false;
+    WorldGenSettings settings;
+    std::string err;
+    if (!readMapFile(mapFilePath(currentMap.stem), settings, err)) {
+        refuse(err);
+        return;
+    }
+    settings.theme = devTheme;
+    settings.themePreset = devThemePreset;
+    if (!writeMapFile(mapFilePath(currentMap.stem), settings, err)) {
+        refuse(err);
+        return;
+    }
+    devSavedTheme = devTheme;
+    devSavedPreset = devThemePreset;
+    showNotice(lang("UILABEL_DEV_THEME_SAVED"));
+    playSfx(Sfx::UiSaved);
+}
+
 void App::themeEdited() {
+    if (devThemeShown()) {
+        renderer.setMapTheme(devTheme);
+        return;
+    }
     if (editing) {
         renderer.setMapTheme(editor.map.theme);
         editor.exitWarned = false;
@@ -217,7 +279,9 @@ void App::drawThemePanel(const Rect& area) {
 
 void App::themeDragAt(float x) {
     const float s = uiScaleFor(winH);
-    const Rect area = editing ? layoutEditor(winW, winH, true).themeArea : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
+    const Rect area = editing ? layoutEditor(winW, winH, true).themeArea
+                    : devThemeShown() ? layoutDeveloper(winW, winH, true).themeArea
+                    : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
     const float labelW = area.w * 0.52f, controlX = area.x + labelW, controlW = area.w - labelW;
     (void)s;
     const float share = std::clamp((x - controlX) / controlW, 0.0f, 1.0f);

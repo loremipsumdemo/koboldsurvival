@@ -906,10 +906,16 @@ UILABEL_BUILD_GROUP_CAGES	Cages
 UILABEL_BUILD_GROUP_VEHICLES	Vehicles
 UILABEL_BUILD_GROUP_NATURE	Nature
 UILABEL_BUILD_GROUP_DEVELOPER	Developer
-UILABEL_BUILD_DEVELOPER	Developer: spawn anything
+UILABEL_BUILD_DEVELOPER	Developer Menu
 UILABEL_BUILD_OPEN_IT	Open
 UILABEL_BUILD_OPEN	Close
 UILABEL_DEVELOPER_HELP	Pick something, then left-click the ground to spawn it. Right-click or Escape puts it down.
+UILABEL_DEV_TAB_SPAWN	Spawn
+UILABEL_DEV_THEME_TEMP	Temporary: the world's theme is not changed
+UILABEL_DEV_THEME_CONFIRM	Press Make permanent again to change the world's theme
+UILABEL_DEV_REVERT	Revert to the world's theme
+UILABEL_DEV_MAKE_PERMANENT	Make permanent
+UILABEL_DEV_THEME_SAVED	The world's theme is saved
 UILABEL_LOCK	Lock
 MISC_BUILD_SEALED	That ground is claimed by another faction
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
