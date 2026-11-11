@@ -405,6 +405,7 @@ void App::render() {
     case Screen::ScenarioSelect: drawScenarioScreen(); break;
     case Screen::PartySetup: drawPartyScreen(); break;
     case Screen::WorldGen: drawWorldGenScreen(); break;
+    case Screen::DefaultWorldAsk: drawDefaultWorldAsk(); break;
     case Screen::Pause: drawPauseScreen(); break;
     }
     if (panelOpen) drawSavePanel();

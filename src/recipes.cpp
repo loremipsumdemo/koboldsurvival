@@ -23,31 +23,10 @@ struct Researched {
     std::map<int, std::set<std::string>> byFaction;
 };
 
-float dist2(const Transform& a, const Transform& b) { return (a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z); }
-
-BehaviorRule* ruleOf(Behaviors& b, BehaviorKind kind) {
-    for (BehaviorRule& r : b.rules) {
-        if (r.kind == kind) return &r;
-    }
-    return nullptr;
-}
-
-bool walkingNow(World& w, ObjectId u) {
-    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
-    const SoloMove* so = w.get<SoloMove>(u);
-    return so && so->next < so->waypoints.size();
-}
 
 void walkTo(World& w, Terrain& t, ObjectId u, ObjectId target) {
     const Transform* tt = w.get<Transform>(target);
     if (tt) walkSoloTo(w, t, u, Vec2{ tt->x, tt->z }, storeyOf(w, target));
-}
-
-// A prop that is this faction's: owned by it, or standing in its claim
-bool propOfFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction) {
-    if (const Owner* own = w.get<Owner>(prop)) return own->faction == faction;
-    const Transform* pt = w.get<Transform>(prop);
-    return pt && claimAt(claims, pt->x, pt->z, faction) != nullptr;
 }
 
 int held(World& w, ObjectId prop, int item) {
@@ -81,7 +60,7 @@ ObjectId storeHolding(World& w, const std::vector<Claim>& claims, ObjectId u, Ob
         const PropInfo& info = propInfo(w.get<Prop>(s)->kind);
         if (s == bench || info.advanced || info.claimsLand || info.stall || w.has<Blueprint>(s) || lockShutFor(w, claims, s, u)) continue;
         if (!propOfFaction(w, claims, s, faction) || held(w, s, item) <= 0) continue;
-        const float d2 = dist2(*w.get<Transform>(s), *ut);
+        const float d2 = distSq(*w.get<Transform>(s), *ut);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = s;
             bestD2 = d2;
@@ -340,7 +319,7 @@ bool startCraftStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     float bestD2 = 0.0f;
     for (ObjectId p : w.view<CraftOrder, Prop, Transform>()) {
         if (std::find(taken.begin(), taken.end(), p) != taken.end() || !orderWantsFilling(w, claims, u, p)) continue;
-        const float d2 = dist2(*w.get<Transform>(p), *ut);
+        const float d2 = distSq(*w.get<Transform>(p), *ut);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = p;
             bestD2 = d2;
@@ -476,7 +455,7 @@ ObjectId craftOutputToHaul(World& w, ObjectId u, const std::vector<ObjectId>& ta
         if (!propInfo(w.get<Prop>(p)->kind).advanced || outputEmpty(w, p) || w.has<Blueprint>(p)) continue;
         if (std::find(taken.begin(), taken.end(), p) != taken.end()) continue;
         if (!propOfFaction(w, claims, p, faction) || lockShutFor(w, claims, p, u)) continue;
-        const float d2 = dist2(*w.get<Transform>(p), *ut);
+        const float d2 = distSq(*w.get<Transform>(p), *ut);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = p;
             bestD2 = d2;

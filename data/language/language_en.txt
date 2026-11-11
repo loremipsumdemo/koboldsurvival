@@ -70,7 +70,6 @@ UILABEL_SAVE	Save
 UILABEL_LOAD	Load
 UILABEL_NAME	Name
 UILABEL_NO_SAVES	No saves yet
-MISC_MAIN_MAP_MISSING	The main map is missing from data.pak
 UILABEL_UNSAVED_WARNING	Unsaved progress in this game will be lost.
 MISC_LEAVE_Q	Leave without saving?
 UILABEL_HOLD_DELETE	Hold Delete for 3 seconds to confirm.
@@ -354,7 +353,6 @@ UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: oth
 UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
 UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
 UILABEL_GEN_DEFAULT_NAME	world
-UILABEL_MAP_MAIN	Main Map
 
 # ----------------------------------------------------------------------
 # Panels, HUD, time and the message log
@@ -860,14 +858,10 @@ UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
 MISC_BED_PUBLIC	Public: anyone may sleep here
 MISC_BED_PRIVATE	Private: for {0} only
 UILABEL_WAIT_NO_STALL_ORDER	No Stall orders waiting
-UILABEL_WAIT_NO_CAGED_ANIMAL	No caged animal is due a feed
-UILABEL_WAIT_NO_RAW_MEAT	No raw meat carried or in your stores
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL	Auto-Haul to Stalls
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	Carries the items picked in a Stall's Stock window from their store to the Stall. Each order is tried once, and dropped if the item has gone
 UILABEL_BEHAVIOR_MAN_STALL	Man Stall: {0}
 UILABEL_BEHAVIOR_MAN_STALL_TIP	Stands at the {0} as its shopkeeper, so units of friendly factions can buy from it. Tasks above it in the list still come first
-UILABEL_BEHAVIOR_TAME_ANIMALS	Tame Animals
-UILABEL_BEHAVIOR_TAME_ANIMALS_TIP	Brings raw meat to the animals in your Taming Cages, fetching it from your stores if none is carried. Each animal is fed once every 6 hours
 UILABEL_BED_MAKE_PUBLIC	Make Public
 UILABEL_BED_MAKE_PRIVATE	Make Private
 UILABEL_MAN_STALL	Man Stall
@@ -1690,3 +1684,5 @@ UILABEL_CRAFT_STOCK	In your stores now: {0}
 UILABEL_CRAFT_ORDER_HELP	One recipe at a time. With a stock to keep, units with Auto-Craft make more while your stores hold fewer than that and hold the ingredients. What is made must be carried out before more is.
 UILABEL_CRAFT_NONE_KNOWN	No recipe for this is known yet: unlock one at a Research Table
 UILABEL_CRAFT_TAKES	takes {0}
+MISC_NO_WORLD_Q	No world exists yet. Make one with all the default settings?
+UILABEL_NO_WORLD_HINT	To choose the land and look yourself, use World Generation on the title screen.

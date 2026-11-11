@@ -13,30 +13,8 @@
 using namespace systems_detail;
 
 namespace {
-float dist2(float ax, float az, float bx, float bz) { return (ax - bx) * (ax - bx) + (az - bz) * (az - bz); }
-
-BehaviorRule* ruleOf(Behaviors& b, BehaviorKind kind) {
-    for (BehaviorRule& r : b.rules) {
-        if (r.kind == kind) return &r;
-    }
-    return nullptr;
-}
-
-bool walkingNow(World& w, ObjectId u) {
-    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
-    const SoloMove* so = w.get<SoloMove>(u);
-    return so && so->next < so->waypoints.size();
-}
-
 bool rulesDoSomething(const FactionRules& r) {
     return r.downedBody != DownedBodyRule::Leave || r.downedTake != DownedTakeRule::Nothing;
-}
-
-// A prop of this faction's: owned by it, or standing in its claim
-bool propOfFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction) {
-    if (const Owner* own = w.get<Owner>(prop)) return own->faction == faction;
-    const Transform* pt = w.get<Transform>(prop);
-    return pt && claimAt(claims, pt->x, pt->z, faction) != nullptr;
 }
 
 // The nearest Prisoner Cage of this faction's with room, that no one else is carrying a prisoner to
@@ -54,7 +32,7 @@ ObjectId freeCage(World& w, const std::vector<Claim>& claims, ObjectId u, int fa
         const int coming = (int)std::count(promised.begin(), promised.end(), c);
         if (occupantCount(w, c) + coming >= occupyCapacity(w, c)) continue;
         const Transform* ct = w.get<Transform>(c);
-        const float d2 = dist2(ct->x, ct->z, ut->x, ut->z);
+        const float d2 = distSq(*ct, *ut);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = c;
             bestD2 = d2;
@@ -95,7 +73,7 @@ ObjectId downedTarget(World& w, ObjectId u) {
         if (v == u || !dealableBy(w, faction, v)) continue;
         if (std::find(taken.begin(), taken.end(), v) != taken.end()) continue;
         const Transform* vt = w.get<Transform>(v);
-        const float d2 = dist2(vt->x, vt->z, ut->x, ut->z);
+        const float d2 = distSq(*vt, *ut);
         if (d2 <= bestD2) {
             best = v;
             bestD2 = d2;
@@ -357,7 +335,7 @@ void dealJobSystem(World& w, Terrain& t, float dt) {
             gap = flatGap(w, u, job.cage) - PROP_REACH;
         } else {
             const Transform* ut = w.get<Transform>(u);
-            gap = std::sqrt(dist2(ut->x, ut->z, job.toX, job.toZ)) - 1.5f;
+            gap = std::hypot(ut->x - job.toX, ut->z - job.toZ) - 1.5f;
         }
         if (gap > 0.0f) {
             if (!walkingNow(w, u)) {
@@ -521,7 +499,7 @@ void factionRulesSystem(World& w, float frameDt) {
         for (ObjectId o : units) {
             if (o == u || factionOf(w, o) != owner || outCold(w, o) || inPrisonerCage(w, o)) continue;
             const Transform* ot = w.get<Transform>(o);
-            if (dist2(ot->x, ot->z, ut->x, ut->z) > PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) continue;
+            if (distSq(*ot, *ut) > PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) continue;
             provoke(w, o, mine);
             if (Combat* cb = w.get<Combat>(o); cb && cb->target == NO_OBJECT && !w.has<Commandable>(o)) cb->target = u;
         }

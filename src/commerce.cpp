@@ -21,32 +21,9 @@ struct CommerceClock {
     long long traderDay = -1;
 };
 
-int ownerOf(World& w, ObjectId prop) {
-    const Owner* o = w.get<Owner>(prop);
-    return o ? o->faction : -1;
-}
-
-bool walkingNow(World& w, ObjectId u) {
-    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
-    const SoloMove* so = w.get<SoloMove>(u);
-    return so && so->next < so->waypoints.size();
-}
-
 int valueOf(int item) {
     const ItemDef* d = findItem(item);
     return d ? std::max(1, d->buyValue) : 1;
-}
-
-// A unit sent on an errand of the world's (shopping, raiding) leaves its own tasks alone meanwhile
-void holdTasks(World& w, ObjectId u) {
-    if (Behaviors* b = w.get<Behaviors>(u)) {
-        if (b->busy) stopAutoStep(w, u, *b);
-        b->wait = std::max(b->wait, 1.0f);
-    }
-}
-
-void releaseTasks(World& w, ObjectId u) {
-    if (Behaviors* b = w.get<Behaviors>(u)) b->wait = 0.0f;
 }
 
 void goTo(World& w, Terrain& t, ObjectId u, ObjectId target) {

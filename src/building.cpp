@@ -25,11 +25,6 @@ const PropInfo* infoOf(World& w, ObjectId e) {
     return p ? &propInfo(p->kind) : nullptr;
 }
 
-int ownerOf(World& w, ObjectId prop) {
-    const Owner* o = w.get<Owner>(prop);
-    return o ? o->faction : -1;
-}
-
 // 1 at Carpentry 1, up to 2 at the top level
 double carpentryPace(World& w, ObjectId u) {
     return 2.0 / workHoursFor(levelOf(statsOf(w, u), StatId::Carpentry));
@@ -73,13 +68,6 @@ bool walking(World& w, ObjectId u) {
     if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
     const SoloMove* so = w.get<SoloMove>(u);
     return so && so->next < so->waypoints.size();
-}
-
-BehaviorRule* ruleOf(Behaviors& b, BehaviorKind kind) {
-    for (BehaviorRule& r : b.rules) {
-        if (r.kind == kind) return &r;
-    }
-    return nullptr;
 }
 
 ObjectId mapGet(const std::unordered_map<long long, ObjectId>& m, long long key) {
@@ -788,7 +776,7 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
         for (int x = x0; x <= x1; ++x) {
             if (m.foundation.count(tileKey(x, z))) continue;
             const ObjectId e = placeBuiltProp(w, t, PropKind::Foundation, x + 0.5f, z + 0.5f, 0.0f, owner);
-            w.add(e, Foundation{ x, z, 1, 1, {} });
+            w.add(e, Foundation{ x, z, 1, 1 });
             w.add(e, Blueprint{});
             if (material != BuildMaterial::Wood) w.add(e, Material{ material });
             if (first == NO_OBJECT) first = e;
@@ -1705,7 +1693,7 @@ void settleBuildingsAfterLoad(World& w, Terrain& t) {
             for (int x = f.x0; x < f.x0 + f.w; ++x) {
                 const ObjectId n = owner >= 0 ? placeBuiltProp(w, t, PropKind::Foundation, x + 0.5f, z + 0.5f, 0.0f, owner)
                                               : makeProp(w, PropKind::Foundation, Transform{ x + 0.5f, t.heightAt(x + 0.5f, z + 0.5f), z + 0.5f });
-                w.add(n, Foundation{ x, z, 1, 1, {} });
+                w.add(n, Foundation{ x, z, 1, 1 });
                 if (planned) w.add(n, Blueprint{});
                 if (material != BuildMaterial::Wood) w.add(n, Material{ material });
             }

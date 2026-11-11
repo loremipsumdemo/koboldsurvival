@@ -22,13 +22,6 @@ std::string unitNameOf(World& w, ObjectId u) {
     const Name* nm = w.get<Name>(u);
     return nm && !nm->text.empty() ? nm->text : std::string(lang("UILABEL_UNNAMED_UNIT"));
 }
-
-std::string groupTitle(StatGroup group) {
-    return group == StatGroup::Attributes ? lang("UILABEL_ATTRIBUTES")
-         : group == StatGroup::Combat ? lang("UILABEL_COMBAT")
-         : group == StatGroup::Gathering ? lang("UILABEL_RESOURCE_GATHERING")
-         : group == StatGroup::Crafting ? lang("UILABEL_CRAFTING") : lang("UILABEL_UTILITY");
-}
 }
 
 void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,

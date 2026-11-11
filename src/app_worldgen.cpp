@@ -409,6 +409,36 @@ void App::refreshPlayedMaps() {
     }
 }
 
+// New Game with no world yet: the same world World Generation would make from its first page, left as it is
+void App::makeDefaultWorld() {
+    WorldGenSettings settings;
+    settings.seed = (uint32_t)SDL_GetTicksNS() | 1u;
+    settings.theme = themePresets()[mapStyleInfo(settings.style).themePreset].theme;
+    const std::string name = safeFileName(lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(settings.seed));
+    std::string err;
+    if (!writeMapFile(mapFilePath(name), settings, err)) {
+        refuse(err);
+        screen = Screen::Title;
+        return;
+    }
+    playSfx(Sfx::UiSaved);
+    openMapPick();
+}
+
+void App::drawDefaultWorldAsk() {
+    const float s = uiScaleFor(winH);
+    const DialogGeometry d = questionGeometry(winW, winH);
+    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
+    const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f };
+    renderer.beginUi(winW, winH);
+    drawMenuBackdrop();
+    renderer.drawThemedPanel(d.box);
+    renderer.drawUiTextCentered(lang("MISC_NO_WORLD_Q"), d.box.x + d.box.w * 0.5f, d.box.y + 30.0f * s, white);
+    renderer.drawUiTextCentered(lang("UILABEL_NO_WORLD_HINT"), d.box.x + d.box.w * 0.5f, d.box.y + 36.0f * s + 48.0f * s, gray);
+    drawScreenButtons(layoutButtons(Screen::DefaultWorldAsk, winW, winH, saves));
+    renderer.endUi();
+}
+
 void App::openWorldGen() {
     if (worldGenUi.settings.seed == 1) worldGenUi.settings.seed = (uint32_t)SDL_GetTicksNS() | 1u;
     defaultWorldGenName();

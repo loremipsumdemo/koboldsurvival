@@ -11,10 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, TameAnimals, DealWithDowned, AutoCraft, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, DealWithDowned, AutoCraft, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
                                                  "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
-                                                 "AutoHaulStall", "ManStall", "TameAnimals", "DealWithDowned", "AutoCraft" };
+                                                 "AutoHaulStall", "ManStall", "DealWithDowned", "AutoCraft" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -53,8 +53,6 @@ enum class BehaviorWait : int {
     NoLogs,
     NoStockpile,
     NoStallOrder,
-    NoCagedAnimal,   // (Tame Animals, a task no longer used: taming takes time alone)
-    NoRawMeat,       // Tame Animals: no raw meat carried or in your stores
     NoDowned,        // Deal with Downed: no knocked-out enemy near, or the faction's rules leave them be
     NoCraftOrder,    // Auto-Craft: no Crafting Order is short of stock with its ingredients in your stores
 };
@@ -122,8 +120,6 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::NoLogs: return lang("UILABEL_WAIT_NO_LOGS");
     case BehaviorWait::NoStockpile: return lang("UILABEL_WAIT_NO_STOCKPILE");
     case BehaviorWait::NoStallOrder: return lang("UILABEL_WAIT_NO_STALL_ORDER");
-    case BehaviorWait::NoCagedAnimal: return lang("UILABEL_WAIT_NO_CAGED_ANIMAL");
-    case BehaviorWait::NoRawMeat: return lang("UILABEL_WAIT_NO_RAW_MEAT");
     case BehaviorWait::NoDowned: return lang("UILABEL_WAIT_NO_DOWNED");
     case BehaviorWait::NoCraftOrder: return lang("UILABEL_WAIT_NO_CRAFT_ORDER");
     }
@@ -145,7 +141,7 @@ inline std::vector<BehaviorRule> defaultBehaviors() {
 inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
-           k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall || k == BehaviorKind::TameAnimals ||
+           k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall ||
            k == BehaviorKind::DealWithDowned || k == BehaviorKind::AutoCraft;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
@@ -197,7 +193,6 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND");
     case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL");
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL", { propName });
-    case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS");
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED");
     case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT");
     case BehaviorKind::Count: break;
@@ -228,7 +223,6 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::AutoHaulGround: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP");
     case BehaviorKind::AutoHaulStall: return lang("UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP");
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL_TIP", { propName });
-    case BehaviorKind::TameAnimals: return lang("UILABEL_BEHAVIOR_TAME_ANIMALS_TIP");
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED_TIP");
     case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT_TIP");
     case BehaviorKind::Count: break;

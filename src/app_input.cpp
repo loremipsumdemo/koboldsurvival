@@ -332,6 +332,8 @@ void App::onKeyDown() {
         } else if (screen == Screen::MapSelect) {
             if (mapPreview) mapPreview->stop();
             performAction(Action::ReturnToTitle, 0);
+        } else if (screen == Screen::DefaultWorldAsk) {
+            performAction(Action::DefaultWorldNo, 0);
         }
     }
 }

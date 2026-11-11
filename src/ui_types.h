@@ -7,7 +7,7 @@ struct PanelPlace {
     bool barBottom = false;
 };
 
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen, DefaultWorldAsk };
 
 enum class Action {
     Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration,
@@ -17,6 +17,7 @@ enum class Action {
     OverwriteYes, OverwriteNo,
     LoadYes, LoadNo,
     LeaveYes, LeaveNo,
+    DefaultWorldYes, DefaultWorldNo,
     SortName, SortTime,
     ScrollUp, ScrollDown,
     DeleteSave,

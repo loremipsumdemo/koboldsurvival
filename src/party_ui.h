@@ -67,3 +67,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                                      const std::vector<DropEntry>& drop);
 
 std::string partyMessage(const Party& p);
+
+// The heading of a stat group
+std::string groupTitle(StatGroup g);

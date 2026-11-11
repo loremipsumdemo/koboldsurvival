@@ -171,7 +171,6 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
         list->clear();
         for (const SaveRule& r : sg.rules) {
             BehaviorRule rule = r.rule;
-            if (rule.kind == BehaviorKind::TameAnimals) continue;
             if (ruleNamesProp(rule.kind)) {
                 if (r.prop < 0 || r.prop >= (int)props.size()) continue;
                 rule.prop = props[(size_t)r.prop];
@@ -330,7 +329,6 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     b.rules.clear();
     for (const SaveRule& r : u.rules) {
         BehaviorRule rule = r.rule;
-        if (rule.kind == BehaviorKind::TameAnimals) continue;   // no longer a task: taming takes time alone
         if (ruleNamesProp(rule.kind)) {
             if (r.prop < 0 || r.prop >= (int)props.size()) continue;
             rule.prop = props[(size_t)r.prop];

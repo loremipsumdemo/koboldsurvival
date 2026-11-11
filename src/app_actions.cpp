@@ -108,7 +108,8 @@ GearPrefs App::gearPrefs() {
 
 void App::performAction(Action action, int param) {
     const bool back = action == Action::Back || action == Action::ReturnToTitle || action == Action::CancelName ||
-                      action == Action::OverwriteNo || action == Action::LoadNo || action == Action::LeaveNo || action == Action::DeleteNo;
+                      action == Action::OverwriteNo || action == Action::LoadNo || action == Action::LeaveNo || action == Action::DeleteNo ||
+                      action == Action::DefaultWorldNo;
     playSfx(back ? Sfx::UiBack : action == Action::Resume ? Sfx::UiResume : Sfx::UiClick);
     if (partyAction(action, param) || savePanelAction(action, param)) return;
     switch (action) {
@@ -120,14 +121,20 @@ void App::performAction(Action action, int param) {
         }
         return;
     case Action::NewGame: {
-        const std::optional<MapChoice> mainMap = findMap(listMaps(), "packed", MAIN_MAP_STEM);
-        if (!mainMap) {
-            showNotice(lang("MISC_MAIN_MAP_MISSING"));
+        // With no world made yet, offer to make one from the default settings instead of sending a new player to World Generation
+        if (listMaps().empty()) {
+            screen = Screen::DefaultWorldAsk;
             return;
         }
         openMapPick();
         return;
     }
+    case Action::DefaultWorldYes:
+        makeDefaultWorld();
+        return;
+    case Action::DefaultWorldNo:
+        screen = Screen::Title;
+        return;
     case Action::WorldGeneration:
         openWorldGen();
         return;

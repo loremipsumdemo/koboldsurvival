@@ -70,7 +70,6 @@ UILABEL_SAVE	保存
 UILABEL_LOAD	读取
 UILABEL_NAME	名称
 UILABEL_NO_SAVES	还没有存档
-MISC_MAIN_MAP_MISSING	data.pak 中缺少主地图
 UILABEL_UNSAVED_WARNING	本局游戏中未保存的进度将会丢失。
 MISC_LEAVE_Q	不保存就离开吗？
 UILABEL_HOLD_DELETE	按住删除键 3 秒钟以确认。
@@ -354,7 +353,6 @@ UILABEL_MAP_PICK_LEVEL_NOTE	黄色：起始位置。绿色：你的单位。红�
 UILABEL_MAP_PICK_CAMPS_NOTE	黄色：起始位置。每个派系的营地以其自身颜色显示，并标出周围的空间。单位、道具和怪物会在游戏开始时放置。
 UILABEL_MAP_PICK_LEVEL_BAD	无法读取此关卡文件。
 UILABEL_GEN_DEFAULT_NAME	世界
-UILABEL_MAP_MAIN	主地图
 
 # ----------------------------------------------------------------------
 # Panels, HUD, time and the message log
@@ -860,14 +858,10 @@ UILABEL_WAIT_NO_STOCKPILE	你没有还有空间的堆放区
 MISC_BED_PUBLIC	公共：任何人都可以在此睡觉
 MISC_BED_PRIVATE	私人：仅限{0}
 UILABEL_WAIT_NO_STALL_ORDER	没有等待中的摊位订单
-UILABEL_WAIT_NO_CAGED_ANIMAL	没有需要喂食的笼中动物
-UILABEL_WAIT_NO_RAW_MEAT	身上和仓库里都没有生肉
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL	自动搬运到摊位
 UILABEL_BEHAVIOR_AUTO_HAUL_STALL_TIP	把在摊位进货窗口中选择的物品从仓库搬到摊位。每个订单只尝试一次，物品不见了就取消
 UILABEL_BEHAVIOR_MAN_STALL	看守摊位：{0}
 UILABEL_BEHAVIOR_MAN_STALL_TIP	作为店主站在{0}旁，让友好阵营的单位可以购买。列表中排在它之上的任务仍然优先
-UILABEL_BEHAVIOR_TAME_ANIMALS	驯养动物
-UILABEL_BEHAVIOR_TAME_ANIMALS_TIP	把生肉送给你驯养笼里的动物，身上没有时从你的仓库里取。每只动物每 6 小时喂一次
 UILABEL_BED_MAKE_PUBLIC	设为公共
 UILABEL_BED_MAKE_PRIVATE	设为私人
 UILABEL_MAN_STALL	看守摊位
@@ -1690,3 +1684,5 @@ UILABEL_CRAFT_STOCK	当前仓库中：{0}
 UILABEL_CRAFT_ORDER_HELP	每次只能选一个配方。设置库存量后，拥有“自动制作”任务的单位会在仓库数量不足且材料齐备时继续制作。成品必须先搬走才能再做。
 UILABEL_CRAFT_NONE_KNOWN	尚未掌握可在此制作的配方：请在研究台解锁
 UILABEL_CRAFT_TAKES	需要{0}
+MISC_NO_WORLD_Q	还没有生成过世界。要用全部默认设置现在生成一个吗？
+UILABEL_NO_WORLD_HINT	想自己选择地形和外观，请在标题画面使用“世界生成”。

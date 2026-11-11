@@ -123,6 +123,27 @@ bool upgrade15to16(Lines&) { return true; }
 // researched) and "craftorder" (an Advanced Crafting prop's recipe and stock). An older save keeps the rules of data/factions.txt, its bosses are
 // given a coloring on loading, and its caged animals start taming afresh. Its Nomads (faction 6) are the Factionless, by the same number.
 bool upgrade16to17(Lines&) { return true; }
+// Version 18 drops the foundation line's entrances (a gate list nothing used) and the Tame Animals task (taming takes time
+// alone). A step 17 file's foundation lines lose their last word, and its Tame Animals tasks and steps are removed.
+bool upgrade17to18(Lines& lines) {
+    Lines out;
+    out.reserve(lines.size());
+    for (std::string& line : lines) {
+        std::string key;
+        std::istringstream(line) >> key;
+        size_t start = 0, length = 0;
+        if (key == "foundation") {
+            if (!wordAt(line, 6, start, length)) return false;
+            line.erase(start - 1);
+        } else if (key == "task" || key == "step" || key == "btask") {
+            if (!wordAt(line, key == "btask" ? 2 : (key == "step" ? 2 : 3), start, length)) return false;
+            if (line.compare(start, length, "TameAnimals") == 0) continue;
+        }
+        out.push_back(std::move(line));
+    }
+    lines = std::move(out);
+    return true;
+}
 
 struct Step {
     int from;
@@ -140,6 +161,7 @@ constexpr Step STEPS[] = {
     { 14, upgrade14to15 },
     { 15, upgrade15to16 },
     { 16, upgrade16to17 },
+    { 17, upgrade17to18 },
 };
 }
 

@@ -397,6 +397,8 @@ struct App : AppSession {
     bool pressOnRename();
     void drawRename();
     void openMapPick();
+    void drawDefaultWorldAsk();
+    void makeDefaultWorld();
     void pickMap(int i);
     void pickLevel(int i);
     void updateMapPick();

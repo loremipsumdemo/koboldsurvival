@@ -104,6 +104,44 @@ void stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop);
 void stopAutoStep(World& w, ObjectId u, Behaviors& b);
 bool openTile(const Terrain& t, float x, float z);
 
+inline bool walkingNow(World& w, ObjectId u) {
+    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
+    const SoloMove* so = w.get<SoloMove>(u);
+    return so && so->next < so->waypoints.size();
+}
+
+inline BehaviorRule* ruleOf(Behaviors& b, BehaviorKind kind) {
+    for (BehaviorRule& r : b.rules) {
+        if (r.kind == kind) return &r;
+    }
+    return nullptr;
+}
+
+// The faction that owns a prop, or -1
+inline int ownerOf(World& w, ObjectId prop) {
+    const Owner* o = w.get<Owner>(prop);
+    return o ? o->faction : -1;
+}
+
+// A prop of this faction's: owned by it, or standing in its claim
+inline bool propOfFaction(World& w, const std::vector<Claim>& claims, ObjectId prop, int faction) {
+    if (const Owner* own = w.get<Owner>(prop)) return own->faction == faction;
+    const Transform* pt = w.get<Transform>(prop);
+    return pt && claimAt(claims, pt->x, pt->z, faction) != nullptr;
+}
+
+// A unit on an errand of its own (shopping, raiding, retreating, fetching food) leaves its tasks alone meanwhile
+inline void holdTasks(World& w, ObjectId u) {
+    if (Behaviors* b = w.get<Behaviors>(u)) {
+        if (b->busy) stopAutoStep(w, u, *b);
+        b->wait = std::max(b->wait, 1.0f);
+    }
+}
+
+inline void releaseTasks(World& w, ObjectId u) {
+    if (Behaviors* b = w.get<Behaviors>(u)) b->wait = 0.0f;
+}
+
 inline bool outOfAction(World& w, ObjectId u) {
     return outCold(w, u) || w.has<Carried>(u) || w.has<PlayingDead>(u) || lockedIn(w, u);
 }
