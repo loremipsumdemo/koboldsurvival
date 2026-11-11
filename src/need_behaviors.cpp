@@ -70,8 +70,7 @@ ObjectId sharerFor(World& w, ObjectId taker, bool food, int takerValue, float ra
     for (ObjectId g : w.view<Behaviors, Needs, Transform>()) {
         if (!canShareWith(w, g, taker, food, takerValue)) continue;
         const Transform* gt = w.get<Transform>(g);
-        const float dx = gt->x - tt->x, dz = gt->z - tt->z;
-        if (dx * dx + dz * dz > range * range) continue;
+        if (distSq(*gt, *tt) > range * range) continue;
         const int v = valueOf(*w.get<Needs>(g), food);
         if (best != NO_OBJECT && v <= bestValue) continue;
         best = g;

@@ -97,8 +97,7 @@ struct LevelBuilder {
     bool tileFree(GridPos g) {
         if (!t.walkable(g.x, g.y)) return false;
         const float x = g.x + 0.5f, z = g.y + 0.5f;
-        const float dx = x - spawn.x, dz = z - spawn.z;
-        if (dx * dx + dz * dz < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) return false;
+        if (distSq(x, z, spawn.x, spawn.z) < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) return false;
         return std::none_of(enemyTiles.begin(), enemyTiles.end(), [&](GridPos k) { return k == g; });
     }
 
@@ -253,8 +252,7 @@ struct LevelBuilder {
         int placed = 0;
         for (int attempt = 0; attempt < 4000 && placed < f.units; ++attempt) {
             GridPos g{ rng.range(tileAt(cx - radius), tileAt(cx + radius)), rng.range(tileAt(cz - radius), tileAt(cz + radius)) };
-            const float dx = g.x + 0.5f - cx, dz = g.y + 0.5f - cz;
-            if (dx * dx + dz * dz > radius * radius || !tileFree(g)) continue;
+            if (distSq(g.x + 0.5f, g.y + 0.5f, cx, cz) > radius * radius || !tileFree(g)) continue;
             const ObjectId e = placeUnit(g, f.id);
             if (firstUnit == NO_OBJECT) firstUnit = e;
             ++placed;
@@ -262,8 +260,7 @@ struct LevelBuilder {
         for (int attempt = 0; attempt < 20000 && placed < f.units; ++attempt) {
             GridPos g{ rng.range(tileAt(spawn.x - ENEMY_RANGE), tileAt(spawn.x + ENEMY_RANGE)),
                        rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
-            const float dx = g.x + 0.5f - spawn.x, dz = g.y + 0.5f - spawn.z;
-            if (dx * dx + dz * dz > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
+            if (distSq(g.x + 0.5f, g.y + 0.5f, spawn.x, spawn.z) > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
             const ObjectId e = placeUnit(g, f.id);
             if (firstUnit == NO_OBJECT) firstUnit = e;
             ++placed;
@@ -287,8 +284,7 @@ struct LevelBuilder {
             // Each camp keeps its room clear
             bool inCamp = false;
             for (const CampPlan& c : plan) {
-                const float dx = g.x + 0.5f - c.x, dz = g.y + 0.5f - c.z;
-                inCamp = inCamp || dx * dx + dz * dz <= CAMP_ROOM * CAMP_ROOM;
+                inCamp = inCamp || distSq(g.x + 0.5f, g.y + 0.5f, c.x, c.z) <= CAMP_ROOM * CAMP_ROOM;
             }
             if (inCamp) continue;
             bool kitHere = false;

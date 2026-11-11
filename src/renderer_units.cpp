@@ -59,8 +59,7 @@ float Renderer::bedLift(World& w, ObjectId u) const {
     const Transform* pt = w.get<Transform>(oc->prop);
     const Transform* ut = w.get<Transform>(u);
     if (!p || !pt || !ut || !isBed(p->kind)) return -1.0f;
-    const float dx = ut->x - pt->x, dz = ut->z - pt->z;
-    if (dx * dx + dz * dz > 0.25f * 0.25f) return -1.0f;
+    if (distSq(*ut, *pt) > 0.25f * 0.25f) return -1.0f;
     return std::max(0.0f, propBaseY(w, oc->prop) - ut->y + propTop(p->kind) * 0.5f);
 }
 

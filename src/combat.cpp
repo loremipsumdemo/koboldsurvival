@@ -129,8 +129,7 @@ void onAttacked(World& w, ObjectId a, ObjectId d) {
     const std::vector<ObjectId> near = w.view<Entity, Transform, Faction>();
     auto sees = [&](ObjectId u) {
         const Transform* tu = w.get<Transform>(u);
-        const float dx = tu->x - td->x, dz = tu->z - td->z;
-        return dx * dx + dz * dz <= WITNESS_RANGE * WITNESS_RANGE;
+        return distSq(*tu, *td) <= WITNESS_RANGE * WITNESS_RANGE;
     };
     if (!atWar && fd != FACTION_PLAYER) {
         for (ObjectId u : near) {

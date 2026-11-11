@@ -53,7 +53,7 @@ void App::pickClosestUnit() {
     for (ObjectId u : militaryUnits(world)) {
         const Transform* tr = world.get<Transform>(u);
         if (!tr) continue;
-        const float dx = tr->x - cam.focusX, dz = tr->z - cam.focusZ, d2 = dx * dx + dz * dz;
+        const float d2 = distSq(tr->x, tr->z, cam.focusX, cam.focusZ);
         if (best == NO_OBJECT || d2 < bestD2) {
             best = u;
             bestD2 = d2;

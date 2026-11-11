@@ -57,8 +57,7 @@ void factionSystem(World& w, float dt) {
             for (ObjectId o : units) {
                 if (!awake || o == u || factionOf(w, o) != en.faction || outCold(w, o) || inPrisonerCage(w, o)) continue;
                 const Transform* to = w.get<Transform>(o);
-                const float dx = to->x - tu->x, dz = to->z - tu->z;
-                if (dx * dx + dz * dz <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {
+                if (distSq(*to, *tu) <= PROVOKED_SIGHT_RANGE * PROVOKED_SIGHT_RANGE) {
                     seen = true;
                     break;
                 }

@@ -43,8 +43,7 @@ std::vector<Claim> playerClaims(World& w) {
 
 bool nearClaim(const std::vector<Claim>& claims, const Transform& at, float range) {
     for (const Claim& c : claims) {
-        const float dx = at.x - c.x, dz = at.z - c.z;
-        if (dx * dx + dz * dz <= range * range) return true;
+        if (distSq(at.x, at.z, c.x, c.z) <= range * range) return true;
     }
     return false;
 }

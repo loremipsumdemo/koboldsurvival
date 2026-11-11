@@ -29,8 +29,7 @@ bool allFootSamples(const Footprint& f, float cx, float cz, float yaw, Pred pred
 bool footprintsOverlap(const Footprint& fa, float ax, float az, float ayaw,
                        const Footprint& fb, float bx, float bz, float byaw) {
     const float reach = footprintReach(fa) + footprintReach(fb);
-    const float dx = ax - bx, dz = az - bz;
-    if (dx * dx + dz * dz > reach * reach) return false;
+    if (distSq(ax, az, bx, bz) > reach * reach) return false;
     return anyFootSample(fa, ax, az, ayaw, [&](float x, float z) {
         return insideFootprint(fb, x - bx, z - bz, byaw);
     });
