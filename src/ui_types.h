@@ -10,7 +10,7 @@ struct PanelPlace {
 enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen, DefaultWorldAsk };
 
 enum class Action {
-    Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration,
+    Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration, BuildingBlueprints,
     Resume, Save, Load, LoadSlot, LoadPicked, ReturnToTitle, Back,
     ConfirmName,
     CancelName,

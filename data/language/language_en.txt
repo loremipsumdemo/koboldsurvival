@@ -903,6 +903,8 @@ UILABEL_BUILD_GROUP_DEVELOPER	Developer
 UILABEL_BUILD_DEVELOPER	Developer Menu
 UILABEL_BUILD_OPEN_IT	Open
 UILABEL_BUILD_OPEN	Close
+UILABEL_BUILD_COST	{0}  [{1} logs]
+UILABEL_BUILD_COST_TILE	{0}  [{1} logs a tile]
 UILABEL_DEVELOPER_HELP	Pick something, then left-click the ground to spawn it. Right-click or Escape puts it down.
 UILABEL_DEV_TAB_SPAWN	Spawn
 UILABEL_DEV_THEME_TEMP	Temporary: the world's theme is not changed
@@ -920,6 +922,7 @@ UILABEL_DEV_KILL_HELP_RADIUS	Left-click the ground to kill every entity within t
 UILABEL_DEV_KILL_WARN	This kills every entity on the map, yours included. Hold the button for {0} seconds to go through.
 UILABEL_DEV_KILL_HOLD	Hold to kill all
 MISC_KILLED	Killed {0}
+MISC_CLAIM_GROWS	The {0} claim grows: it is now {1} tiles wide from its Altar
 UILABEL_DEV_KILL_DELETE_CORPSE	Delete the corpse
 UILABEL_DEV_KILL_DROP_ITEMS	Drop its items
 UILABEL_DEV_KILL_DELETE_ITEMS	Delete its items
@@ -940,6 +943,24 @@ UILABEL_DEV_DESTROY_HELP_RADIUS	Left-click the ground to destroy every prop and 
 UILABEL_DEV_DESTROY_WARN	This destroys every prop and building on the map, altars and your own included. Hold the button for {0} seconds to go through.
 UILABEL_DEV_DESTROY_HOLD	Hold to destroy all
 MISC_DESTROYED	Destroyed {0}
+UILABEL_BUILDING_BLUEPRINTS	Building Blueprints
+UILABEL_BLUEPRINT_TITLE	Building Blueprints
+UILABEL_BLUEPRINT_NAME	Name of the plan
+UILABEL_BLUEPRINT_DEFAULT_NAME	blueprint
+UILABEL_BLUEPRINT_WIDTH	Width
+UILABEL_BLUEPRINT_DEPTH	Depth
+UILABEL_BLUEPRINT_FLOORS	Floors
+UILABEL_BLUEPRINT_CLEAR	Clear
+UILABEL_BLUEPRINT_EXIT	Exit
+UILABEL_BLUEPRINT_EXIT_SURE	Unsaved: press again
+UILABEL_BLUEPRINT_HELP	Build in the marked box with the Build tab: pieces go down finished. Only what is inside the box is saved.
+MISC_BLUEPRINT_SAVED	Saved {0}
+MISC_BLUEPRINT_LOADED	Opened {0}
+MISC_BLUEPRINT_NEEDS_NAME	Give the plan a name first
+MISC_BLUEPRINT_OUTSIDE	{0} pieces are outside the box and will not be saved: press Save again to save without them
+MISC_BLUEPRINT_NO_PLANS	No plans are saved yet
+MISC_BLUEPRINT_NO_FOUNDATION	A plan needs a foundation of 3 by 3 or more
+MISC_BLUEPRINT_NO_DOOR	A plan needs a door
 UILABEL_LOCK	Lock
 MISC_BUILD_SEALED	That ground is claimed by another faction
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
@@ -960,7 +981,6 @@ MISC_BUILD_NEEDS_FOUNDATION	This goes on a foundation of yours
 MISC_BUILD_FOUNDATION_UNFINISHED	The foundation must be finished first
 MISC_BUILD_TILE_TAKEN	Something is already built on that tile
 UILABEL_BREAK	Break
-MISC_BUILD_EDGES_OPEN	Every edge tile of the building needs a wall or a door on this floor first
 MISC_FLOORS_COLLAPSE	With no walls or doors left under it, a floor falls in
 UILABEL_MATERIAL_TITLE	Build the {0} out of
 UILABEL_MATERIAL_WOOD	Wood (Wood Logs)

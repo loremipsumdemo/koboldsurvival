@@ -87,6 +87,8 @@ set(SIM_SOURCES
     src/faction_rules.cpp
     src/recipes.cpp
     src/building.cpp
+    src/build_plan.cpp
+    src/npc_builders.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp
     src/orders.cpp
@@ -129,6 +131,7 @@ target_link_libraries(kobold_sim PUBLIC SDL3::SDL3)
 
 add_executable(koboldsurvival
     src/play_state.cpp
+    src/app_blueprint.cpp
     src/storage.cpp
     src/trade.cpp
     src/selection.cpp
@@ -265,7 +268,7 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
 # sim_step plays with no window and checks the same seed gives the same game.
 # terrain_check checks the ground the game walks on. world_gen_check checks the generator and the map and level files.
 enable_testing()
-foreach(test save_roundtrip data_check sim_step terrain_check world_gen_check)
+foreach(test save_roundtrip data_check sim_step terrain_check world_gen_check building_plan_check)
     add_executable(${test} tests/${test}.cpp)
     target_link_libraries(${test} PRIVATE kobold_sim)
     add_dependencies(${test} game_data)
@@ -274,7 +277,7 @@ endforeach()
 
 target_compile_definitions(save_roundtrip PRIVATE KOBOLD_TEST_SAVES="${CMAKE_SOURCE_DIR}/tests/saves")
 
-foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check world_gen_check)
+foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check world_gen_check building_plan_check)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>

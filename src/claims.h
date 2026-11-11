@@ -10,6 +10,9 @@
 constexpr double ALTAR_HEALTH = 10.0;
 constexpr double ALTAR_RECOVER_PER_HOUR = 1.0;
 constexpr float CLAIM_RADIUS = 25.0f;
+// Every complete building (building.h) in an Altar's claim adds this much to its radius, if no other claim is in the way
+constexpr float CLAIM_GROWTH_STEP = 2.0f;
+constexpr int CLAIM_GROWTH_MOST = 20;
 // A camp: a campfire away from its own faction's Altar claim claims this much land around it (it locks nothing)
 constexpr float CAMP_CLAIM_RADIUS = 10.0f;
 constexpr double ALTAR_DECAY_HOURS = 48.0;
@@ -25,7 +28,15 @@ struct Claim {
     bool camp = false;            // a campfire's: smaller, and it locks no stores
 };
 
+// On an Altar: how many times its claim has grown. Saved.
+struct ClaimGrowth {
+    int steps = 0;
+};
 std::vector<Claim> claimsOf(World& w);
+// An Altar's claim grows when its faction has more complete buildings in it than it has grown by, and the room is there:
+// no other Altar's claim within reach of the larger one. A camp of another faction under the larger claim is destroyed.
+// It looks only when there is something earned, and when claims have changed since it last found no room.
+void claimGrowthSystem(World& w, float dt);
 const Claim* claimAt(const std::vector<Claim>& claims, float x, float z, int owner = -1);
 // A spot a faction's Bedroll may lie on (props.txt flag needs_camp): in a claim of the faction's (its Altar's, or a
 // camp's), or within a camp's reach of a Campfire that is the faction's or no one's

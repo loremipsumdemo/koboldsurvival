@@ -110,7 +110,7 @@ bool App::mouseDownOnPanels() {
                         }
                         const BuildPick pick = rows[i].pick;
                         if (!pick.any()) break;
-                        if (!buildAnywhere(pick) && !selectionInClaim(world)) break;
+                        if (!buildAnywhere(pick) && !selectionInClaim(world) && !bpEdit.active) break;
                         if (session.buildPick == pick) {
                             session.buildPick = {};
                         } else if (pick.placing() && takesMaterial(pick.kind)) {
@@ -247,7 +247,7 @@ bool App::mouseDownOnPanels() {
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
                 const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey);
                 if (why == BuildCheck::Ok) {
-                    placeBuiltProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f, FACTION_PLAYER, storey);
+                    placeCostedProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f, FACTION_PLAYER, storey);
                     playSfx(Sfx::UiClick);
                 } else {
                     refuse(lang(buildRefusalKey(why)));

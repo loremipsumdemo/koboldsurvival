@@ -15,7 +15,7 @@
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
 // raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
 // version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
-inline constexpr int SAVE_VERSION = 18;
+inline constexpr int SAVE_VERSION = 19;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
 
@@ -91,6 +91,13 @@ struct SaveGround {
     GroundItem item;
 };
 
+// A building laid from a plan, on its first foundation tile (npc_builders.h)
+struct SaveSite {
+    std::string plan;
+    int x = 0, z = 0, turns = 0, material = 0, stage = 0;
+    double hours = 0.0;
+};
+
 struct SaveProp {
     int kind = 0;
     Transform at;
@@ -106,6 +113,8 @@ struct SaveProp {
     std::vector<ItemStack> bonesItems;
     std::optional<Health> health;
     std::optional<PropVisual> visual;   // from version 17: how it is drawn apart from where it stands
+    std::optional<int> claimSteps;      // from version 19: an Altar's claim, grown this many steps
+    std::optional<SaveSite> site;       // from version 19: a building laid from a plan, being built
     std::string craftRecipe;            // from version 17: an Advanced Crafting prop's order: its recipe's key, or empty
     int craftKeep = 0;                  //   and the stock it keeps
     std::optional<Foundation> foundation;

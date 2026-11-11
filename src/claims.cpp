@@ -5,6 +5,7 @@
 #include "spatial.h"
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
 #include "build.h"
 #include "factions.h"
 #include "hostility.h"
@@ -14,12 +15,13 @@
 std::vector<Claim> claimsOf(World& w) {
     std::vector<Claim> out;
     for (ObjectId e : w.view<Prop, Transform, Owner>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).claimsLand || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
+        if (!propInfo(w.get<Prop>(e)->kind).claimsLand || w.has<Blueprint>(e) || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
         Claim c;
         c.altar = e;
         c.x = w.get<Transform>(e)->x;
         c.z = w.get<Transform>(e)->z;
         c.owner = w.get<Owner>(e)->faction;
+        if (const ClaimGrowth* g = w.get<ClaimGrowth>(e)) c.radius = CLAIM_RADIUS + CLAIM_GROWTH_STEP * (float)g->steps;
         out.push_back(c);
     }
     // Camps: a campfire (yours or another faction's) that stands outside its own faction's Altar claim
@@ -31,9 +33,15 @@ std::vector<Claim> claimsOf(World& w) {
         const Transform* t = w.get<Transform>(e);
         bool atHome = false;
         for (size_t i = 0; i < altars && !atHome; ++i) {
-            atHome = out[i].owner == faction && distSq(t->x, t->z, out[i].x, out[i].z) <= CLAIM_RADIUS * CLAIM_RADIUS;
+            atHome = out[i].owner == faction && distSq(t->x, t->z, out[i].x, out[i].z) <= out[i].radius * out[i].radius;
         }
         if (atHome) continue;
+        // Another faction's Altar claim takes priority: a campfire standing in it holds no claim of its own
+        bool underAltar = false;
+        for (size_t i = 0; i < altars && !underAltar; ++i) {
+            underAltar = out[i].owner != faction && distSq(t->x, t->z, out[i].x, out[i].z) <= out[i].radius * out[i].radius;
+        }
+        if (underAltar) continue;
         Claim c;
         c.altar = e;
         c.x = t->x;
@@ -327,4 +335,83 @@ void removeProp(World& w, ObjectId e) {
     w.destroy(e);
     if (owner >= 0) abandonClaim(w, at.x, at.z, radius, owner);
     dropStacks(w, at, held, storey);
+}
+
+namespace {
+// What claim growth remembers between looks. Not saved: a loaded game looks again.
+struct ClaimWatch {
+    float timer = 0.0f;
+    std::unordered_map<ObjectId, unsigned long long> noRoomSeen;   // an Altar, and the claims as they were when it had no room
+};
+
+// The claims as they stand, in one number: any claim-making prop added, lost, moved or grown changes it
+unsigned long long claimsSignature(const std::vector<Claim>& claims) {
+    unsigned long long h = 1469598103934665603ULL;
+    auto mix = [&](unsigned long long v) { h = (h ^ v) * 1099511628211ULL; };
+    for (const Claim& c : claims) {
+        mix((unsigned long long)c.altar);
+        mix((unsigned long long)std::lround(c.x * 4.0f));
+        mix((unsigned long long)std::lround(c.z * 4.0f));
+        mix((unsigned long long)std::lround(c.radius * 4.0f));
+        mix(c.camp ? 1ULL : 0ULL);
+        mix((unsigned long long)(c.owner + 1));
+    }
+    return h;
+}
+}
+
+void claimGrowthSystem(World& w, float dt) {
+    ClaimWatch& watch = w.resource<ClaimWatch>();
+    watch.timer += dt;
+    constexpr float LOOK_EVERY_SECONDS = 4.0f;
+    if (watch.timer < LOOK_EVERY_SECONDS) return;
+    watch.timer = 0.0f;
+    std::vector<Claim> claims = claimsOf(w);
+    bool anyAltar = false;
+    for (const Claim& c : claims) anyAltar = anyAltar || !c.camp;
+    if (!anyAltar) return;
+    const BuildingMap map = buildingMap(w);
+    const std::vector<BuildingCluster> buildings = buildingClusters(w, map);
+    std::vector<ObjectId> altars;
+    for (const Claim& c : claims) {
+        if (!c.camp) altars.push_back(c.altar);
+    }
+    for (ObjectId altar : altars) {
+        for (;;) {
+            const std::vector<Claim> standing = claimsOf(w);
+            const Claim* held = claimOf(standing, altar);
+            if (!held) break;
+            const Claim c = *held;   // as it stands after any growth
+            int steps = 0;
+            if (const ClaimGrowth* g = w.get<ClaimGrowth>(altar)) steps = g->steps;
+            int earned = 0;
+            for (const BuildingCluster& b : buildings) {
+                if (b.complete && b.owner == c.owner && distSq(b.centerX(), b.centerZ(), c.x, c.z) <= c.radius * c.radius) ++earned;
+            }
+            if (earned <= steps || steps >= CLAIM_GROWTH_MOST) break;
+            const std::vector<Claim> now = claimsOf(w);
+            const unsigned long long sig = claimsSignature(now);
+            auto seen = watch.noRoomSeen.find(altar);
+            if (seen != watch.noRoomSeen.end() && seen->second == sig) break;   // nothing has changed since it found no room
+            const float bigger = c.radius + CLAIM_GROWTH_STEP;
+            bool room = true;
+            for (const Claim& k : now) {
+                if (k.altar == altar || k.camp) continue;
+                if (claimsOverlap(c.x, c.z, bigger, k.x, k.z, k.radius)) room = false;
+            }
+            if (!room) {
+                watch.noRoomSeen[altar] = sig;
+                break;
+            }
+            watch.noRoomSeen.erase(altar);
+            if (ClaimGrowth* g = w.get<ClaimGrowth>(altar)) ++g->steps;
+            else w.add(altar, ClaimGrowth{ 1 });
+            // A camp of another faction that the larger claim reaches is destroyed: an Altar's land comes first
+            for (const Claim& k : now) {
+                if (!k.camp || k.owner == c.owner) continue;
+                if (claimsOverlap(c.x, c.z, bigger, k.x, k.z, k.radius)) breakBuilding(w, k.altar);
+            }
+            if (c.owner == FACTION_PLAYER) queueLog(w, langf("MISC_CLAIM_GROWS", { factionName(c.owner), std::to_string((int)bigger) }), LogKind::Other);
+        }
+    }
 }

@@ -350,6 +350,7 @@ bool App::mouseDownOnPopups() {
     if (pressOnFactionRules()) return true;
     if (pressOnCraftWindow()) return true;
     if (pressOnDeveloper()) return true;
+    if (pressOnBlueprint()) return true;
     if (pressOnGhosts()) return true;
     if (pressOnBehaviorGroups()) return true;
     if (pressOnStoreFilter()) return true;

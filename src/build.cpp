@@ -51,9 +51,8 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
     z = snapCoord(gz, h);
 }
 
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey) {
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder) {
     const Footprint& f = propInfo(kind).foot;
-    const int builder = FACTION_PLAYER;
     const float yaw = 0.0f;
 
     // On an upper floor, every bit of it must stand on a finished floor of yours on that level

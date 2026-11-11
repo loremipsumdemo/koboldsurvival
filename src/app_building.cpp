@@ -81,6 +81,8 @@ void App::updateFloorView() {
         const auto it = m.floor.find(levelKey(px, pz, level));
         if (it != m.floor.end() && !world.has<Blueprint>(it->second)) top = level;
     }
+    // In the Building Blueprints editor every floor of the plan may be looked at, whatever is under the pivot
+    if (bpEdit.active) top = std::min(STOREY_MAX, bpEdit.floors - 1);
     pivotTopFloor = top;
     if (!session.floorManual && followUnit != NO_OBJECT && world.has<Transform>(followUnit)) session.floorLevel = storeyOf(world, followUnit);
     // No higher than the top floor under the pivot, in Manual too: off a building (or with no floor over this tile),

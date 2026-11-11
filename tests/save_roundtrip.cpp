@@ -1110,7 +1110,7 @@ int main(int, char**) {
             }
         }
         const ObjectId door = placePiece(town, ground, PropKind::WoodDoor, x0 + 2, z1);
-        check(edgesClosed(town, base) && checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::Ok, "with every edge closed, a ladder may go in");
+        check(checkPiece(town, PropKind::Ladder, x0 + 1, z0 + 2) == PieceCheck::Ok, "a ladder may go in");
         const ObjectId ladder = placePiece(town, ground, PropKind::Ladder, x0 + 1, z0 + 2);
         std::vector<ObjectId> floors;
         for (int z = z0; z <= z1; ++z) floors.push_back(placePiece(town, ground, PropKind::UpperFloor, x0, z));

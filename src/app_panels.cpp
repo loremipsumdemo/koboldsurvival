@@ -464,6 +464,10 @@ void App::moveSelectedTo(float x, float z) {
 }
 
 bool App::overPanels(float x, float y, int W, int H) {
+    if (bpEdit.active) {
+        const BlueprintLayout bl = layoutBlueprint(W, H, bpEdit);
+        if (bl.panel.contains(x, y) || (bpEdit.listOpen && !bpEdit.folded && bl.list.contains(x, y))) return true;
+    }
     if (editing && editor.useOwnUi) {
         const EditorLayout editorLayout = layoutEditor(W, H, true);
         return editorLayout.panel.contains(x, y) || editorLayout.uiToggle.contains(x, y) || (mapOpen && worldMapFor(W, H).window.contains(x, y));

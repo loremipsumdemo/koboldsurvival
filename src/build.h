@@ -20,7 +20,8 @@ enum class BuildCheck {
 void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
 
 // storey: the floor it goes on (0 the ground; above that, it must stand on a finished upper floor of yours)
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0);
+// builder: the faction placing it (yours by default)
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0, int builder = FACTION_PLAYER);
 
 bool buildAnywhere(const BuildPick& pick);
 bool selectionInClaim(World& w);

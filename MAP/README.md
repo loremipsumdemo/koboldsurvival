@@ -8,3 +8,5 @@ The game ships with no map: New Game offers to make one from the default setting
 Any `.map` file here shows up in New Game's map choice and in World Generation's Existing Maps.
 
 Levels made for these maps go in [LEVEL](LEVEL).
+
+Plans for the buildings other factions build go in [BLUEPRINT](BLUEPRINT).
