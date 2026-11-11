@@ -1,4 +1,4 @@
-// Checks the ground the game walks on, using the main map. With a path, also writes a fingerprint of everything the
+// Checks the ground the game walks on, using a generated map. With a path, also writes a fingerprint of everything the
 // simulation sees of the map there, to compare a change against the game before it. Runs beside data.pak.
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -15,6 +15,7 @@
 #include "savegame.h"
 #include "simulation.h"
 #include "terrain.h"
+#include "world_gen.h"
 
 namespace {
 int failures = 0;
@@ -37,7 +38,14 @@ struct Fingerprint {
     void add(const T& v) { add(&v, sizeof v); }
 };
 
-constexpr const char* MAIN_MAP = "pak:data/map/main";
+// The smallest generated map, from the default settings and a fixed seed
+std::shared_ptr<const ChunkSource> testMapSource() {
+    WorldGenSettings settings;
+    settings.seed = 1;
+    settings.size = WORLD_GEN_SIZES[0];
+    settings.theme = themePresets()[mapStyleInfo(settings.style).themePreset].theme;
+    return generatedChunkSource(settings);
+}
 
 // A huge world made up on the spot: gentle hills, with a walled-off block of water every 32 tiles
 class HugeSource : public ChunkSource {
@@ -132,7 +140,7 @@ int main(int argc, char** argv) {
     loadLanguage(LANGUAGE_DEFAULT_ID, err);
 
     Terrain terrain;
-    check(terrain.openWorld(MAIN_MAP, err), "the main map opens " + err);
+    terrain.open(testMapSource());
     const int size = terrain.size();
 
     // Every tile, sampled at several points inside it
@@ -153,7 +161,7 @@ int main(int argc, char** argv) {
             }
         }
     }
-    check(walkableTiles > 0, "the main map has ground to walk on");
+    check(walkableTiles > 0, "the generated map has ground to walk on");
 
     // Paths, spread over the map
     Fingerprint paths;
@@ -170,9 +178,9 @@ int main(int argc, char** argv) {
             paths.add(p.z);
         }
     }
-    check(foundPaths > 0, "paths are found on the main map");
+    check(foundPaths > 0, "paths are found on the generated map");
 
-    // A stretch of play on the real map
+    // A stretch of play on the generated map
     World world;
     Rng rng;
     rng.gen.seed(4242);
@@ -183,9 +191,9 @@ int main(int argc, char** argv) {
         simStep(world, terrain, rng, gs, STEP, false);
         takeEvents(world);
     }
-    check(!world.view<Entity, Transform>().empty(), "units are still there after thirty seconds on the main map");
+    check(!world.view<Entity, Transform>().empty(), "units are still there after thirty seconds on the generated map");
 
-    const SaveData end = captureWorld(world, gs, Camera{}, rng, 1000, "test", MapChoice{ "packed", "main", "main", "" });
+    const SaveData end = captureWorld(world, gs, Camera{}, rng, 1000, "test", MapChoice{ MAP_SOURCE_FILE, "test", "test", "" });
     const char* played = "terrain_check_play.sav";
     writeSaveFile(played, end);
     Fingerprint play;

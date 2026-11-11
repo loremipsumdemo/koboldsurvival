@@ -47,10 +47,8 @@ inline int storeyAtHeight(float aboveGround) {
 }
 
 // A foundation: the tiles it covers. Each is a single tile now; older saves had whole rectangles, split when opened.
-// entrances is no longer used but is kept for old saves.
 struct Foundation {
     int x0 = 0, z0 = 0, w = 0, h = 0;
-    std::vector<long long> entrances;
     bool contains(int x, int z) const { return x >= x0 && z >= z0 && x < x0 + w && z < z0 + h; }
     bool onEdge(int x, int z) const { return contains(x, z) && (x == x0 || z == z0 || x == x0 + w - 1 || z == z0 + h - 1); }
 };

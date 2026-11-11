@@ -21,11 +21,9 @@ struct MapChoice {
     std::string path;
 };
 
-constexpr const char* MAIN_MAP_STEM = "main";
 // A map made by World Generation, from a file in the MAP folder
 constexpr const char* MAP_SOURCE_FILE = "file";
 
-bool mainMapPacked();
 std::vector<MapChoice> listMaps();
 using LoadProgress = std::function<void(float, const std::string&)>;
 

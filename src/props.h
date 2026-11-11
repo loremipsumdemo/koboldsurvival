@@ -189,7 +189,7 @@ struct PropInfo {
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
     bool wheelbarrow = false;    // its occupant pushes it about in front of them, with its store
     bool pulled = false;         // with wheelbarrow: drawn behind its puller, slowing all but a large animal
-    bool taming = false;         // with cage: only an animal goes in, and Tame Animals feeds it
+    bool taming = false;         // with cage: only an animal goes in
     bool moves = false;          // a vehicle: goes wherever it is taken while the game runs (airship and wheelbarrow imply it)
     bool foundation = false;     // laid by dragging a rectangle; the pieces below are built on it
     bool onFoundation = false;   // only on a finished foundation tile of the builder's

@@ -38,16 +38,8 @@ void main() {
 }
 )";
 
-const char* GLYPH_FS = R"(
-#version 330 core
-in vec2 vUV;
-uniform sampler2D uTex;
-uniform vec4 uTint;
-uniform float uSat;   // 1 keeps the colors, 0 is fully gray
-uniform float uShine;   // how far a white shine has crossed, up to 1. 0 is no shine
-uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
-uniform float uHue;      // turns of hue shift, a boss's Coloration (0 leaves the colors as they are)
-out vec4 FragColor;
+// The hue shift both model fragment shaders share; each is a head and a tail with this between them
+const char* HUE_TURN_GLSL = R"(
 // A hue shift by h turns: the color's hue moved round the color wheel, its saturation and value kept, so grays stay gray
 // and shading stays as it was. Not a colorize: every color in the texture moves by the same angle.
 vec3 hueTurn(vec3 c, float h) {
@@ -61,6 +53,23 @@ vec3 hueTurn(vec3 c, float h) {
     vec3 t = abs(fract(hsv.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
     return hsv.z * mix(vec3(1.0), clamp(t - 1.0, 0.0, 1.0), hsv.y);
 }
+)";
+
+std::string withHueTurn(const char* head, const char* tail) { return std::string(head) + HUE_TURN_GLSL + tail; }
+
+const char* GLYPH_FS_HEAD = R"(
+#version 330 core
+in vec2 vUV;
+uniform sampler2D uTex;
+uniform vec4 uTint;
+uniform float uSat;   // 1 keeps the colors, 0 is fully gray
+uniform float uShine;   // how far a white shine has crossed, up to 1. 0 is no shine
+uniform vec4 uFaction;   // a faction's color the texture's colors are pulled toward, by a (0 leaves them as they are)
+uniform float uHue;      // turns of hue shift, a boss's Coloration (0 leaves the colors as they are)
+out vec4 FragColor;
+)";
+
+const char* GLYPH_FS_TAIL = R"(
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;   // keep only the visible pixels
@@ -104,8 +113,8 @@ void main() {
 }
 )";
 
-// GLYPH_FS for instanced models: the faction color and saturation come with each copy instead of from uniforms
-const char* MODEL_INST_FS = R"(
+// The glyph fragment shader for instanced models: the faction color and saturation come with each copy instead of from uniforms
+const char* MODEL_INST_FS_HEAD = R"(
 #version 330 core
 in vec2 vUV;
 in vec4 vFaction;
@@ -118,19 +127,9 @@ uniform float uGrainOn;     // 1 for building pieces, 0 for everything else
 uniform float uGrainTile;   // world units one copy of the texture covers
 uniform vec4 uTint;
 out vec4 FragColor;
-// A hue shift by h turns: the color's hue moved round the color wheel, its saturation and value kept, so grays stay gray
-// and shading stays as it was. Not a colorize: every color in the texture moves by the same angle.
-vec3 hueTurn(vec3 c, float h) {
-    if (h == 0.0) return c;
-    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-    float d = q.x - min(q.w, q.y);
-    vec3 hsv = vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
-    hsv.x = fract(hsv.x + h);
-    vec3 t = abs(fract(hsv.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
-    return hsv.z * mix(vec3(1.0), clamp(t - 1.0, 0.0, 1.0), hsv.y);
-}
+)";
+
+const char* MODEL_INST_FS_TAIL = R"(
 void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;
@@ -595,7 +594,7 @@ bool Renderer::init(TTF_Font* hudFont, TTF_Font* uiFont,
 
 bool Renderer::initGl() {
     colorProgram_ = linkProgram("colour", COLOR_VS, COLOR_FS);
-    glyphProgram_ = linkProgram("glyph", GLYPH_VS, GLYPH_FS);
+    glyphProgram_ = linkProgram("glyph", GLYPH_VS, withHueTurn(GLYPH_FS_HEAD, GLYPH_FS_TAIL).c_str());
     if (!colorProgram_ || !glyphProgram_) return false;
     uMVPColor_ = glGetUniformLocation(colorProgram_, "uMVP");
     uMVPGlyph_ = glGetUniformLocation(glyphProgram_, "uMVP");
@@ -606,7 +605,7 @@ bool Renderer::initGl() {
     uFaction_ = glGetUniformLocation(glyphProgram_, "uFaction");
     setGlyphDefaults(glyphProgram_);
 
-    modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, MODEL_INST_FS);
+    modelInstProgram_ = linkProgram("instanced model", MODEL_INST_VS, withHueTurn(MODEL_INST_FS_HEAD, MODEL_INST_FS_TAIL).c_str());
     if (modelInstProgram_) {
         uVPInst_ = glGetUniformLocation(modelInstProgram_, "uVP");
         setGlyphDefaults(modelInstProgram_);

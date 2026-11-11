@@ -86,12 +86,8 @@ void App::openMapPick() {
     mapPick = MapPickUi{};
     mapPick.maps = listMaps();
     pendingLevel.clear();
-    int first = 0;
-    for (size_t i = 0; i < mapPick.maps.size(); ++i) {
-        if (mapPick.maps[i].source == "packed" && mapPick.maps[i].stem == MAIN_MAP_STEM) first = (int)i;
-    }
     screen = Screen::MapSelect;
-    if (!mapPick.maps.empty()) pickMap(first);
+    if (!mapPick.maps.empty()) pickMap(0);
 }
 
 void App::pickMap(int i) {

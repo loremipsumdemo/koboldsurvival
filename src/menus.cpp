@@ -223,6 +223,13 @@ std::vector<Button> layoutButtons(Screen screen, int W, int H, const std::vector
         add(lang("UILABEL_RETURN_TO_TITLE"), Action::ReturnToTitle, x, y);
         break;
     }
+    case Screen::DefaultWorldAsk: {
+        // New Game with no generated world: use all the default settings to make one, or go back
+        const DialogGeometry d = questionGeometry(W, H);
+        out.push_back(Button{ lang("UILABEL_YES"), d.yes, Action::DefaultWorldYes });
+        out.push_back(Button{ lang("UILABEL_NO"), d.no, Action::DefaultWorldNo });
+        break;
+    }
     case Screen::Playing:
     case Screen::Settings:
     case Screen::MapSelect:
@@ -271,6 +278,7 @@ Soundtrack soundtrackFor(Screen screen) {
     case Screen::Pause: return soundtrackNamed("Pause");
     case Screen::Playing: return soundtrackNamed("Playing");
     case Screen::WorldGen: return soundtrackNamed("Settings");
+    case Screen::DefaultWorldAsk: return soundtrackNamed("Title");
     }
     return {};
 }

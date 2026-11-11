@@ -12,24 +12,6 @@ struct CampClock {
     float forageIn = 0.0f;
 };
 
-bool walkingNow(World& w, ObjectId u) {
-    if (w.has<Route>(u) || w.has<Climbing>(u)) return true;
-    const SoloMove* so = w.get<SoloMove>(u);
-    return so && so->next < so->waypoints.size();
-}
-
-// Its own tasks wait while it retreats or fetches food
-void holdTasks(World& w, ObjectId u) {
-    if (Behaviors* b = w.get<Behaviors>(u)) {
-        if (b->busy) stopAutoStep(w, u, *b);
-        b->wait = std::max(b->wait, 1.0f);
-    }
-}
-
-void releaseTasks(World& w, ObjectId u) {
-    if (Behaviors* b = w.get<Behaviors>(u)) b->wait = 0.0f;
-}
-
 float dist(const Transform& a, float x, float z) { return std::hypot(a.x - x, a.z - z); }
 
 bool isFood(int item) {

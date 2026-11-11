@@ -8,11 +8,6 @@
 #include "mobs.h"
 #include "stats.h"
 
-namespace {
-int pickedIndex(const Party& p, const PartyUi& ui) {
-    return std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
-}
-
 std::string groupTitle(StatGroup g) {
     switch (g) {
     case StatGroup::Attributes: return lang("UILABEL_ATTRIBUTES");
@@ -23,6 +18,12 @@ std::string groupTitle(StatGroup g) {
     }
     return "";
 }
+
+namespace {
+int pickedIndex(const Party& p, const PartyUi& ui) {
+    return std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
+}
+
 }
 
 const PartyMember& pickedMember(const Party& p, const PartyUi& ui) {

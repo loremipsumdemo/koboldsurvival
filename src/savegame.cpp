@@ -126,10 +126,7 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
         w.line("visual", i, v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz);
     }
     if (p.foundation) {
-        std::ostringstream gates;
-        for (size_t k = 0; k < p.foundation->entrances.size(); ++k) gates << (k ? "," : "") << p.foundation->entrances[k];
-        w.line("foundation", i, p.foundation->x0, p.foundation->z0, p.foundation->w, p.foundation->h,
-               p.foundation->entrances.empty() ? std::string("-") : gates.str());
+        w.line("foundation", i, p.foundation->x0, p.foundation->z0, p.foundation->w, p.foundation->h);
     }
     if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
     if (p.material > 0) w.line("material", i, p.material);
@@ -461,19 +458,8 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "foundation", [](Line& l) {
             SaveProp* p = l.prop();
             Foundation f;
-            std::string gates;
-            if (!p || !l.read(f.x0, f.z0, f.w, f.h, gates)) return false;
+            if (!p || !l.read(f.x0, f.z0, f.w, f.h)) return false;
             if (f.w < 1 || f.h < 1 || f.w > FOUNDATION_MAX || f.h > FOUNDATION_MAX) return false;
-            if (gates != "-") {
-                std::istringstream in(gates);
-                std::string one;
-                while (std::getline(in, one, ',')) {
-                    char* end = nullptr;
-                    const long long key = std::strtoll(one.c_str(), &end, 10);
-                    if (end == one.c_str()) return false;
-                    f.entrances.push_back(key);
-                }
-            }
             p->foundation = std::move(f);
             return true;
         } },

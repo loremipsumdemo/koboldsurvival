@@ -1,7 +1,0 @@
-format 2
-name main
-created 1792988723503
-size 640
-chunk 64
-heightScale 0.1
-floorY -0.88
