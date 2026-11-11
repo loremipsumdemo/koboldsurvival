@@ -141,7 +141,7 @@ public:
     void setBuildSelected(const BuildPick& pick) { buildSelected_ = pick; }
     void setBuildInClaim(bool in) { buildInClaim_ = in; }
     void setDeveloperOpen(bool on) { developerOpen_ = on; }
-    void setBuildPreview(const BuildPreview& p) { buildPreview_ = p; }
+    void setBuildPreview(BuildPreview p) { buildPreview_ = std::move(p); }
     // The cutaway: inside a building, what stands on the floors above the one looked at is left out, drawn and picked
     struct Cutaway {
         bool on = false;
@@ -167,7 +167,11 @@ public:
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
                       const std::vector<DialogueOption>& options, float mx, float my);
+    // Kept for a text and width asked about again (a panel's help text is wrapped every frame it shows), until the font changes
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
+    std::vector<std::string> wrapListTextUncached(const std::string& text, float maxW);
+    std::unordered_map<std::string, std::vector<std::string>> wrapListCache_;
+    const void* wrapListFont_ = nullptr;
     int drawStatsTab(const SidebarLayout& L, const Stats& stats, float mx, float my, bool mob = false);
     void drawStatTip(const Stats& stats, StatId stat, float mx, float my);
     void drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId unit, float mx, float my,
@@ -670,6 +674,7 @@ private:
     GLint uSkyKind_ = -1, uSkyBaked_ = -1, uSkyUseBaked_ = -1, uTintInst_ = -1;
     GLuint skyCube_ = 0, skyBakeFbo_ = 0;
     bool skyBakeWanted_ = true;
+    Uint64 skyBakeNotBefore_ = 0;   // a theme edited while dragging a slider is baked at most this often, not on every mouse move
     void bakeSky(int skyKind, const float* zenith, const float* horizon, float stars);
     float billX_ = 0.0f, billZ_ = 0.0f;
 };

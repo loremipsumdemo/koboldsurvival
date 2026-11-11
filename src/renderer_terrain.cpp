@@ -738,6 +738,9 @@ void Renderer::setMapTheme(const MapTheme& theme) {
     theme_ = theme;
     themeLook_ = themeLook(theme);
     themeSky_ = themeSkyColors(theme);
+    // The sky is baked into six 1024 x 1024 pictures: once one exists, a run of edits (a slider dragged) bakes it a few times
+    // a second, not on every one
+    if (skyCube_ && !skyBakeWanted_) skyBakeNotBefore_ = SDL_GetTicks() + 250;
     skyBakeWanted_ = true;
 }
 

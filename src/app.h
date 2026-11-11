@@ -55,6 +55,7 @@
 #include "textcase.h"
 #include "items.h"
 #include "build_plan.h"
+#include "building.h"
 #include "systems.h"
 #include "terrain.h"
 #include "ui_types.h"
@@ -347,6 +348,43 @@ struct App : AppSession {
     // Floors: the one looked at follows the camera (Auto) or Q and E (Manual), Z back to Auto; the cutaway inside a
     // building; clicks that land on the highest floor seen under the pointer
     void updateFloorView();
+    // What the cutaway was last worked out for: it is made again only when one of these changes
+    struct CutawayKey {
+        BuildingStamp stamp;
+        int x = 0, z = 0, level = 0;
+        bool inside = false;
+        bool operator==(const CutawayKey& o) const { return stamp == o.stamp && x == o.x && z == o.z && level == o.level && inside == o.inside; }
+    };
+    CutawayKey cutawayKey;
+    bool cutawayKeyValid = false;
+    // Kept between frames so the per-frame build preview and hover work isn't made again when nothing it depends on changed
+    struct SpotCache {
+        bool filled = false, ok = false;
+        PropKind kind = PropKind::Wagon;
+        float x = 0.0f, z = 0.0f;
+        int storey = 0;
+        std::uint64_t props = 0, owners = 0, foundations = 0, storeys = 0, blueprints = 0;
+        Uint64 tick = 0;
+    };
+    SpotCache spotCache;
+    bool buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims);
+    std::vector<std::array<float, 3>> campRings;   // the campfires whose rings show while a Bedroll is placed
+    bool campRingsValid = false;
+    std::uint64_t campRingsProps = 0, campRingsOwners = 0, campRingsBlueprints = 0;
+    Uint64 campRingsTick = 0;
+    std::vector<BuildPreview::Mark> bpBoxMarks;    // the Blueprint editor's box edge
+    int bpBoxW = 0, bpBoxD = 0;
+    struct HoverCache {
+        bool filled = false, hasProps = false, hasUnits = false, hasItems = false;
+        float x = 0.0f, y = 0.0f;
+        Screen screen = Screen::Playing;
+        int winW = 0, winH = 0;
+        float focusX = 0.0f, focusY = 0.0f, focusZ = 0.0f, yaw = 0.0f, pitch = 0.0f, distance = 0.0f, lift = 0.0f;
+        std::uint64_t revision = 0;
+        Uint64 tick = 0;
+        std::vector<ObjectId> props, units, items;
+    };
+    HoverCache hover;
     void stepFloor(int by);
     void floorAuto();
     void drawFloorBanner();
@@ -570,7 +608,8 @@ struct App : AppSession {
     BlueprintUi bpEdit;
     void openBlueprintEditor();
     void blueprintExit();
-    bool blueprintSave();
+    bool blueprintSave(bool overwriteConfirmed = false);
+    void blueprintDelete(const std::string name);
     bool blueprintLoad(const std::string& name);
     void blueprintClear();
     bool blueprintKeyDown();

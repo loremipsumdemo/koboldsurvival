@@ -953,9 +953,14 @@ UILABEL_BLUEPRINT_FLOORS	Floors
 UILABEL_BLUEPRINT_CLEAR	Clear
 UILABEL_BLUEPRINT_EXIT	Exit
 UILABEL_BLUEPRINT_EXIT_SURE	Unsaved: press again
+UILABEL_BLUEPRINT_OVERWRITE_WARN	A plan named {0} is already saved. Hold the button for {1} seconds to overwrite it.
+UILABEL_BLUEPRINT_OVERWRITE_HOLD	Hold to overwrite
+UILABEL_BLUEPRINT_DELETE_WARN	This deletes the saved plan {0} for good. Hold the button for {1} seconds to go through.
+UILABEL_BLUEPRINT_DELETE_HOLD	Hold to delete
 UILABEL_BLUEPRINT_HELP	Build in the marked box with the Build tab: pieces go down finished. Only what is inside the box is saved.
 MISC_BLUEPRINT_SAVED	Saved {0}
 MISC_BLUEPRINT_LOADED	Opened {0}
+MISC_BLUEPRINT_DELETED	Deleted {0}
 MISC_BLUEPRINT_NEEDS_NAME	Give the plan a name first
 MISC_BLUEPRINT_OUTSIDE	{0} pieces are outside the box and will not be saved: press Save again to save without them
 MISC_BLUEPRINT_NO_PLANS	No plans are saved yet

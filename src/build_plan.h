@@ -63,6 +63,7 @@ bool planFromText(const std::string& text, BuildPlan& out, std::string& err);
 bool writePlanFile(const std::string& path, const BuildPlan& plan, std::string& err);
 bool readPlanFile(const std::string& path, BuildPlan& out, std::string& err);
 std::vector<std::string> listPlanFiles();
+bool deletePlanFile(const std::string& name, std::string& err);
 // Every plan in MAP/BLUEPRINT that reads and is sound (a 3 by 3 foundation at least, a door), read once. Asking again after a plan is saved
 // or deleted needs reloadPlanLibrary.
 const std::vector<BuildPlan>& planLibrary();

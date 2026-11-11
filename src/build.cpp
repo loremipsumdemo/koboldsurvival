@@ -51,7 +51,8 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
     z = snapCoord(gz, h);
 }
 
-BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder) {
+BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder,
+                          const std::vector<Claim>* given) {
     const Footprint& f = propInfo(kind).foot;
     const float yaw = 0.0f;
 
@@ -72,7 +73,9 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
         if (!outdoors) return BuildCheck::Indoors;
     }
 
-    const std::vector<Claim> claims = claimsOf(w);
+    std::vector<Claim> own;
+    if (!given) own = claimsOf(w);
+    const std::vector<Claim>& claims = given ? *given : own;
 
     if (const Claim* held = claimAt(claims, x, z); held && held->owner != builder) return BuildCheck::EnemySealed;
     // A Bedroll: only by a Campfire, or in your Altar's claim
@@ -109,7 +112,10 @@ bool buildAnywhere(const BuildPick& pick) {
 }
 
 bool selectionInClaim(World& w) {
-    const std::vector<Claim> claims = claimsOf(w);
+    return selectionInClaim(w, claimsOf(w));
+}
+
+bool selectionInClaim(World& w, const std::vector<Claim>& claims) {
     for (ObjectId u : w.view<Entity, Selected, Commandable, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
         if (claimAt(claims, tr->x, tr->z, FACTION_PLAYER)) return true;

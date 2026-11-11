@@ -182,6 +182,20 @@ void Renderer::drawClockText(const std::string& s, float x, float y, RGBA tint) 
 }
 
 std::vector<std::string> Renderer::wrapListText(const std::string& text, float maxW) {
+    if (!text_.list.font) return {};
+    if (wrapListFont_ != (const void*)text_.list.font || wrapListCache_.size() > 256) {
+        wrapListCache_.clear();
+        wrapListFont_ = (const void*)text_.list.font;
+    }
+    std::string key = std::to_string(maxW);
+    key += '|';
+    key += text;
+    const auto found = wrapListCache_.find(key);
+    if (found != wrapListCache_.end()) return found->second;
+    return wrapListCache_.emplace(std::move(key), wrapListTextUncached(text, maxW)).first->second;
+}
+
+std::vector<std::string> Renderer::wrapListTextUncached(const std::string& text, float maxW) {
     std::vector<std::string> out;
     if (!text_.list.font) return out;
     const auto width = [this](const std::string& s) {
