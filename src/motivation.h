@@ -9,7 +9,8 @@
 //  - It ticks down by about 10 an hour. The most it holds is 125, and 25 more for every complete building of the faction.
 //  - Over 100 (MOTIVATION_FAST), the faction's units walk 50% faster inside the faction's own claims, and its Altar's fire burns
 //    bigger and brighter.
-// The Faction panel shows it as a bar with a mark at the threshold (more thresholds, for other bonuses, may be added).
+// Hovering the faction's Altar shows it as a bar with a mark at the threshold (more thresholds, for other bonuses, may be added). Its
+// fire burns much higher over the threshold, and a chime plays as the player's Motivation rises up to it.
 inline constexpr double MOTIVATION_BASE_MAX = 125.0;
 inline constexpr double MOTIVATION_PER_BUILDING = 25.0;
 inline constexpr double MOTIVATION_FAST = 100.0;
@@ -23,6 +24,7 @@ struct Motivation {
     std::map<int, int> buildings;      // each faction's complete buildings, counted every MOTIVATION_LOOK_SECONDS
     std::vector<Claim> claims;         // the claims as last seen
     float lookIn = 0.0f;
+    std::map<int, bool> over;          // whether each faction was over the threshold at the last look: a chime plays on the way up. Not saved.
 };
 
 double motivationOf(World& w, int faction);

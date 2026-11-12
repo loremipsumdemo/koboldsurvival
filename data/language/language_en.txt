@@ -1149,6 +1149,9 @@ FACTION_YELLOW	Yellow Faction
 FACTION_FACTIONLESS	Factionless
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
 UILABEL_FACTION_TAB	Faction
+UILABEL_FACTION_SUB_SQUADS	Squads
+UILABEL_FACTION_SUB_REPUTATION	Reputation
+UILABEL_FACTION_SUB_SETTINGS	Settings
 UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
 UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)
 UILABEL_REP_NEUTRAL	Neutral: they leave each other alone

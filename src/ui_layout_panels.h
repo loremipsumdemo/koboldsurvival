@@ -96,15 +96,22 @@ struct UnitPanelLayout {
     int tab = 0;
     Rect tabSquad;
     Rect tabFaction;
-    std::array<Rect, SQUAD_COUNT> squadCells{};   // the Faction tab's squads, laid out like a numpad: 7 8 9 on top
-    Rect manageSquadsButton;   // above renameButton: opens Manage Squads
-    Rect renameButton;
-    Rect factionRulesButton;   // below renameButton: opens Faction Rules
-    Rect motivationBar;        // below factionRulesButton: the faction's Motivation, with a mark at the threshold
-    Rect repHeading;
-    std::vector<Rect> repRows;
+    // The Faction tab has three tabs of its own, each scrolling: Squads, Reputation and Settings. What shows is laid out from
+    // view's top, moved up by subScroll (in pixels); what is outside view is cut off when drawn, and a click there is no click.
+    std::array<Rect, 3> subTabs{};
+    int sub = 0;
+    Rect view;
+    Rect subTrack, subThumb;   // the scrollbar of the tab, when its contents don't fit
+    float subScroll = 0.0f, subScrollMax = 0.0f, subContentH = 0.0f;
+    std::array<Rect, SQUAD_COUNT> squadCells{};   // Squads: the squads, laid out like a numpad: 7 8 9 on top
+    Rect manageSquadsButton;   // Squads: below the squads, opens Manage Squads
+    Rect renameButton;         // Squads: below manageSquadsButton
+    Rect factionRulesButton;   // Settings: opens Faction Rules
+    Rect repHeading;           // Reputation: whose view it is, kept at the top while the list scrolls
+    std::vector<Rect> repRows;   // the rows that show, from repFirst
     int repFirst = 0;
     int repVisible = 0;
+    bool subScrollable() const { return subScrollMax > 0.0f; }
     Rect scrollUp;
     Rect scrollDown;
     Rect track;
@@ -122,10 +129,13 @@ struct UnitPanelLayout {
 constexpr float SQUAD_WHEEL_NOTCHES_PER_ROW = 4.0f;
 constexpr int FACTION_TAB_SQUAD = 0;
 constexpr int FACTION_TAB_FACTION = 1;
+constexpr int FACTION_SUB_SQUADS = 0;
+constexpr int FACTION_SUB_REPUTATION = 1;
+constexpr int FACTION_SUB_SETTINGS = 2;
 
 UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
                                        const PanelPlace& place = PanelPlace{}, int tab = FACTION_TAB_SQUAD,
-                                       int factionCount = 0, int repScroll = 0);
+                                       int factionCount = 0, float subScroll = 0.0f, int sub = FACTION_SUB_SQUADS);
 
 int squadRowAtThumb(const UnitPanelLayout& L, float thumbTop);
 

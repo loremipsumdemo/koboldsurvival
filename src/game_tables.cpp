@@ -40,7 +40,8 @@ const char* const SFX_KEYS[] = {
     "Drink", "Poison", "WorkMining", "WorkWoodcutting", "WorkHerbalism", "WorkCooking", "WorkPump", "WorkTraining",
     "WorkLockpick", "ForgeBurning", "DoneOre", "DoneTree", "DoneMushroom", "DoneCooking", "DoneWater", "DoneTraining",
     "DoneForge", "Unlocked", "LockpickFailed", "TradeDone", "TradeFailed", "Store", "Take", "TurnHostile", "LockedIn",
-    "Occupy", "GearChanged", "Downed", "LevelUp", "TalkOpen", "CarryUp", "PutDown", "Dies", "Recovers",
+    "Occupy", "GearChanged", "Downed", "LevelUp", "TalkOpen", "CarryUp", "PutDown", "Dies", "Recovers", "DanceStep",
+    "MotivationChime",
 };
 static_assert(std::size(SFX_KEYS) == (size_t)Sfx::Count);
 

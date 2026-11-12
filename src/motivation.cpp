@@ -64,4 +64,11 @@ void motivationSystem(World& w, float dt, double gameSeconds) {
         if (value > 0.0) value -= hours * MOTIVATION_DECAY_PER_HOUR;
         value = std::clamp(value, 0.0, motivationMax(w, faction));
     }
+    // Rising up to the threshold: a chime, for the player's faction (the first look only notes where it is, so loading a game is silent)
+    for (const auto& [faction, value] : m.value) {
+        const bool now = value > MOTIVATION_FAST;
+        const auto was = m.over.find(faction);
+        if (faction == FACTION_PLAYER && now && was != m.over.end() && !was->second) queueSound(w, Sfx::MotivationChime);
+        m.over[faction] = now;
+    }
 }

@@ -1,5 +1,6 @@
 #include "app.h"
 #include "prop_info.h"
+#include "motivation.h"
 #include "profile.h"
 
 using namespace play;
@@ -276,7 +277,21 @@ void App::drawPlayingScreen() {
     PROFILED("draw: overlays", drawWorldOverlays());
     if (!(editing && editor.useOwnUi)) PROFILED("draw: panels", drawGamePanels());
     if (hoverProp != NO_OBJECT && SDL_GetTicks() - hoverPropSince >= PROP_TOOLTIP_DELAY_MS) {
-        renderer.drawPropTooltip(propInfoLines(world, hoverProp), mouseX, mouseY);
+        const std::vector<std::string> lines = propInfoLines(world, hoverProp);
+        MotivationBarInfo bar;
+        // An Altar's last line is its Motivation, drawn as a bar
+        if (altarMotivationBar(world, hoverProp, bar)) {
+            std::vector<std::string> shown = lines;
+            const int barRow = (int)shown.size() - 1;
+            // What Motivation does, under the bar
+            for (const std::string& line : renderer.wrapListText(langf("UILABEL_MOTIVATION_TIP", { std::to_string((int)MOTIVATION_FAST), std::to_string((int)std::lround(MOTIVATION_SPEED_BONUS * 100.0f)) }),
+                                                                  260.0f * uiScaleFor((float)winH))) {
+                shown.push_back(line);
+            }
+            renderer.drawPropTooltip(shown, mouseX, mouseY, barRow, bar.fill, bar.mark, bar.fast);
+        } else {
+            renderer.drawPropTooltip(lines, mouseX, mouseY);
+        }
     }
     if (session.lootUnit != NO_OBJECT) {
         const std::string who = world.has<Corpse>(session.lootUnit) ? langf("UILABEL_CORPSE_OF", { nameOf(world, session.lootUnit) })

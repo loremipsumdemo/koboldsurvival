@@ -822,24 +822,9 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glEnable(GL_DEPTH_TEST);
 
     passTimerBegin(groundTimer_);
-    glUseProgram(floorShader_.prog);
-    glUniformMatrix4fv(floorShader_.viewProj, 1, GL_FALSE, viewProj_.m);
-    glUniform3f(floorShader_.eye, ex, ey, ez);
-    glUniform3f(floorShader_.center, ex, t.floorY(), ez);
-    glUniform1f(floorShader_.half, kFarPlane * 1.2f);
-    glUniform3f(floorShader_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
-    glUniform3f(floorShader_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
-    glUniform3f(floorShader_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
-    glUniform3f(floorShader_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
-    glUniform1f(floorShader_.fog, sky.fog);
-    glUniform1f(floorShader_.mapSize, seaEnd);
-    if (hasWater) {
-        glDepthMask(GL_FALSE);
-        glBindVertexArray(emptyVao_);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDepthMask(GL_TRUE);
-    }
-
+    // Drawn in this order, so that the card skips the pixels a nearer thing has covered before it works them out: the ground (nearest
+    // chunk first), then the sky where there is none, then the sea floor over the sky, then the water over it all.
+    // Over a void the ground's edge blends into the sky behind it, so there the sky comes first (drawFrame).
     glUseProgram(groundShader_.prog);
     glUniformMatrix4fv(groundShader_.viewProj, 1, GL_FALSE, viewProj_.m);
     glUniform3f(groundShader_.eye, ex, ey, ez);
@@ -873,6 +858,8 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     }
     const FrustumPlanes planes = framePlanes(viewProj_);
     int builds = 0;
+    static std::vector<std::pair<float, int>> drawOrder;   // distance from the eye, chunk
+    drawOrder.clear();
     for (int id = 0; id < (int)chunks_.size(); ++id) {
         TerrainChunk& slot = chunks_[(size_t)id];
         const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
@@ -914,11 +901,42 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
             ++builds;
         }
         if (slot.step == 0) continue;
+        drawOrder.push_back({ dist, id });
+    }
+    // Over a void the ground blends, so it keeps the far-to-near order that needs; otherwise the nearest goes first
+    if (blendEdge) std::sort(drawOrder.begin(), drawOrder.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    else std::sort(drawOrder.begin(), drawOrder.end());
+    for (const auto& [distance, id] : drawOrder) {
+        const TerrainChunk& slot = chunks_[(size_t)id];
         glBindVertexArray(slot.vao);
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
     glBindVertexArray(0);
     if (blendEdge) glDisable(GL_BLEND);
+    if (hasWater) {
+        // The sky fills what the ground left. The sea floor then goes over it where it reaches (it is a plane out past the far
+        // plane, and writes no depth, as before); the ground's pixels fail its depth test before it works them out.
+        if (skyLater_) {
+            skyLater_();
+            skyLater_ = nullptr;
+        }
+        glDepthMask(GL_FALSE);
+        glUseProgram(floorShader_.prog);
+        glUniformMatrix4fv(floorShader_.viewProj, 1, GL_FALSE, viewProj_.m);
+        glUniform3f(floorShader_.eye, ex, ey, ez);
+        glUniform3f(floorShader_.center, ex, t.floorY(), ez);
+        glUniform1f(floorShader_.half, kFarPlane * 1.2f);
+        glUniform3f(floorShader_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
+        glUniform3f(floorShader_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
+        glUniform3f(floorShader_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
+        glUniform3f(floorShader_.fogColor, sky.fogColor.x, sky.fogColor.y, sky.fogColor.z);
+        glUniform1f(floorShader_.fog, sky.fog);
+        glUniform1f(floorShader_.mapSize, seaEnd);
+        glBindVertexArray(emptyVao_);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+        glDepthMask(GL_TRUE);
+    }
     passTimerEnd(groundTimer_);
     if (!hasWater) return;
 

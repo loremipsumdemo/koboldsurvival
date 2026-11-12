@@ -518,5 +518,5 @@ bool App::pointerOverPanels(int W, int H) {
 
 UnitPanelLayout App::squadPanelLayout(int W, int H) {
     return layoutUnitPanel(W, H, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
-                           reputationFactionCount(), repScroll);
+                           reputationFactionCount(), factionScroll[std::clamp(factionSub, 0, 2)], factionSub);
 }

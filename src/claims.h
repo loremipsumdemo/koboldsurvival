@@ -34,6 +34,11 @@ struct ClaimGrowth {
     int steps = 0;
 };
 std::vector<Claim> claimsOf(World& w);
+// The same claims, kept: worked out again only when a Prop, Owner, Blueprint or ClaimGrowth is added or removed, when
+// invalidateClaims says one was changed in place, and at the start of every simulation step. For lookups made many times a
+// step (every unit's lock check); the reference is good until the next call that may change a prop, so copy it to hold on.
+const std::vector<Claim>& cachedClaims(World& w);
+void invalidateClaims(World& w);
 // An Altar's claim grows when its faction has more complete buildings in it than it has grown by, and the room is there:
 // no other Altar's claim within reach of the larger one. A camp of another faction under the larger claim is destroyed.
 // It looks only when there is something earned, and when claims have changed since it last found no room.

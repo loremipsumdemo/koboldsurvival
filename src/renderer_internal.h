@@ -33,6 +33,8 @@
 #include <vector>
 
 namespace render_detail {
+// A unit's model is drawn from its coarser copy (Model::lods, a quarter of the triangles) past this distance from the camera (tiles)
+inline constexpr float MODEL_LOD_FAR_TILES = 90.0f;
 inline constexpr float GLYPH_H = 1.2f;
 inline constexpr float CARRIED_LIFT = 0.55f;
 inline constexpr float CARRIED_MODEL_LIFT = 0.95f;

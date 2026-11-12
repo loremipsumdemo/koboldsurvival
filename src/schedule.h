@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cmath>
 #include <map>
 #include <string>
 #include "behavior.h"
@@ -84,6 +85,18 @@ inline constexpr float DANCE_GROW = 0.25f;     // share of its size it widens an
 struct DanceRings {
     std::map<ObjectId, double> seconds;
 };
+// A dancer hops as it goes round: this long for each hop, this high (in tiles), with a light thud as the foot lands. The hop clock runs
+// with the game, so the hops stop while it is paused; each dancer is a little out of step with the rest, by its own offset.
+inline constexpr float DANCE_HOP_SECONDS = 0.5f, DANCE_HOP_HEIGHT = 0.22f;
+struct DanceHops {
+    double clock = 0.0;
+};
+// Where in its hop a dancer is, 0 to 1: 0 is the foot on the ground
+inline float danceHopPhase(double clock, ObjectId dancer) {
+    const double offset = (double)(dancer * 2654435761u % 1000u) / 1000.0;
+    const double t = clock / (double)DANCE_HOP_SECONDS + offset;
+    return (float)(t - std::floor(t));
+}
 // On a unit that is dancing on a circle: it ignores the crowd's collision until it stops
 struct Dancing {};
 inline constexpr float DANCE_MIN = 40.0f, DANCE_MAX = 90.0f;   // real seconds

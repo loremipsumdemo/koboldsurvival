@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <unordered_map>
 #include "equip.h"
 #include "inventory.h"
 #include "items.h"
@@ -87,6 +88,10 @@ bool targetable(World& w, ObjectId e) {
 float noticeFailChance(World& w, ObjectId p) { return isSneaking(w, p) ? SNEAK_NOTICE_FAIL : 0.0f; }
 float noticeRangeOf(World& w, ObjectId p) { return AGGRO_RANGE * (isSneaking(w, p) ? SNEAK_NOTICE_RANGE : 1.0f); }
 constexpr float MAX_NOTICE_RANGE = AGGRO_RANGE * (SNEAK_NOTICE_RANGE > 1.0f ? SNEAK_NOTICE_RANGE : 1.0f) + 0.01f;
+// The cells units are sorted into to find who is near: no smaller than the furthest a unit notices, so the cells round
+// one hold everyone in its range
+constexpr float NOTICE_CELL = MAX_NOTICE_RANGE;
+std::int64_t noticeCell(int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); }
 
 int slotNamed(World& w, ObjectId e, const char* name) {
     const Inventory* inv = w.get<Inventory>(e);
@@ -488,18 +493,25 @@ static std::string elixirName() {
     return ELIXIR;
 }
 
+// What numbersOf says for maxHp, without working out the rest (every unit asks it every step)
+static int maxHpOf(World& w, ObjectId e) {
+    int hp = maxHealthFor(statsOf(w, e));
+    if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) hp = mobInfo(m->kind).hp;
+    return hp;
+}
+
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
     const std::vector<ObjectId> everyone = w.view<Entity, Transform>();
     for (ObjectId e : everyone) ensureCombat(w, e);
     for (ObjectId e : everyone) {
         if (w.has<Corpse>(e)) continue;
         Combat& c = *w.get<Combat>(e);
-        const CombatNumbers n = numbersOf(w, e);
+        const int maxHp = maxHpOf(w, e);
 
         if (Needs* nd = w.get<Needs>(e)) {
             const int hpBefore = nd->hp, maxBefore = nd->maxHp;
-            nd->maxHp = n.maxHp;
-            nd->hp = std::min(nd->hp, n.maxHp);
+            nd->maxHp = maxHp;
+            nd->hp = std::min(nd->hp, maxHp);
             if (nd->hp != hpBefore || nd->maxHp != maxBefore) nd->changed |= NEEDS_HP_CHANGED;
         }
 
@@ -526,6 +538,9 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         w.remove<AttackOrder>(e);
     }
 
+    std::unordered_map<std::int64_t, std::vector<std::uint32_t>> grid;
+    std::vector<std::uint32_t> nearby;
+    bool gridBuilt = false;
     for (ObjectId h : everyone) {
         if (w.has<Commandable>(h) || !standing(h) || !w.has<Combat>(h)) continue;
         Combat& hc = *w.get<Combat>(h);
@@ -540,7 +555,26 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         }
         if (isPassive(w, h)) continue;
         const Transform* th = w.get<Transform>(h);
-        for (ObjectId p : everyone) {
+        if (!th) continue;
+        // Only those in the cells round it can be in range. Taken in the order of everyone, so the dice fall as they always did.
+        if (!gridBuilt) {
+            gridBuilt = true;
+            for (size_t i = 0; i < everyone.size(); ++i) {
+                const Transform* ti = w.get<Transform>(everyone[i]);
+                grid[noticeCell((int)std::floor(ti->x / NOTICE_CELL), (int)std::floor(ti->z / NOTICE_CELL))].push_back((std::uint32_t)i);
+            }
+        }
+        nearby.clear();
+        const int hx = (int)std::floor(th->x / NOTICE_CELL), hz = (int)std::floor(th->z / NOTICE_CELL);
+        for (int dz = -1; dz <= 1; ++dz) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                const auto cell = grid.find(noticeCell(hx + dx, hz + dz));
+                if (cell != grid.end()) nearby.insert(nearby.end(), cell->second.begin(), cell->second.end());
+            }
+        }
+        std::sort(nearby.begin(), nearby.end());
+        for (const std::uint32_t pi : nearby) {
+            const ObjectId p = everyone[pi];
             const Transform* tp = w.get<Transform>(p);
             if (!th || !tp) continue;
             const float gx = tp->x - th->x, gz = tp->z - th->z;
