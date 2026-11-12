@@ -339,6 +339,7 @@ UILABEL_EDITOR_HELP1	Left: place. Right: erase. Q/E: turn.
 UILABEL_EDITOR_HELP2	Ctrl+S: save. Ctrl+Z: undo. M: map.
 UILABEL_SPAWN_CLUSTER	Cluster of
 MISC_SPAWNED	Spawned {0}
+MISC_GATHERED	Moved {0} units to the ground floor
 UILABEL_EDITOR_EXIT	Exit to World Generation
 UILABEL_EDITOR_EXIT_SURE	Unsaved! Click again to exit
 MISC_LEVEL_SAVED	Saved level {0}.
@@ -914,6 +915,8 @@ UILABEL_DEV_REVERT	Revert to the world's theme
 UILABEL_DEV_MAKE_PERMANENT	Make permanent
 UILABEL_DEV_THEME_SAVED	The world's theme is saved
 UILABEL_DEV_TAB_KILL	Kill
+UILABEL_DEV_GATHER	Move Units Here
+UILABEL_DEV_GATHER_TIP	Moves every unit of yours to the ground floor, around the point the camera is looking at
 UILABEL_DEV_KILL_MODE	Mode
 UILABEL_DEV_KILL_SINGLE	Single selection
 UILABEL_DEV_KILL_RADIUS	Radius

@@ -269,7 +269,8 @@ struct App : AppSession {
     bool spawnPickerKey(SpawnPicker& p);
     void spawnPickerCommit(SpawnPicker& p, bool keep);
     void spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y, float notches);
-    int spawnAt(SpawnPicker& p, float x, float z, bool levelIds);   // places the pick (a cluster of them); how many
+    int gatherUnits();   // the Developer panel: every unit of yours to the ground floor around the camera's pivot; how many
+    int spawnAt(SpawnPicker& p, float x, float z, bool levelIds, int storey = 0);   // places the pick (a cluster of them); how many
     void openDeveloper();
     void closeDeveloper();
     bool pressOnDeveloper();
@@ -412,6 +413,7 @@ struct App : AppSession {
     void drawMaterialAsk();
     bool pressOnCancelAsk();
     void drawCancelAsk();
+    float cancelAskTextWidth();
     int cancelBlueprints(const std::vector<ObjectId>& list);
     void finishAreaTool();
     void drawFoundationSize();

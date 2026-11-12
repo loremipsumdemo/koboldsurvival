@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include "build.h"
+#include "building.h"
 #include "hostility.h"
 #include "game_tables.h"
 #include "items.h"
@@ -158,17 +159,28 @@ std::vector<std::string> listLevelFiles(const std::string& map) {
 
 ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObject& o) {
     ObjectId e = NO_OBJECT;
-    const Transform at{ o.x, t.heightAt(o.x, o.z), o.z };
+    const Transform at{ o.x, t.heightAt(o.x, o.z) + storeyBaseHeight(o.storey), o.z };
+    // A unit or mob put on an upper floor stands on it, over the foundation tile there
+    const auto standUpstairs = [&](ObjectId u) {
+        Transform* tr = u != NO_OBJECT ? w.get<Transform>(u) : nullptr;
+        if (!tr || o.storey <= 0) return;
+        tr->y = at.y;
+        const BuildingMap& m = cachedBuildingMap(w);
+        const auto f = m.foundation.find(tileKey((int)std::floor(o.x), (int)std::floor(o.z)));
+        w.add(u, Upstairs{ f != m.foundation.end() ? f->second : NO_OBJECT, o.storey });
+    };
     switch (o.type) {
     case LevelObject::Type::Unit:
         e = spawnUnit(w, t, rng, o.kind, o.x, o.z);
+        standUpstairs(e);
         break;
     case LevelObject::Type::Prop: {
         const PropKind kind = (PropKind)o.kind;
         if (propInfo(kind).built && o.owner >= 0) {
-            e = placeBuiltProp(w, t, kind, o.x, o.z, o.yaw, o.owner);
+            e = placeBuiltProp(w, t, kind, o.x, o.z, o.yaw, o.owner, o.storey);
         } else {
             e = makeProp(w, kind, at, o.yaw);
+            if (o.storey > 0) w.add(e, Storey{ o.storey });
             if (o.owner >= 0) w.add(e, Owner{ o.owner });
         }
         if (e != NO_OBJECT && !o.visual.plain()) w.add(e, o.visual);
@@ -176,9 +188,10 @@ ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObjec
     }
     case LevelObject::Type::Mob:
         e = spawnMob(w, t, rng, (MobKind)o.kind, o.owner, o.x, o.z);   // -1 or Factionless: wild
+        standUpstairs(e);
         break;
     case LevelObject::Type::Item:
-        e = spawnGroundItem(w, at, o.kind, o.count);
+        e = spawnGroundItem(w, at, o.kind, o.count, o.storey);
         break;
     }
     if (e != NO_OBJECT && o.id > 0) w.add(e, LevelId{ o.id });   // 0: placed in a game, for no level file

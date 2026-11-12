@@ -39,10 +39,16 @@ bool propInTheWay(World& w, ObjectId unit, ObjectId prop) {
     if (!a || !b) return false;
     const float abx = b->x - a->x, abz = b->z - a->z;
     const float len2 = abx * abx + abz * abz;
+    const int level = storeyOf(w, prop);
     for (ObjectId p : w.view<Prop, Transform>()) {
+        const PropInfo& pi = propInfo(w.get<Prop>(p)->kind);
         // An Airship floats over the way, and a Wheelbarrow is pushed out of it
-        if (p == prop || propInfo(w.get<Prop>(p)->kind).airship || propInfo(w.get<Prop>(p)->kind).wheelbarrow) continue;
+        if (p == prop || pi.airship || pi.wheelbarrow) continue;
+        // What is on another floor is not in the way. A foundation or floor is ground to stand on, not an obstacle, and the walls and
+        // other pieces of a building that the prop was moved into do not shut it off from itself.
+        if (storeyOf(w, p) != level || pi.foundation || pi.upperFloor) continue;
         const Transform* c = w.get<Transform>(p);
+        if (pi.onFoundation && distSq(c->x, c->z, b->x, b->z) < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) continue;
         float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
         t = std::clamp(t, 0.0f, 1.0f);
         const float nx = a->x + abx * t - c->x, nz = a->z + abz * t - c->z;

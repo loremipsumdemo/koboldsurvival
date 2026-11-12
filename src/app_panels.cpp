@@ -487,7 +487,7 @@ bool App::overPanels(float x, float y, int W, int H) {
         || gameLogPanel(W, H).panel.contains(x, y)
         || (session.lootUnit != NO_OBJECT && layoutLoot(W, H).panel.contains(x, y))
         || (mapOpen && worldMapFor(W, H).window.contains(x, y))
-        || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H).box.contains(x, y));
+        || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H, labels).box.contains(x, y));
 }
 
 bool App::mouseOverPanels() {

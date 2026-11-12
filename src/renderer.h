@@ -229,7 +229,8 @@ public:
                             float mx, float my);
     void drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held, float mx, float my);
     void drawNotice(const std::string& text, int winW, int winH);
-    ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH);
+    // With the labels, the menu is as wide as the longest needs
+    ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH, const std::vector<std::string>& labels = {});
     void drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my);
 
     void drawGroundLabels(World& w, const Terrain& t, const Camera& cam, int winW, int winH, float mx, float my);

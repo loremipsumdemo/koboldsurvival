@@ -838,7 +838,21 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
         }
         return false;
     };
-    constexpr int MAX_RING = 3;
+    // The floor the prop is on: the unit comes off onto that floor, not the ground under it
+    const int level = storeyOf(w, prop);
+    const BuildingMap& bm = cachedBuildingMap(w);
+    auto standAt = [&](float x, float y, float z) {
+        ut->x = x;
+        ut->y = y;
+        ut->z = z;
+        if (level > 0) {
+            const auto fit = bm.foundation.find(tileKey((int)std::floor(x), (int)std::floor(z)));
+            w.add(u, Upstairs{ fit != bm.foundation.end() ? fit->second : NO_OBJECT, level });
+        } else {
+            w.remove<Upstairs>(u);
+        }
+    };
+    const int MAX_RING = level > 0 ? 5 : 3;
     bool haveFallback = false;
     float fx = 0.0f, fy = 0.0f, fz = 0.0f;
     for (int ring = 1; ring <= MAX_RING; ++ring) {
@@ -857,11 +871,15 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
             if (insideFootprint(pf, x - pt->x, z - pt->z, pp->yaw)) continue;
             bool walk = false;
             float h = 0.0f;
-            if (!t.tileGround(tx, tz, walk, h) || !walk) continue;
+            if (level > 0) {
+                // Upstairs: a tile of the same floor
+                if (!floorSurfaceOn(w, bm, tx, tz, level)) continue;
+                h = t.heightAt(x, z) + storeyBaseHeight(level);
+            } else if (!t.tileGround(tx, tz, walk, h) || !walk) {
+                continue;
+            }
             if (!onOtherProp(x, z)) {
-                ut->x = x;
-                ut->y = h;
-                ut->z = z;
+                standAt(x, h, z);
                 return;
             }
             if (!haveFallback) {
@@ -872,11 +890,10 @@ void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop
             }
         }
     }
-    if (haveFallback) {
-        ut->x = fx;
-        ut->y = fy;
-        ut->z = fz;
-    }
+    // Nothing clear: the best of the crowded spots, else where the prop stands (its own floor and height), so a unit is never
+    // left with nowhere to go
+    if (haveFallback) standAt(fx, fy, fz);
+    else standAt(pt->x, pt->y, pt->z);
 }
 
 void leaveOpenLocksSystem(World& w, Terrain& t) {

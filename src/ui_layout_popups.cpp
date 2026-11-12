@@ -285,10 +285,10 @@ PercentPromptLayout layoutPercentPrompt(int W, int H) {
     return P;
 }
 
-ItemMenuLayout layoutItemMenu(float x, float y, int buttonCount, float rowH, int W, int H) {
+ItemMenuLayout layoutItemMenu(float x, float y, int buttonCount, float rowH, int W, int H, float minButtonW) {
     const float s = uiScaleFor(H);
     const float pad = 4.0f * s, gap = 3.0f * s;
-    const float btnW = 104.0f * s, btnH = rowH + 8.0f * s;
+    const float btnW = std::max(104.0f * s, minButtonW), btnH = rowH + 8.0f * s;
     const float w = btnW + 2.0f * pad;
     const float h = 2.0f * pad + buttonCount * btnH + (buttonCount - 1) * gap;
 

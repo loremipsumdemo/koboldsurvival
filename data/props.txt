@@ -74,11 +74,11 @@
 #                upper_floor     a floor at wall height, that units who climb a ladder stand and move on
 
 key	name_key	model	size	use	stat	item	input	workers	lock_level	accepts	fuel_hours	alt_item	alt_one_in	speed	rested	comfort	work_sound	done_sound	emote	flags	materials	build_seconds	slots	capacity	group
-Bedroll	PROP_BEDROLL	bedroll.glb	1.0	occupy	none	0	0	0	0	any	1	0	0	1	15	10	none	ItemMove	Sleeping	build_anywhere,scatter,needs_camp	0	5	12	0	claims
+Bedroll	PROP_BEDROLL	bedroll.glb	1.0	occupy	none	0	0	0	0	any	1	0	0	1	30	10	none	ItemMove	Sleeping	build_anywhere,scatter,needs_camp	0	5	12	0	claims
 Campfire	PROP_CAMPFIRE	campfire.glb	0.8	passive	Cooking	0	cookable	0	0	any	1	0	0	1	0	0	WorkCooking	ItemMove	none	build_anywhere,scatter,burns_corpses,fire:0:0.1:0:0.5	0	10	12	0	claims
 Altar	PROP_ALTAR	altar.glb	1.2	passive	none	0	bones	0	0	any	4	0	0	1	0	0	none	ItemMove	none	built,build_anywhere,claims_land,fire:0:0.9:0:0.34	10	50	12	0	claims
 Wagon	PROP_WAGON	wagon.glb	1.5	occupy	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,wheelbarrow,pulled	8	40	400	0	vehicles
-Bed	PROP_BED	bed.glb	1.4	occupy	none	0	0	0	0	any	1	0	0	1	25	20	none	ItemMove	Sleeping	scatter	4	20	12	0	furniture
+Bed	PROP_BED	bed.glb	1.4	occupy	none	0	0	0	0	any	1	0	0	1	50	20	none	ItemMove	Sleeping	scatter	4	20	12	0	furniture
 Barrel	PROP_BARREL	barrel.glb	0.7	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	3	15	12	0	storage
 Ore	PROP_ORE	ore.glb	1.0	resource	Mining	1	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
 Tree	PROP_TREE	tree.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	WorkWoodcutting	DoneTree	Woodcutting	scatter,random_yaw	0	0	12	0	nature

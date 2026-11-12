@@ -144,6 +144,7 @@ struct DestroyUi : SweepUi {
 // Kill, Clean and Destroy tabs) the mode box and what the mode needs
 struct DeveloperLayout {
     Rect panel, title, close, help;
+    Rect gather;   // Spawn tabs: move every unit of yours to the ground floor around the camera's pivot
     Rect spawnTab, themeTab, killTab, cleanTab, destroyTab;
     SpawnPickerLayout picker;
     Rect themeArea, status, revert, makePermanent;
