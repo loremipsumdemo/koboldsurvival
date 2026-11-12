@@ -327,7 +327,7 @@ struct LevelBuilder {
                 }
                 if (!found) continue;
                 // The animals in your own camp are wild ones, shut in a cage that is yours to tame them in
-                const ObjectId mob = spawnMob(w, t, rng, kind, kit.faction == FACTION_PLAYER ? FACTION_FACTIONLESS : kit.faction, x, z);
+                const ObjectId mob = spawnMob(w, t, rng, kind, kit.faction == FACTION_PLAYER ? mobFaction(kind) : kit.faction, x, z);
                 PropKind cageKind = PropKind::PrisonerCage;   // the Taming Cage, a prop of props.txt only
                 if (!propKindNamed("TamingCage", cageKind)) cageKind = PropKind::PrisonerCage;
                 const PropInfo& cageInfo = propInfo(cageKind);

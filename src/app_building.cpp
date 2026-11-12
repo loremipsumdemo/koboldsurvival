@@ -330,6 +330,11 @@ bool App::buildPressAt(float gx, float gz) {
 
 bool App::buildRelease() {
     session.paintPiece = false;
+    if (session.areaDrag) {
+        session.areaDrag = false;
+        finishAreaTool();
+        return true;
+    }
     if (session.floorDrag) {
         // Upper floors on every tile of the rectangle that may take one
         session.floorDrag = false;
@@ -463,4 +468,111 @@ bool App::previewBuilding(BuildPreview& bp, float gx, float gz) {
     bp.z = tz + 0.5f;
     bp.valid = foundationAt(world, tx, tz) == NO_OBJECT && terrain.walkable(tx, tz);
     return true;
+}
+
+namespace {
+struct CancelAskLayout {
+    Rect box, title, note, yes, no;
+};
+
+CancelAskLayout layoutCancelAsk(int W, int H) {
+    const float s = uiScaleFor((float)H);
+    CancelAskLayout L;
+    const float bw = 150.0f * s, bh = 40.0f * s, gap = 12.0f * s, pad = 18.0f * s, line = 30.0f * s;
+    const float w = 2.0f * bw + gap + 2.0f * pad, h = pad + 2.0f * line + gap + bh + pad;
+    L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
+    L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad, line };
+    L.note = Rect{ L.box.x + pad, L.title.y + line, w - 2.0f * pad, line };
+    L.yes = Rect{ L.box.x + pad, L.note.y + line + gap, bw, bh };
+    L.no = Rect{ L.yes.x + bw + gap, L.yes.y, bw, bh };
+    return L;
+}
+}
+
+// Cancels these blueprints (each still one of yours that is unfinished); what was brought to them drops. How many went.
+int App::cancelBlueprints(const std::vector<ObjectId>& list) {
+    int n = 0;
+    for (ObjectId id : list) {
+        if (world.has<Prop>(id) && world.has<Blueprint>(id)) ++n;
+    }
+    for (ObjectId id : list) {
+        if (!world.has<Prop>(id) || !world.has<Blueprint>(id)) continue;
+        if (session.storageProp == id) closeStorage();
+        destroyBuilding(world, id);
+    }
+    return n;
+}
+
+bool App::pressOnCancelAsk() {
+    if (!session.askCancel) return false;
+    if (e.button.button != SDL_BUTTON_LEFT) return true;
+    const CancelAskLayout L = layoutCancelAsk(winW, winH);
+    if (L.yes.contains(e.button.x, e.button.y)) {
+        const int n = cancelBlueprints(session.cancelList);
+        if (n > 0) {
+            showNotice(langf("MISC_CONSTRUCTION_CANCELLED", { std::to_string(n) }));
+            playSfx(Sfx::UiClick);
+        }
+    }
+    session.askCancel = false;
+    session.cancelList.clear();
+    return true;
+}
+
+void App::drawCancelAsk() {
+    if (!session.askCancel) return;
+    const CancelAskLayout L = layoutCancelAsk(winW, winH);
+    const float th = renderer.listTextHeight("Ag");
+    renderer.drawScrim();
+    renderer.drawThemedPanel(L.box);
+    renderer.drawListText(langf("UILABEL_CANCEL_ALL_TITLE", { std::to_string(session.cancelList.size()) }), L.title.x,
+                          L.title.y + (L.title.h - th) * 0.5f, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
+    renderer.drawListText(lang("UILABEL_CANCEL_ALL_NOTE"), L.note.x, L.note.y + (L.note.h - th) * 0.5f, RGBA{ 0.8f, 0.8f, 0.8f, 1.0f });
+    renderer.drawButton(L.yes, lang("UILABEL_CANCEL_ALL_YES"), true, L.yes.contains(mouseX, mouseY));
+    renderer.drawButton(L.no, lang("UILABEL_CANCEL_ALL_NO"), true, L.no.contains(mouseX, mouseY));
+}
+
+// Deconstruct and Cancel Construction: what is on the tiles of the dragged area, on every floor
+void App::finishAreaTool() {
+    float mx = 0.0f, my = 0.0f;
+    SDL_GetMouseState(&mx, &my);
+    const auto hit = buildPickAt(mx, my);
+    if (!hit) return;
+    const int x0 = std::min(session.dragTileX, tileOf(hit->first)), x1 = std::max(session.dragTileX, tileOf(hit->first));
+    const int z0 = std::min(session.dragTileZ, tileOf(hit->second)), z1 = std::max(session.dragTileZ, tileOf(hit->second));
+    const bool cancel = session.buildPick.tool == BuildPick::Tool::CancelBuilding;
+    std::vector<std::pair<int, ObjectId>> found;   // by floor, the highest first
+    for (ObjectId e : world.view<Prop, Transform>()) {
+        const Prop* p = world.get<Prop>(e);
+        const PropInfo& info = propInfo(p->kind);
+        const Owner* own = world.get<Owner>(e);
+        if (!own || own->faction != FACTION_PLAYER) continue;
+        const bool blueprint = world.has<Blueprint>(e);
+        if (blueprint != cancel) continue;
+        if (!cancel && (info.debris || info.claimsLand || info.airship)) continue;
+        const Transform* tr = world.get<Transform>(e);
+        int ax0 = tileOf(tr->x), az0 = tileOf(tr->z), ax1 = ax0, az1 = az0;
+        if (info.stairs) pieceTiles(world, e, ax0, az0, ax1, az1);
+        if (ax1 < x0 || ax0 > x1 || az1 < z0 || az0 > z1) continue;
+        found.push_back({ storeyOf(world, e), e });
+    }
+    if (found.empty()) {
+        refuse(lang(cancel ? "MISC_NOTHING_TO_CANCEL" : "MISC_NOTHING_TO_DECONSTRUCT"));
+        return;
+    }
+    std::sort(found.begin(), found.end(), [](const auto& a, const auto& b) { return a.first != b.first ? a.first > b.first : a.second < b.second; });
+    std::vector<ObjectId> list;
+    for (const auto& f : found) list.push_back(f.second);
+    int n = 0;
+    if (cancel) {
+        n = cancelBlueprints(list);
+    } else {
+        for (ObjectId id : list) {
+            if (!world.has<Prop>(id) || world.has<Blueprint>(id)) continue;
+            if (session.storageProp == id) closeStorage();
+            if (deconstructBuilding(world, id)) ++n;
+        }
+    }
+    showNotice(langf(cancel ? "MISC_CONSTRUCTION_CANCELLED" : "MISC_DECONSTRUCTED", { std::to_string(n) }));
+    playSfx(cancel ? Sfx::UiClick : Sfx::Drop);
 }

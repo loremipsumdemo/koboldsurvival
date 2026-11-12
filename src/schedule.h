@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <map>
 #include <string>
 #include "behavior.h"
 #include "ecs.h"
@@ -71,8 +72,18 @@ inline constexpr double SOCIAL_COMFORT_PER_HOUR = 15.0;
 inline constexpr double PLAY_COMFORT_PER_HOUR = 20.0, DANCE_COMFORT_PER_HOUR = 10.0;
 // A Game Table has a place on each of its four sides, this far from its middle
 inline constexpr float TABLE_SEAT_DISTANCE = 1.15f;
-// Dancing round a Campfire: up to 8 on a circle of this radius; round an Altar up to 32 on the larger one
-inline constexpr float DANCE_CAMPFIRE_RADIUS = 2.0f, DANCE_ALTAR_RADIUS = 5.0f;
+// Dancing round a Campfire inside an Altar's claim: up to 8 on a Circle formation with this much between neighbours; round an
+// Altar up to 32 on the larger one. The whole circle swings clockwise while it widens, then back counterclockwise while it
+// narrows, and so on, only while someone is dancing on it.
+inline constexpr float DANCE_CAMPFIRE_SPACING = 1.55f, DANCE_ALTAR_SPACING = 1.0f;
 inline constexpr int DANCE_CAMPFIRE_DANCERS = 8, DANCE_ALTAR_DANCERS = 32;
-inline constexpr float DANCE_SPEED = 1.2f;   // tiles a second along the circle
+inline constexpr float DANCE_PERIOD = 12.0f;   // real seconds for the circle to swing out and back
+inline constexpr float DANCE_TURN = 0.6f;      // radians it swings each way
+inline constexpr float DANCE_GROW = 0.25f;     // share of its size it widens and narrows by
+// How long each Campfire or Altar's circle has been going, in real seconds. A circle with no dancer on it is not here: it is at rest.
+struct DanceRings {
+    std::map<ObjectId, double> seconds;
+};
+// On a unit that is dancing on a circle: it ignores the crowd's collision until it stops
+struct Dancing {};
 inline constexpr float DANCE_MIN = 40.0f, DANCE_MAX = 90.0f;   // real seconds

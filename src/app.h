@@ -146,6 +146,7 @@ struct AppSession {
     int pivotTopFloor = 0;   // the highest finished floor under the camera's pivot (0: the ground)
     float actionAlpha = 0.0f;
     float actionX = 0.0f, actionZ = 0.0f;
+    int actionStorey = 0;   // the floor the action crystal stands on
     float simLeft = 0.0f;
     std::vector<std::pair<ObjectId, Transform>> simBefore;
     std::vector<std::pair<ObjectId, Transform>> simTrue;
@@ -409,6 +410,10 @@ struct App : AppSession {
     // Picking what a foundation, wall or door is made of
     bool pressOnMaterialAsk();
     void drawMaterialAsk();
+    bool pressOnCancelAsk();
+    void drawCancelAsk();
+    int cancelBlueprints(const std::vector<ObjectId>& list);
+    void finishAreaTool();
     void drawFoundationSize();
     void startRename(ObjectId u);
     void openStoreFilter(ObjectId prop);

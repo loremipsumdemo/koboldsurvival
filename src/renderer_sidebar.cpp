@@ -325,7 +325,10 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
 void Renderer::drawBuildSection(const SidebarLayout& L, float mx, float my) {
     const float s = uiScale();
     auto pickName = [](const BuildPick& pick) {
-        return pick.placing() ? lang(propInfo(pick.kind).nameKey) : lang(pick.adjusting() ? "UILABEL_BUILD_ADJUST" : "UILABEL_BUILD_DESTROY");
+        if (pick.placing()) return lang(propInfo(pick.kind).nameKey);
+        if (pick.tool == BuildPick::Tool::Deconstruct) return lang("UILABEL_BUILD_DECONSTRUCT");
+        if (pick.tool == BuildPick::Tool::CancelBuilding) return lang("UILABEL_CANCEL_BUILD");
+        return lang(pick.adjusting() ? "UILABEL_BUILD_ADJUST" : "UILABEL_BUILD_DESTROY");
     };
     const std::string head = buildSelected_.any()
         ? langf("UILABEL_BUILD_SELECTED", { pickName(buildSelected_) })

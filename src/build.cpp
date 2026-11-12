@@ -108,7 +108,7 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
 }
 
 bool buildAnywhere(const BuildPick& pick) {
-    return pick.tool == BuildPick::Tool::Destroy || pick.adjusting() || (pick.placing() && propInfo(pick.kind).buildAnywhere);
+    return pick.tool == BuildPick::Tool::Destroy || pick.adjusting() || pick.areaTool() || (pick.placing() && propInfo(pick.kind).buildAnywhere);
 }
 
 bool selectionInClaim(World& w) {

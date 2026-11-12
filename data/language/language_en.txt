@@ -989,6 +989,18 @@ MISC_BUILD_ALTAR_TAKEN	Your faction already has an Altar
 MISC_DESTROY_NOTHING	Nothing to destroy there
 UILABEL_CANCEL_BUILD	Cancel Construction
 MISC_BUILD_CANCELLED	The {0} blueprint is cancelled, and what was brought to it is dropped
+UILABEL_BUILD_DECONSTRUCT	Deconstruct
+UILABEL_BUILD_DECONSTRUCT_HINT	Left-click and drag over an area to take down your finished buildings and props in it, on every floor. Building pieces give back their material, and what props hold falls to the ground. Right-click or Escape cancels.
+UILABEL_BUILD_CANCEL_HINT	Left-click and drag over an area to cancel your unfinished blueprints in it, on every floor. What was brought to them falls to the ground. Right-click or Escape cancels.
+MISC_DECONSTRUCTED	Deconstructed {0}
+MISC_NOTHING_TO_DECONSTRUCT	Nothing of yours to deconstruct there
+MISC_CONSTRUCTION_CANCELLED	Cancelled {0} blueprints
+MISC_NOTHING_TO_CANCEL	No unfinished blueprints of yours there
+UILABEL_CANCEL_ALL_BUILD	Cancel All Construction
+UILABEL_CANCEL_ALL_TITLE	Cancel {0} connected blueprints?
+UILABEL_CANCEL_ALL_NOTE	What was brought to them and not built yet drops to the ground.
+UILABEL_CANCEL_ALL_YES	Cancel Them All
+UILABEL_CANCEL_ALL_NO	Keep Building
 UILABEL_CLIMB_UP	Climb Up
 UILABEL_CLIMB_DOWN	Climb Down
 MISC_BUILT	A {0} is finished

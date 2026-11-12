@@ -77,7 +77,7 @@ inline std::string currentPropKey(const std::string& key) {
 // How many kinds data/props.txt has
 int propKindCount();
 struct BuildPick {
-    enum class Tool { None, Destroy, Place, Adjust };
+    enum class Tool { None, Destroy, Place, Adjust, Deconstruct, CancelBuilding };
     Tool tool = Tool::None;
     PropKind kind = PropKind::Wagon;
 
@@ -85,6 +85,10 @@ struct BuildPick {
     static BuildPick place(PropKind k) { return BuildPick{ Tool::Place, k }; }
     // Adjust: how a prop is drawn apart from where it stands (app_prop_adjust.cpp)
     static BuildPick adjust() { return BuildPick{ Tool::Adjust }; }
+    // Deconstruct and Cancel Construction: an area dragged out with the left button
+    static BuildPick deconstruct() { return BuildPick{ Tool::Deconstruct }; }
+    static BuildPick cancelBuilding() { return BuildPick{ Tool::CancelBuilding }; }
+    bool areaTool() const { return tool == Tool::Deconstruct || tool == Tool::CancelBuilding; }
     bool adjusting() const { return tool == Tool::Adjust; }
     bool any() const { return tool != Tool::None; }
     bool placing() const { return tool == Tool::Place; }
@@ -281,6 +285,8 @@ inline std::vector<BuildRow> buildRows() {
         rows.push_back(BuildRow{ group, true, false, {} });
         if (group == BuildGroup::Tools) {
             rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
+            rows.push_back(BuildRow{ group, false, false, BuildPick::deconstruct() });
+            rows.push_back(BuildRow{ group, false, false, BuildPick::cancelBuilding() });
             rows.push_back(BuildRow{ group, false, false, BuildPick::adjust() });
             BuildRow plans{ group, false, false, {} };
             plans.blueprints = true;

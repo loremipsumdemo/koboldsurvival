@@ -1,4 +1,5 @@
 #include "systems_internal.h"
+#include "schedule.h"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -754,7 +755,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     s.dt = dt;
     s.units = w.view<Entity, Transform>();
     std::vector<ObjectId>& units = s.units;
-    units.erase(std::remove_if(units.begin(), units.end(), [&](ObjectId e) { return outCold(w, e) || w.has<Carried>(e); }),
+    units.erase(std::remove_if(units.begin(), units.end(), [&](ObjectId e) { return outCold(w, e) || w.has<Carried>(e) || w.has<Dancing>(e); }),
                 units.end());
     s.vel.assign(units.size(), { 0.0f, 0.0f });
     s.speeds.assign(units.size(), 0.0f);

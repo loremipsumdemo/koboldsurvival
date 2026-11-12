@@ -75,13 +75,14 @@ int main(int, char**) {
     check(propKindCount() == propsBefore + 1, "a refused table changes nothing");
     check(loadPropTableText(realProps, err) && propKindCount() == propsBefore, "the real props load again");
     {
-        // The Developer Menu first; then Tools (Destroy, Adjust, Building Blueprint), then the Claims heading with the Bedroll,
+        // The Developer Menu first; then Tools (Destroy, Deconstruct, Cancel Construction, Adjust, Building Blueprint), then the Claims heading with the Bedroll,
         // Campfire and Altar in the table's order
         const std::vector<BuildRow> rows = buildRows();
         check(rows.size() > 10 && rows[0].heading && rows[0].group == BuildGroup::Developer && rows[1].developer && rows[2].heading &&
-                  rows[2].group == BuildGroup::Tools && rows[3].pick == BuildPick::destroy() && rows[4].pick.adjusting() &&
-                  rows[5].blueprints && rows[6].heading && rows[6].group == BuildGroup::Claims &&
-                  rows[7].pick.places(PropKind::Bedroll) && rows[9].pick.places(PropKind::Altar),
+                  rows[2].group == BuildGroup::Tools && rows[3].pick == BuildPick::destroy() && rows[4].pick == BuildPick::deconstruct() && rows[5].pick == BuildPick::cancelBuilding() &&
+                  rows[6].pick.adjusting() &&
+                  rows[7].blueprints && rows[8].heading && rows[8].group == BuildGroup::Claims &&
+                  rows[9].pick.places(PropKind::Bedroll) && rows[11].pick.places(PropKind::Altar),
               "the Build tab is sorted under its headings, following the table, the Developer Menu first");
         check(rows[1].developer && propInfo(PropKind::Forge).group == BuildGroup::Crafting &&
                   propInfo(PropKind::Wagon).group == BuildGroup::Vehicles && propInfo(PropKind::Wagon).pulled,

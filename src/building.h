@@ -278,6 +278,10 @@ bool evacuateBuilding(World& w, Terrain& t, const std::vector<long long>& tiles)
 // Takes the whole building down at once: every piece of it goes, blueprints and ghosts too; props, items and units above the ground
 // floor are put down on it
 void pullDownBuilding(World& w, Terrain& t, const std::vector<long long>& tiles);
+// Every blueprint of the same owner joined to this one: those of the same building (its foundation tiles side by side), those on the
+// floors above and below, and those beside one another, so an overhang or a prop hung off a tile that is joined to the building comes
+// with it. The blueprint itself is among them.
+std::vector<ObjectId> connectedBlueprints(World& w, ObjectId start);
 
 // Material is brought to a blueprint: how much it took
 int supplyBlueprint(World& w, ObjectId blueprint, int logs);

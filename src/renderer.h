@@ -160,7 +160,7 @@ public:
     void drawBuildPreview(const Terrain& t);
     void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
-    void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int winW, int winH);
+    void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int storey, int winW, int winH);
 
     // renameText: the squad name being typed, or null when no squad is being renamed
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,

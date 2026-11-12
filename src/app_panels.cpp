@@ -401,6 +401,7 @@ void App::finishFormationDrag() {
     issueFormationOrder(world, terrain, units, point, spec);
     actionX = point.x;
     actionZ = point.z;
+    actionStorey = clickStorey;
     actionAlpha = 1.0f;
     markMove(point.x, point.z);
     playSfx(Sfx::UiOrder);
@@ -413,6 +414,7 @@ void App::beginRightHold(float x, float z) {
     if (units.empty()) {
         actionX = x;
         actionZ = z;
+        actionStorey = clickStorey;
         actionAlpha = 1.0f;
         markMove(x, z);
         playSfx(Sfx::UiOrder);
@@ -434,6 +436,7 @@ void App::beginRightHold(float x, float z) {
     holdZ = z;
     actionX = x;
     actionZ = z;
+    actionStorey = clickStorey;
     actionAlpha = 1.0f;
     markMove(x, z);
     steerUnits(world, units, Vec2{ x, z });
@@ -459,6 +462,7 @@ void App::moveSelectedTo(float x, float z) {
     if (!units.empty()) issueMoveOrder(world, terrain, units, Vec2{ x, z });
     actionX = x;
     actionZ = z;
+    actionStorey = clickStorey;
     actionAlpha = 1.0f;
     markMove(x, z);
 }

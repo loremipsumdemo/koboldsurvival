@@ -96,6 +96,13 @@ void App::onKeyDown() {
         if (e.key.key == SDLK_ESCAPE) session.askMaterial = false;
         return;
     }
+    if (screen == Screen::Playing && session.askCancel) {
+        if (e.key.key == SDLK_ESCAPE) {
+            session.askCancel = false;
+            session.cancelList.clear();
+        }
+        return;
+    }
     if (screen == Screen::Playing && rename.open) {
         if (e.key.key == SDLK_BACKSPACE) popUtf8Char(rename.text);
         else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) finishRename(true);
