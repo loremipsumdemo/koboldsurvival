@@ -48,6 +48,8 @@ bool propInTheWay(World& w, ObjectId unit, ObjectId prop) {
         // other pieces of a building that the prop was moved into do not shut it off from itself.
         if (storeyOf(w, p) != level || pi.foundation || pi.upperFloor) continue;
         const Transform* c = w.get<Transform>(p);
+        // A door the unit may pass is an opening, not a wall: standing in its tile, or looking through it, is no reason to refuse
+        if (pi.door && doorLets(w, p, unit)) continue;
         if (pi.onFoundation && distSq(c->x, c->z, b->x, b->z) < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) continue;
         float t = len2 > 1e-8f ? ((c->x - a->x) * abx + (c->z - a->z) * abz) / len2 : 0.0f;
         t = std::clamp(t, 0.0f, 1.0f);
