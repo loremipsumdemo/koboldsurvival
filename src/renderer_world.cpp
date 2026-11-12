@@ -273,11 +273,11 @@ void Renderer::drawFormationPreview(const Camera& cam, const Terrain& t, const s
     drawColorTris(rings, cam.viewProj((float)winW / (float)winH));
 }
 
-void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha,
+void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int storey,
                                  int winW, int winH) {
     if (alpha <= 0.0f) return;
 
-    const float gy = t.heightAt(x, z);
+    const float gy = t.heightAt(x, z) + storeyBaseHeight(storey);
     const float cy = gy + 0.55f, halfH = 0.45f, r = 0.22f;
     const V3 top{ x, cy + halfH, z };
     const V3 bottom{ x, cy - halfH, z };

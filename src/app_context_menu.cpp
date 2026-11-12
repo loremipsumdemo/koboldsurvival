@@ -156,7 +156,11 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
     }
     if (world.has<Entity>(target)) {
         const bool caged = inPrisonerCage(world, target);
-        if (world.has<Commandable>(target)) {
+        // Your own units, and your own animals whether military or citizens, are never attacked from here; an animal can't trade
+        // (all it holds is its meat and bones)
+        const bool ownMob = world.has<Mob>(target) && factionOf(world, target) == FACTION_PLAYER;
+        if (world.has<Commandable>(target) || ownMob) {
+            if (world.has<Citizen>(target)) out.push_back(MenuAction::Recruit);
             if (!world.has<Mob>(target)) out.push_back(MenuAction::Trade);
             out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
             if (canBeCarried(world, target)) out.push_back(MenuAction::PickUp);
@@ -203,7 +207,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         }
         // Units that all occupy something already have nobody to send in
         allOccupying = allOccupying && !picked.empty();
-        if (hasStorage(propInfo(p->kind))) out.push_back(MenuAction::Inventory);
+        if (hasStorage(propInfo(p->kind)) && !world.has<Blueprint>(target)) out.push_back(MenuAction::Inventory);
         // An Advanced Crafting prop or a Research Table that is yours (or no one's): its order, or its research
         if ((propInfo(p->kind).advanced || p->kind == PropKind::ResearchTable) && !world.has<Blueprint>(target)) {
             const Owner* own = world.get<Owner>(target);
@@ -243,6 +247,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             // A ghost is not built yet, and a free blueprint builds itself; either may be cancelled
             if (!bp->ghost && !world.has<FreeBuild>(target)) out.push_back(MenuAction::AutoConstruct);
             out.push_back(MenuAction::CancelBuild);
+            if (connectedBlueprints(world, target).size() > 1) out.push_back(MenuAction::CancelAllBuild);
         }
         // A bed in your building: open it to anyone, or keep it for your faction
         if (isBed(p->kind) && bedHouseOwner(world, target) == FACTION_PLAYER) {
@@ -304,6 +309,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
         case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
+        case MenuAction::CancelAllBuild: labels.push_back(lang("UILABEL_CANCEL_ALL_BUILD")); break;
         case MenuAction::AutoConstruct: labels.push_back(lang("UILABEL_AUTO_CONSTRUCT")); break;
         case MenuAction::Climb: labels.push_back(lang("UILABEL_CLIMB_UP")); break;
         case MenuAction::ClimbDown: labels.push_back(lang("UILABEL_CLIMB_DOWN")); break;
@@ -366,7 +372,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         // yours made Public or Private, and a Stall of yours stocked, with nobody selected
         std::vector<MenuAction> alone;
         for (MenuAction a : actions) {
-            if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
+            if (a == MenuAction::CancelBuild || a == MenuAction::CancelAllBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
                 a == MenuAction::StockStall || a == MenuAction::Recruit || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
                 alone.push_back(a);
             }
@@ -393,6 +399,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         if (const Transform* tt = world.get<Transform>(target)) {
             actionX = tt->x;
             actionZ = tt->z;
+            actionStorey = storeyOf(world, target);
             actionAlpha = 1.0f;
         }
         session.contextMenu.open = false;
@@ -545,6 +552,14 @@ void App::pickMenuAction(MenuAction a) {
     if (a == MenuAction::PutDown) {
         const ObjectId carrier = putDownCarrier(target);
         if (carrier != NO_OBJECT) putDown(world, carrier);
+        return;
+    }
+    if (a == MenuAction::CancelAllBuild) {
+        // Every blueprint joined to this one (the building's, the floors above it, and what hangs over its edges): asked first, with how many
+        if (!world.has<Blueprint>(target)) return;
+        session.cancelList = connectedBlueprints(world, target);
+        session.askCancel = !session.cancelList.empty();
+        playSfx(Sfx::UiMenuOpen);
         return;
     }
     if (a == MenuAction::CancelBuild) {
@@ -850,6 +865,7 @@ void App::pickMenuAction(MenuAction a) {
     if (const Transform* tt = world.get<Transform>(target)) {
         actionX = tt->x;
         actionZ = tt->z;
+        actionStorey = storeyOf(world, target);
         actionAlpha = 1.0f;
     }
     playSfx(Sfx::UiClick);

@@ -127,6 +127,8 @@ bool App::mouseDownOnPanels() {
                         } else {
                             session.buildPick = pick;
                             showNotice(lang(pick.adjusting() ? "UILABEL_BUILD_ADJUST_HINT"
+                                            : pick.tool == BuildPick::Tool::Deconstruct ? "UILABEL_BUILD_DECONSTRUCT_HINT"
+                                            : pick.tool == BuildPick::Tool::CancelBuilding ? "UILABEL_BUILD_CANCEL_HINT"
                                             : !pick.placing() ? "UILABEL_BUILD_DESTROY_HINT" : "UILABEL_BUILD_PLACE_HINT"), 4.0f);
                         }
                         playSfx(Sfx::UiClick);
@@ -229,6 +231,15 @@ bool App::mouseDownOnPanels() {
             return true;
         }
         if (session.buildPick.any() && session.dialogueUnit == NO_OBJECT && !mapOpen) {
+            if (session.buildPick.areaTool()) {
+                // Deconstruct and Cancel Construction: the area is dragged out from this tile
+                if (const auto hit = buildPickAt(mx, my)) {
+                    session.areaDrag = true;
+                    session.dragTileX = (int)std::floor(hit->first);
+                    session.dragTileZ = (int)std::floor(hit->second);
+                }
+                return true;
+            }
             if (!session.buildPick.placing()) {
                 ObjectId target = NO_OBJECT;
                 float ex = 0.0f, ey = 0.0f, ez = 0.0f, best = 0.0f;

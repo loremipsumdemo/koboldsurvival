@@ -73,6 +73,7 @@ void App::updateRightHold() {
         }
         actionX = holdX;
         actionZ = holdZ;
+        actionStorey = clickStorey;
         actionAlpha = 1.0f;
         markMove(holdX, holdZ);
     } else {
@@ -572,6 +573,23 @@ void App::updateHover() {
         }
         if (placing) updateBuildPaint();
         else session.foundationDrag = session.floorDrag = session.paintPiece = false;
+        if (!session.buildPick.areaTool()) session.areaDrag = false;
+        else if (screen == Screen::Playing && !panelOpen && !mapOpen && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {
+            // The area to deconstruct or cancel, in red as it is dragged out
+            if (const auto hit = buildPickAt(bmx, bmy)) {
+                const int tx = (int)std::floor(hit->first), tz = (int)std::floor(hit->second);
+                if (session.areaDrag) {
+                    bp.rect = true;
+                    bp.rx0 = std::min(session.dragTileX, tx);
+                    bp.rx1 = std::max(session.dragTileX, tx);
+                    bp.rz0 = std::min(session.dragTileZ, tz);
+                    bp.rz1 = std::max(session.dragTileZ, tz);
+                    bp.valid = false;
+                } else {
+                    bp.marks.push_back({ tx, tz, terrain.heightAt(tx + 0.5f, tz + 0.5f) + 0.05f, 2, true });
+                }
+            }
+        }
         if (bp.on && propInfo(session.buildPick.kind).claimsLand) {
             bp.ringR = CLAIM_RADIUS;
             bp.ringTone = bp.valid ? 1 : 2;

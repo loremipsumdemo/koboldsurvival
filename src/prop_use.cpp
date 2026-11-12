@@ -207,7 +207,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
                 continue;
             }
             if (action == PropAction::Inventory) {
-                if (hasStorage(info)) out.push_back(a);
+                if (hasStorage(info) && !w.has<Blueprint>(prop)) out.push_back(a);
                 continue;
             }
             switch (info.use) {

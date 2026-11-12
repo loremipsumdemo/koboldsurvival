@@ -6,6 +6,7 @@
 #include "recipes.h"
 #include "commerce.h"
 #include "schedule.h"
+#include "formation.h"
 
 using namespace systems_detail;
 
@@ -431,12 +432,77 @@ int danceCapacity(PropKind k) { return k == PropKind::Altar ? DANCE_ALTAR_DANCER
 // Where dancer slot of a ring is at this moment: the ring is shared, so they keep their places. Everyone steps on round the circle,
 // then back a little the other way, and on again.
 Vec2 dancePoint(const Transform& center, PropKind kind, int slot, double seconds) {
-    const float radius = kind == PropKind::Altar ? DANCE_ALTAR_RADIUS : DANCE_CAMPFIRE_RADIUS;
     const int cap = danceCapacity(kind);
-    const double cycle = std::fmod(seconds, 4.0);
-    const double turns = std::floor(seconds / 4.0) * 2.0 + (cycle < 3.0 ? cycle : 3.0 - (cycle - 3.0));
-    const float angle = TWO_PI * (float)slot / (float)cap + (float)turns * DANCE_SPEED / radius;
-    return Vec2{ center.x + std::cos(angle) * radius, center.z + std::sin(angle) * radius };
+    const std::vector<Vec2> ring = formationOffsets(FormationShape::Circle, cap, kind == PropKind::Altar ? DANCE_ALTAR_SPACING : DANCE_CAMPFIRE_SPACING);
+    const Vec2 o = ring[(size_t)std::clamp(slot, 0, cap - 1)];
+    // Clockwise and wider, then counterclockwise and narrower; at 0 seconds the circle is at its default place
+    const float phase = std::sin(TWO_PI * (float)std::fmod(seconds, (double)DANCE_PERIOD) / DANCE_PERIOD);
+    const float turn = DANCE_TURN * phase, grow = 1.0f + DANCE_GROW * phase;
+    const float c = std::cos(turn), s = std::sin(turn);
+    return Vec2{ center.x + (o.x * c - o.z * s) * grow, center.z + (o.x * s + o.z * c) * grow };
+}
+
+double danceRingTime(World& w, ObjectId center) {
+    const std::map<ObjectId, double>& m = w.resource<DanceRings>().seconds;
+    const auto it = m.find(center);
+    return it == m.end() ? 0.0 : it->second;
+}
+
+// Inside the claim of an Altar of the faction: a camp's own small claim does not count
+bool inAltarClaim(const std::vector<Claim>& claims, const Transform& at, int faction) {
+    for (const Claim& c : claims) {
+        if (c.owner != faction || c.camp) continue;
+        if ((at.x - c.x) * (at.x - c.x) + (at.z - c.z) * (at.z - c.z) <= c.radius * c.radius) return true;
+    }
+    return false;
+}
+
+// A dancer stops: it moves at once to the open place nearest its Altar (where it stands, if it has none), so it goes back to
+// normal collision without being stuck in anyone
+void leaveDance(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u) {
+    Transform* ut = w.get<Transform>(u);
+    if (!ut) return;
+    const int faction = factionOf(w, u);
+    float ax = ut->x, az = ut->z;
+    float best = -1.0f;
+    for (const Claim& c : claims) {
+        if (c.owner != faction || c.camp) continue;
+        const float d2 = (ut->x - c.x) * (ut->x - c.x) + (ut->z - c.z) * (ut->z - c.z);
+        if (d2 <= c.radius * c.radius && (best < 0.0f || d2 < best)) {
+            best = d2;
+            ax = c.x;
+            az = c.z;
+        }
+    }
+    struct Body2 { float x, z, r; };
+    std::vector<Body2> others;
+    for (ObjectId v : w.view<Entity, Transform>()) {
+        if (v == u || w.has<Carried>(v) || storeyOf(w, v) != 0) continue;
+        const Transform* vt = w.get<Transform>(v);
+        others.push_back({ vt->x, vt->z, w.get<Entity>(v)->radius });
+    }
+    const float mine = w.get<Entity>(u)->radius;
+    for (int ring = 0; ring <= 60; ++ring) {
+        const float r = (float)ring * 0.5f;
+        const int around = ring == 0 ? 1 : std::max(8, (int)(TWO_PI * r / 0.5f));
+        for (int k = 0; k < around; ++k) {
+            const float a = TWO_PI * (float)k / (float)around;
+            const float x = ax + std::cos(a) * r, z = az + std::sin(a) * r;
+            if (!openTile(t, x, z)) continue;
+            bool clear = true;
+            for (const Body2& o : others) {
+                if ((o.x - x) * (o.x - x) + (o.z - z) * (o.z - z) < (mine + o.r) * (mine + o.r)) {
+                    clear = false;
+                    break;
+                }
+            }
+            if (!clear) continue;
+            ut->x = x;
+            ut->z = z;
+            ut->y = t.standHeight(x, z);
+            return;
+        }
+    }
 }
 
 // The nearest Campfire or Altar of the unit's faction (or in its claim) with a place free on its circle
@@ -458,8 +524,9 @@ bool danceChoice(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rn
         const PropKind kind = w.get<Prop>(p)->kind;
         if (!isDanceCenter(kind) || w.has<Blueprint>(p) || storeyOf(w, p) != 0 || storeyOf(w, u) != 0) continue;
         const Owner* own = w.get<Owner>(p);
-        if (own && own->faction != faction && !inOwnClaim(w, claims, p, faction)) continue;
+        if (own && own->faction != faction) continue;
         const Transform* pt = w.get<Transform>(p);
+        if (!inAltarClaim(claims, *pt, faction)) continue;   // only round an Altar, or a Campfire within an Altar's claim
         const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
         if (d2 >= bestD2) continue;
         int used = 0;
@@ -515,8 +582,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         b.slot = slot;
         b.began = false;
         b.social = 0.0f;
-        autoWalk(w, t, u, dancePoint(*w.get<Transform>(center), w.get<Prop>(center)->kind, slot,
-                                     w.resource<WorldClock>().seconds / GAME_SECONDS_PER_REAL_SECOND), 0);
+        autoWalk(w, t, u, dancePoint(*w.get<Transform>(center), w.get<Prop>(center)->kind, slot, danceRingTime(w, center)), 0);
         return true;
     }
     if (r.kind == BehaviorKind::SitDown) {
@@ -684,6 +750,18 @@ namespace {
 bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) return false;
     if (!scheduleAllows(w, u, r.kind)) return false;   // not at this hour of its schedule
+    if (r.kind == BehaviorKind::Socialize) {
+        // Rested and comfortable (90% of each): it would rather dance, if it can
+        const Needs* n = w.get<Needs>(u);
+        if (n && n->rested * 10 >= n->maxRested * 9 && n->comfort * 10 >= n->maxComfort * 9) {
+            for (BehaviorRule& d : b.rules) {
+                if (d.kind != BehaviorKind::Dance || !d.on || d.cooldown > 0.0f || !scheduleAllows(w, u, d.kind)) continue;
+                if (startStep(w, t, claims, u, b, d, rng)) return true;
+                d.cooldown = BEHAVIOR_RETRY_SECONDS;
+                break;
+            }
+        }
+    }
     if (startStep(w, t, claims, u, b, r, rng)) return true;
     r.cooldown = r.why == BehaviorWait::NoBed ? NO_BED_RETRY_SECONDS : BEHAVIOR_RETRY_SECONDS;
     return false;
@@ -815,6 +893,32 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
 
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     const std::vector<Claim> claims = claimsOf(w);
+    {
+        // Whoever stopped dancing, for any reason, goes to an open place; the circles that still have dancers keep turning, and the
+        // rest are at rest
+        for (ObjectId u : w.view<Dancing, Transform>()) {
+            const Behaviors* db = w.get<Behaviors>(u);
+            if (db && db->busy && db->began && db->step.kind == BehaviorKind::Dance && w.has<Prop>(db->stepProp)) continue;
+            w.remove<Dancing>(u);
+            leaveDance(w, t, claims, u);
+        }
+        DanceRings& rings = w.resource<DanceRings>();
+        std::vector<ObjectId> active;
+        for (ObjectId u : w.view<Dancing>()) {
+            const Behaviors* db = w.get<Behaviors>(u);
+            if (db) active.push_back(db->stepProp);
+        }
+        std::sort(active.begin(), active.end());
+        for (auto it = rings.seconds.begin(); it != rings.seconds.end();) {
+            if (std::binary_search(active.begin(), active.end(), it->first)) {
+                it->second += dt;
+                ++it;
+            } else {
+                it = rings.seconds.erase(it);
+            }
+        }
+        for (ObjectId p : active) rings.seconds.try_emplace(p, 0.0);
+    }
     for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
         bool any = false;
@@ -1121,13 +1225,14 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             Transform* ut = w.get<Transform>(u);
             if (ct && ut && scheduleAllows(w, u, BehaviorKind::Dance)) {
                 const PropKind ck = w.get<Prop>(b->stepProp)->kind;
-                const Vec2 spot = dancePoint(*ct, ck, b->slot, w.resource<WorldClock>().seconds / GAME_SECONDS_PER_REAL_SECOND);
+                const Vec2 spot = dancePoint(*ct, ck, b->slot, danceRingTime(w, b->stepProp));
                 if (!b->began) {
                     if (std::hypot(spot.x - ut->x, spot.z - ut->z) > 0.9f) {
                         if (!walkingNow(w, u)) autoWalk(w, t, u, spot, 0);
                         continue;
                     }
                     b->began = true;
+                    w.add(u, Dancing{});
                     b->social = DANCE_MIN + rng.unit() * (DANCE_MAX - DANCE_MIN);
                     w.remove<SoloMove>(u);
                 }

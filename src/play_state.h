@@ -12,7 +12,7 @@ constexpr float TALK_COOLDOWN = 1.0f;
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
                         ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
-                        BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit };
+                        BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit, CancelAllBuild };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -62,6 +62,10 @@ struct PlaySession {
     int buildDir = 0;   // stairs being placed: the way they rise (0 north, 1 east, 2 south, 3 west), turned with R
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;
+    bool areaDrag = false;   // an area of Deconstruct or Cancel Construction being dragged out from dragTileX, dragTileZ
+    // Cancel All Construction asks first, with every blueprint it would cancel
+    bool askCancel = false;
+    std::vector<ObjectId> cancelList;
     std::vector<TradeGhost> tradeNpc;
     std::vector<TradeGhost> tradePlayer;
     int tradeNpcDrag = -1;

@@ -61,6 +61,8 @@ void breakBuilding(World& w, ObjectId e, bool leaveDebris = true);
 // Gone without a trace (no debris): what it held is dropped where it stood, and a claim it held is let go
 void removeProp(World& w, ObjectId e);
 bool destroyBuilding(World& w, ObjectId e);
+// Takes a finished prop down: what it holds drops, a building piece gives back the material it took, and no Debris is left
+bool deconstructBuilding(World& w, ObjectId e);
 void claimOwnership(World& w, ObjectId prop);
 void settleClaimOwnership(World& w);
 void claimDecaySystem(World& w, double gameSeconds);

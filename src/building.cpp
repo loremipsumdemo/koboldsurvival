@@ -2256,3 +2256,69 @@ void buildingSystem(World& w, Terrain& t, float dt) {
     if (w.resource<BuildingsChanged>().dirty) rebuildBlocking(w, t);
     else refreshBuildingTiles(w, t);
 }
+
+std::vector<ObjectId> connectedBlueprints(World& w, ObjectId start) {
+    std::vector<ObjectId> out;
+    if (!w.has<Blueprint>(start) || !w.has<Prop>(start)) return out;
+    struct Node {
+        ObjectId e;
+        int x0, z0, x1, z1, level;
+        std::vector<long long> clusters;
+    };
+    const int owner = ownerOf(w, start);
+    const BuildingMap& map = cachedBuildingMap(w);
+    std::unordered_map<long long, long long> clusterOfTile;
+    // A foundation tile's building, named by its lowest tile; -1 where there is no foundation
+    auto clusterId = [&](int x, int z) -> long long {
+        const long long k = tileKey(x, z);
+        if (const auto it = clusterOfTile.find(k); it != clusterOfTile.end()) return it->second;
+        long long id = -1;
+        if (map.foundation.count(k)) {
+            const std::vector<long long>& tiles = cachedBuildingTiles(w, x, z);
+            if (!tiles.empty()) id = *std::min_element(tiles.begin(), tiles.end());
+            for (long long tk : tiles) clusterOfTile[tk] = id;
+        }
+        clusterOfTile[k] = id;
+        return id;
+    };
+    std::vector<Node> nodes;
+    size_t first = 0;
+    for (ObjectId e : w.view<Prop, Transform, Blueprint>()) {
+        if (ownerOf(w, e) != owner) continue;
+        Node n;
+        n.e = e;
+        const Transform* tr = w.get<Transform>(e);
+        n.x0 = n.x1 = tileOf(tr->x);
+        n.z0 = n.z1 = tileOf(tr->z);
+        if (propInfo(w.get<Prop>(e)->kind).stairs) pieceTiles(w, e, n.x0, n.z0, n.x1, n.z1);
+        n.level = storeyOf(w, e);
+        for (int z = n.z0 - 1; z <= n.z1 + 1; ++z) {
+            for (int x = n.x0 - 1; x <= n.x1 + 1; ++x) {
+                const long long id = clusterId(x, z);
+                if (id >= 0 && std::find(n.clusters.begin(), n.clusters.end(), id) == n.clusters.end()) n.clusters.push_back(id);
+            }
+        }
+        if (e == start) first = nodes.size();
+        nodes.push_back(std::move(n));
+    }
+    auto joined = [&](const Node& a, const Node& b) {
+        for (long long c : a.clusters) {
+            if (std::find(b.clusters.begin(), b.clusters.end(), c) != b.clusters.end()) return true;
+        }
+        return std::abs(a.level - b.level) <= 1 && a.x0 - 1 <= b.x1 && b.x0 - 1 <= a.x1 && a.z0 - 1 <= b.z1 && b.z0 - 1 <= a.z1;
+    };
+    std::vector<char> seen(nodes.size(), 0);
+    std::vector<size_t> open{ first };
+    seen[first] = 1;
+    while (!open.empty()) {
+        const size_t i = open.back();
+        open.pop_back();
+        out.push_back(nodes[i].e);
+        for (size_t j = 0; j < nodes.size(); ++j) {
+            if (seen[j] || !joined(nodes[i], nodes[j])) continue;
+            seen[j] = 1;
+            open.push_back(j);
+        }
+    }
+    return out;
+}

@@ -346,6 +346,7 @@ bool App::mouseDownOnPopups() {
     if (pressOnAdjustWidget()) return true;
     if (pressOnRename()) return true;
     if (pressOnMaterialAsk()) return true;
+    if (pressOnCancelAsk()) return true;
     if (pressOnAltar()) return true;
     if (pressOnManageSquads()) return true;
     if (pressOnFactionRules()) return true;

@@ -271,7 +271,7 @@ void App::drawPlayingScreen() {
         const FormationSpec spec = formationFromDrag(world, units, Vec2{ dragFromX, dragFromZ }, Vec2{ dragToX, dragToZ }, formationChoice(), point);
         renderer.drawFormationPreview(cam, terrain, previewFormation(world, terrain, units, point, spec), winW, winH);
     }
-    renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, winW, winH);
+    renderer.drawActionCrystal(cam, terrain, actionX, actionZ, actionAlpha, actionStorey, winW, winH);
     renderer.beginUi(winW, winH);
     PROFILED("draw: overlays", drawWorldOverlays());
     if (!(editing && editor.useOwnUi)) PROFILED("draw: panels", drawGamePanels());
@@ -318,6 +318,7 @@ void App::drawPlayingScreen() {
     drawRename();
     drawFoundationSize();
     drawMaterialAsk();
+    drawCancelAsk();
     drawTalkOrTrade();
     if (session.paused && !editing && !bpEdit.active) renderer.drawPauseBar(true);
     drawFloorBanner();

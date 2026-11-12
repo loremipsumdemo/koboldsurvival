@@ -294,6 +294,21 @@ bool destroyBuilding(World& w, ObjectId e) {
     return true;
 }
 
+bool deconstructBuilding(World& w, ObjectId e) {
+    if (!w.has<Prop>(e) || !w.has<Transform>(e) || w.has<Blueprint>(e)) return false;
+    const PropKind kind = w.get<Prop>(e)->kind;
+    int storey = 0;
+    const Transform at = remainsAt(w, e, storey);
+    int logs = 0, material = 0;
+    if (isBuildingPiece(kind)) {
+        logs = materialsNeeded(w, e);
+        material = materialItem(materialOf(w, e));
+    }
+    breakBuilding(w, e, false);
+    if (logs > 0 && material > 0) spawnGroundItem(w, at, material, logs, storey);
+    return true;
+}
+
 void claimDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
