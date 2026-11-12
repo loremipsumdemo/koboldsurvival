@@ -36,6 +36,28 @@ void check(bool ok, const std::string& what) {
     if (!ok) ++failures;
 }
 
+// The first plan, a 3 by 3 house with a floor above. Held here, not read from MAP/BLUEPRINT: that folder is the player's to
+// rename, change and add to (small_house was renamed Shed), and a clean checkout has no copy of it.
+const char* const SMALL_HOUSE_PLAN =
+    "format 1\n"
+    "name small_house\n"
+    "size 3 3 2\n"
+    "fill Foundation 0 2 0 0\n"
+    "fill Foundation 0 2 1 0\n"
+    "fill Foundation 0 2 2 0\n"
+    "fill UpperFloor 0 2 0 0\n"
+    "fill UpperFloor 0 2 1 0\n"
+    "fill UpperFloor 0 2 2 0\n"
+    "piece WoodWall 0.500 0.500 0 0.0000\n"
+    "piece WoodWall 1.500 0.500 0 0.0000\n"
+    "piece WoodWall 2.500 0.500 0 0.0000\n"
+    "piece WoodWall 0.500 1.500 0 0.0000\n"
+    "piece WoodWall 2.500 1.500 0 0.0000\n"
+    "piece WoodWall 0.500 2.500 0 0.0000\n"
+    "piece WoodWall 2.500 2.500 0 0.0000\n"
+    "piece WoodDoor 1.500 2.500 0 0.0000\n"
+    "piece LockedChest 1.500 1.500 0 0.0000\n";
+
 int npcFaction() {
     for (const FactionDef& f : factions()) {
         if (f.id != FACTION_PLAYER && !isMobFaction(f.id) && factionCanClaim(f.id)) return f.id;
@@ -100,7 +122,7 @@ int main(int, char**) {
 
     // ---- The first plan, and what a plan is
     BuildPlan house;
-    check(readPlanFile(planFilePath("small_house"), house, err), "MAP/BLUEPRINT/small_house.blueprint reads: " + err);
+    check(planFromText(SMALL_HOUSE_PLAN, house, err), "the small house plan reads: " + err);
     check(house.w == 3 && house.d == 3 && house.floors == 2, "it is a 3 by 3, two floors");
     check(house.pieces.size() == 9 + 9 + 7 + 1 + 1, "it has 9 foundation tiles, 9 floor tiles, 7 walls, a door and a chest");
     check(planProblem(house).empty(), "it is sound: a foundation and closed edges");
