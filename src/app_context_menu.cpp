@@ -165,6 +165,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         } else if (world.has<Mob>(target) && world.has<Faction>(target) && isMobFaction(world.get<Faction>(target)->id)) {
             if (!caged) out.push_back(MenuAction::AttackUnprovoked);
         } else {
+            // One of your citizens can be made military, whether or not you have an Altar or any unit selected
+            if (world.has<Citizen>(target) && !world.has<Mob>(target) && factionOf(world, target) == FACTION_PLAYER) out.push_back(MenuAction::Recruit);
             if (talkable(target)) out.push_back(MenuAction::Talk);
             if (sells(target)) out.push_back(MenuAction::Shop);
             out.insert(out.end(), { MenuAction::Follow, MenuAction::Defend });
@@ -238,7 +240,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         if (breakableKind(p->kind) && !world.has<Blueprint>(target)) out.push_back(MenuAction::Destroy);
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
         if (const Blueprint* bp = world.get<Blueprint>(target); bp && world.has<Owner>(target) && world.get<Owner>(target)->faction == FACTION_PLAYER) {
-            out.push_back(MenuAction::AutoConstruct);
+            // A ghost is not built yet, and a free blueprint builds itself; either may be cancelled
+            if (!bp->ghost && !world.has<FreeBuild>(target)) out.push_back(MenuAction::AutoConstruct);
             out.push_back(MenuAction::CancelBuild);
         }
         // A bed in your building: open it to anyone, or keep it for your faction
@@ -316,6 +319,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::GetOut: labels.push_back(lang("UILABEL_EVACUATE")); break;
         case MenuAction::CraftOrder: labels.push_back(lang("UILABEL_CRAFT_ORDER")); break;
         case MenuAction::Research: labels.push_back(lang("UILABEL_RESEARCH")); break;
+        case MenuAction::Recruit: labels.push_back(lang("UILABEL_RECRUIT")); break;
         }
     }
     return labels;
@@ -363,7 +367,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         std::vector<MenuAction> alone;
         for (MenuAction a : actions) {
             if (a == MenuAction::CancelBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
-                a == MenuAction::StockStall || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
+                a == MenuAction::StockStall || a == MenuAction::Recruit || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
                 alone.push_back(a);
             }
         }
@@ -420,6 +424,16 @@ void App::pickMenuAction(MenuAction a) {
     session.contextMenu.open = false;
     if (a == MenuAction::CraftOrder || a == MenuAction::Research) {
         openCraftWindow(clicked, a == MenuAction::Research);
+        return;
+    }
+    if (a == MenuAction::Recruit) {
+        // A citizen of yours joins the military, in the current squad or the first with room
+        if (!world.has<Citizen>(target)) return;
+        if (!makeMilitary(world, target, world.resource<SquadBook>().current)) {
+            refuse(langf("MISC_MILITARY_FULL", { std::to_string(MILITARY_MAX) }));
+            return;
+        }
+        playSfx(Sfx::UiClick);
         return;
     }
     if (a == MenuAction::GetOut) {

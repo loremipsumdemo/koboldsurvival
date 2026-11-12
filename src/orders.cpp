@@ -1,4 +1,5 @@
 #include "systems_internal.h"
+#include "stuck.h"
 
 using namespace systems_detail;
 
@@ -281,6 +282,7 @@ void steerUnits(World& w, const std::vector<ObjectId>& units, Vec2 target) {
         SoloMove* so = w.get<SoloMove>(u);
         so->waypoints.assign(1, target);
         so->next = 0;
+        setPathGoal(w, u, target);
     }
 }
 

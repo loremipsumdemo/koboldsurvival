@@ -29,6 +29,10 @@
 #include "simulation.h"
 #include "building.h"
 #include "behavior_groups.h"
+#include "schedule.h"
+#include "party.h"
+#include "motivation.h"
+#include "calendar.h"
 #include "terrain.h"
 #include "encumbrance.h"
 #include "spawn_cluster.h"
@@ -282,6 +286,68 @@ int main(int, char**) {
         home.kind = BehaviorKind::Patrol;
         check(holdsBehavior(world.get<Behaviors>(resident)->rules, chopTrees) && holdsBehavior(world.get<Behaviors>(resident)->rules, home),
               "the citizen takes its group's tasks, the Citizen Default Behavior's among them");
+        // The daily schedule: eight hours of each by default, the global one until a group overrides it
+        const Schedule def = defaultSchedule();
+        int counts[ACTIVITY_COUNT] = { 0, 0, 0 };
+        for (unsigned char a : def.hours) ++counts[a];
+        check(counts[0] == 8 && counts[1] == 8 && counts[2] == 8, "the default schedule has eight hours of Sleep, Work and Recreation");
+        world.resource<WorldClock>().seconds = 10.0 * SECONDS_PER_HOUR;   // 10:00
+        check(activityOf(world, resident) == Activity::Work && scheduleAllows(world, resident, BehaviorKind::AutoHaul) &&
+              !scheduleAllows(world, resident, BehaviorKind::Sleep) && !scheduleAllows(world, resident, BehaviorKind::Socialize) &&
+              scheduleAllows(world, resident, BehaviorKind::Eat), "at 10:00 the default schedule is Work: work tasks run, sleep and recreation do not, needs always");
+        Schedule& own = scheduleOfRef(bg, woodGroup);
+        own = def;
+        own.hours[10] = (unsigned char)Activity::Recreation;
+        check(activityOf(world, resident) == Activity::Work, "a group that does not override follows the global schedule");
+        own.override = true;
+        check(activityOf(world, resident) == Activity::Recreation && scheduleAllows(world, resident, BehaviorKind::SitDown) &&
+              !scheduleAllows(world, resident, BehaviorKind::Patrol), "a group's own schedule, once overriding, is the one its citizens follow");
+        Schedule parsed;
+        check(scheduleFromText(scheduleText(own), parsed) && parsed.hours == own.hours && !scheduleFromText("012", parsed),
+              "a schedule is written as 24 digits and read back");
+        // Motivation: dancers add to it, it ticks down, and over 100 the faction walks faster inside its own claim
+        setMotivation(world, FACTION_PLAYER, 50.0);
+        check(!isMotivated(world, FACTION_PLAYER) && motivationOf(world, FACTION_PLAYER) == 50.0, "Motivation starts below the threshold");
+        setMotivation(world, FACTION_PLAYER, 110.0);
+        check(isMotivated(world, FACTION_PLAYER) && motivationMax(world, FACTION_PLAYER) >= MOTIVATION_BASE_MAX,
+              "over 100 a faction is motivated, and its most is 125 at least");
+        motivationSystem(world, 3.0f, 3600.0);   // an in-game hour with no one dancing: 10 less
+        check(std::fabs(motivationOf(world, FACTION_PLAYER) - 100.0) < 0.001, "Motivation ticks down 10 an in-game hour");
+        setMotivation(world, FACTION_PLAYER, 1000.0);
+        motivationSystem(world, 3.0f, 1.0);
+        check(motivationOf(world, FACTION_PLAYER) <= motivationMax(world, FACTION_PLAYER), "Motivation never goes over its most");
+
+        // Other factions' schedules: the default, and two Irregular ones that swap Sleep with Recreation and with Work
+        const Schedule npcA = npcSchedule(1), npcB = npcSchedule(2), npcD = npcSchedule(0);
+        check(npcD.hours == defaultSchedule().hours && npcA.hours[23] == (unsigned char)Activity::Recreation && npcA.hours[15] == (unsigned char)Activity::Sleep &&
+              npcA.hours[8] == (unsigned char)Activity::Work && npcB.hours[23] == (unsigned char)Activity::Work &&
+              npcB.hours[8] == (unsigned char)Activity::Sleep && npcB.hours[15] == (unsigned char)Activity::Recreation,
+              "the Irregular schedules swap Sleep with Recreation, and Sleep with Work");
+        check(npcIrregularMost(1) == 0 && npcIrregularMost(2) == 1 && npcIrregularMost(10) == 2 && npcIrregularMost(30) == 4,
+              "a faction has up to 1 + 10% of its units on the Irregular schedules, none for a single unit");
+        {
+            World camp;
+            Terrain flat(64);
+            Rng crng;
+            for (int i = 0; i < 20; ++i) spawnUnit(camp, flat, crng, 2, 10.0f + (float)i, 10.0f);
+            npcScheduleSystem(camp, 10.0f);
+            int irregular[3] = { 0, 0, 0 };
+            for (ObjectId u : camp.view<NpcSchedule>()) ++irregular[camp.get<NpcSchedule>(u)->kind];
+            check(irregular[0] == 17 && irregular[1] + irregular[2] == 3 && irregular[1] >= 1 && irregular[2] >= 1,
+                  "20 units of a faction keep 17 on the default schedule and put 3 on the two Irregular ones");
+            camp.resource<NpcScheduleClock>().left = 0.0f;
+            std::vector<ObjectId> units = camp.view<NpcSchedule>();
+            std::sort(units.begin(), units.end());
+            for (size_t i = 0; i < 10; ++i) camp.destroy(units[units.size() - 1 - i]);
+            npcScheduleSystem(camp, 10.0f);
+            int total = 0;
+            for (ObjectId u : camp.view<NpcSchedule>()) total += camp.get<NpcSchedule>(u)->kind > 0 ? 1 : 0;
+            check(total <= npcIrregularMost(10), "when units are lost, no more than the allowed number stay irregular");
+        }
+        check(scenarioHasCamp(ScenarioId::Outpost) && !scenarioHasCamp(ScenarioId::Vagabond) && !scenarioResizable(ScenarioId::Outpost) &&
+              scenarioEditable(ScenarioId::Outpost) && (int)scenarioParty(ScenarioId::Outpost, rng).size() == OUTPOST_UNITS,
+              "the Outpost scenario gives your own camp and a fixed number of units that can be customized");
+        setMotivation(world, FACTION_PLAYER, 120.0);
     }
 
     const size_t propsBefore = world.view<Prop, Transform>().size();
@@ -306,6 +372,12 @@ int main(int, char**) {
     restoreWorld(restored, terrain, after, loaded);
     check(writeSaveFile(second, captureWorld(restored, gs, cam, after, 1000, "test", map)), "the reloaded game is saved");
     check(slurp(first) == slurp(second), "both saves match");
+    {
+        BehaviorGroups& rg = behaviorGroups(restored);
+        check(rg.groupSchedules.size() >= 2 && rg.groupSchedules[1].override && rg.groupSchedules[1].hours[10] == (unsigned char)Activity::Recreation &&
+              !rg.schedule.override && rg.schedule.hours == defaultSchedule().hours, "the schedules come back from a save");
+        check(std::fabs(motivationOf(restored, FACTION_PLAYER) - 120.0) < 0.01, "Motivation comes back from a save");
+    }
     check(factionRules(restored, FACTION_PLAYER) == changedRules && factionRules(restored, 2) == findFaction(2)->rules,
           "your faction's changed rules come back from a save, and the others keep factions.txt's");
     {
@@ -349,10 +421,12 @@ int main(int, char**) {
         addBehavior(list, chop, BEHAVIOR_GROUP_TASKS);
         addBehavior(list, haul, BEHAVIOR_GROUP_TASKS);
         const size_t n = list.size();
-        check(n >= 7 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::AutoHarvest &&
-              list[n - 3].kind == BehaviorKind::AutoCraft && list[n - 4].kind == BehaviorKind::AutoHaulGround &&
-              list[n - 5].kind == BehaviorKind::AutoHaul && list[n - 6].kind == BehaviorKind::AutoHaulStall &&
-              list[n - 7].kind == BehaviorKind::AutoConstruct,
+        check(n >= 11 && list[n - 1].kind == BehaviorKind::Patrol && list[n - 2].kind == BehaviorKind::Dance &&
+              list[n - 3].kind == BehaviorKind::Play && list[n - 4].kind == BehaviorKind::SitDown &&
+              list[n - 5].kind == BehaviorKind::Socialize && list[n - 6].kind == BehaviorKind::AutoHarvest &&
+              list[n - 7].kind == BehaviorKind::AutoCraft && list[n - 8].kind == BehaviorKind::AutoHaulGround &&
+              list[n - 9].kind == BehaviorKind::AutoHaul && list[n - 10].kind == BehaviorKind::AutoHaulStall &&
+              list[n - 11].kind == BehaviorKind::AutoConstruct,
               "hauling (to stores, then off the ground) and harvesting sort in after building and before movement");
         check(!isNightAt(START_CLOCK_SECONDS) && isNightAt(18.0 * SECONDS_PER_HOUR) && isNightAt(3.0 * SECONDS_PER_HOUR) &&
               !isNightAt(17.9 * SECONDS_PER_HOUR), "night runs from 18:00 to 06:00");

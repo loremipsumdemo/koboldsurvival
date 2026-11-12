@@ -1685,7 +1685,33 @@ def dragon_crystal(c):
     c.line(p[1], 0.7, (13, 13), (16, 26))
 
 
+def gizmo(c):
+    """A small device of springs and cogs: a big brass cog, a small steel one meshed with it, and a coil spring."""
+    import math
+
+    def cog(cx, cy, ro, ri, teeth, cols, hole, rot=0.0):
+        pts = []
+        for i in range(teeth):
+            a = rot + i * 2 * math.pi / teeth
+            step = math.pi / teeth
+            for da, r in ((-0.55, ri), (-0.32, ro), (0.32, ro), (0.55, ri)):
+                pts.append((cx + math.cos(a + da * step * 1.8) * r, cy + math.sin(a + da * step * 1.8) * r))
+        c.poly(cols[2], *[(x + 0.6, y + 0.8) for x, y in pts])
+        c.poly(cols[0], *pts)
+        c.circ(cols[1], cx - ri * 0.15, cy - ri * 0.15, ri * 0.72)
+        c.circ(cols[0], cx, cy, ri * 0.62)
+        c.circ(cols[2], cx, cy, hole)
+        c.circ(WHITE, cx - hole * 0.3, cy - hole * 0.3, hole * 0.35)
+
+    brass = ((206, 150, 56), (244, 204, 108), (134, 90, 30))
+    cog(12.5, 15.5, 10.0, 7.8, 8, brass, 3.0)
+    cog(24.0, 23.5, 6.2, 4.8, 6, STEEL, 1.7, 0.3)
+    c.line(STEEL[2], 1.5, (19, 9), (21, 4.5), (23, 9), (25, 4.5), (27, 9), (29, 4.5))
+    c.line(STEEL[1], 0.6, (19, 8.6), (21, 4.1), (23, 8.6), (25, 4.1), (27, 8.6), (29, 4.1))
+
+
 PLAIN = {
+    'Gizmo': gizmo,
     'Iron Ore': ore, 'Oak Log': oak_log, 'Healing Herb': healing_herb, 'Gold Coin': gold_coin, 'Wolf Pelt': wolf_pelt,
     'Ancient Relic': relic, 'Health Potion': health_potion, 'Mana Potion': mana_potion, 'Elixir of Might': elixir, 'Bread': bread,
     'Antidote': antidote, 'Apple': apple, 'Wild Berries': berries, 'Hard Biscuit': biscuit, 'Cheese Wedge': cheese,

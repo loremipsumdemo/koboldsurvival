@@ -75,6 +75,7 @@ struct SaveUnit {
     int squad = -1;        // a military unit's squad, 0 to 8
     bool citizen = false;
     int citizenGroup = 0;  // the behavior group a citizen of yours follows, 0 for Group 1
+    int npcSchedule = 0;   // another faction's unit: 1 or 2 for an Irregular schedule (schedule.h)
     std::optional<int> coloration;     // from version 17: a boss's hue turn, degrees
     std::optional<double> tamingHours; // from version 17: game hours in a Taming Cage of another faction's
 };
@@ -84,6 +85,12 @@ struct SaveUnit {
 struct SaveGroup {
     int ref = 0;
     std::vector<SaveRule> rules;
+};
+// A daily schedule (schedule.h): ref -1 the global one, otherwise a group's index; hours as 24 digits
+struct SaveSchedule {
+    int ref = -1;
+    bool override = false;
+    std::string hours;
 };
 
 struct SaveGround {
@@ -96,6 +103,9 @@ struct SaveSite {
     std::string plan;
     int x = 0, z = 0, turns = 0, material = 0, stage = 0;
     double hours = 0.0;
+    double idleHours = 0.0;
+    int mark = -1;
+    double demolishHours = -1.0;
 };
 
 struct SaveProp {
@@ -118,7 +128,9 @@ struct SaveProp {
     std::string craftRecipe;            // from version 17: an Advanced Crafting prop's order: its recipe's key, or empty
     int craftKeep = 0;                  //   and the stock it keeps
     std::optional<Foundation> foundation;
-    std::optional<Blueprint> blueprint;
+    std::optional<Blueprint> blueprint;   // its autoPlaced, ghost and stage: lines bpauto
+    bool condemned = false;               // part of an NPC building being pulled down
+    double freeBuildHours = -1.0;         // a free blueprint: game hours since it was placed; -1 for none
     int material = 0;
     std::optional<std::uint32_t> storeFilter;
     bool bedPublic = false;
@@ -148,6 +160,8 @@ struct SaveData {
     int currentSquad = 0;
     std::vector<Ghost> ghosts;
     std::vector<SaveGroup> groups;   // empty in a file from before behavior groups: the defaults are used
+    std::vector<std::pair<int, double>> motivation;   // each faction's Motivation (motivation.h)
+    std::vector<SaveSchedule> schedules;   // none in a file from before schedules: the default one
     std::vector<SaveProp> props;
     std::vector<SaveGround> ground;
     std::vector<SaveUnit> units;

@@ -60,6 +60,9 @@ enum class PropKind : int {
     StoneStockpile,
     Stairs,
     Wheelbarrow,
+    IronStockpile,
+    OreStockpile,
+    GameTable,
     NamedCount
 };
 constexpr int PROP_NAMED_KIND_COUNT = idx(PropKind::NamedCount);
@@ -102,7 +105,7 @@ inline constexpr const char* BUILD_GROUP_LABELS[] = { "UILABEL_BUILD_GROUP_TOOLS
                                                       "UILABEL_BUILD_GROUP_VEHICLES", "UILABEL_BUILD_GROUP_NATURE",
                                                       "UILABEL_BUILD_GROUP_DEVELOPER" };
 
-enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone, Gizmo };
+enum class ItemFilter { Any, RawFood, Food, Weapon, Armor, Water, Wood, Stone, Gizmo, Iron, Ore };
 
 // The kinds of item a general store (a Barrel, a chest: storage that takes any item) can be set to allow, from its
 // right-click menu's Allowed Items. By default it takes all but Wood Logs and Stone, which have stockpiles of their
@@ -128,6 +131,8 @@ inline const char* itemFilterKey(ItemFilter f) {
     case ItemFilter::Wood: return "FILTER_WOOD";
     case ItemFilter::Stone: return "FILTER_STONE";
     case ItemFilter::Gizmo: return "FILTER_GIZMO";
+    case ItemFilter::Iron: return "FILTER_IRON";
+    case ItemFilter::Ore: return "FILTER_ORE";
     default: return "";
     }
 }
@@ -206,6 +211,7 @@ struct PropInfo {
     float fireX = 0.0f, fireY = 0.0f, fireZ = 0.0f, fireSize = 0.4f;
     double materials = 0.0;      // building material a blueprint needs (Wood Logs, or the material picked); 0: placed finished
     double buildSeconds = 0.0;   // building it needs at Carpentry 1 (per tile for a foundation)
+    double health = 0.0;         // damage it takes to break it, from the optional health column or its size; 0: none (nature, debris, pieces)
     int slots = 12;              // a store's slots (props.txt's optional slots column; STORAGE_SLOTS by default)
     int capacity = 0;            // the most items a store holds in all, or 0 for as many as its slots fit
     bool stall = false;
@@ -255,7 +261,7 @@ constexpr int STORAGE_COLUMNS = 6;
 
 constexpr int PROP_COPIES = 3;
 // One row of the Build tab: a heading, a pick (Destroy, or a prop to place), or the Developer entry that opens the spawn
-// panel. Under each heading in BuildGroup's order: Destroy first under Claims, then that group's props in props.txt's order.
+// panel (first). Under each heading in BuildGroup's order: Destroy first under Claims, then that group's props in props.txt's order.
 struct BuildRow {
     BuildGroup group = BuildGroup::Claims;
     bool heading = false;
@@ -265,10 +271,13 @@ struct BuildRow {
 };
 inline std::vector<BuildRow> buildRows() {
     std::vector<BuildRow> rows;
+    // The Developer Menu is at the top
+    rows.push_back(BuildRow{ BuildGroup::Developer, true, false, {} });
+    rows.push_back(BuildRow{ BuildGroup::Developer, false, true, {} });
     for (int g = 0; g < (int)BuildGroup::Count; ++g) {
         const BuildGroup group = (BuildGroup)g;
         // Nature is spawned from the Developer Menu only
-        if (group == BuildGroup::Nature) continue;
+        if (group == BuildGroup::Nature || group == BuildGroup::Developer) continue;
         rows.push_back(BuildRow{ group, true, false, {} });
         if (group == BuildGroup::Tools) {
             rows.push_back(BuildRow{ group, false, false, BuildPick::destroy() });
@@ -277,7 +286,6 @@ inline std::vector<BuildRow> buildRows() {
             plans.blueprints = true;
             rows.push_back(plans);
         }
-        if (group == BuildGroup::Developer) rows.push_back(BuildRow{ group, false, true, {} });
         for (PropKind k : propKindsListed()) {
             if (propInfo(k).group == group) rows.push_back(BuildRow{ group, false, false, BuildPick::place(k) });
         }

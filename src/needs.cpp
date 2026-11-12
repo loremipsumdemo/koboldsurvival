@@ -1,5 +1,6 @@
 #include "systems_internal.h"
 #include "npc_camps.h"
+#include "schedule.h"
 
 using namespace systems_detail;
 
@@ -35,7 +36,15 @@ void needsSystem(World& w, int hours, double gameSeconds) {
             const ObjectId seat = occupiedProp(w, e);
             const Prop* sp = seat != NO_OBJECT ? w.get<Prop>(seat) : nullptr;
             const double restGain = sp ? restedGainPerHour(sp->kind) : 0.0;
-            const double comfortGain = sp ? comfortGainPerHour(sp->kind) : 0.0;
+            double comfortGain = sp ? comfortGainPerHour(sp->kind) : 0.0;
+            // Chatting with someone gives comfort too
+            if (const Behaviors* bh = w.get<Behaviors>(e); bh && bh->busy && bh->began && bh->step.kind == BehaviorKind::Socialize) {
+                comfortGain = std::max(comfortGain, SOCIAL_COMFORT_PER_HOUR);
+            }
+            if (const Behaviors* bh = w.get<Behaviors>(e); bh && bh->busy && bh->began) {
+                if (bh->step.kind == BehaviorKind::Play) comfortGain = std::max(comfortGain, PLAY_COMFORT_PER_HOUR);
+                if (bh->step.kind == BehaviorKind::Dance) comfortGain = std::max(comfortGain, DANCE_COMFORT_PER_HOUR);
+            }
             const double restRate = restGain > 0.0 ? restGain : outCold(w, e) ? 0.0 : -restedLossPerHour(n->maxRested);
             driftNeed(n->rested, n->maxRested, n->restedPart, restRate, gameHours);
             driftNeed(n->comfort, n->maxComfort, n->comfortPart, comfortGain > 0.0 ? comfortGain : -COMFORT_LOSS_PER_HOUR,

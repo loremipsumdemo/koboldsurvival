@@ -315,7 +315,7 @@ struct LevelBuilder {
 
     void placeCampMobs() {
         for (const CampKit& kit : kits) {
-            if (!kit.placed || kit.faction == FACTION_PLAYER) continue;
+            if (!kit.placed) continue;
             for (int i = 0; i < CAMP_MOBS; ++i) {
                 float x = 0.0f, z = 0.0f;
                 MobKind kind = (MobKind)rng.range(1, mobKindCount());
@@ -326,14 +326,17 @@ struct LevelBuilder {
                     found = clearOfProps(x, z);
                 }
                 if (!found) continue;
-                const ObjectId mob = spawnMob(w, t, rng, kind, kit.faction, x, z);
-                const PropInfo& cageInfo = propInfo(PropKind::PrisonerCage);
-                const ObjectId cage = makeProp(w, PropKind::PrisonerCage, Transform{ x, t.heightAt(x, z), z });
+                // The animals in your own camp are wild ones, shut in a cage that is yours to tame them in
+                const ObjectId mob = spawnMob(w, t, rng, kind, kit.faction == FACTION_PLAYER ? FACTION_FACTIONLESS : kit.faction, x, z);
+                PropKind cageKind = PropKind::PrisonerCage;   // the Taming Cage, a prop of props.txt only
+                if (!propKindNamed("TamingCage", cageKind)) cageKind = PropKind::PrisonerCage;
+                const PropInfo& cageInfo = propInfo(cageKind);
+                const ObjectId cage = makeProp(w, cageKind, Transform{ x, t.heightAt(x, z), z });
                 w.add(cage, Owner{ kit.faction });
                 w.add(cage, Lock{ true, cageInfo.lockLevel, kit.faction });
                 claimOwnership(w, cage);
                 w.add(mob, Occupying{ cage });
-                if (!isMobFaction(kit.faction)) {
+                if (!isMobFaction(kit.faction) && kit.faction != FACTION_PLAYER) {
                     if (Name* nm = w.get<Name>(mob)) nm->text += " [!]";
                 }
             }

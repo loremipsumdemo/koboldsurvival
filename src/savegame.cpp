@@ -105,6 +105,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
         w.line("task", i, r.rule.on, behaviorKey(r.rule.kind), namesProp ? propInfo((PropKind)r.rule.propKind).key : std::string("-"), r.prop, r.rule.percent);
     }
     if (u.citizen && u.citizenGroup > 0) w.line("citgroup", i, u.citizenGroup);
+    if (u.npcSchedule > 0) w.line("npcsched", i, u.npcSchedule);
     if (u.stepKind >= 0) w.line("step", i, behaviorKey((BehaviorKind)u.stepKind));
     if (u.squad >= 0) w.line("squad", i, u.squad);
     if (u.citizen) w.line("citizen", i);
@@ -126,11 +127,21 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
         w.line("visual", i, v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz);
     }
     if (p.claimSteps) w.line("claimsteps", i, *p.claimSteps);
-    if (p.site) w.line("plansite", i, p.site->plan, p.site->x, p.site->z, p.site->turns, p.site->material, p.site->stage, p.site->hours);
+    if (p.site) {
+        w.line("plansite", i, p.site->plan, p.site->x, p.site->z, p.site->turns, p.site->material, p.site->stage, p.site->hours);
+        // How long an NPC building has stood without progress, and how long it has been coming down (-1 not at all)
+        if (p.site->idleHours != 0.0 || p.site->mark != -1 || p.site->demolishHours >= 0.0) {
+            w.line("plansite2", i, p.site->idleHours, p.site->mark, p.site->demolishHours);
+        }
+    }
     if (p.foundation) {
         w.line("foundation", i, p.foundation->x0, p.foundation->z0, p.foundation->w, p.foundation->h);
     }
     if (p.blueprint) w.line("blueprint", i, p.blueprint->supplied, p.blueprint->progress);
+    // An Auto Placed Blueprint: whether it is still a ghost, and the plan's stage it is of
+    if (p.blueprint && p.blueprint->autoPlaced) w.line("bpauto", i, p.blueprint->ghost ? 1 : 0, p.blueprint->stage);
+    if (p.condemned) w.line("condemned", i);
+    if (p.freeBuildHours >= 0.0) w.line("freebuild", i, p.freeBuildHours);
     if (p.material > 0) w.line("material", i, p.material);
     if (p.storeFilter) w.line("storefilter", i, *p.storeFilter);
     if (!p.craftRecipe.empty() || p.craftKeep > 0) w.line("craftorder", i, p.craftRecipe.empty() ? std::string("-") : p.craftRecipe, p.craftKeep);
@@ -169,6 +180,8 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
                    group ? r.rule.propKind : r.prop, r.rule.percent);
         }
     }
+    for (const auto& [faction, value] : d.motivation) w.line("motivation", faction, value);
+    for (const SaveSchedule& s : d.schedules) w.line("schedule", s.ref, s.override ? 1 : 0, s.hours);
     for (const auto& g : d.groundEdits) w.line("groundedit", (int)g[0], (int)g[1], g[2]);
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
     for (const SaveGround& g : d.ground) w.line("ground", g.at.x, g.at.y, g.at.z, g.item.item, g.item.count, g.item.hours);
@@ -344,6 +357,38 @@ const std::unordered_map<std::string, Handler>& handlers() {
             p->site = std::move(s);
             return true;
         } },
+        { "plansite2", [](Line& l) {
+            SaveProp* p = l.prop();
+            double idle = 0.0, demolish = -1.0;
+            int mark = -1;
+            if (!p || !p->site || !l.read(idle, mark, demolish)) return false;
+            p->site->idleHours = std::max(0.0, idle);
+            p->site->mark = mark;
+            p->site->demolishHours = demolish < 0.0 ? -1.0 : demolish;
+            return true;
+        } },
+        { "bpauto", [](Line& l) {
+            SaveProp* p = l.prop();
+            int ghost = 0, stage = 0;
+            if (!p || !p->blueprint || !l.read(ghost, stage)) return false;
+            p->blueprint->autoPlaced = true;
+            p->blueprint->ghost = ghost != 0;
+            p->blueprint->stage = std::max(0, stage);
+            return true;
+        } },
+        { "freebuild", [](Line& l) {
+            SaveProp* p = l.prop();
+            double hours = 0.0;
+            if (!p || !l.read(hours)) return false;
+            p->freeBuildHours = std::max(0.0, hours);
+            return true;
+        } },
+        { "condemned", [](Line& l) {
+            SaveProp* p = l.prop();
+            if (!p) return false;
+            p->condemned = true;
+            return true;
+        } },
         { "visual", [](Line& l) {
             SaveProp* p = l.prop();
             PropVisual v;
@@ -394,11 +439,27 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "slot", [](Line& l) { SaveUnit* u = l.unit(); return u && l.slotInto(u->stacks); } },
         { "squad", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->squad); } },
         { "citizen", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->citizen = true; return u != nullptr; } },
+        { "npcsched", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->npcSchedule) && u->npcSchedule >= 0 && u->npcSchedule < 3; } },
         { "citgroup", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->citizenGroup) && u->citizenGroup >= 0; } },
         { "bgroup", [](Line& l) {
             SaveGroup g;
             if (!l.read(g.ref)) return false;
             l.d.groups.push_back(std::move(g));
+            return true;
+        } },
+        { "motivation", [](Line& l) {
+            int faction = 0;
+            double value = 0.0;
+            if (!l.read(faction, value)) return false;
+            l.d.motivation.push_back({ faction, value });
+            return true;
+        } },
+        { "schedule", [](Line& l) {
+            SaveSchedule s;
+            int ov = 0;
+            if (!l.read(s.ref, ov, s.hours) || s.hours.size() != 24) return false;
+            s.override = ov != 0;
+            l.d.schedules.push_back(std::move(s));
             return true;
         } },
         { "btask", [](Line& l) {

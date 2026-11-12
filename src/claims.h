@@ -9,6 +9,7 @@
 
 constexpr double ALTAR_HEALTH = 10.0;
 constexpr double ALTAR_RECOVER_PER_HOUR = 1.0;
+constexpr double PROP_MEND_SHARE_PER_HOUR = 0.1;   // a prop below its health mends this share of it an hour inside an Altar's claim
 constexpr float CLAIM_RADIUS = 25.0f;
 // Every complete building (building.h) in an Altar's claim adds this much to its radius, if no other claim is in the way
 constexpr float CLAIM_GROWTH_STEP = 2.0f;

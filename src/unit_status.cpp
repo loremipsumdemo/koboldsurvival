@@ -1,3 +1,4 @@
+#include "recipes.h"
 #include "systems_internal.h"
 
 using namespace systems_detail;
@@ -25,6 +26,9 @@ std::string taskNameOf(World& w, ObjectId u) {
     if (w.has<Carried>(u)) return lang("UILABEL_TASK_CARRIED");
     if (const Behaviors* b = w.get<Behaviors>(u)) {
         if (b->seeking) return langf("UILABEL_TASK_SHARE_WALK", { nameOf(w, b->seek) });
+        if (b->busy && (b->step.kind == BehaviorKind::Socialize || b->step.kind == BehaviorKind::Play || b->step.kind == BehaviorKind::Dance)) {
+            return behaviorName(b->step);
+        }
         const PropOrder* po = w.get<PropOrder>(u);
         const Working* wk = w.get<Working>(u);
         if (b->busy && po && po->automatic) return langf("UILABEL_TASK_AUTO_GOING", { behaviorName(b->step) });
@@ -56,7 +60,7 @@ std::string taskNameOf(World& w, ObjectId u) {
 }
 
 std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
-    if (w.has<Corpse>(u)) return {};
+    if (w.has<Corpse>(u)) return w.has<Mob>(u) ? std::vector<EmoteId>{} : std::vector<EmoteId>{ EmoteId::Dead };
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
     std::vector<EmoteId> out;
@@ -84,6 +88,28 @@ std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
         if (limit > 0.0f && carriedWeightOf(w, u) >= ENCUMBERED_SHARE * limit) out.push_back(EmoteId::Encumbered);
     }
     if (const Needs* n = w.get<Needs>(u); n && n->maxHunger > 0 && n->hunger < 1) out.push_back(EmoteId::Hungry);
+    // What it is doing besides working a prop: recreation, carrying, fighting and the rest
+    if (const Behaviors* b = w.get<Behaviors>(u); b && b->busy) {
+        const BehaviorKind k = b->step.kind;
+        if (k == BehaviorKind::Socialize && b->began) out.push_back(EmoteId::Socializing);
+        if (k == BehaviorKind::Play && b->began) out.push_back(EmoteId::Playing);
+        if (k == BehaviorKind::Dance && b->began) out.push_back(EmoteId::Dancing);
+        if (k == BehaviorKind::ManStall) out.push_back(EmoteId::Stall);
+    }
+    if (const Behaviors* b = w.get<Behaviors>(u); b && b->seeking) out.push_back(EmoteId::Sharing);
+    if (w.has<Carried>(u)) out.push_back(EmoteId::Carried);
+    if (w.has<Carrying>(u) || w.has<CarryOrder>(u)) out.push_back(EmoteId::Carrying);
+    else if (const PropOrder* po = w.get<PropOrder>(u); po && po->action == PropAction::Store) out.push_back(EmoteId::Carrying);
+    if (w.has<StallJob>(u)) out.push_back(EmoteId::Stall);
+    if (w.has<CraftJob>(u)) out.push_back(EmoteId::Crafting);
+    if (w.has<DefendOrder>(u)) out.push_back(EmoteId::Defending);
+    if (w.has<FollowOrder>(u)) out.push_back(EmoteId::Following);
+    if (w.has<TalkOrder>(u)) out.push_back(EmoteId::Talking);
+    if (w.has<LootOrder>(u)) out.push_back(EmoteId::Looting);
+    if (!w.has<Mob>(u)) {
+        if (w.has<Fleeing>(u)) out.push_back(EmoteId::Fleeing);
+        else if (const Combat* c = w.get<Combat>(u); (c && c->target != NO_OBJECT) || w.has<AttackOrder>(u)) out.push_back(EmoteId::Fighting);
+    }
     return out;
 }
 

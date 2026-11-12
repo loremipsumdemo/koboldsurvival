@@ -2,6 +2,8 @@
 #include "behavior_groups.h"
 #include "claims.h"
 #include "squads.h"
+#include "calendar.h"
+#include "schedule.h"
 
 using namespace play;
 
@@ -40,7 +42,7 @@ std::vector<AddRow> addRows(const std::vector<BehaviorOption>& options) {
 }
 
 struct GroupsLayout {
-    Rect box, title, close;
+    Rect box, title, close, tabBehavior, tabSchedule;
     Rect list, addGroup, removeGroup;
     std::vector<Rect> entries;   // one per ref shown, from the first
     int firstEntry = 0, entryRows = 0;
@@ -68,6 +70,9 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
     float y = L.box.y + pad;
     L.title = Rect{ x, y, w - line, line };
     L.close = Rect{ x + w - line, y, line, line };
+    const float tabW = 120.0f * s;
+    L.tabSchedule = Rect{ L.close.x - gap - tabW, y, tabW, line };
+    L.tabBehavior = Rect{ L.tabSchedule.x - gap - tabW, y, tabW, line };
     y += line + gap;
     const float leftW = std::min(250.0f * s, w * 0.36f);
     const float bottom = L.box.y + boxH - pad;
@@ -103,6 +108,54 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
         L.rows.push_back(r);
     }
     return L;
+}
+
+// The Schedule tab: the brushes along the top, then a row of 24 hours for the global schedule and for each group
+struct SchedLayout {
+    Rect paint[ACTIVITY_COUNT];
+    Rect labelHead, hoursHead;
+    float labelW = 0.0f, cellW = 0.0f, rowH = 0.0f, rowGap = 0.0f, top = 0.0f, x = 0.0f, gridX = 0.0f;
+    Rect area;
+    int first = 0, rows = 0;
+};
+
+SchedLayout layoutSchedule(const GroupsLayout& L, float s, int rowCount, int scroll) {
+    SchedLayout S;
+    const float btnH = 34.0f * s, gap = 8.0f * s;
+    S.x = L.list.x;
+    const float w = L.box.x + L.box.w - 14.0f * s - S.x;
+    const float y0 = L.list.y;
+    for (int a = 0; a < ACTIVITY_COUNT; ++a) S.paint[a] = Rect{ S.x + a * (130.0f * s + gap), y0, 130.0f * s, btnH };
+    S.labelW = std::min(250.0f * s, w * 0.3f);
+    S.gridX = S.x + S.labelW + gap;
+    S.cellW = std::floor((S.x + w - S.gridX) / (float)SCHEDULE_HOURS);
+    S.rowH = 44.0f * s;
+    S.rowGap = 4.0f * s;
+    const float headY = y0 + btnH + gap * 1.5f;
+    S.hoursHead = Rect{ S.gridX, headY, S.cellW * SCHEDULE_HOURS, 22.0f * s };
+    S.labelHead = Rect{ S.x, headY, S.labelW, S.hoursHead.h };
+    S.top = headY + S.hoursHead.h + gap;
+    const float bottom = L.box.y + L.box.h - 14.0f * s;
+    S.area = Rect{ S.x, S.top, w, std::max(0.0f, bottom - S.top) };
+    S.rows = std::max(1, (int)std::floor((S.area.h + S.rowGap) / (S.rowH + S.rowGap)));
+    S.first = std::clamp(scroll, 0, std::max(0, rowCount - S.rows));
+    return S;
+}
+Rect schedRow(const SchedLayout& S, int visible) {
+    return Rect{ S.x, S.top + visible * (S.rowH + S.rowGap), S.gridX + S.cellW * SCHEDULE_HOURS - S.x, S.rowH };
+}
+Rect schedCell(const SchedLayout& S, int visible, int hour) {
+    return Rect{ S.gridX + hour * S.cellW, S.top + visible * (S.rowH + S.rowGap), S.cellW - 1.0f, S.rowH };
+}
+Rect schedToggle(const SchedLayout& S, int visible, float s) {
+    const float tw = 52.0f * s, th = 26.0f * s;
+    return Rect{ S.x + S.labelW - tw - 8.0f * s, S.top + visible * (S.rowH + S.rowGap) + (S.rowH - th) * 0.5f, tw, th };
+}
+RGBA activityColor(int a, bool live) {
+    static const RGBA C[ACTIVITY_COUNT] = { { 0.24f, 0.24f, 0.66f, 1.0f }, { 0.55f, 0.55f, 0.22f, 1.0f }, { 0.49f, 0.29f, 0.49f, 1.0f } };
+    RGBA c = C[std::clamp(a, 0, ACTIVITY_COUNT - 1)];
+    if (!live) { c.r *= 0.42f; c.g *= 0.42f; c.b *= 0.42f; }
+    return c;
 }
 
 std::string fitTo(Renderer& renderer, const std::string& text, float maxW) {
@@ -200,6 +253,16 @@ bool App::pressOnBehaviorGroups() {
     if (L.close.contains(x, y) || !L.box.contains(x, y)) {
         groupsUi = BehaviorGroupsUi{};
         playSfx(Sfx::UiBack);
+        return true;
+    }
+    if (L.tabBehavior.contains(x, y) || L.tabSchedule.contains(x, y)) {
+        groupsUi.tab = L.tabSchedule.contains(x, y) ? 1 : 0;
+        groupsUi.adding = false;
+        playSfx(Sfx::UiClick);
+        return true;
+    }
+    if (groupsUi.tab == 1) {
+        scheduleClick(x, y, true);
         return true;
     }
     for (size_t i = 0; i < L.entries.size(); ++i) {
@@ -315,6 +378,11 @@ void App::scrollBehaviorGroups(float mx, float my, float wheel) {
     const int rowCount = groupsUi.adding ? (int)addRows(groupTaskOptions()).size() : (int)groupList(g, groupsUi.ref)->size();
     const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, rowCount, groupsUi.rowScroll);
     const int step = wheel > 0.0f ? -3 : wheel < 0.0f ? 3 : 0;
+    if (groupsUi.tab == 1) {
+        const SchedLayout S = layoutSchedule(L, uiScaleFor((float)winH), 1 + (int)g.groups.size(), groupsUi.schedScroll);
+        if (S.area.contains(mx, my)) groupsUi.schedScroll = std::clamp(S.first + step, 0, std::max(0, 1 + (int)g.groups.size() - S.rows));
+        return;
+    }
     if (L.list.contains(mx, my)) groupsUi.refScroll = std::clamp(L.firstEntry + step, 0, std::max(0, (int)refs.size() - L.entryRows));
     if (L.rules.contains(mx, my)) groupsUi.rowScroll = std::clamp(L.firstRow + step, 0, std::max(0, rowCount - L.ruleRows));
 }
@@ -340,6 +408,54 @@ void App::drawBehaviorGroups() {
     renderer.drawThemedPanel(L.box);
     renderer.drawListText(lang("UILABEL_GROUPS_TITLE"), L.title.x, mid(L.title), theme::GOLD);
     renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
+    renderer.drawButton(L.tabBehavior, lang("UILABEL_GROUPS_TAB_BEHAVIOR"), groupsUi.tab != 0, L.tabBehavior.contains(mouseX, mouseY));
+    renderer.drawButton(L.tabSchedule, lang("UILABEL_GROUPS_TAB_SCHEDULE"), groupsUi.tab != 1, L.tabSchedule.contains(mouseX, mouseY));
+    if (groupsUi.tab == 1) {
+        const int rowTotal = 1 + (int)g.groups.size();
+        const SchedLayout S = layoutSchedule(L, s, rowTotal, groupsUi.schedScroll);
+        groupsUi.schedScroll = S.first;
+        for (int a = 0; a < ACTIVITY_COUNT; ++a) {
+            const bool picked = groupsUi.paint == a;
+            renderer.drawRect(Rect{ S.paint[a].x - 3.0f * s, S.paint[a].y - 3.0f * s, S.paint[a].w + 6.0f * s, S.paint[a].h + 6.0f * s },
+                              picked ? RGBA{ 1.0f, 1.0f, 1.0f, 0.9f } : RGBA{ 0.0f, 0.0f, 0.0f, 0.0f });
+            renderer.drawRect(S.paint[a], activityColor(a, true));
+            const std::string label = lang(ACTIVITY_KEYS[a]);
+            renderer.drawListText(label, S.paint[a].x + (S.paint[a].w - renderer.listTextWidth(label)) * 0.5f, mid(S.paint[a]), PLAIN);
+            renderer.noteTip(lang("UILABEL_SCHEDULE_HELP"), S.paint[a]);
+        }
+        const int nowHour = clockOf(world.resource<WorldClock>().seconds).hour;
+        for (int h = 0; h < SCHEDULE_HOURS; ++h) {
+            const std::string n = std::to_string(h);
+            const Rect c = schedCell(S, 0, h);
+            renderer.drawListText(n, c.x + (c.w - renderer.listTextWidth(n)) * 0.5f, S.hoursHead.y, h == nowHour ? theme::GOLD : theme::TEXT_DIM);
+        }
+        for (int i = 0; i < S.rows && S.first + i < rowTotal; ++i) {
+            const int idx = S.first + i;   // 0 the global schedule, then each group
+            const int ref = idx - 1;
+            const Schedule& sch = scheduleOfRef(g, ref);
+            const bool live = idx == 0 || sch.override;
+            const Rect row = schedRow(S, i);
+            renderer.drawRect(Rect{ row.x, row.y, S.labelW, row.h }, theme::alpha(theme::WELL, live ? 0.8f : 0.55f));
+            const std::string name = idx == 0 ? lang("UILABEL_SCHEDULE_GLOBAL") : groupRefName(ref);
+            renderer.drawListText(fitTo(renderer, name, S.labelW - 66.0f * s), row.x + 8.0f * s, idx == 0 ? mid(row) : row.y + 3.0f * s,
+                                  live ? PLAIN : theme::TEXT_DIM);
+            if (idx > 0) {
+                if (!sch.override) renderer.drawListText(lang("UILABEL_SCHEDULE_USING_GLOBAL"), row.x + 8.0f * s, row.y + 3.0f * s + th, theme::TEXT_QUIET);
+                const Rect tg = schedToggle(S, i, s);
+                renderer.drawRect(tg, sch.override ? RGBA{ 0.30f, 0.70f, 0.32f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.32f, 1.0f });
+                const float kn = tg.h - 6.0f * s;
+                renderer.drawRect(Rect{ sch.override ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+                renderer.noteTip(lang("UILABEL_SCHEDULE_OVERRIDE"), tg);
+            }
+            const Schedule& shown = live ? sch : g.schedule;
+            for (int h = 0; h < SCHEDULE_HOURS; ++h) {
+                const Rect c = schedCell(S, i, h);
+                renderer.drawRect(c, activityColor(shown.hours[(size_t)h], live));
+                if (h == nowHour) renderer.drawRect(Rect{ c.x, c.y, c.w, 3.0f * s }, theme::GOLD);
+            }
+        }
+        return;
+    }
 
     // The lists to pick from
     renderer.drawRect(L.list, theme::alpha(theme::WELL, 0.6f));
@@ -401,4 +517,47 @@ void App::drawBehaviorGroups() {
     }
     renderer.drawButton(L.addTask, lang(groupsUi.adding ? "UILABEL_GROUP_ADD_DONE" : "UILABEL_GROUP_ADD_TASK"), true,
                         L.addTask.contains(mouseX, mouseY));
+}
+
+bool App::scheduleClick(float x, float y, bool press) {
+    if (!groupsUi.open || groupsUi.tab != 1) return false;
+    BehaviorGroups& g = behaviorGroups(world);
+    const std::vector<int> refs = groupRefs(g);
+    const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, 0, 0);
+    const float s = uiScaleFor((float)winH);
+    const int rowTotal = 1 + (int)g.groups.size();
+    const SchedLayout S = layoutSchedule(L, s, rowTotal, groupsUi.schedScroll);
+    if (press) {
+        for (int a = 0; a < ACTIVITY_COUNT; ++a) {
+            if (!S.paint[a].contains(x, y)) continue;
+            groupsUi.paint = a;
+            playSfx(Sfx::UiClick);
+            return true;
+        }
+    }
+    for (int i = 0; i < S.rows && S.first + i < rowTotal; ++i) {
+        const int ref = S.first + i - 1;
+        Schedule& sch = scheduleOfRef(g, ref);
+        if (press && ref >= 0 && schedToggle(S, i, s).contains(x, y)) {
+            sch.override = !sch.override;
+            // A group's own schedule starts out as the global one
+            if (sch.override) {
+                const bool keep = sch.override;
+                sch = g.schedule;
+                sch.override = keep;
+            }
+            playSfx(Sfx::UiClick);
+            return true;
+        }
+        if (ref >= 0 && !sch.override) continue;
+        for (int h = 0; h < SCHEDULE_HOURS; ++h) {
+            if (!schedCell(S, i, h).contains(x, y)) continue;
+            if (sch.hours[(size_t)h] != (unsigned char)groupsUi.paint) {
+                sch.hours[(size_t)h] = (unsigned char)groupsUi.paint;
+                if (press) playSfx(Sfx::UiClick);
+            }
+            return true;
+        }
+    }
+    return false;
 }

@@ -51,13 +51,19 @@ void resetBehaviorGroups(BehaviorGroups& g) {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
     // Each sorts into its place by its category (Auto-Haul to Stalls is in the defaults already)
-    BehaviorRule sleep, build, ground, patrol, craft;
+    BehaviorRule sleep, build, ground, patrol, craft, social, sit, play, dance;
+    play.kind = BehaviorKind::Play;
+    dance.kind = BehaviorKind::Dance;
+    social.kind = BehaviorKind::Socialize;
+    sit.kind = BehaviorKind::SitDown;
     craft.kind = BehaviorKind::AutoCraft;   // fills the Crafting Orders that keep a stock
     sleep.kind = BehaviorKind::Sleep;
     build.kind = BehaviorKind::AutoConstruct;
     ground.kind = BehaviorKind::AutoHaulGround;
     patrol.kind = BehaviorKind::Patrol;
-    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
+    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol, social, sit, play, dance }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
+    g.schedule = defaultSchedule();
+    g.groupSchedules.clear();
     g.listedStores.clear();
     g.storesListed = false;
     g.groups.assign(1, { groupTask(GROUP_REF_CITIZEN) });
@@ -103,6 +109,7 @@ int addBehaviorGroup(World& w) {
     BehaviorGroups& g = behaviorGroups(w);
     if ((int)g.groups.size() >= BEHAVIOR_GROUP_MAX) return -1;
     g.groups.emplace_back();
+    scheduleOfRef(g, (int)g.groups.size() - 1);
     ++g.version;
     return (int)g.groups.size() - 1;
 }
@@ -111,6 +118,7 @@ bool removeBehaviorGroup(World& w, int group) {
     BehaviorGroups& g = behaviorGroups(w);
     if (group <= 0 || group >= (int)g.groups.size()) return false;
     g.groups.erase(g.groups.begin() + group);
+    if (group < (int)g.groupSchedules.size()) g.groupSchedules.erase(g.groupSchedules.begin() + group);
     for (std::vector<BehaviorRule>& list : g.groups) {
         list.erase(std::remove_if(list.begin(), list.end(), [&](const BehaviorRule& r) {
             return r.kind == BehaviorKind::Group && r.propKind == group;

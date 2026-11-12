@@ -9,6 +9,7 @@
 #include "components.h"
 #include "factions.h"
 #include "items.h"
+#include "npc_camps.h"
 #include "spatial.h"
 #include "systems_internal.h"
 
@@ -48,14 +49,20 @@ const BuildPlan* findPlan(const std::string& name) {
     return nullptr;
 }
 
-// Lays the pieces of one stage of the plan for the faction. How many went down.
-int layStage(World& w, Terrain& t, const BuildPlan& turned, const PlanSite& site, int stage, int faction) {
-    int laid = 0;
-    for (const PlanPiece* p : planStagePieces(turned, stage)) {
-        if (placePlanPiece(w, t, *p, site.x, site.z, faction, (BuildMaterial)site.material) != NO_OBJECT) ++laid;
-    }
-    return laid;
+// Whether a ghost may become a blueprint now: a piece on an upper floor needs that floor built under it
+bool ghostReady(World& w, ObjectId g, int faction) {
+    const Prop* p = w.get<Prop>(g);
+    const Transform* tr = w.get<Transform>(g);
+    if (!p || !tr) return false;
+    const int level = storeyOf(w, g);
+    if (level <= 0 || propInfo(p->kind).upperFloor) return true;
+    return floorSurfaceAt(w, (int)std::floor(tr->x), (int)std::floor(tr->z), level, faction);
 }
+
+// Where a site's building stands, for the ghosts that no site owns
+struct SiteBox {
+    int faction, x, z, w, d;
+};
 
 // Auto-Construct for the faction's citizens, so they build what is laid
 void giveBuilders(World& w, int faction) {
@@ -135,12 +142,20 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     clock.hours = 0.0;
     const std::vector<Claim> claims = claimsOf(w);
 
-    // The buildings under way, NPC factions' and yours (laid from the Build tab's Building Blueprint): lay the next stage of each
-    // when the last is built, or give up on it
+    // The buildings under way, NPC factions' and yours (laid from the Build tab's Building Blueprint): when what is laid of one is
+    // built, the ghosts of its next stage become blueprints. An NPC building that makes no progress is condemned, then pulled down.
     std::unordered_set<int> building;
+    std::vector<SiteBox> boxes;
+    // Auto Placed pieces of the world's blueprints, by faction, read once
+    std::vector<ObjectId> autoPlaced;
+    for (ObjectId b : w.view<Blueprint, Prop, Transform>()) {
+        if (w.get<Blueprint>(b)->autoPlaced) autoPlaced.push_back(b);
+    }
     for (ObjectId e : w.view<PlanSite, Prop>()) {
         const int faction = ownerOf(w, e);
-        PlanSite& site = *w.get<PlanSite>(e);
+        PlanSite* sitePtr = w.get<PlanSite>(e);
+        if (!sitePtr) continue;
+        PlanSite& site = *sitePtr;
         const BuildPlan* plan = findPlan(site.plan);
         if (!plan || faction < 0) {
             w.remove<PlanSite>(e);
@@ -148,28 +163,94 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         }
         const BuildPlan turned = planTurned(*plan, site.turns);
         site.hours += hours;
-        int pending = 0;
-        for (ObjectId b : w.view<Blueprint, Prop, Transform>()) {
-            const Transform* bt = w.get<Transform>(b);
-            if (ownerOf(w, b) == faction && inBox(site, turned, bt->x, bt->z)) ++pending;
-        }
-        if (pending > 0) {
-            if (site.hours >= PLAN_STAGE_GIVE_UP_HOURS) w.remove<PlanSite>(e);
-            else building.insert(faction);
-            continue;
-        }
-        // Everything laid is built: the next stage that has anything to lay
-        const int stages = planStageCount(turned);
-        int laid = 0;
-        int stage = site.stage;
-        while (laid == 0 && ++stage < stages) laid = layStage(w, t, turned, site, stage, faction);
-        if (laid == 0) {
-            w.remove<PlanSite>(e);   // the plan is built
-            continue;
-        }
-        site.stage = stage;
-        site.hours = 0.0;
+        boxes.push_back(SiteBox{ faction, site.x, site.z, turned.w, turned.d });
         building.insert(faction);
+
+        // Condemned: its units are asked to leave, and once the day is up and nobody is on its ground floor it comes down
+        if (site.demolishHours >= 0.0) {
+            site.demolishHours += hours;
+            const Transform* at = w.get<Transform>(e);
+            const BuildingMap map = buildingMap(w);
+            const std::vector<long long> tiles = buildingTiles(map, (int)std::floor(at->x), (int)std::floor(at->z));
+            const bool inside = evacuateBuilding(w, t, tiles);
+            if (site.demolishHours >= NPC_DEMOLISH_HOURS && !inside) pullDownBuilding(w, t, tiles);
+            continue;
+        }
+
+        // What is left of it to build: its Auto Placed pieces in its box, those laid and those still ghosts
+        int remaining = 0, supplied = 0, lowestGhost = 1 << 20, ghostCount = 0;
+        bool laid = false;
+        for (ObjectId b : autoPlaced) {
+            if (!w.has<Blueprint>(b)) continue;   // built, or cancelled, since the list was made
+            const Transform* bt = w.get<Transform>(b);
+            if (ownerOf(w, b) != faction || !inBox(site, turned, bt->x, bt->z)) continue;
+            const Blueprint* bp = w.get<Blueprint>(b);
+            ++remaining;
+            if (bp->ghost) {
+                ++ghostCount;
+                lowestGhost = std::min(lowestGhost, bp->stage);
+            } else {
+                laid = true;
+                supplied += bp->supplied;
+            }
+        }
+        if (remaining == 0) {
+            w.remove<PlanSite>(e);   // built, or what is left of it cancelled
+            boxes.pop_back();
+            continue;
+        }
+        // Everything before the next stage is built: its ghosts become blueprints, and what costs nothing is put down
+        if (!laid && ghostCount > 0) {
+            int made = 0;
+            for (ObjectId b : autoPlaced) {
+                if (!w.has<Blueprint>(b)) continue;
+                Blueprint* bp = w.get<Blueprint>(b);
+                const Transform* bt = w.get<Transform>(b);
+                if (!bp->ghost || bp->stage != lowestGhost || ownerOf(w, b) != faction || !inBox(site, turned, bt->x, bt->z)) continue;
+                if (!ghostReady(w, b, faction)) continue;
+                bp->ghost = false;
+                ++made;
+            }
+            if (made > 0 && lowestGhost > site.stage) {
+                for (const PlanPiece* p : planStagePieces(turned, lowestGhost)) {
+                    if (propInfo(p->kind).materials <= 0.0) placePlanPiece(w, t, *p, site.x, site.z, faction, (BuildMaterial)site.material);
+                }
+                site.stage = lowestGhost;
+            }
+            supplied += made * 7919;   // a ghost made a blueprint is progress
+        }
+        // Progress, or not: an NPC building that stands idle for NPC_STALL_HOURS is condemned. Yours never are.
+        const int mark = remaining * 10007 + supplied;
+        if (mark != site.mark) {
+            site.mark = mark;
+            site.idleHours = 0.0;
+        } else {
+            site.idleHours += hours;
+        }
+        if (faction != FACTION_PLAYER && site.idleHours >= NPC_STALL_HOURS) {
+            const Transform* at = w.get<Transform>(e);
+            const BuildingMap map = buildingMap(w);
+            const std::vector<long long> tiles = buildingTiles(map, (int)std::floor(at->x), (int)std::floor(at->z));
+            const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+            for (ObjectId p : w.view<Prop, Transform>()) {
+                const Transform* pt = w.get<Transform>(p);
+                if (in.count(tileKey((int)std::floor(pt->x), (int)std::floor(pt->z)))) w.add(p, Condemned{});
+            }
+            site.demolishHours = 0.0;
+        }
+    }
+    claimBedSystem(w, t);
+    // Ghosts that no building owns any more (the first tile of its foundation was cancelled) go
+    for (ObjectId b : autoPlaced) {
+        if (!w.has<Blueprint>(b) || !w.get<Blueprint>(b)->ghost) continue;
+        const Transform* bt = w.get<Transform>(b);
+        const int faction = ownerOf(w, b);
+        const bool owned = std::any_of(boxes.begin(), boxes.end(), [&](const SiteBox& s) {
+            return s.faction == faction && bt->x >= (float)s.x && bt->z >= (float)s.z && bt->x < (float)(s.x + s.w) && bt->z < (float)(s.z + s.d);
+        });
+        if (owned) continue;
+        releasePropLinks(w, b);
+        w.destroy(b);
     }
 
     // A faction that is not building looks for a house it could start
@@ -197,17 +278,14 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         }
         BuildMaterial material = BuildMaterial::Wood;
         if (!npcNextMaterial(have, material)) continue;
-        const int haveMaterial = stockOf(w, claims, c.owner, materialItem(material));
-        const int haveLogs = material == BuildMaterial::Wood ? haveMaterial : stockOf(w, claims, c.owner, woodLogItem());
+        // Wood is what it can always try for. Stone and metal buildings wait until it has some of that in its stores, so that a
+        // faction with none does not lay one it will never finish, have it condemned, and lay it again.
+        if (material != BuildMaterial::Wood && stockOf(w, claims, c.owner, materialItem(material)) <= 0) continue;
 
-        // The plans it has the stock for, one of them by chance
+        // Any plan it may build, one of them by chance: a free slot and room are all it needs to start, not the stock
         std::vector<const BuildPlan*> plans;
         for (const BuildPlan& plan : planLibrary()) {
-            if (!plan.npcAllowed) continue;   // the Load list's NPC toggle is off: only you place it
-            const PlanCost cost = planCost(plan);
-            const bool enough = material == BuildMaterial::Wood ? haveMaterial >= cost.material + cost.logs
-                                                                : haveMaterial >= cost.material && haveLogs >= cost.logs;
-            if (enough) plans.push_back(&plan);
+            if (plan.npcAllowed) plans.push_back(&plan);   // the Load list's NPC toggle off: only you place it
         }
         if (plans.empty()) continue;
         const BuildPlan& plan = *plans[(size_t)rng.range(0, (int)plans.size() - 1)];
@@ -232,8 +310,8 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
             for (int tz = z - 1; tz <= z + turned.d && clear; ++tz) {
                 for (int tx = x - 1; tx <= x + turned.w && clear; ++tx) clear = !map.foundation.count(tileKey(tx, tz));
             }
-            if (!clear || !planFoundationFits(w, t, rectsBy[turns], x, z, c.owner)) continue;
-            const ObjectId anchor = placePlanFoundation(w, t, rectsBy[turns], x, z, c.owner, material);
+            if (!clear || !planFoundationFits(w, t, rectsBy[turns], x, z, c.owner) || !planSurroundingsClear(w, rectsBy[turns], x, z)) continue;
+            const ObjectId anchor = placePlanAll(w, t, turned, rectsBy[turns], x, z, c.owner, material);
             if (anchor == NO_OBJECT) continue;
             PlanSite site;
             site.plan = plan.name;

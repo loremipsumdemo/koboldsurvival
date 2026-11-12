@@ -424,6 +424,7 @@ UILABEL_MODE_BLOCK_TIP	格挡：从不攻击，格挡几率翻倍，空手也一
 UILABEL_MODE_SNEAK_TIP	潜行：以一半速度行走，更难被发现。
 UILABEL_MODE_RANGED_TIP	远程：主手持弓或弩时自动开启。每次射击消耗一支箭或弩矢。
 UILABEL_SQUAD_TAB	小队
+UILABEL_RECRUIT	招募
 UILABEL_DISBAND	遣散
 UILABEL_DISBAND_HOLD	按住“遣散”{0}秒以确认
 MISC_DISBAND_ASK	{0}将永远离开你的小队和阵营，成为无派系者：不属于任何阵营，独自游荡。
@@ -1249,6 +1250,8 @@ PROP_UPPER_FLOOR	楼板
 PROP_DRAGON_CRYSTAL	龙晶
 PROP_WOOD_STOCKPILE	木头堆放区
 PROP_STONE_STOCKPILE	石头堆放区
+PROP_IRON_STOCKPILE	铁堆放区
+PROP_ORE_STOCKPILE	矿石堆放区
 MISC_PROP_HOLDS_ITEMS	存放 {0}/{1} 件物品
 PROP_STAIRS	楼梯
 PROP_TAMING_CAGE	驯养笼
@@ -1728,6 +1731,8 @@ PROP_WEAPON_BENCH	武器工作台
 PROP_ARMOR_BENCH	护甲工作台
 PROP_AMMO_BENCH	弹药工作台
 FILTER_GIZMO	小装置
+FILTER_IRON	铁锭
+FILTER_ORE	矿石
 UILABEL_BEHAVIOR_AUTO_CRAFT	自动制作
 UILABEL_BEHAVIOR_AUTO_CRAFT_TIP	完成设有库存量的制作订单：当仓库中的数量少于订单要求且有配方所需材料时，把材料运到制作台并开工
 UILABEL_WAIT_NO_CRAFT_ORDER	没有库存不足且材料齐备的制作订单
@@ -1756,3 +1761,30 @@ UILABEL_CRAFT_NONE_KNOWN	尚未掌握可在此制作的配方：请在研究台�
 UILABEL_CRAFT_TAKES	需要{0}
 MISC_NO_WORLD_Q	还没有生成过世界。要用全部默认设置现在生成一个吗？
 UILABEL_NO_WORLD_HINT	想自己选择地形和外观，请在标题画面使用“世界生成”。
+UILABEL_ACTIVITY_SLEEP	睡觉
+UILABEL_ACTIVITY_WORK	工作
+UILABEL_ACTIVITY_RECREATION	娱乐
+UILABEL_TASKS_RECREATION	娱乐
+UILABEL_BEHAVIOR_SOCIALIZE	社交
+UILABEL_BEHAVIOR_SOCIALIZE_TIP	在娱乐时段，走到同阵营另一个也在娱乐的单位身边聊一会儿，恢复舒适度
+UILABEL_BEHAVIOR_SIT_DOWN	坐下
+UILABEL_BEHAVIOR_SIT_DOWN_TIP	在娱乐时段，坐在空闲的座位（椅子、凳子、长凳等）上休息一会儿，从座位获得舒适度
+UILABEL_WAIT_NO_SEAT	附近没有空闲的座位
+UILABEL_WAIT_NO_COMPANY	附近没有同阵营的单位在娱乐
+UILABEL_GROUPS_TAB_BEHAVIOR	行为
+UILABEL_GROUPS_TAB_SCHEDULE	日程
+UILABEL_SCHEDULE_GLOBAL	市民（全局日程）
+UILABEL_SCHEDULE_OVERRIDE	覆盖
+UILABEL_SCHEDULE_USING_GLOBAL	（使用全局）
+UILABEL_SCHEDULE_HELP	选择睡觉、工作或娱乐，然后点击或拖动小时格来涂画。未覆盖的组使用全局日程。需求类任务（进食、治疗、休息）在任何时段都会进行。
+PROP_GAME_TABLE	游戏桌
+UILABEL_BEHAVIOR_PLAY	玩游戏
+UILABEL_BEHAVIOR_PLAY_TIP	在娱乐时段，走到本阵营的游戏桌旁，占据四边之一玩游戏（最多4人）。玩的时候恢复舒适度
+UILABEL_BEHAVIOR_DANCE	跳舞
+UILABEL_BEHAVIOR_DANCE_TIP	在娱乐时段，走到本阵营的篝火或祭坛旁，绕着它蹦跳起舞（篝火最多8人，祭坛最多32人）。每个舞者每游戏小时为所属阵营提供1点干劲，并少量恢复舒适度
+UILABEL_WAIT_NO_TABLE	附近没有还有空位的游戏桌
+UILABEL_WAIT_NO_DANCE_PLACE	没有还有空位可供跳舞的本阵营篝火或祭坛
+UILABEL_MOTIVATION_BAR	干劲 {0} / {1}
+UILABEL_MOTIVATION_TIP	干劲：每个在你的祭坛和篝火旁跳舞的单位每游戏小时提供1点，并以每小时约10点的速度下降。超过{0}时，你的单位在你的领地内移动速度提高{1}%，祭坛的火焰也会更旺。上限为125，每有一座完整建筑再加25
+SCENARIO_OUTPOST_NAME	前哨（推荐）
+SCENARIO_OUTPOST_DESC	以与其他阵营相同的方式开局：自己的营地，包含祭坛、篝火、铺盖卷、储备充足的堆放区、可驯服的笼中动物，以及与它们相同数量的单位。可以自定义单位，但不能增减。

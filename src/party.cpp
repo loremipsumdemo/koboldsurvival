@@ -124,11 +124,11 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
 }
 
 const char* scenarioNameKey(ScenarioId id) {
-    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_NAME" : "SCENARIO_VAGABOND_NAME";
+    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_NAME" : id == ScenarioId::Outpost ? "SCENARIO_OUTPOST_NAME" : "SCENARIO_VAGABOND_NAME";
 }
 
 const char* scenarioDescKey(ScenarioId id) {
-    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_DESC" : "SCENARIO_VAGABOND_DESC";
+    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_DESC" : id == ScenarioId::Outpost ? "SCENARIO_OUTPOST_DESC" : "SCENARIO_VAGABOND_DESC";
 }
 
 PartyMember mobMember(MobKind kind, Rng& rng) {
@@ -154,6 +154,11 @@ int partyPeople(const Party& p) {
 Party scenarioParty(ScenarioId id, Rng& rng, int count) {
     if (id == ScenarioId::Custom) {
         Party p = randomParty(rng, count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT);
+        for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
+        return p;
+    }
+    if (id == ScenarioId::Outpost) {
+        Party p = randomParty(rng, OUTPOST_UNITS);
         for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
         return p;
     }

@@ -303,6 +303,15 @@ void claimDecaySystem(World& w, double gameSeconds) {
         if (altarFueled(w, c.altar)) hp->value = std::min(hp->max, hp->value + ALTAR_RECOVER_PER_HOUR * hours);
         else hp->value -= hours / ALTAR_DECAY_HOURS * ALTAR_HEALTH;
     }
+    // Every prop with health mends by itself, a tenth of its health an hour, inside an Altar's claim (not a camp's)
+    const std::vector<Claim> claims = claimsOf(w);
+    for (ObjectId e : w.view<Health, Prop, Transform>()) {
+        Health* h = w.get<Health>(e);
+        if (h->value <= 0.0 || h->value >= h->max || propInfo(w.get<Prop>(e)->kind).claimsLand) continue;
+        const Transform* tr = w.get<Transform>(e);
+        const Claim* c = claimAt(claims, tr->x, tr->z);
+        if (c && !c->camp) h->value = std::min(h->max, h->value + PROP_MEND_SHARE_PER_HOUR * h->max * hours);
+    }
     for (ObjectId e : w.view<Health>()) {
         if (w.get<Health>(e)->value <= 0.0 && w.has<Prop>(e)) breakBuilding(w, e);
     }

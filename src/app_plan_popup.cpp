@@ -262,7 +262,9 @@ bool App::planSpotFree(const BuildPlan& turned, int x, int z, const std::vector<
             }
         }
     }
-    c.ok = inside && planFoundationFits(world, terrain, planPick.rects, x, z, FACTION_PLAYER);
+    // Props and other buildings may not stand on it or a tile round it (the Building Blueprints editor's own ground is its own)
+    c.ok = inside && planFoundationFits(world, terrain, planPick.rects, x, z, FACTION_PLAYER) &&
+           (bpEdit.active || planSurroundingsClear(world, planPick.rects, x, z));
     c.filled = true;
     c.x = x;
     c.z = z;
@@ -287,6 +289,18 @@ void App::previewPlanPick(BuildPreview& bp, const std::vector<Claim>& claims) {
             bp.marks.push_back(BuildPreview::Mark{ x + i, z + j, terrain.heightAt((float)(x + i) + 0.5f, (float)(z + j) + 0.5f) + 0.08f, ok ? 1 : 2, false });
         }
     }
+    // The front of a plan is its +x side as it was drawn in the Building Blueprints editor (the view that looks from the +x, +z corner, so
+    // it is the side to the lower right). Each quarter turn clockwise (R) carries it from +x to +z, then -x, then -z.
+    static const float FRONT_X[4] = { 1.0f, 0.0f, -1.0f, 0.0f }, FRONT_Z[4] = { 0.0f, 1.0f, 0.0f, -1.0f };
+    const int turn = ((planPick.turns % 4) + 4) % 4;
+    const float fx = FRONT_X[turn], fz = FRONT_Z[turn];
+    const float midX = (float)x + (float)turned.w * 0.5f, midZ = (float)z + (float)turned.d * 0.5f;
+    const float reach = (fx != 0.0f ? (float)turned.w : (float)turned.d) * 0.5f + 1.6f;
+    bp.arrow = true;
+    bp.arrowX = midX + fx * reach;
+    bp.arrowZ = midZ + fz * reach;
+    bp.arrowDX = fx;
+    bp.arrowDZ = fz;
 }
 
 bool App::placePlanPick(float mx, float my) {
@@ -297,12 +311,12 @@ bool App::placePlanPick(float mx, float my) {
         refuse(lang("MISC_PLAN_BLOCKED"));
         return true;
     }
-    const ObjectId anchor = placePlanFoundation(world, terrain, planPick.rects, x, z, FACTION_PLAYER, (BuildMaterial)planPick.material);
+    const ObjectId anchor = placePlanAll(world, terrain, planPick.turned, planPick.rects, x, z, FACTION_PLAYER, (BuildMaterial)planPick.material);
     if (anchor == NO_OBJECT) {
         refuse(lang("MISC_PLAN_BLOCKED"));
         return true;
     }
-    // Where it is and how far it has come: the next stage of it is laid when this one is built (npcBuilderSystem)
+    // Where it is and how far it has come: the ghosts of its next stage become blueprints when this one is built (npcBuilderSystem)
     PlanSite site;
     site.plan = planPick.plan.name;
     site.x = x;

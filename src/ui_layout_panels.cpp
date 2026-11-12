@@ -177,7 +177,8 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
         L.factionRulesButton = Rect{ open.x + m.pad, L.renameButton.y + L.renameButton.h + m.gap, open.w - 2.0f * m.pad, m.toggleH };
 
         const float rowH = 24.0f * s, rowGap = 2.0f * s;
-        L.repHeading = Rect{ open.x + m.pad, L.factionRulesButton.y + L.factionRulesButton.h + m.gap, open.w - 2.0f * m.pad, rowH };
+        L.motivationBar = Rect{ open.x + m.pad, L.factionRulesButton.y + L.factionRulesButton.h + m.gap, open.w - 2.0f * m.pad, rowH };
+        L.repHeading = Rect{ open.x + m.pad, L.motivationBar.y + L.motivationBar.h + m.gap, open.w - 2.0f * m.pad, rowH };
         const float listTop = L.repHeading.y + rowH + rowGap;
         const float room = body.y + body.h - m.pad * 0.5f - listTop;
         L.repVisible = std::max(0, (int)std::floor((room + rowGap) / (rowH + rowGap) + 0.001f));

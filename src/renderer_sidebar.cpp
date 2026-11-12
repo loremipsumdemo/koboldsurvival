@@ -162,6 +162,14 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
         infoLine(langf("UILABEL_TEMPERAMENT", { lang(temperamentKey(mobTemperament(mb->kind))) }));
     }
 
+    // What it is trying to do now, as the Behavior tab shows it: for any unit, yours or not
+    {
+        const std::string task = langf("UILABEL_TASK", { taskNameOf(w, unit) });
+        const std::string shown = fitTextTip(task, colW, Rect{ tx, y, colW, listTextHeight("Ag") });
+        drawListText(shown, tx, y, RGBA{ 1.0f, 0.86f, 0.55f, 1.0f });
+        y += listTextHeight("Ag") + 6.0f * s;
+    }
+
     auto statRow = [&](float rowY, const std::string& label, const std::string& value, float frac, RGBA fill) {
         drawListText(label, tx, rowY, theme::TEXT_DIM);
         drawListText(value, rightEdge - listTextWidth(value), rowY, WHITE);
