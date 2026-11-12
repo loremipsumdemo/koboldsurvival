@@ -43,7 +43,7 @@ void App::startMapLevel(const MapChoice& choice) {
         }
         buildLevelFrom(world, terrain, rng, (unsigned)std::time(nullptr), level);
     } else {
-        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), false, progress);
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
     }
     settleFactionHomes(world, terrain);
     // The party from the menu replaces the units that the seed made: its people, then its mobs after them
@@ -55,6 +55,15 @@ void App::startMapLevel(const MapChoice& choice) {
     ensurePlayerUnits(world, terrain, rng, people);
     ensurePlayerMobs(world, terrain, rng, mobKinds, people);
     applyParty(world, party);
+    if (scenarioHasCamp(scenarioPick) && pendingLevel.empty()) {
+        // The Outpost: only the first unit is yours to command, the rest start as citizens who tend the camp
+        const ObjectId lead = firstSquadUnit(world);
+        std::vector<ObjectId> squad = world.view<Entity, Commandable>();
+        std::sort(squad.begin(), squad.end());
+        for (ObjectId u : squad) {
+            if (u != lead && !world.has<Mob>(u)) makeCitizen(world, u);
+        }
+    }
     if (const ObjectId first = firstSquadUnit(world); first != NO_OBJECT) {
         const Transform* ft = world.get<Transform>(first);
         if (ft && unreachableLand(terrain, ft->x, ft->z, AIRSHIP_LAND_TILES)) placeStartingAirship(world, terrain, ft->x, ft->z);
@@ -71,7 +80,7 @@ void App::startMapLevel(const MapChoice& choice) {
 
 void App::openParty(const MapChoice& choice) {
     pendingMap = choice;
-    scenarioPick = ScenarioId::Vagabond;
+    scenarioPick = ScenarioId::Outpost;
     scenarioScroll = 0;
     screen = Screen::ScenarioSelect;
 }

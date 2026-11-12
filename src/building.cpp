@@ -4,6 +4,7 @@
 #include <deque>
 #include <unordered_set>
 #include "airship.h"
+#include "stuck.h"
 #include "encumbrance.h"
 #include "experience.h"
 #include "factions.h"
@@ -42,9 +43,11 @@ float gapTo(World& w, ObjectId u, ObjectId prop) {
     const Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
     if (!ut || !pt) return 1e9f;
+    // From its own floor, or the one above or below it: building reaches a floor either way, so a builder need not stand on the
+    // stairs or the floor beside a piece to finish it
     const int su = storeyOf(w, u);
     const PropInfo* info = infoOf(w, prop);
-    if (su != workStorey(w, prop) && !(info && info->upperFloor && su == storeyOf(w, prop))) return 1e9f;
+    if (std::abs(su - workStorey(w, prop)) > 1 && !(info && info->upperFloor && su == storeyOf(w, prop))) return 1e9f;
     if (const Foundation* f = w.get<Foundation>(prop)) {
         const float cx = std::clamp(ut->x, (float)f->x0, (float)(f->x0 + f->w));
         const float cz = std::clamp(ut->z, (float)f->z0, (float)(f->z0 + f->h));
@@ -62,6 +65,19 @@ Vec2 approachOf(World& w, ObjectId u, ObjectId prop) {
                      std::clamp(ut->z, (float)f->z0 + 0.5f, (float)(f->z0 + f->h) - 0.5f) };
     }
     return pt ? Vec2{ pt->x, pt->z } : Vec2{ 0.0f, 0.0f };
+}
+
+// Where to walk to build the piece: not up to it, but to BUILD_STAND_OFF short of how far it can be reached from, in line with it, so a
+// builder never stands on what it builds or on the stairs by it. Where it already is when it is near enough.
+Vec2 standOffOf(World& w, ObjectId u, ObjectId prop) {
+    const Transform* ut = w.get<Transform>(u);
+    const Vec2 at = approachOf(w, u, prop);
+    if (!ut) return at;
+    const float dx = ut->x - at.x, dz = ut->z - at.z;
+    const float d = std::hypot(dx, dz);
+    const float stay = BLUEPRINT_REACH - BUILD_STAND_OFF;
+    if (d <= stay) return Vec2{ ut->x, ut->z };
+    return Vec2{ at.x + dx / d * stay, at.z + dz / d * stay };
 }
 
 bool walking(World& w, ObjectId u) {
@@ -965,9 +981,88 @@ void collapseCheck(World& w) {
     if (fell) queueLog(w, lang("MISC_FLOORS_COLLAPSE"), LogKind::Seen);
 }
 
+bool evacuateBuilding(World& w, Terrain& t, const std::vector<long long>& tiles) {
+    const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+    bool inside = false;
+    for (ObjectId u : w.view<Entity, Transform>()) {
+        if (w.has<Corpse>(u) || w.has<Carried>(u) || storeyOf(w, u) != 0) continue;
+        const Transform* ut = w.get<Transform>(u);
+        const int ux = tileOf(ut->x), uz = tileOf(ut->z);
+        if (!in.count(tileKey(ux, uz))) continue;
+        inside = true;
+        if (outCold(w, u) || w.has<Occupying>(u) || walking(w, u)) continue;
+        bool moved = false;
+        for (int ring = 1; ring <= FOUNDATION_MAX && !moved; ++ring) {
+            for (int dz = -ring; dz <= ring && !moved; ++dz) {
+                for (int dx = -ring; dx <= ring && !moved; ++dx) {
+                    if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
+                    const int x = ux + dx, z = uz + dz;
+                    if (in.count(tileKey(x, z)) || !t.walkable(x, z)) continue;
+                    leaveSquad(w, u);
+                    w.remove<IdleSpot>(u);
+                    walkSoloTo(w, t, u, Vec2{ x + 0.5f, z + 0.5f }, 0);
+                    moved = true;
+                }
+            }
+        }
+    }
+    return inside;
+}
+
+void pullDownBuilding(World& w, Terrain& t, const std::vector<long long>& tiles) {
+    if (tiles.empty()) return;
+    const std::unordered_set<long long> in(tiles.begin(), tiles.end());
+    auto within = [&](const Transform* tr) { return in.count(tileKey(tileOf(tr->x), tileOf(tr->z))) > 0; };
+    int x0 = keyX(tiles[0]), z0 = keyZ(tiles[0]), x1 = x0, z1 = z0;
+    for (long long k : tiles) {
+        x0 = std::min(x0, keyX(k));
+        x1 = std::max(x1, keyX(k));
+        z0 = std::min(z0, keyZ(k));
+        z1 = std::max(z1, keyZ(k));
+    }
+    std::vector<ObjectId> doomed, dropped;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (!within(w.get<Transform>(e))) continue;
+        w.remove<Condemned>(e);
+        if (isBuildingPiece(w.get<Prop>(e)->kind)) doomed.push_back(e);
+        else if (storeyOf(w, e) > 0) dropped.push_back(e);   // what stood above the ground floor, and what it holds, comes down
+    }
+    for (ObjectId e : w.view<GroundItem, Transform>()) {
+        if (within(w.get<Transform>(e)) && storeyOf(w, e) > 0) dropped.push_back(e);
+    }
+    for (ObjectId e : dropped) {
+        Transform* tr = w.get<Transform>(e);
+        tr->y = t.heightAt(tr->x, tr->z);
+        w.remove<Storey>(e);
+    }
+    // A unit somehow above the ground floor of it is put down on the ground floor
+    for (ObjectId u : w.view<Entity, Transform>()) {
+        Transform* ut = w.get<Transform>(u);
+        if (storeyOf(w, u) <= 0 || !within(ut)) continue;
+        ut->y = t.heightAt(ut->x, ut->z);
+        w.remove<Upstairs>(u);
+        w.remove<Climbing>(u);
+        w.remove<Route>(u);
+        w.remove<SoloMove>(u);
+    }
+    for (ObjectId e : doomed) {
+        // Material brought to a piece and not spent yet is left where it stood
+        if (const Blueprint* bp = w.get<Blueprint>(e); bp && !bp->ghost && bp->progress <= 0.0 && bp->supplied > 0) {
+            Transform at = *w.get<Transform>(e);
+            at.y = t.heightAt(at.x, at.z);
+            spawnGroundItem(w, at, materialItem(materialOf(w, e)), bp->supplied);
+        }
+        releasePropLinks(w, e);
+        w.destroy(e);
+    }
+    buildingTilesChanged(w, x0, z0, x1, z1);
+    w.resource<BuildingsChanged>().dirty = true;
+}
+
 ObjectId placeCostedProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey) {
+    // A prop with nothing to bring is a free blueprint: it finishes itself in an in-game hour (freeBuildSystem)
+    if (propInfo(kind).materials <= 0.0) return placeFreeBlueprint(w, t, kind, x, z, yaw, owner, storey);
     const ObjectId e = placeBuiltProp(w, t, kind, x, z, yaw, owner, storey);
-    if (propInfo(kind).materials <= 0.0) return e;
     // Whoever places it is who builds it, so it is theirs while it is a blueprint
     if (Owner* own = w.get<Owner>(e)) own->faction = owner;
     else w.add(e, Owner{ owner });
@@ -975,16 +1070,27 @@ ObjectId placeCostedProp(World& w, const Terrain& t, PropKind kind, float x, flo
     return e;
 }
 
-ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir) {
+namespace {
+// ghostStage -1: a piece placed as the game's rules allow. Otherwise a ghost of that stage: an Auto Placed Blueprint laid with no
+// rules at all, ahead of the foundation or floor it stands on.
+ObjectId layPiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir,
+                  int ghostStage) {
     const PropInfo& info = propInfo(kind);
+    if (ghostStage >= 0 && (info.materials <= 0.0 || level < 0 || level > STOREY_MAX)) return NO_OBJECT;
     const BuildingMap m = buildingMap(w);
     float yaw = info.stairs ? (float)(((dir % 4) + 4) % 4) * 1.5707963f : 0.0f;
     if (info.door) {
         // Across the doorway: in line with the walls beside it, or along the building's edge
-        const bool ns = isWallOrDoor(w, mapGet(m.piece, levelKey(x, z - 1, level))) || isWallOrDoor(w, mapGet(m.piece, levelKey(x, z + 1, level)));
-        const bool ew = isWallOrDoor(w, mapGet(m.piece, levelKey(x - 1, z, level))) || isWallOrDoor(w, mapGet(m.piece, levelKey(x + 1, z, level)));
+        // Its two ends go to walls: the line (north-south or east-west) with the walls beside it, a wall counting for more than another
+        // door. With as many on both lines, or none, it lies along the building's edge.
+        auto pull = [&](int ax, int az) {
+            const ObjectId p = mapGet(m.piece, levelKey(ax, az, level));
+            const PropInfo* pi = p != NO_OBJECT ? infoOf(w, p) : nullptr;
+            return pi ? (pi->wallRule ? 3 : (pi->door ? 1 : 0)) : 0;
+        };
+        const int ns = pull(x, z - 1) + pull(x, z + 1), ew = pull(x - 1, z) + pull(x + 1, z);
         const bool westOrEastEdge = !m.foundation.count(tileKey(x - 1, z)) || !m.foundation.count(tileKey(x + 1, z));
-        if ((ns && !ew) || (!ns && !ew && westOrEastEdge)) yaw = 1.5707963f;
+        if (ns > ew || (ns == ew && westOrEastEdge)) yaw = 1.5707963f;
     }
     const int storey = info.upperFloor ? level + 1 : level;
     const ObjectId e = placeBuiltProp(w, t, kind, x + 0.5f, z + 0.5f, yaw, owner);
@@ -997,9 +1103,28 @@ ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int
     if (storey > 0) w.add(e, Storey{ storey });
     w.remove<Lock>(e);   // a door locks once it is built
     if (takesMaterial(kind) && material != BuildMaterial::Wood) w.add(e, Material{ material });
-    if (info.materials > 0.0) w.add(e, Blueprint{});
-    else finishBlueprint(w, const_cast<Terrain&>(t), e);
+    if (ghostStage >= 0) {
+        Blueprint bp;
+        bp.autoPlaced = true;
+        bp.ghost = true;
+        bp.stage = ghostStage;
+        w.add(e, bp);
+    } else if (info.materials > 0.0) {
+        w.add(e, Blueprint{});
+    } else {
+        finishBlueprint(w, const_cast<Terrain&>(t), e);
+    }
     return e;
+}
+}
+
+ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir) {
+    return layPiece(w, t, kind, x, z, owner, material, level, dir, -1);
+}
+
+ObjectId placeGhostPiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir,
+                         int stage) {
+    return layPiece(w, t, kind, x, z, owner, material, level, dir, std::max(0, stage));
 }
 
 int supplyBlueprint(World& w, ObjectId blueprint, int logs) {
@@ -1082,9 +1207,43 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
         w.add(prop, Lock{ true, std::max(1, info->lockLevel), ownerOf(w, prop) });
         w.add(prop, Health{ DOOR_HEALTH * tough, DOOR_HEALTH * tough });
     }
+    // Stairs and ladders can be broken too, by units walled in (stuck.h)
+    if (info->stairs) w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
+    else if (info->ladder) w.add(prop, Health{ DOOR_HEALTH * tough, DOOR_HEALTH * tough });
     queueSoundFrom(w, Sfx::DoneTree, prop);
     queueLog(w, langf("MISC_BUILT", { lang(info->nameKey) }), LogKind::Other, ownerOf(w, prop) != FACTION_PLAYER);
     return true;
+}
+
+ObjectId placeFreeBlueprint(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey) {
+    const ObjectId e = placeBuiltProp(w, t, kind, x, z, yaw, owner, storey);
+    if (Owner* own = w.get<Owner>(e)) own->faction = owner;
+    else w.add(e, Owner{ owner });
+    w.add(e, Blueprint{});
+    w.add(e, FreeBuild{});
+    return e;
+}
+
+void freeBuildSystem(World& w, Terrain& t, double gameHours) {
+    for (ObjectId e : w.view<FreeBuild>()) {
+        FreeBuild* fb = w.get<FreeBuild>(e);
+        Blueprint* bp = w.get<Blueprint>(e);
+        if (!bp) {
+            w.remove<FreeBuild>(e);   // finished some other way
+            continue;
+        }
+        fb->hours += gameHours;
+        bp->progress = std::min(1.0, fb->hours / FREE_BUILD_HOURS);
+        if (bp->progress >= 1.0 && bp->retryIn <= 0.0f && finishBlueprint(w, t, e)) {
+            w.remove<FreeBuild>(e);
+            continue;
+        }
+        // Held up so long that it is let go: whoever stood on it never stepped away
+        if (fb->hours >= FREE_BUILD_EXPIRE_HOURS) {
+            releasePropLinks(w, e);
+            w.destroy(e);
+        }
+    }
 }
 
 void rebuildBlocking(World& w, Terrain& t) {
@@ -1210,6 +1369,14 @@ void refreshBuildingTiles(World& w, Terrain& t) {
         if (w.has<Upstairs>(u) || w.has<Carried>(u) || w.has<Occupying>(u) || w.has<Climbing>(u)) continue;
         Transform* ut = w.get<Transform>(u);
         if (changed.count(tileKey(tileOf(ut->x), tileOf(ut->z)))) ut->y = t.standHeight(ut->x, ut->z);
+    }
+    // So do the ground floor's props: one laid as a blueprint before its foundation was built stands on the deck once it is, and
+    // comes down with it
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (info.foundation || info.onFoundation || w.has<Storey>(e) || w.has<Carried>(e)) continue;
+        Transform* pt = w.get<Transform>(e);
+        if (changed.count(tileKey(tileOf(pt->x), tileOf(pt->z)))) pt->y = t.standHeight(pt->x, pt->z);
     }
     collapseCheck(w);
 }
@@ -1647,6 +1814,7 @@ void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
     w.add(e, SoloMove{});
     if (storey == here) {
         if (here == 0) {
+            setPathGoal(w, e, target);   // noticed if it cannot get there (stuck.h)
             planSoloMove(w, t, e, target);
             return;
         }
@@ -1882,7 +2050,8 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     };
     std::vector<std::pair<float, ObjectId>> wanted, rest;
     for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
-        if (ownerOf(w, e) != faction) continue;
+        // A ghost waits for its stage; nobody builds what is being pulled down
+        if (ownerOf(w, e) != faction || w.get<Blueprint>(e)->ghost || w.has<Condemned>(e) || w.has<FreeBuild>(e)) continue;
         const Vec2 at = approachOf(w, u, e);
         const float floors = (float)std::abs(workStorey(w, e) - storeyOf(w, u)) * 20.0f;
         const float d2 = (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z) + floors * floors;
@@ -1971,7 +2140,7 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     const float reach = job.phase == BuildJob::Phase::Fetch ? PROP_REACH : BLUEPRINT_REACH;
     const float gap = job.phase == BuildJob::Phase::Fetch ? flatGap(w, u, first) : gapTo(w, u, first);
     const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, first) : workStorey(w, first);
-    if (gap > reach) walkSoloTo(w, t, u, approachOf(w, u, first), storey);
+    if (gap > reach) walkSoloTo(w, t, u, job.phase == BuildJob::Phase::Fetch ? approachOf(w, u, first) : standOffOf(w, u, first), storey);
     w.add(u, job);
     return true;
 }
@@ -2012,7 +2181,7 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
                 job.stuck += dt;
                 const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, goal) : workStorey(w, goal);
                 if (job.stuck > BUILD_GIVE_UP_SECONDS) end(BEHAVIOR_RETRY_SECONDS * 3.0f);
-                else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSoloTo(w, t, u, approachOf(w, u, goal), storey);
+                else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSoloTo(w, t, u, job.phase == BuildJob::Phase::Fetch ? approachOf(w, u, goal) : standOffOf(w, u, goal), storey);
             }
             continue;
         }
@@ -2044,7 +2213,7 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
             queueItemMove(w, job.source, u, log, took);
             queueSoundFrom(w, Sfx::ItemMove, job.source);
             job.phase = BuildJob::Phase::Deliver;
-            if (gapTo(w, u, job.target) > BLUEPRINT_REACH) walkSoloTo(w, t, u, approachOf(w, u, job.target), workStorey(w, job.target));
+            if (gapTo(w, u, job.target) > BLUEPRINT_REACH) walkSoloTo(w, t, u, standOffOf(w, u, job.target), workStorey(w, job.target));
             break;
         }
         case BuildJob::Phase::Deliver: {

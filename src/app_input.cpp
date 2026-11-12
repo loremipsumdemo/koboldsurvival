@@ -860,6 +860,10 @@ void App::onMouseButtonUp() {
 }
 
 void App::onMouseMotion() {
+    if (screen == Screen::Playing && groupsUi.open && groupsUi.tab == 1 && (e.motion.state & SDL_BUTTON_LMASK)) {
+        scheduleClick((float)e.motion.x, (float)e.motion.y, false);
+        return;
+    }
     // The Adjust tool's widget, dragged
     if (screen == Screen::Playing && propAdjust.drag >= 0) {
         if (e.motion.state & SDL_BUTTON_LMASK) adjustMotion(e.motion.x, e.motion.y);

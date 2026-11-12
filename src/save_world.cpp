@@ -1,3 +1,4 @@
+#include "motivation.h"
 #include "behavior_groups.h"
 #include "game_tables.h"
 #include "level.h"
@@ -67,7 +68,11 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         s.yaw = p->yaw;
         if (const PropVisual* pv = w.get<PropVisual>(e); pv && !pv->plain()) s.visual = *pv;
         if (const ClaimGrowth* g = w.get<ClaimGrowth>(e); g && g->steps > 0) s.claimSteps = g->steps;
-        if (const PlanSite* ps = w.get<PlanSite>(e)) s.site = SaveSite{ ps->plan, ps->x, ps->z, ps->turns, ps->material, ps->stage, ps->hours };
+        if (const PlanSite* ps = w.get<PlanSite>(e)) {
+            s.site = SaveSite{ ps->plan, ps->x, ps->z, ps->turns, ps->material, ps->stage, ps->hours, ps->idleHours, ps->mark, ps->demolishHours };
+        }
+        s.condemned = w.has<Condemned>(e);
+        if (const FreeBuild* fb = w.get<FreeBuild>(e)) s.freeBuildHours = fb->hours;
         if (const Owner* own = w.get<Owner>(e)) s.owner = own->faction;
         if (const Lock* lock = w.get<Lock>(e)) s.lock = *lock;
         if (const Storage* st = w.get<Storage>(e)) s.storage = occupiedSlots(st->slots);
@@ -157,10 +162,21 @@ void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
         }
         d.groups.push_back(std::move(sg));
     }
+    d.schedules.push_back(SaveSchedule{ -1, false, scheduleText(g.schedule) });
+    for (const auto& [faction, value] : w.resource<Motivation>().value) d.motivation.push_back({ faction, value });
+    for (int k = 0; k < (int)g.groupSchedules.size(); ++k) {
+        d.schedules.push_back(SaveSchedule{ k, g.groupSchedules[(size_t)k].override, scheduleText(g.groupSchedules[(size_t)k]) });
+    }
 }
 
 void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>& props) {
     BehaviorGroups& g = behaviorGroups(world);
+    for (const auto& [faction, value] : d.motivation) setMotivation(world, faction, value);
+    for (const SaveSchedule& s : d.schedules) {
+        if (s.ref < -1 || s.ref >= BEHAVIOR_GROUP_MAX) continue;
+        Schedule& to = scheduleOfRef(g, s.ref);
+        if (scheduleFromText(s.hours, to)) to.override = s.ref >= 0 && s.override;
+    }
     if (d.groups.empty()) return;   // from before behavior groups: the defaults stand
     g.groups.clear();
     for (const SaveGroup& sg : d.groups) {
@@ -183,6 +199,14 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
             if (rule.kind == BehaviorKind::PatrolSpawn) rule.kind = BehaviorKind::Patrol;
             if (holdsBehavior(*list, rule)) continue;
             list->push_back(rule);
+        }
+    }
+    // A save from before schedules: the Citizen Default gets the recreation tasks once
+    if (d.schedules.empty()) {
+        for (const BehaviorKind k : { BehaviorKind::Socialize, BehaviorKind::SitDown, BehaviorKind::Play, BehaviorKind::Dance }) {
+            BehaviorRule r;
+            r.kind = k;
+            if (!holdsBehavior(g.citizen, r)) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
         }
     }
     if (g.groups.empty()) resetBehaviorGroups(g);
@@ -248,6 +272,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const SquadMember* sm = w.get<SquadMember>(u)) su.squad = sm->squad;
     su.citizen = w.has<Citizen>(u);
     if (const Citizen* c = w.get<Citizen>(u)) su.citizenGroup = c->group;
+    if (const NpcSchedule* ns = w.get<NpcSchedule>(u)) su.npcSchedule = ns->kind;
 }
 
 std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
@@ -258,7 +283,12 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
         world.get<Prop>(e)->yaw = s.yaw;   // as it was saved, whatever way a new one would face
         if (s.visual) world.add(e, *s.visual);
         if (s.claimSteps) world.add(e, ClaimGrowth{ *s.claimSteps });
-        if (s.site) world.add(e, PlanSite{ s.site->plan, s.site->x, s.site->z, s.site->turns, s.site->material, s.site->stage, s.site->hours });
+        if (s.site) {
+            world.add(e, PlanSite{ s.site->plan, s.site->x, s.site->z, s.site->turns, s.site->material, s.site->stage, s.site->hours,
+                                   s.site->idleHours, s.site->mark, s.site->demolishHours });
+        }
+        if (s.condemned) world.add(e, Condemned{});
+        if (s.freeBuildHours >= 0.0) world.add(e, FreeBuild{ s.freeBuildHours });
         props.push_back(e);
         if (s.owner >= 0) world.add(e, Owner{ s.owner });
         if (s.lock) world.add(e, *s.lock);
@@ -357,6 +387,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
         else world.add(e, Neutral{});
     }
     // Saved as citizens, they keep their home and behaviors from the file
+    if (u.npcSchedule > 0) world.add(e, NpcSchedule{ u.npcSchedule });
     if (u.citizen) {
         world.remove<Commandable>(e);
         world.add(e, Citizen{ std::max(0, u.citizenGroup), -1 });

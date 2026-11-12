@@ -6,10 +6,13 @@
 #include "wheelbarrow.h"
 #include "building.h"
 #include "simulation.h"
+#include "motivation.h"
+#include "schedule.h"
 #include "calendar.h"
 #include "claims.h"
 #include "npc_camps.h"
 #include "npc_builders.h"
+#include "stuck.h"
 #include "taming.h"
 #include "faction_rules.h"
 #include "recipes.h"
@@ -111,6 +114,10 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     cleanupActiveSquads(w);
     settleSquads(w);
     const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
+    freeBuildSystem(w, t, gameSecs / 3600.0);
+    PROFILED("stuckSystem", stuckSystem(w, t, rng, dt));
+    PROFILED("motivationSystem", motivationSystem(w, dt, gameSecs));
+    npcScheduleSystem(w, dt);
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
     PROFILED("needsSystem", needsSystem(w, hoursPassed, gameSecs));
     ghostSystem(w, gameSecs);

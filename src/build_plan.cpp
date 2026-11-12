@@ -1,5 +1,6 @@
 #include "build_plan.h"
 #include <algorithm>
+#include <unordered_set>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -424,6 +425,80 @@ ObjectId placePlanPiece(World& w, const Terrain& t, const PlanPiece& p, int x, i
     const ObjectId e = placeCostedProp(w, t, p.kind, (float)x + p.x, (float)z + p.z, p.yaw, owner, p.level);
     if (e != NO_OBJECT && !p.visual.plain()) w.add(e, p.visual);
     return e;
+}
+
+ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const std::vector<PlanRect>& rects, int x, int z, int owner,
+                      BuildMaterial material) {
+    const ObjectId anchor = placePlanFoundation(w, t, rects, x, z, owner, material);
+    if (anchor == NO_OBJECT) return NO_OBJECT;
+    // The foundation tiles just laid are Auto Placed Blueprints of stage 0
+    for (const PlanRect& r : rects) {
+        for (int tz = z + r.z0; tz <= z + r.z1; ++tz) {
+            for (int tx = x + r.x0; tx <= x + r.x1; ++tx) {
+                const ObjectId f = foundationAt(w, tx, tz);
+                if (Blueprint* bp = f != NO_OBJECT ? w.get<Blueprint>(f) : nullptr) bp->autoPlaced = true;
+            }
+        }
+    }
+    // Everything else as ghosts, a stage at a time, doors after the walls they go between (a door lies along them)
+    const int stages = planStageCount(turned);
+    for (int stage = 1; stage < stages; ++stage) {
+        const std::vector<const PlanPiece*> pieces = planStagePieces(turned, stage);
+        for (int pass = 0; pass < 2; ++pass) {
+            for (const PlanPiece* p : pieces) {
+                const PropInfo& info = propInfo(p->kind);
+                if (info.foundation || info.door != (pass == 1)) continue;
+                if (info.onFoundation) {
+                    const int tx = x + (int)std::floor(p->x), tz = z + (int)std::floor(p->z);
+                    placeGhostPiece(w, t, p->kind, tx, tz, owner, takesMaterial(p->kind) ? material : BuildMaterial::Wood, p->level,
+                                    info.stairs ? dirOfYaw(p->yaw) : 0, stage);
+                    continue;
+                }
+                // A prop that costs nothing is put down when its stage comes (npcBuilderSystem); one that costs is a ghost too. On the
+                // ground it still needs room: nothing stands in its way as the game checks it now.
+                if (info.materials <= 0.0) continue;
+                if (p->level == 0 && checkBuildSpot(w, t, p->kind, (float)x + p->x, (float)z + p->z, 0, owner) != BuildCheck::Ok) continue;
+                const ObjectId e = placeCostedProp(w, t, p->kind, (float)x + p->x, (float)z + p->z, p->yaw, owner, p->level);
+                if (e == NO_OBJECT) continue;
+                if (Blueprint* bp = w.get<Blueprint>(e)) {
+                    bp->autoPlaced = true;
+                    bp->ghost = true;
+                    bp->stage = stage;
+                }
+                if (!p->visual.plain()) w.add(e, p->visual);
+            }
+        }
+    }
+    return anchor;
+}
+
+bool planSurroundingsClear(World& w, const std::vector<PlanRect>& rects, int x, int z) {
+    std::unordered_set<long long> ring;
+    for (const PlanRect& r : rects) {
+        for (int tz = z + r.z0 - 1; tz <= z + r.z1 + 1; ++tz) {
+            for (int tx = x + r.x0 - 1; tx <= x + r.x1 + 1; ++tx) ring.insert(tileKey(tx, tz));
+        }
+    }
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (storeyOf(w, e) != 0) continue;
+        const Transform* tr = w.get<Transform>(e);
+        if (const Foundation* f = w.get<Foundation>(e)) {
+            for (int tz = f->z0; tz < f->z0 + f->h; ++tz) {
+                for (int tx = f->x0; tx < f->x0 + f->w; ++tx) {
+                    if (ring.count(tileKey(tx, tz))) return false;
+                }
+            }
+            continue;
+        }
+        // A prop is as wide as its size, up to a couple of tiles either way
+        const float r = std::clamp(propInfo(w.get<Prop>(e)->kind).size * 0.5f, 0.3f, 2.0f);
+        for (int tz = (int)std::floor(tr->z - r); tz <= (int)std::floor(tr->z + r); ++tz) {
+            for (int tx = (int)std::floor(tr->x - r); tx <= (int)std::floor(tr->x + r); ++tx) {
+                if (ring.count(tileKey(tx, tz))) return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool planFoundationFits(World& w, const Terrain& t, const BuildPlan& plan, int x, int z, int owner) {

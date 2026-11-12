@@ -11,10 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, DealWithDowned, AutoCraft, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, DealWithDowned, AutoCraft, Socialize, SitDown, Play, Dance, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
                                                  "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
-                                                 "AutoHaulStall", "ManStall", "DealWithDowned", "AutoCraft" };
+                                                 "AutoHaulStall", "ManStall", "DealWithDowned", "AutoCraft", "Socialize", "SitDown", "Play", "Dance" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -55,6 +55,10 @@ enum class BehaviorWait : int {
     NoStallOrder,
     NoDowned,        // Deal with Downed: no knocked-out enemy near, or the faction's rules leave them be
     NoCraftOrder,    // Auto-Craft: no Crafting Order is short of stock with its ingredients in your stores
+    NoSeat,          // Sit Down: no free seat in reach
+    NoCompany,       // Socialize: no one of its faction is at recreation near it
+    NoTable,         // Playing: no Game Table with a free place near
+    NoDancePlace,    // Dancing: no Campfire or Altar of its faction with room to dance round
 };
 
 constexpr float PATROL_PAUSE_MIN = 4.0f, PATROL_PAUSE_MAX = 12.0f;
@@ -122,6 +126,10 @@ inline std::string waitReason(const BehaviorRule& r, const std::string& other = 
     case BehaviorWait::NoStallOrder: return lang("UILABEL_WAIT_NO_STALL_ORDER");
     case BehaviorWait::NoDowned: return lang("UILABEL_WAIT_NO_DOWNED");
     case BehaviorWait::NoCraftOrder: return lang("UILABEL_WAIT_NO_CRAFT_ORDER");
+    case BehaviorWait::NoSeat: return lang("UILABEL_WAIT_NO_SEAT");
+    case BehaviorWait::NoCompany: return lang("UILABEL_WAIT_NO_COMPANY");
+    case BehaviorWait::NoTable: return lang("UILABEL_WAIT_NO_TABLE");
+    case BehaviorWait::NoDancePlace: return lang("UILABEL_WAIT_NO_DANCE_PLACE");
     }
     return std::string();
 }
@@ -142,7 +150,8 @@ inline bool isAutomated(BehaviorKind k) {
     return k == BehaviorKind::AutoHarvest || isHaul(k) || k == BehaviorKind::Patrol || k == BehaviorKind::Roam ||
            k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
            k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall ||
-           k == BehaviorKind::DealWithDowned || k == BehaviorKind::AutoCraft;
+           k == BehaviorKind::DealWithDowned || k == BehaviorKind::AutoCraft || k == BehaviorKind::Socialize || k == BehaviorKind::SitDown ||
+           k == BehaviorKind::Play || k == BehaviorKind::Dance;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -195,6 +204,10 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL", { propName });
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED");
     case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT");
+    case BehaviorKind::Socialize: return lang("UILABEL_BEHAVIOR_SOCIALIZE");
+    case BehaviorKind::SitDown: return lang("UILABEL_BEHAVIOR_SIT_DOWN");
+    case BehaviorKind::Play: return lang("UILABEL_BEHAVIOR_PLAY");
+    case BehaviorKind::Dance: return lang("UILABEL_BEHAVIOR_DANCE");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -225,6 +238,10 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::ManStall: return langf("UILABEL_BEHAVIOR_MAN_STALL_TIP", { propName });
     case BehaviorKind::DealWithDowned: return lang("UILABEL_BEHAVIOR_DEAL_WITH_DOWNED_TIP");
     case BehaviorKind::AutoCraft: return lang("UILABEL_BEHAVIOR_AUTO_CRAFT_TIP");
+    case BehaviorKind::Socialize: return lang("UILABEL_BEHAVIOR_SOCIALIZE_TIP");
+    case BehaviorKind::SitDown: return lang("UILABEL_BEHAVIOR_SIT_DOWN_TIP");
+    case BehaviorKind::Play: return lang("UILABEL_BEHAVIOR_PLAY_TIP");
+    case BehaviorKind::Dance: return lang("UILABEL_BEHAVIOR_DANCE_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -254,11 +271,16 @@ inline std::vector<BehaviorRule> factionlessBehaviors() {
 }
 // A unit of a faction that runs itself: rescues and deals with the knocked out as its faction's rules say, and patrols
 inline std::vector<BehaviorRule> npcFactionBehaviors() {
-    BehaviorRule rescue, deal, patrol;
+    BehaviorRule rescue, deal, patrol, sleep, social, sit, play, dance;
+    play.kind = BehaviorKind::Play;
+    dance.kind = BehaviorKind::Dance;
     rescue.kind = BehaviorKind::Rescue;
     deal.kind = BehaviorKind::DealWithDowned;
     patrol.kind = BehaviorKind::Patrol;
-    return { rescue, deal, patrol };
+    sleep.kind = BehaviorKind::Sleep;
+    social.kind = BehaviorKind::Socialize;
+    sit.kind = BehaviorKind::SitDown;
+    return { rescue, deal, sleep, patrol, social, sit, play, dance };
 }
 inline std::vector<BehaviorRule> mobBehaviors() {
     return {};
@@ -267,9 +289,9 @@ inline std::vector<BehaviorRule> mobBehaviors() {
 // Producing tasks: what they make is carried off by the haul tasks, which therefore rank above them
 // What kind of task it is, in the order of priority a new task is sorted into: group tasks first, then needs,
 // building, hauling, harvesting, and movement last. The Add Task list shows its headings in this order too.
-enum class TaskCategory : int { Groups = 0, Needs, Building, Hauling, Harvesting, Movement, Count };
+enum class TaskCategory : int { Groups = 0, Needs, Building, Hauling, Harvesting, Recreation, Movement, Count };
 inline constexpr const char* TASK_CATEGORY_KEYS[] = { "UILABEL_TASKS_GROUPS", "UILABEL_TASKS_NEEDS", "UILABEL_TASKS_BUILDING",
-                                                      "UILABEL_TASKS_HAULING", "UILABEL_TASKS_HARVESTING", "UILABEL_TASKS_MOVEMENT" };
+                                                      "UILABEL_TASKS_HAULING", "UILABEL_TASKS_HARVESTING", "UILABEL_TASKS_RECREATION", "UILABEL_TASKS_MOVEMENT" };
 static_assert(std::size(TASK_CATEGORY_KEYS) == (size_t)TaskCategory::Count);
 inline TaskCategory taskCategory(BehaviorKind k) {
     switch (k) {
@@ -280,6 +302,7 @@ inline TaskCategory taskCategory(BehaviorKind k) {
     case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: case BehaviorKind::AutoHaulStall:
         return TaskCategory::Hauling;
     case BehaviorKind::ManStall: return TaskCategory::Movement;
+    case BehaviorKind::Socialize: case BehaviorKind::SitDown: case BehaviorKind::Play: case BehaviorKind::Dance: return TaskCategory::Recreation;
     default: return TaskCategory::Needs;
     }
 }
@@ -332,7 +355,8 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
     if (!mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
                 BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::AutoHaulStall,
-                BehaviorKind::DealWithDowned, BehaviorKind::AutoCraft, BehaviorKind::Patrol, BehaviorKind::Roam };
+                BehaviorKind::DealWithDowned, BehaviorKind::AutoCraft, BehaviorKind::Patrol, BehaviorKind::Roam,
+                BehaviorKind::Socialize, BehaviorKind::SitDown, BehaviorKind::Play, BehaviorKind::Dance };
         return out;
     }
     // Patrol Spawn (keeping near where it appeared) is for wild mobs

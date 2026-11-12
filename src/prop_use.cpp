@@ -661,6 +661,8 @@ bool propAcceptsItem(PropKind kind, int item) {
     case ItemFilter::Wood: return def && hasTag(*def, ITEM_TAG_WOOD_LOG);
     case ItemFilter::Stone: return def && hasTag(*def, ITEM_TAG_STONE);
     case ItemFilter::Gizmo: return def && hasTag(*def, "gizmo");
+    case ItemFilter::Iron: return def && hasTag(*def, ITEM_TAG_IRON_INGOT);
+    case ItemFilter::Ore: return def && hasTag(*def, "ore");
     }
     return false;
 }

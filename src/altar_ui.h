@@ -64,6 +64,9 @@ struct BehaviorGroupsUi {
     int ref = 0;
     bool adding = false;
     int refScroll = 0, rowScroll = 0;
+    int tab = 0;          // 0 the task lists, 1 the Schedule
+    int paint = 1;        // the Schedule's brush: an Activity
+    int schedScroll = 0;  // the Schedule's first row shown
 };
 
 // Renaming one of your units, from the Squad Panel or the roster

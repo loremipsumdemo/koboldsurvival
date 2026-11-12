@@ -3,6 +3,7 @@
 #include <vector>
 #include "behavior.h"
 #include "ecs.h"
+#include "schedule.h"
 
 // Behavior groups, kept by your Altar. Each of your citizens follows one group (Group 1 unless moved). A group is a task
 // list like a unit's, which may also hold Group tasks: one stands for the whole list of another group or of a Default
@@ -15,6 +16,8 @@ inline constexpr int BEHAVIOR_GROUP_TASKS = BEHAVIOR_TASKS_MAX;  // tasks in one
 struct BehaviorGroups {
     std::vector<BehaviorRule> military, citizen;     // the Default Behaviors, which hold no Group tasks
     std::vector<std::vector<BehaviorRule>> groups;   // Group 1 is groups[0]
+    Schedule schedule = defaultSchedule();           // the global schedule (schedule.h)
+    std::vector<Schedule> groupSchedules;            // each group's own, by index: made when asked for (scheduleOfRef)
     int version = 0;                                 // raised on every change, so citizens take their lists again
     bool ready = false;
     // Your stores already given a haul task in the Citizen Default Behavior (sorted), so one you remove stays removed

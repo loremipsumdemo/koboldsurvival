@@ -232,6 +232,10 @@ struct BuildPreview {
         bool outline = false;   // just the tile's edge, not filled
     };
     std::vector<Mark> marks;
+    // A building blueprint being placed: an arrow on the ground in front of it, pointing the way its front faces. (cx, cz) is where the
+    // arrow is middled, (dx, dz) the way it points.
+    bool arrow = false;
+    float arrowX = 0.0f, arrowZ = 0.0f, arrowDX = 1.0f, arrowDZ = 0.0f;
     float lift = 0.0f;   // building on an upper floor: how far above the ground the preview is drawn
 };
 

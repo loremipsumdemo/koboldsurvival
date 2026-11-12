@@ -424,6 +424,7 @@ UILABEL_MODE_BLOCK_TIP	Block: never attacks, and blocks hits twice as often, eve
 UILABEL_MODE_SNEAK_TIP	Sneak: walks at half speed and is much harder to notice.
 UILABEL_MODE_RANGED_TIP	Ranged: on by itself while a bow or crossbow is in the main hand. Each shot uses one arrow or bolt.
 UILABEL_SQUAD_TAB	Squad
+UILABEL_RECRUIT	Recruit
 UILABEL_DISBAND	Disband
 UILABEL_DISBAND_HOLD	Hold Disband for {0} seconds to confirm
 MISC_DISBAND_ASK	{0} will leave your squad and faction for good and become Factionless: belonging to no faction and roaming alone.
@@ -1249,6 +1250,8 @@ PROP_UPPER_FLOOR	Floor
 PROP_DRAGON_CRYSTAL	Dragon Crystal
 PROP_WOOD_STOCKPILE	Wood Stockpile
 PROP_STONE_STOCKPILE	Stone Stockpile
+PROP_IRON_STOCKPILE	Iron Stockpile
+PROP_ORE_STOCKPILE	Ore Stockpile
 MISC_PROP_HOLDS_ITEMS	Holds {0}/{1} items
 PROP_STAIRS	Stairs
 PROP_TAMING_CAGE	Taming Cage
@@ -1728,6 +1731,8 @@ PROP_WEAPON_BENCH	Weapon Workbench
 PROP_ARMOR_BENCH	Armor Workbench
 PROP_AMMO_BENCH	Ammunition Workbench
 FILTER_GIZMO	Gizmos
+FILTER_IRON	Iron Ingots
+FILTER_ORE	Ore
 UILABEL_BEHAVIOR_AUTO_CRAFT	Auto-Craft
 UILABEL_BEHAVIOR_AUTO_CRAFT_TIP	Fills your Crafting Orders that keep a stock: while your stores hold fewer than the order asks and hold what its recipe takes, fetches the ingredients to the crafting prop and works it
 UILABEL_WAIT_NO_CRAFT_ORDER	No Crafting Order is short of stock with its ingredients in your stores
@@ -1756,3 +1761,30 @@ UILABEL_CRAFT_NONE_KNOWN	No recipe for this is known yet: unlock one at a Resear
 UILABEL_CRAFT_TAKES	takes {0}
 MISC_NO_WORLD_Q	No world exists yet. Make one with all the default settings?
 UILABEL_NO_WORLD_HINT	To choose the land and look yourself, use World Generation on the title screen.
+UILABEL_ACTIVITY_SLEEP	Sleep
+UILABEL_ACTIVITY_WORK	Work
+UILABEL_ACTIVITY_RECREATION	Recreation
+UILABEL_TASKS_RECREATION	Recreation
+UILABEL_BEHAVIOR_SOCIALIZE	Socializing
+UILABEL_BEHAVIOR_SOCIALIZE_TIP	In its Recreation hours, walks to another unit of its faction that is at recreation too, and stays by them a while, talking. Gains Comfort
+UILABEL_BEHAVIOR_SIT_DOWN	Sit Down
+UILABEL_BEHAVIOR_SIT_DOWN_TIP	In its Recreation hours, sits on a free seat (chair, stool, bench and the like) for a while. Gains Comfort from the seat
+UILABEL_WAIT_NO_SEAT	No free seat near
+UILABEL_WAIT_NO_COMPANY	No one of its faction is at recreation near
+UILABEL_GROUPS_TAB_BEHAVIOR	Behavior
+UILABEL_GROUPS_TAB_SCHEDULE	Schedule
+UILABEL_SCHEDULE_GLOBAL	Citizens (Global Schedule)
+UILABEL_SCHEDULE_OVERRIDE	OVERRIDE
+UILABEL_SCHEDULE_USING_GLOBAL	(Using Global)
+UILABEL_SCHEDULE_HELP	Pick Sleep, Work or Recreation, then click or drag over the hours to paint them. A group that does not override uses the global schedule. Needs tasks (eating, healing, resting) happen at any hour.
+PROP_GAME_TABLE	Game Table
+UILABEL_BEHAVIOR_PLAY	Playing
+UILABEL_BEHAVIOR_PLAY_TIP	In its Recreation hours, goes to a Game Table of its faction and plays at one of its four sides (up to 4 players). Gains Comfort while it plays
+UILABEL_BEHAVIOR_DANCE	Dancing
+UILABEL_BEHAVIOR_DANCE_TIP	In its Recreation hours, goes to a Campfire or Altar of its faction and dances round it, hopping (up to 8 round a Campfire, 32 round an Altar). Each dancer gives its faction 1 Motivation for every in-game hour. Gains a little Comfort
+UILABEL_WAIT_NO_TABLE	No Game Table with a free side near
+UILABEL_WAIT_NO_DANCE_PLACE	No Campfire or Altar of its faction with room to dance round
+UILABEL_MOTIVATION_BAR	Motivation {0} / {1}
+UILABEL_MOTIVATION_TIP	Motivation: each unit dancing round your Altars and Campfires gives 1 point for every in-game hour, and it ticks down about 10 an hour. Over {0}, your units walk {1}% faster inside your claims, and your Altar's fire burns bigger. The most it holds is 125, and 25 more for every complete building
+SCENARIO_OUTPOST_NAME	Outpost (Recommended)
+SCENARIO_OUTPOST_DESC	Start with your own camp, set up like the other factions': an Altar, a Campfire, Bedrolls, stockpiles with supplies, caged animals to tame, and as many units as they start with. You can customize your units, but not add or remove them.

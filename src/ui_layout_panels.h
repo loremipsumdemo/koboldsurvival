@@ -100,6 +100,7 @@ struct UnitPanelLayout {
     Rect manageSquadsButton;   // above renameButton: opens Manage Squads
     Rect renameButton;
     Rect factionRulesButton;   // below renameButton: opens Faction Rules
+    Rect motivationBar;        // below factionRulesButton: the faction's Motivation, with a mark at the threshold
     Rect repHeading;
     std::vector<Rect> repRows;
     int repFirst = 0;

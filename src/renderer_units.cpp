@@ -50,6 +50,11 @@ Renderer::UnitPose Renderer::unitPose(World& w, ObjectId e) const {
     if (p.carried) p.lift = unitModel(w, e) ? CARRIED_MODEL_LIFT : CARRIED_LIFT;
     else if (bed >= 0.0f) p.lift = bed;
     else p.lift = unitHover(w, e);
+    // A dancer hops as it goes round
+    if (const Behaviors* b = w.get<Behaviors>(e); b && b->busy && b->began && b->step.kind == BehaviorKind::Dance) {
+        const float phase = (float)(SDL_GetTicks() % 500u) / 500.0f;
+        p.lift += std::sin(phase * 3.14159265f) * 0.22f;
+    }
     return p;
 }
 
@@ -142,7 +147,7 @@ void Renderer::queueModel(const Model& m, float x, float y, float z, float targe
         return;
     }
     const ModelPlacement p = placeModel(m, x, y, z, targetSize, yaw);
-    if (p.ok) queueModelMatrix(m, placementMatrix(p), RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
+    if (p.ok) queueModelMatrix(m, placementMatrix(p), propTint_, 1.0f);
 }
 
 void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue) {

@@ -1,3 +1,4 @@
+#include "motivation.h"
 #include "renderer_internal.h"
 
 using namespace render_detail;
@@ -32,7 +33,7 @@ float Renderer::profileCardHeight(int H) {
     const float s = uiScaleFor(H);
     const float line = listTextHeight("Ag");
     const float statRow = line + 3.0f * s + 8.0f * s + 9.0f * s;
-    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 2.0f * (line + 6.0f * s) + 7.0f * statRow + 4.0f * s;
+    return 10.0f * s + uiTextHeight("Ag") + 6.0f * s + 3.0f * (line + 6.0f * s) + 7.0f * statRow + 4.0f * s;
 }
 
 void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
@@ -383,6 +384,21 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
         const std::string shown = fitText(lang("UILABEL_FACTION_RULES"), b.w - 6.0f * s, false);
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
         noteTip(lang("UILABEL_FACTION_RULES_TIP"), b);
+    }
+    if (L.motivationBar.w > 0.0f) {
+        const Rect& b = L.motivationBar;
+        const double now = motivationOf(w, FACTION_PLAYER), most = motivationMax(w, FACTION_PLAYER);
+        const bool fast = now > MOTIVATION_FAST;
+        drawRect(b, RGBA{ 0.12f, 0.05f, 0.07f, 0.9f });
+        const float frac = most > 0.0 ? (float)std::clamp(now / most, 0.0, 1.0) : 0.0f;
+        drawRect(Rect{ b.x, b.y, b.w * frac, b.h }, fast ? RGBA{ 0.95f, 0.62f, 0.15f, 0.95f } : RGBA{ 0.55f, 0.36f, 0.20f, 0.9f });
+        // The threshold, over 100: the mark and a faint line
+        const float mark = most > 0.0 ? b.x + b.w * (float)std::clamp(MOTIVATION_FAST / most, 0.0, 1.0) : b.x;
+        drawRect(Rect{ mark - 1.0f, b.y, 2.0f * s, b.h }, theme::GOLD);
+        const std::string label = langf("UILABEL_MOTIVATION_BAR", { std::to_string((int)now), std::to_string((int)most) });
+        drawListText(fitText(label, b.w - 8.0f * s, false), b.x + 4.0f * s, b.y + (b.h - th) * 0.5f, WHITE);
+        if (b.contains(mouseX_, mouseY_)) noteHover(b);
+        noteTip(langf("UILABEL_MOTIVATION_TIP", { std::to_string((int)MOTIVATION_FAST), std::to_string((int)std::lround(MOTIVATION_SPEED_BONUS * 100.0f)) }), b);
     }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;

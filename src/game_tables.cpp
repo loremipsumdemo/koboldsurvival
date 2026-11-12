@@ -56,7 +56,7 @@ const char* const PROP_KEYS[] = {
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
     "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Farm", "Turbine", "Stove", "Airship",
     "Foundation", "WoodWall", "WoodDoor", "Ladder", "UpperFloor", "DragonCrystal", "WoodStockpile", "StoneStockpile",
-    "Stairs", "Wheelbarrow",
+    "Stairs", "Wheelbarrow", "IronStockpile", "OreStockpile", "GameTable",
 };
 static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
@@ -76,6 +76,7 @@ const std::vector<Numbered> EMOTE_KEYS = {
     { "Lockpicking", 7 }, { "LockedIn", 8 }, { "Herbalism", 9 }, { "Unconscious", 10 }, { "PlayingDead", 12 },
     { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 }, { "Hauling", 17 },
     { "Building", 18 },
+    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 },
 };
 
 const std::vector<Numbered> ICON_KEYS = {
@@ -352,7 +353,7 @@ int placeIn(const char* const (&names)[N], const std::string& s) {
 }
 
 const char* const PROP_USE_KEYS[] = { "none", "storage", "occupy", "resource", "crafting", "passive" };
-const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water", "wood", "stone", "gizmo" };
+const char* const ITEM_FILTER_KEYS[] = { "any", "raw_food", "food", "weapon", "armor", "water", "wood", "stone", "gizmo", "iron", "ore" };
 
 bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
     if (text == "none") return true;
@@ -463,7 +464,15 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
         }
         if (!found) { why = "unknown emote " + cell(r, "emote"); return false; }
     }
-    return readPropFlags(cell(r, "flags"), p, why);
+    if (!readPropFlags(cell(r, "flags"), p, why)) return false;
+    // Optional: health. Without the column, 30 for each tile of its size; the pieces of a building, nature and debris have none here
+    // (a piece gets its health when it is built)
+    if (cell.at.count("health")) {
+        if (!readDouble(cell(r, "health"), p.health) || p.health < 0.0) { why = "health must be 0 or more"; return false; }
+    } else if (!p.debris && !p.foundation && !p.onFoundation && !p.claimsLand && p.group != BuildGroup::Nature) {
+        p.health = std::max(10.0, 30.0 * (double)p.size);
+    }
+    return true;
 }
 
 bool parseProps(const std::string& text, std::string& err) {

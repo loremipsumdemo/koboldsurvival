@@ -282,6 +282,7 @@ public:
     // The fires of the props in view this frame (props.txt flag fire): flames, and a warm glow as their light
     struct FireSpot {
         float x, y, z, size, seed;
+        float energy = 0.0f;   // 0 to 1: a motivated faction's Altar burns bigger, brighter and quicker
     };
     std::vector<FireSpot> fires_;
     TextTex glow_;   // a soft round spot, bright in the middle
@@ -654,6 +655,7 @@ private:
     std::string planKey_;
     float planFocus_[3] = {};              // the middle of it, and how far across it is
     float planSpan_ = 1.0f;
+    RGBA propTint_{ 0.0f, 0.0f, 0.0f, 0.0f };   // what queueModel tints a model with: red for a building being pulled down
     void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
     void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);

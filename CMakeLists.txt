@@ -99,6 +99,9 @@ set(SIM_SOURCES
     src/wild_ai.cpp
     src/downed.cpp
     src/carry.cpp
+    src/stuck.cpp
+    src/schedule.cpp
+    src/motivation.cpp
     src/loot.cpp
     src/terrain.cpp
     src/terrain_mesh.cpp

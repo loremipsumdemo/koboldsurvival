@@ -150,10 +150,10 @@ std::vector<App::EditorEntry> App::spawnEntries(EditorTab tab) {
         break;
     case EditorTab::Items: {
         // Under headings, each in the item table's order
-        enum Group { Weapons, Ammo, Armor, Accessories, Food, Medicine, Materials, Bones, GroupCount };
-        static const char* const GROUP_KEYS[GroupCount] = { "UILABEL_ITEMS_WEAPONS", "UILABEL_ITEMS_AMMO", "UILABEL_ITEMS_ARMOR",
-                                                            "UILABEL_ITEMS_ACCESSORIES", "UILABEL_ITEMS_FOOD", "UILABEL_ITEMS_MEDICINE",
-                                                            "UILABEL_ITEMS_MATERIALS", "UILABEL_ITEMS_BONES" };
+        enum Group { Materials, Weapons, Ammo, Armor, Accessories, Food, Medicine, Bones, GroupCount };
+        static const char* const GROUP_KEYS[GroupCount] = { "UILABEL_ITEMS_MATERIALS", "UILABEL_ITEMS_WEAPONS", "UILABEL_ITEMS_AMMO",
+                                                            "UILABEL_ITEMS_ARMOR", "UILABEL_ITEMS_ACCESSORIES", "UILABEL_ITEMS_FOOD",
+                                                            "UILABEL_ITEMS_MEDICINE", "UILABEL_ITEMS_BONES" };
         auto groupOf = [](const ItemDef& d) {
             if (d.typeId == "weapon") return Weapons;
             if (hasTag(d, "arrow") || hasTag(d, "bolt")) return Ammo;

@@ -5,6 +5,7 @@
 #include "faction_rules.h"
 #include "recipes.h"
 #include "commerce.h"
+#include "schedule.h"
 
 using namespace systems_detail;
 
@@ -264,6 +265,25 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
     return best;
 }
 
+// How near the middle of its claim a rescued unit is put down when there is no bed for it
+constexpr float RESCUE_PARK_REACH = 4.0f;
+
+// The middle of the faction's nearest claim, an Altar's or a camp's
+bool claimMiddle(const std::vector<Claim>& claims, int faction, float x, float z, Vec2& out) {
+    float bestD2 = 0.0f;
+    bool found = false;
+    for (const Claim& c : claims) {
+        if (c.owner != faction) continue;
+        const float d2 = (c.x - x) * (c.x - x) + (c.z - z) * (c.z - z);
+        if (!found || d2 < bestD2) {
+            out = Vec2{ c.x, c.z };
+            bestD2 = d2;
+            found = true;
+        }
+    }
+    return found;
+}
+
 ObjectId rescueTarget(World& w, ObjectId u) {
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return NO_OBJECT;
@@ -302,7 +322,235 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& t
     return BehaviorWait::NowhereToRoam;
 }
 
+// A free seat (chair, stool, bench...) of the unit's faction or in its claim: one of the few nearest, picked at random so that
+// the units at recreation do not all crowd one seat
+ObjectId seatTarget(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rng) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NO_OBJECT;
+    std::vector<ObjectId> wanted;
+    for (ObjectId o : w.view<PropOrder>()) {
+        if (o != u) wanted.push_back(w.get<PropOrder>(o)->prop);
+    }
+    std::sort(wanted.begin(), wanted.end());
+    const std::vector<ObjectId> occupied = occupiedProps(w);
+    const int faction = factionOf(w, u);
+    const int level = storeyOf(w, u);
+    std::vector<std::pair<float, ObjectId>> found;
+    for (ObjectId p : w.view<Prop, Transform>()) {
+        if (!isSeat(w.get<Prop>(p)->kind) || w.has<Blueprint>(p) || storeyOf(w, p) != level) continue;
+        if (countIn(occupied, p) > 0 || lockShutFor(w, claims, p, u) || std::binary_search(wanted.begin(), wanted.end(), p)) continue;
+        const Owner* own = w.get<Owner>(p);
+        if (own && own->faction != faction && !inOwnClaim(w, claims, p, faction)) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (d2 > REST_SEARCH_RANGE * REST_SEARCH_RANGE) continue;
+        found.push_back({ d2, p });
+    }
+    if (found.empty()) return NO_OBJECT;
+    std::sort(found.begin(), found.end());
+    const int few = (int)std::min<size_t>(found.size(), 4);
+    return found[(size_t)rng.range(0, few - 1)].second;
+}
+
+// The nearest other unit of the faction that is at recreation and free to talk
+ObjectId socialTarget(World& w, ObjectId u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NO_OBJECT;
+    const int faction = factionOf(w, u);
+    const int level = storeyOf(w, u);
+    ObjectId best = NO_OBJECT;
+    float bestD2 = SOCIAL_SEARCH_RANGE * SOCIAL_SEARCH_RANGE;
+    for (ObjectId v : w.view<Behaviors, Transform>()) {
+        if (v == u || w.has<Mob>(v) || w.has<Carried>(v) || w.has<Corpse>(v) || outOfAction(w, v) || factionOf(w, v) != faction) continue;
+        if (storeyOf(w, v) != level || activityOf(w, v) != Activity::Recreation) continue;
+        if (const Combat* c = w.get<Combat>(v); c && c->target != NO_OBJECT) continue;
+        const Transform* vt = w.get<Transform>(v);
+        const float d2 = distSq(*vt, *ut);
+        if (d2 < bestD2) {
+            best = v;
+            bestD2 = d2;
+        }
+    }
+    return best;
+}
+
+// Where to stand to talk to the target: a little short of it, on the side the unit comes from
+Vec2 socialSpot(World& w, ObjectId u, ObjectId target) {
+    const Transform* ut = w.get<Transform>(u);
+    const Transform* tt = w.get<Transform>(target);
+    const float dx = ut->x - tt->x, dz = ut->z - tt->z, d = std::max(1e-3f, std::hypot(dx, dz));
+    const float stop = std::min(1.4f, d);
+    return Vec2{ tt->x + dx / d * stop, tt->z + dz / d * stop };
+}
+
+// Where to stand at one of a Game Table's four sides (0 north, 1 east, 2 south, 3 west)
+Vec2 tableSeatPos(const Transform& table, int slot) {
+    static const float DX[4] = { 0.0f, 1.0f, 0.0f, -1.0f }, DZ[4] = { -1.0f, 0.0f, 1.0f, 0.0f };
+    const int k = ((slot % 4) + 4) % 4;
+    return Vec2{ table.x + DX[k] * TABLE_SEAT_DISTANCE, table.z + DZ[k] * TABLE_SEAT_DISTANCE };
+}
+
+// A Game Table of the unit's faction (or in its claim) with a side free: one of the few nearest, a side picked at random
+bool tableChoice(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, ObjectId& table, int& slot) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    const int faction = factionOf(w, u);
+    const int level = storeyOf(w, u);
+    std::map<ObjectId, int> taken;   // table to the sides in use, as bits
+    for (ObjectId v : w.view<Behaviors>()) {
+        const Behaviors* vb = w.get<Behaviors>(v);
+        if (v != u && vb->busy && vb->step.kind == BehaviorKind::Play && vb->slot >= 0) taken[vb->stepProp] |= 1 << vb->slot;
+    }
+    struct Option { float d2; ObjectId table; int slot; };
+    std::vector<Option> found;
+    for (ObjectId p : w.view<Prop, Transform>()) {
+        if (w.get<Prop>(p)->kind != PropKind::GameTable || w.has<Blueprint>(p) || storeyOf(w, p) != level) continue;
+        const Owner* own = w.get<Owner>(p);
+        if (own && own->faction != faction && !inOwnClaim(w, claims, p, faction)) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (d2 > REST_SEARCH_RANGE * REST_SEARCH_RANGE) continue;
+        const int mask = taken.count(p) ? taken[p] : 0;
+        for (int k = 0; k < 4; ++k) {
+            const Vec2 at = tableSeatPos(*pt, k);
+            if ((mask & (1 << k)) || !openTile(t, at.x, at.z)) continue;
+            found.push_back({ d2, p, k });
+        }
+    }
+    if (found.empty()) return false;
+    std::sort(found.begin(), found.end(), [](const Option& a, const Option& b) { return a.d2 < b.d2; });
+    const Option& pick = found[(size_t)rng.range(0, (int)std::min<size_t>(found.size(), 4) - 1)];
+    table = pick.table;
+    slot = pick.slot;
+    return true;
+}
+
+bool isDanceCenter(PropKind k) { return k == PropKind::Campfire || k == PropKind::Altar; }
+int danceCapacity(PropKind k) { return k == PropKind::Altar ? DANCE_ALTAR_DANCERS : DANCE_CAMPFIRE_DANCERS; }
+
+// Where dancer slot of a ring is at this moment: the ring is shared, so they keep their places. Everyone steps on round the circle,
+// then back a little the other way, and on again.
+Vec2 dancePoint(const Transform& center, PropKind kind, int slot, double seconds) {
+    const float radius = kind == PropKind::Altar ? DANCE_ALTAR_RADIUS : DANCE_CAMPFIRE_RADIUS;
+    const int cap = danceCapacity(kind);
+    const double cycle = std::fmod(seconds, 4.0);
+    const double turns = std::floor(seconds / 4.0) * 2.0 + (cycle < 3.0 ? cycle : 3.0 - (cycle - 3.0));
+    const float angle = TWO_PI * (float)slot / (float)cap + (float)turns * DANCE_SPEED / radius;
+    return Vec2{ center.x + std::cos(angle) * radius, center.z + std::sin(angle) * radius };
+}
+
+// The nearest Campfire or Altar of the unit's faction (or in its claim) with a place free on its circle
+bool danceChoice(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rng, ObjectId& center, int& slot) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    const int faction = factionOf(w, u);
+    std::map<ObjectId, std::vector<char>> taken;
+    for (ObjectId v : w.view<Behaviors>()) {
+        const Behaviors* vb = w.get<Behaviors>(v);
+        if (v == u || !vb->busy || vb->step.kind != BehaviorKind::Dance || vb->slot < 0) continue;
+        std::vector<char>& m = taken[vb->stepProp];
+        if ((int)m.size() <= vb->slot) m.resize((size_t)vb->slot + 1, 0);
+        m[(size_t)vb->slot] = 1;
+    }
+    float bestD2 = 40.0f * 40.0f;
+    ObjectId best = NO_OBJECT;
+    for (ObjectId p : w.view<Prop, Transform>()) {
+        const PropKind kind = w.get<Prop>(p)->kind;
+        if (!isDanceCenter(kind) || w.has<Blueprint>(p) || storeyOf(w, p) != 0 || storeyOf(w, u) != 0) continue;
+        const Owner* own = w.get<Owner>(p);
+        if (own && own->faction != faction && !inOwnClaim(w, claims, p, faction)) continue;
+        const Transform* pt = w.get<Transform>(p);
+        const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
+        if (d2 >= bestD2) continue;
+        int used = 0;
+        if (const auto it = taken.find(p); it != taken.end()) used = (int)std::count(it->second.begin(), it->second.end(), (char)1);
+        if (used >= danceCapacity(kind)) continue;
+        best = p;
+        bestD2 = d2;
+    }
+    if (best == NO_OBJECT) return false;
+    const int cap = danceCapacity(w.get<Prop>(best)->kind);
+    std::vector<int> free;
+    const auto it = taken.find(best);
+    for (int k = 0; k < cap; ++k) {
+        if (it == taken.end() || (int)it->second.size() <= k || !it->second[(size_t)k]) free.push_back(k);
+    }
+    if (free.empty()) return false;
+    center = best;
+    slot = free[(size_t)rng.range(0, (int)free.size() - 1)];
+    return true;
+}
+
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    if (r.kind == BehaviorKind::Play) {
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<Carrying>(u) || w.has<Occupying>(u)) return false;
+        ObjectId table = NO_OBJECT;
+        int slot = 0;
+        if (!tableChoice(w, t, claims, u, rng, table, slot)) {
+            r.why = BehaviorWait::NoTable;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = table;
+        b.slot = slot;
+        b.began = false;
+        b.social = 0.0f;
+        autoWalk(w, t, u, tableSeatPos(*w.get<Transform>(table), slot), storeyOf(w, table));
+        return true;
+    }
+    if (r.kind == BehaviorKind::Dance) {
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<Carrying>(u) || w.has<Occupying>(u)) return false;
+        ObjectId center = NO_OBJECT;
+        int slot = 0;
+        if (!danceChoice(w, claims, u, rng, center, slot)) {
+            r.why = BehaviorWait::NoDancePlace;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = center;
+        b.slot = slot;
+        b.began = false;
+        b.social = 0.0f;
+        autoWalk(w, t, u, dancePoint(*w.get<Transform>(center), w.get<Prop>(center)->kind, slot,
+                                     w.resource<WorldClock>().seconds / GAME_SECONDS_PER_REAL_SECOND), 0);
+        return true;
+    }
+    if (r.kind == BehaviorKind::SitDown) {
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<OccupyBan>(u) || w.has<Carrying>(u) || w.has<Occupying>(u)) return false;
+        const ObjectId seat = seatTarget(w, claims, u, rng);
+        if (seat == NO_OBJECT) {
+            r.why = BehaviorWait::NoSeat;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = seat;
+        b.began = false;
+        b.social = 0.0f;
+        autoGo(w, t, u, seat, PropAction::Occupy);
+        return true;
+    }
+    if (r.kind == BehaviorKind::Socialize) {
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<Carrying>(u) || w.has<Occupying>(u)) return false;
+        const ObjectId target = socialTarget(w, u);
+        if (target == NO_OBJECT) {
+            r.why = BehaviorWait::NoCompany;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = target;
+        b.began = false;
+        b.social = 0.0f;
+        autoWalk(w, t, u, socialSpot(w, u, target), storeyOf(w, target));
+        return true;
+    }
     if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::AutoHaulStall) return startStallHaulStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::ManStall) return startManStallStep(w, t, u, b, r);
@@ -324,11 +572,16 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         if (w.has<Mob>(u) || w.has<Carrying>(u)) return false;
         const ObjectId target = rescueTarget(w, u);
         if (target == NO_OBJECT) return false;
-        if (restTarget(w, claims, u) == NO_OBJECT) {
-            r.why = BehaviorWait::NoBed;
-            return false;
-        }
         const Transform* tt = w.get<Transform>(target);
+        if (restTarget(w, claims, u) == NO_OBJECT) {
+            // No bed free: it is still carried in, to near the middle of the claim, unless it is already there
+            Vec2 mid{ 0.0f, 0.0f };
+            if (!claimMiddle(claims, factionOf(w, u), tt->x, tt->z, mid) ||
+                std::hypot(tt->x - mid.x, tt->z - mid.z) <= RESCUE_PARK_REACH) {
+                r.why = BehaviorWait::NoBed;
+                return false;
+            }
+        }
         b.busy = true;
         b.step = r;
         b.stepProp = NO_OBJECT;
@@ -338,7 +591,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
     }
     if (r.kind == BehaviorKind::Sleep) {
         r.why = BehaviorWait::None;
-        if (!isNightAt(w.resource<WorldClock>().seconds) || !w.has<Needs>(u) || w.has<Mob>(u) || w.has<OccupyBan>(u)) return false;
+        if (activityOf(w, u) != Activity::Sleep || !w.has<Needs>(u) || w.has<Mob>(u) || w.has<OccupyBan>(u)) return false;
         const ObjectId bed = restTarget(w, claims, u);
         if (bed == NO_OBJECT) {
             r.why = BehaviorWait::NoBed;
@@ -430,6 +683,7 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
 namespace {
 bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) return false;
+    if (!scheduleAllows(w, u, r.kind)) return false;   // not at this hour of its schedule
     if (startStep(w, t, claims, u, b, r, rng)) return true;
     r.cooldown = r.why == BehaviorWait::NoBed ? NO_BED_RETRY_SECONDS : BEHAVIOR_RETRY_SECONDS;
     return false;
@@ -472,7 +726,8 @@ void systems_detail::stopAutoStep(World& w, ObjectId u, Behaviors& b) {
         w.remove<SoloMove>(u);
     }
     if (b.busy && (isWalkBehavior(b.step.kind) || b.step.kind == BehaviorKind::AutoHaulGround)) w.remove<SoloMove>(u);
-    if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && isBedStep(b.step.kind) && oc->prop == b.stepProp) {
+    if (const Occupying* oc = w.get<Occupying>(u); oc && b.busy && (isBedStep(b.step.kind) || b.step.kind == BehaviorKind::SitDown) &&
+                                                  oc->prop == b.stepProp) {
         w.remove<Occupying>(u);
     }
     if (const Working* wk = w.get<Working>(u); wk && !wk->unlocking && b.busy && wk->prop == b.stepProp) w.remove<Working>(u);
@@ -583,7 +838,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             b->recovered = 0.0f;
             continue;
         }
-        const bool night = isNightAt(w.resource<WorldClock>().seconds);
+        const bool night = activityOf(w, u) == Activity::Sleep;   // the unit's hours for sleeping
         {
             const ObjectId bed = occupiedProp(w, u);
             const Prop* bp = bed != NO_OBJECT ? w.get<Prop>(bed) : nullptr;
@@ -608,6 +863,13 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             if (b->seeking) w.remove<SoloMove>(u);
             b->seeking = false;
             b->wait = resume;
+            continue;
+        }
+        // The Work hours are over: what is under way stops, and the unit goes on to sleeping or recreation
+        if (b->busy && isWorkTask(b->step.kind) && !scheduleAllows(w, u, b->step.kind)) {
+            stopAutoStep(w, u, *b);
+            w.remove<SoloMove>(u);
+            b->wait = 0.0f;
             continue;
         }
         // A building task, a Stall order or a Deal with Downed trip runs by itself (buildJobSystem, commerce, dealJobSystem),
@@ -682,15 +944,34 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
             if (w.has<CarryOrder>(u)) continue;
             bool noBed = false;
+            if (!w.has<Carrying>(u)) w.remove<RescueWalk>(u);
             if (w.has<Carrying>(u)) {
                 if (rpo && rpo->automatic) continue;
                 const ObjectId bed = restTarget(w, claims, u);
                 if (bed != NO_OBJECT && bed != b->stepProp) {
+                    w.remove<RescueWalk>(u);
                     b->stepProp = bed;
                     autoGo(w, t, u, bed, PropAction::Place);
                     continue;
                 }
                 noBed = bed == NO_OBJECT;
+                if (noBed) {
+                    // Carried to near the middle of its claim first, and put down there
+                    const Transform* ct = w.get<Transform>(u);
+                    Vec2 mid{ 0.0f, 0.0f };
+                    if (ct && claimMiddle(claims, factionOf(w, u), ct->x, ct->z, mid) &&
+                        std::hypot(ct->x - mid.x, ct->z - mid.z) > RESCUE_PARK_REACH) {
+                        RescueWalk* rw = w.get<RescueWalk>(u);
+                        if (!rw) {
+                            w.add(u, RescueWalk{});
+                            autoWalk(w, t, u, mid, 0);
+                            continue;
+                        }
+                        rw->left -= dt;
+                        if (rw->left > 0.0f && walkingNow(w, u)) continue;
+                    }
+                    w.remove<RescueWalk>(u);
+                }
                 putDown(w, u);
             }
             b->busy = false;
@@ -806,6 +1087,115 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 const Transform* st = w.get<Transform>(b->stepProp);
                 autoWalk(w, t, u, Vec2{ st->x, st->z }, storeyOf(w, b->stepProp));
             }
+            continue;
+        }
+        // Playing at a Game Table: stands at its side a while
+        if (b->busy && b->step.kind == BehaviorKind::Play) {
+            const Transform* tt = w.has<Prop>(b->stepProp) ? w.get<Transform>(b->stepProp) : nullptr;
+            const Transform* ut = w.get<Transform>(u);
+            if (tt && ut && scheduleAllows(w, u, BehaviorKind::Play)) {
+                const Vec2 spot = tableSeatPos(*tt, b->slot);
+                const float dist = std::hypot(spot.x - ut->x, spot.z - ut->z);
+                if (!b->began) {
+                    if (dist > 0.6f) {
+                        if (!walkingNow(w, u)) autoWalk(w, t, u, spot, storeyOf(w, b->stepProp));
+                        continue;
+                    }
+                    b->began = true;
+                    b->social = SOCIAL_SIT_MIN + rng.unit() * (SOCIAL_SIT_MAX - SOCIAL_SIT_MIN);
+                    w.remove<SoloMove>(u);
+                }
+                b->social -= dt;
+                if (b->social > 0.0f && dist < 1.6f) continue;
+            }
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            b->began = false;
+            b->slot = -1;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = SOCIAL_PAUSE_MIN + rng.unit() * (SOCIAL_PAUSE_MAX - SOCIAL_PAUSE_MIN);
+            continue;
+        }
+        // Dancing round a Campfire or an Altar: takes its place on the circle, and goes round it hopping
+        if (b->busy && b->step.kind == BehaviorKind::Dance) {
+            const Transform* ct = w.has<Prop>(b->stepProp) ? w.get<Transform>(b->stepProp) : nullptr;
+            Transform* ut = w.get<Transform>(u);
+            if (ct && ut && scheduleAllows(w, u, BehaviorKind::Dance)) {
+                const PropKind ck = w.get<Prop>(b->stepProp)->kind;
+                const Vec2 spot = dancePoint(*ct, ck, b->slot, w.resource<WorldClock>().seconds / GAME_SECONDS_PER_REAL_SECOND);
+                if (!b->began) {
+                    if (std::hypot(spot.x - ut->x, spot.z - ut->z) > 0.9f) {
+                        if (!walkingNow(w, u)) autoWalk(w, t, u, spot, 0);
+                        continue;
+                    }
+                    b->began = true;
+                    b->social = DANCE_MIN + rng.unit() * (DANCE_MAX - DANCE_MIN);
+                    w.remove<SoloMove>(u);
+                }
+                b->social -= dt;
+                if (b->social > 0.0f) {
+                    if (openTile(t, spot.x, spot.z)) {
+                        ut->x = spot.x;
+                        ut->z = spot.z;
+                        ut->y = t.standHeight(spot.x, spot.z);
+                    }
+                    continue;
+                }
+            }
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            b->began = false;
+            b->slot = -1;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = SOCIAL_PAUSE_MIN + rng.unit() * (SOCIAL_PAUSE_MAX - SOCIAL_PAUSE_MIN);
+            continue;
+        }
+        // Sitting down: stays a while, and gets up when it is over or the recreation hours are
+        if (b->busy && b->step.kind == BehaviorKind::SitDown) {
+            const Occupying* oc = w.get<Occupying>(u);
+            if (oc && oc->prop == b->stepProp) {
+                if (!b->began) {
+                    b->began = true;
+                    b->social = SOCIAL_SIT_MIN + rng.unit() * (SOCIAL_SIT_MAX - SOCIAL_SIT_MIN);
+                }
+                b->social -= dt;
+                if (b->social > 0.0f && scheduleAllows(w, u, BehaviorKind::SitDown)) continue;
+                const ObjectId seat = oc->prop;
+                w.remove<Occupying>(u);
+                stepOffProp(w, t, u, seat);
+                b->busy = false;
+                b->began = false;
+                if (BehaviorRule* r = stepRule(*b)) r->cooldown = SOCIAL_PAUSE_MIN + rng.unit() * (SOCIAL_PAUSE_MAX - SOCIAL_PAUSE_MIN);
+                continue;
+            }
+            if (!scheduleAllows(w, u, BehaviorKind::SitDown)) {
+                stopAutoStep(w, u, *b);
+                w.remove<SoloMove>(u);
+                continue;
+            }
+        }
+        // Socializing: walks to someone of its faction at recreation and stays by them a while
+        if (b->busy && b->step.kind == BehaviorKind::Socialize) {
+            const Transform* tt = w.has<Behaviors>(b->stepProp) ? w.get<Transform>(b->stepProp) : nullptr;
+            const Transform* ut = w.get<Transform>(u);
+            const bool friendOk = tt && !w.has<Carried>(b->stepProp) && !outOfAction(w, b->stepProp) &&
+                                  activityOf(w, b->stepProp) == Activity::Recreation && !w.has<Corpse>(b->stepProp);
+            if (friendOk && scheduleAllows(w, u, BehaviorKind::Socialize) && ut) {
+                if (std::hypot(tt->x - ut->x, tt->z - ut->z) <= SOCIAL_NEAR) {
+                    if (!b->began) {
+                        b->began = true;
+                        b->social = SOCIAL_CHAT_MIN + rng.unit() * (SOCIAL_CHAT_MAX - SOCIAL_CHAT_MIN);
+                        w.remove<SoloMove>(u);
+                    }
+                    b->social -= dt;
+                    if (b->social > 0.0f) continue;
+                } else if (!b->began) {
+                    if (!walkingNow(w, u)) autoWalk(w, t, u, socialSpot(w, u, b->stepProp), storeyOf(w, b->stepProp));
+                    continue;
+                }
+            }
+            w.remove<SoloMove>(u);
+            b->busy = false;
+            b->began = false;
+            if (BehaviorRule* r = stepRule(*b)) r->cooldown = SOCIAL_PAUSE_MIN + rng.unit() * (SOCIAL_PAUSE_MAX - SOCIAL_PAUSE_MIN);
             continue;
         }
         // Asleep: up at dawn

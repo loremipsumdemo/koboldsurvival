@@ -19,3 +19,23 @@ NoUpkeep	no_upkeep.png	No upkeep: over an Altar with no upkeep items (bones) in 
 Decaying	decaying.png	Decaying: over an Altar that is wearing down
 Hauling	hauling.png	Hauling: bringing Wood Logs to a blueprint
 Building	building.png	Building: working on a blueprint
+Socializing	socializing.png	Socializing: chatting with a unit of its faction at recreation
+Sitting	sitting.png	Sitting: on a chair, stool or bench
+Playing	playing.png	Playing: at a Game Table
+Dancing	dancing.png	Dancing: round a Campfire or an Altar
+Carrying	carrying.png	Carrying: a load or a knocked out unit, to put it away
+Crafting	crafting.png	Crafting: working a Weapon, Armor or Ammunition Bench
+Smelting	smelting.png	Smelting: working a Forge
+Training	training.png	Training: working a Training Dummy
+Strength	strength.png	Strength: working a Water Pump
+Clearing	clearing.png	Clearing: working Debris
+Fighting	fighting.png	Fighting: has a foe, or an order to attack
+Fleeing	fleeing.png	Fleeing: running from a fight
+Defending	defending.png	Defending: guarding another unit
+Following	following.png	Following: another unit
+Talking	talking.png	Talking: going to or at a talk
+Looting	looting.png	Looting: going to or at something to loot
+Stall	stall.png	Stall: keeping or stocking a Stall
+Dead	dead.png	Dead: a unit that has died (not an animal)
+Carried	carried.png	Carried: out cold or taken, in another unit arms
+Sharing	sharing.png	Sharing: walking over to give a unit what it needs

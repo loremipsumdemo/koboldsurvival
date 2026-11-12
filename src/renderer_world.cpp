@@ -1,3 +1,4 @@
+#include "motivation.h"
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include <unordered_set>
@@ -443,8 +444,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     struct PlannedBox {
         float dist2;
         float x0, y0, z0, x1, y1, z1;
+        bool ghost;   // laid ahead of what it stands on: drawn fainter
     };
     std::vector<PlannedBox> plannedBoxes;
+    bool drawingGhost = false;
     fires_.clear();
     Batch stairSteps;   // stairs, drawn as plain steps, and the mooring ropes of Airships nobody is aboard
     // A thin square rope from a to b
@@ -463,11 +466,16 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     auto box = [&](float x0, float y0, float z0, float x1, float y1, float z1, RGBA, RGBA) {
         if (!boxVisible(frustum, x0, y0, z0, x1, y1, z1)) return;
         const float cx = (x0 + x1) * 0.5f - camX, cy = (y0 + y1) * 0.5f - camY, cz = (z0 + z1) * 0.5f - camZ;
-        plannedBoxes.push_back(PlannedBox{ cx * cx + cy * cy + cz * cz, x0, y0, z0, x1, y1, z1 });
+        plannedBoxes.push_back(PlannedBox{ cx * cx + cy * cy + cz * cz, x0, y0, z0, x1, y1, z1, drawingGhost });
     };
+    const RGBA ghostFill{ 0.75f, 0.82f, 0.95f, 0.07f }, ghostEdge{ 0.75f, 0.82f, 0.95f, 0.2f };
+    const RGBA condemnedTint{ 1.0f, 0.12f, 0.08f, 0.5f };   // a building being pulled down: half red
     // One prop: queued to be drawn (models are drawn together, a model at a time, once every prop and unit is queued),
     // or added to the stairs' and blueprints' batches
     auto drawProp = [&](ObjectId e, const Transform* tr, PropKind kind, const PropInfo& info) {
+        const Blueprint* planBp = w.get<Blueprint>(e);
+        drawingGhost = planBp && planBp->ghost;
+        propTint_ = w.has<Condemned>(e) ? condemnedTint : RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
         // The model for this piece's material and shape (0 plain), or nullptr for the plain wood one
         const BuildMaterial mat = materialOf(w, e);
         auto materialModel = [&](int shape) -> const Model* {
@@ -522,7 +530,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                     place.m[13] = y0 - s.minY * sy;
                     place.m[14] = z0 - s.minZ * sz;
                     place.m[15] = 1.0f;
-                    queueModelMatrix(s, place, RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
+                    queueModelMatrix(s, place, propTint_, 1.0f);
                     continue;
                 }
                 const RGBA side{ 0.45f, 0.30f, 0.17f, 1.0f }, face{ 0.62f, 0.44f, 0.26f, 1.0f };
@@ -532,6 +540,21 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 stairSteps.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, top, z1 }, V3{ x0, top, z0 }, side);
                 stairSteps.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, top, z1 }, V3{ x1, top, z0 }, side);
             }
+            return;
+        }
+        if (w.has<Blueprint>(e) && w.has<FreeBuild>(e)) {
+            // A free blueprint: the see-through blue of the prop's own size and shape, not a tile
+            const Model& m = propModel(kind);
+            float hx = 0.4f, hz = 0.4f, height = info.size;
+            if (m.vao && m.maxX > m.minX && m.maxY > m.minY && m.maxZ > m.minZ) {
+                const float extent = std::max({ m.maxX - m.minX, m.maxY - m.minY, m.maxZ - m.minZ });
+                const float k = info.size / extent;
+                hx = 0.5f * k * (m.maxX - m.minX);
+                hz = 0.5f * k * (m.maxZ - m.minZ);
+                height = k * (m.maxY - m.minY);
+                if (std::fabs(std::sin(w.get<Prop>(e)->yaw)) > 0.7f) std::swap(hx, hz);
+            }
+            box(tr->x - hx, tr->y, tr->z - hz, tr->x + hx, tr->y + height, tr->z + hz, planned, plannedEdge);
             return;
         }
         if (w.has<Blueprint>(e)) {
@@ -615,13 +638,17 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 f.y += visual->dy;
                 f.z += visual->dz;
             }
+            if (info.claimsLand) {
+                const Owner* fo = w.get<Owner>(e);
+                const double v = motivationOf(w, fo ? fo->faction : FACTION_PLAYER);
+                if (v > MOTIVATION_FAST) f.energy = 0.5f + 0.5f * std::clamp((float)((v - MOTIVATION_FAST) / 25.0), 0.0f, 1.0f);
+            }
             fires_.push_back(f);
         }
         if (const Model* made = info.door || info.upperFloor || info.ladder ? materialModel(0) : nullptr) {
             queueModel(*made, px, py, pz, info.size, yaw);
         } else if (modelled && visual) {
-            queueModelMatrix(propModel(kind), propVisualMatrix(propModel(kind), px, py, pz, info.size, yaw, *visual),
-                             RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f);
+            queueModelMatrix(propModel(kind), propVisualMatrix(propModel(kind), px, py, pz, info.size, yaw, *visual), propTint_, 1.0f);
         } else if (modelled) {
             queuePropModel(kind, px, py, pz, info.size, yaw);
         } else {
@@ -647,6 +674,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const PropKind kind = w.get<Prop>(e)->kind;
         drawProp(e, w.get<Transform>(e), kind, propInfo(kind));
     }
+    propTint_ = RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
+    drawingGhost = false;
     if (!stairSteps.v.empty()) {
         glUseProgram(colorProgram_);
         drawColorTris(stairSteps, viewProj_);
@@ -684,11 +713,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         Batch blueprints;
         for (const PlannedBox& p : plannedBoxes) {
             const float x0 = p.x0, y0 = p.y0, z0 = p.z0, x1 = p.x1, y1 = p.y1, z1 = p.z1;
-            blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, planned);
-            blueprints.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, planned);
-            blueprints.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, y1, z1 }, V3{ x0, y1, z0 }, planned);
-            blueprints.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x1, y1, z0 }, planned);
-            blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, plannedEdge);
+            const RGBA& side = p.ghost ? ghostFill : planned;
+            const RGBA& top = p.ghost ? ghostEdge : plannedEdge;
+            blueprints.quad(V3{ x0, y0, z0 }, V3{ x1, y0, z0 }, V3{ x1, y1, z0 }, V3{ x0, y1, z0 }, side);
+            blueprints.quad(V3{ x0, y0, z1 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, side);
+            blueprints.quad(V3{ x0, y0, z0 }, V3{ x0, y0, z1 }, V3{ x0, y1, z1 }, V3{ x0, y1, z0 }, side);
+            blueprints.quad(V3{ x1, y0, z0 }, V3{ x1, y0, z1 }, V3{ x1, y1, z1 }, V3{ x1, y1, z0 }, side);
+            blueprints.quad(V3{ x0, y1, z0 }, V3{ x1, y1, z0 }, V3{ x1, y1, z1 }, V3{ x0, y1, z1 }, top);
         }
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -832,7 +863,7 @@ void Renderer::drawFrameTop(bool dragging, const float* corners, const std::vect
 }
 
 void Renderer::drawBuildPreview(const Terrain& t) {
-    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty()) return;
+    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty() && !buildPreview_.arrow) return;
     const float lift = 0.04f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift + buildPreview_.lift; };
     Batch b;
@@ -901,6 +932,22 @@ void Renderer::drawBuildPreview(const Terrain& t) {
                         : buildPreview_.ringTone == 2 ? RGBA{ 1.0f, 0.2f, 0.2f, 0.85f }
                                                       : RGBA{ 0.95f, 0.95f, 1.0f, 0.85f };
         ring(buildPreview_.x, buildPreview_.z, buildPreview_.ringR, tone);
+    }
+    if (buildPreview_.arrow) {
+        // The front arrow: a shaft and a head, flat on the ground, in gold with a dark edge to show over green and red alike
+        const float ux = buildPreview_.arrowDX, uz = buildPreview_.arrowDZ, px = -uz, pz = ux;
+        const float cx = buildPreview_.arrowX, cz = buildPreview_.arrowZ;
+        auto arrowParts = [&](float grow, const RGBA& col, float raise) {
+            const float half = 1.1f + grow, neck = half - 0.85f - grow, shaft = 0.17f + grow, wing = 0.52f + grow;
+            auto at = [&](float along, float side) {
+                const float x = cx + ux * along + px * side, z = cz + uz * along + pz * side;
+                return V3{ x, hgt(x, z) + raise, z };
+            };
+            b.quad(at(-half, -shaft), at(neck, -shaft), at(neck, shaft), at(-half, shaft), col);
+            b.quad(at(neck, -wing), at(half, 0.0f), at(half, 0.0f), at(neck, wing), col);
+        };
+        arrowParts(0.07f, RGBA{ 0.12f, 0.07f, 0.02f, 0.85f }, 0.01f);
+        arrowParts(0.0f, RGBA{ 1.0f, 0.84f, 0.22f, 0.95f }, 0.02f);
     }
     if (b.v.empty()) return;
 
@@ -1097,7 +1144,8 @@ void Renderer::drawFires(const Camera& cam) {
     for (const FireSpot& f : fires_) {
         const float flicker = 0.88f + 0.12f * std::sin(now * 3.0f + f.seed * 5.0f) * std::sin(now * 2.0f + f.seed);
         // The glow on the ground under it
-        const float reach = (2.0f + f.size * 5.0f) * flicker;
+        const float e = f.energy;
+        const float reach = (2.0f + f.size * 5.0f) * flicker * (1.0f + 0.5f * e);
         const float gy = f.y - std::min(f.y, 0.0f) * 0.0f;
         const float ground[4 * 5] = {
             f.x - reach, gy + 0.03f, f.z - reach, 0.0f, 0.0f,
@@ -1105,21 +1153,21 @@ void Renderer::drawFires(const Camera& cam) {
             f.x + reach, gy + 0.03f, f.z + reach, 1.0f, 1.0f,
             f.x - reach, gy + 0.03f, f.z + reach, 0.0f, 1.0f
         };
-        drawQuadVerts(glow_.tex, ground, RGBA{ 1.0f, 0.62f, 0.28f, (0.10f + 0.45f * dark) * flicker });
+        drawQuadVerts(glow_.tex, ground, RGBA{ 1.0f, 0.62f, 0.28f, (0.10f + 0.45f * dark) * flicker * (1.0f + 0.5f * e) });
         // The glow round the fire itself
-        const float halo = f.size * 4.5f;
-        drawGlyph(glow_, f.x, f.y + f.size * 0.4f - halo * 0.5f, f.z, halo, RGBA{ 1.0f, 0.55f, 0.2f, (0.12f + 0.3f * dark) * flicker });
+        const float halo = f.size * 4.5f * (1.0f + 0.6f * e);
+        drawGlyph(glow_, f.x, f.y + f.size * 0.4f - halo * 0.5f, f.z, halo, RGBA{ 1.0f, 0.55f, 0.2f, (0.12f + 0.3f * dark + 0.3f * e) * flicker });
         // The flames: each rises from the fire's foot, drifting in, shrinking and reddening as it goes
-        constexpr int FLAMES = 9;
+        const int FLAMES = 9 + (int)(10.0f * e);
         for (int i = 0; i < FLAMES; ++i) {
             const float seed = f.seed + (float)i * 0.618f;
-            const float life = std::fmod(now * (1.6f + 0.15f * (float)(i % 3)) + seed, 1.0f);
+            const float life = std::fmod(now * (1.6f + 0.15f * (float)(i % 3)) * (1.0f + 0.8f * e) + seed, 1.0f);
             const float sway = std::sin(seed * 40.0f + now * 2.3f);
             const float sway2 = std::cos(seed * 23.0f + now * 1.9f);
             const float spread = f.size * 0.32f * (1.0f - life * 0.8f);
             const float px = f.x + sway * spread, pz = f.z + sway2 * spread;
-            const float py = f.y + life * f.size * 1.7f;
-            const float side = f.size * (0.95f - 0.6f * life);
+            const float py = f.y + life * f.size * 1.7f * (1.0f + 0.5f * e);
+            const float side = f.size * (0.95f - 0.6f * life) * (1.0f + 0.4f * e);
             const RGBA tint{ 1.0f, 0.85f - 0.55f * life, 0.35f - 0.3f * life, (1.0f - life) * 0.75f };
             drawGlyph(glow_, px, py - side * 0.3f, pz, side, tint);
         }

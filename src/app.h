@@ -427,6 +427,8 @@ struct App : AppSession {
     bool pressOnBehaviorGroups();
     void scrollBehaviorGroups(float mx, float my, float wheel);
     void drawBehaviorGroups();
+    // The Schedule tab: a click or a drag over its hours paints them; a press on an Override switch flips it. True if it took the press.
+    bool scheduleClick(float x, float y, bool press);
     void openGhosts(ObjectId altarProp);
     bool pressOnGhosts();
     void drawGhosts();
@@ -711,7 +713,7 @@ struct App : AppSession {
 
     Party party{};
     PartyUi partyUi;
-    ScenarioId scenarioPick = ScenarioId::Vagabond;
+    ScenarioId scenarioPick = ScenarioId::Outpost;
     int scenarioScroll = 0;
     MapChoice pendingMap;
     Rng partyRng;

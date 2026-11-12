@@ -202,12 +202,200 @@ def building(c):
     c.poly(IRON[2], (16, 2.5), (24, 8), (21.5, 11), (13.5, 5.5))
     c.poly(IRON[1], (17, 4), (22.5, 8), (21, 9.5), (15.5, 5.5))
 
+BLUE_SH = (60, 96, 190)
+GREEN_ARROW = (70, 160, 80)
+BURLAP_C = (190, 156, 104)
+LINEN_C = (240, 234, 216)
+
+# ---- Recreation, and the rest of the tasks
+
+def socializing(c):
+    # Two speech bubbles, one over the other
+    c.poly((70, 120, 210), (6, 15), (11, 15), (7, 19.5))
+    c.rect((92, 150, 232), 4, 4, 20, 15, 3.5)
+    c.poly((222, 120, 70), (25, 21), (20, 21), (24.5, 25.5))
+    c.rect((244, 150, 90), 12, 9, 28, 21, 3.5)
+    for x in (16, 20, 24):
+        c.circ(WHITE, x, 15, 1.1)
+
+
+def sitting(c):
+    # A chair, from the side
+    c.rect(WOOD[0], 8, 3, 11, 19, 1)
+    c.rect(WOOD[1], 8, 12, 24, 15.5, 1)
+    c.rect(WOOD[0], 8.5, 15, 11, 23, 0.8)
+    c.rect(WOOD[0], 21.5, 15, 24, 23, 0.8)
+    c.line(WOOD[2], 1.2, (11, 6), (11, 11))
+
+
+def playing(c):
+    # A card and a die
+    c.rect(WHITE, 5, 4, 17, 21, 1.8)
+    c.poly(RED[0], (11, 8), (14.5, 12.5), (11, 17), (7.5, 12.5))
+    c.rect((250, 246, 236), 15, 10, 27, 22, 2.2)
+    for x, y in ((18.5, 13.5), (23.5, 13.5), (21, 16), (18.5, 18.5), (23.5, 18.5)):
+        c.circ(DARK, x, y, 1.1)
+
+
+def dancing(c):
+    # Two joined music notes
+    col = (84, 70, 150)
+    c.line(col, 1.8, (12, 6), (12, 18))
+    c.line(col, 1.8, (22, 4), (22, 16))
+    c.poly(col, (12, 6), (22, 3.5), (22, 8), (12, 10.5))
+    c.ell(col, 6.5, 16, 13.5, 21.5)
+    c.ell(col, 16.5, 14, 23.5, 19.5)
+
+
+def carrying(c):
+    # A crate
+    c.rect(WOOD[1], 6, 7, 26, 21, 1.5)
+    c.rect(WOOD[0], 7.5, 8.5, 24.5, 19.5, 1)
+    c.line(WOOD[2], 1.3, (7.5, 14), (24.5, 14))
+    c.line(WOOD[2], 1.3, (16, 8.5), (16, 19.5))
+
+
+def crafting(c):
+    # An anvil with a hammer over it
+    c.poly(IRON[1], (5, 14), (24, 14), (21, 17), (19, 17.5), (21, 22), (9, 22), (11, 17.5), (8, 17))
+    c.rect(IRON[2], 4, 12, 27, 15.5, 1)
+    c.line(WOOD[0], 2.4, (21, 3.5), (13, 11))
+    c.poly(STEEL[0], (9, 5.5), (16, 3), (18, 7), (11, 9.5))
+
+
+def smelting(c):
+    # A flame over an ingot
+    c.poly((240, 120, 40), (16, 2), (22, 9), (23, 15), (16, 18), (9, 15), (10, 9), (13, 11))
+    c.poly((255, 214, 90), (16, 8), (19.5, 13), (16, 17), (12.5, 13))
+    c.poly(STEEL[1], (7, 19), (25, 19), (22, 23), (10, 23))
+
+
+def training(c):
+    # A target with an arrow in it
+    c.circ(RED[0], 15, 13, 9)
+    c.circ(WHITE, 15, 13, 6.2)
+    c.circ(RED[0], 15, 13, 3.4)
+    c.line(WOOD[0], 1.4, (15, 13), (26, 3.5))
+    c.poly(STEEL[0], (13.6, 12), (16.5, 14), (14, 16))
+
+
+def strength(c):
+    # A dumbbell
+    c.line(STEEL[1], 2.4, (8, 13), (24, 13))
+    c.rect(IRON[1], 4, 7, 9, 19, 1.5)
+    c.rect(IRON[1], 23, 7, 28, 19, 1.5)
+    c.rect(IRON[2], 7, 4.5, 11, 21.5, 1.5)
+    c.rect(IRON[2], 21, 4.5, 25, 21.5, 1.5)
+
+
+def clearing(c):
+    # A shovel
+    c.line(WOOD[0], 2.4, (21, 2.5), (14, 16))
+    c.poly(STEEL[0], (10, 14), (18, 14), (19, 20), (14, 24), (9, 20))
+    c.rect(WOOD[0], 18, 1.5, 25, 4, 1)
+
+
+def fighting(c):
+    # Two crossed swords
+    c.line(STEEL[0], 2.6, (6, 4), (24, 20))
+    c.line(STEEL[0], 2.6, (26, 4), (8, 20))
+    c.line(WOOD[0], 2.2, (19, 15), (25, 21))
+    c.line(WOOD[0], 2.2, (13, 15), (7, 21))
+    c.line(GOLD[0], 2.0, (18, 21), (24, 15))
+    c.line(GOLD[0], 2.0, (14, 21), (8, 15))
+
+
+def fleeing(c):
+    # An exclamation mark
+    c.rect(RED[0], 13.5, 3.5, 18.5, 15.5, 2.2)
+    c.circ(RED[0], 16, 19.5, 2.8)
+
+
+def defending(c):
+    # A shield
+    c.poly(BLUE_SH, (6, 5), (16, 3), (26, 5), (25, 14), (16, 23), (7, 14))
+    c.poly((130, 160, 235), (9, 7), (16, 5.5), (23, 7), (22.5, 13), (16, 20), (9.5, 13))
+    c.line(WHITE, 1.6, (16, 6), (16, 19))
+
+
+def following(c):
+    # Two footprints, and an arrow after them
+    c.ell(DARK, 5, 14, 10, 21)
+    c.ell(DARK, 11, 8, 16, 15)
+    c.poly(GREEN_ARROW, (18, 8), (27, 13.5), (18, 19), (18, 16), (13.5, 16), (13.5, 11), (18, 11))
+
+
+def talking(c):
+    # A speech bubble with a line of dots
+    c.poly((90, 90, 100), (10, 18), (15, 18), (9, 23.5))
+    c.rect((110, 110, 124), 3.5, 4, 28.5, 19, 4)
+    for x in (10, 16, 22):
+        c.circ(WHITE, x, 11.5, 1.6)
+
+
+def looting(c):
+    # A sack tied at the neck, with a coin
+    c.ell(BURLAP_C, 7, 9, 25, 23)
+    c.poly(BURLAP_C, (12, 11), (14, 4), (19, 4), (21, 11))
+    c.line(LEATHER[0], 1.6, (12.5, 10.5), (20.5, 10.5))
+    c.circ(GOLD[0], 16, 17, 3)
+    c.ring((190, 140, 40), 16, 17, 3, 0.8)
+
+
+def stall(c):
+    # A coin, and an awning over it
+    c.circ(GOLD[0], 16, 15, 8)
+    c.ring((190, 140, 40), 16, 15, 8, 1.2)
+    c.rect((190, 140, 40), 14.6, 9.5, 17.4, 20.5, 0.8)
+    c.rect((190, 140, 40), 11, 12, 21, 14, 0.8)
+    c.rect((190, 140, 40), 11, 16, 21, 18, 0.8)
+
+
+def dead(c):
+    # A skull
+    c.ell(LINEN_C, 7, 3.5, 25, 18)
+    c.rect(LINEN_C, 11, 14, 21, 22, 1.5)
+    c.ell(DARK, 10, 9, 14.5, 14)
+    c.ell(DARK, 17.5, 9, 22, 14)
+    c.line(DARK, 1.2, (14, 19.5), (14, 22))
+    c.line(DARK, 1.2, (18, 19.5), (18, 22))
+
+
+def carried(c):
+    # A figure lying across two hands
+    c.ell((230, 190, 150), 5, 6, 12, 13)
+    c.rect((90, 140, 200), 10, 7, 25, 14, 2.5)
+    c.rect((90, 140, 200), 21, 13, 27, 17, 1.5)
+    c.rect((230, 190, 150), 7, 17, 12, 22, 1.5)
+    c.rect((230, 190, 150), 20, 17, 25, 22, 1.5)
+
+
+def sharing(c):
+    # An apple, handed over: arrows both ways
+    c.circ(RED[0], 16, 8, 4.2)
+    c.line(GREEN_ARROW, 1.6, (16, 4), (18, 1.5))
+    c.line(DARK, 1.8, (7, 17), (24, 17))
+    c.poly(DARK, (24, 14), (28, 17), (24, 20))
+    c.line(DARK, 1.8, (25, 21.5), (8, 21.5))
+    c.poly(DARK, (8, 18.5), (4, 21.5), (8, 24.5))
+
 
 EMOTES = [
     (1, mining, STATUS), (2, woodcutting, STATUS), (3, cooking, STATUS), (4, encumbered, WARN), (5, sleeping, STATUS),
     (6, hungry, WARN), (7, lockpicking, STATUS), (8, locked_in, ALARM), (9, herbalism, STATUS), (10, unconscious, STATUS),
     (12, playing_dead, WARN), (13, cue_put_down, CUE), (14, cue_talk, CUE), (15, no_upkeep, WARN), (16, decaying, ALARM),
     (17, hauling, STATUS), (18, building, STATUS),
+    (19, socializing, STATUS),
+    (20, sitting, STATUS), (21, playing, STATUS), (22, dancing, STATUS), (23, carrying, STATUS), (24, crafting, STATUS), (25, smelting, STATUS), (26, training, STATUS), (27, strength, STATUS), (28, clearing, STATUS), (29, fighting, ALARM),
+    (30, fleeing, ALARM),
+    (31, defending, STATUS),
+    (32, following, STATUS),
+    (33, talking, STATUS),
+    (34, looting, STATUS),
+    (35, stall, STATUS),
+    (36, dead, ALARM),
+    (37, carried, WARN),
+    (38, sharing, STATUS),
 ]
 
 def main():

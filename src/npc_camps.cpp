@@ -1,5 +1,6 @@
 #include "npc_camps.h"
 #include "build.h"
+#include "building.h"
 #include "hostility.h"
 #include "systems_internal.h"
 #include "useitem.h"
@@ -114,20 +115,18 @@ bool bedTaken(World& w, ObjectId bed, ObjectId u) {
     return false;
 }
 
-// A free bed or bedroll of its faction's in its home claim; at a camp, one is laid round the campfire if none is free
-ObjectId restBed(World& w, Terrain& t, ObjectId u, const Claim& home) {
+// A free bed or bedroll of its faction's in its home claim. When there are too few, claimBedSystem lays bedroll blueprints.
+ObjectId restBed(World& w, Terrain&, ObjectId u, const Claim& home) {
     const int faction = factionOf(w, u);
     const Transform* ut = w.get<Transform>(u);
     ObjectId best = NO_OBJECT;
     float bestD = 0.0f;
-    int bedrolls = 0;
     for (ObjectId p : w.view<Prop, Transform>()) {
         if (!isBed(w.get<Prop>(p)->kind) || w.has<Blueprint>(p) || storeyOf(w, p) != 0) continue;
         const Transform* pt = w.get<Transform>(p);
         if (dist(*pt, home.x, home.z) > home.radius) continue;
         const Owner* own = w.get<Owner>(p);
         if (!own || own->faction != faction) continue;
-        if (home.camp && dist(*pt, home.x, home.z) <= CAMP_BEDROLL_RING + 1.0f) ++bedrolls;
         if (bedTaken(w, p, u)) continue;
         const float d = dist(*pt, ut->x, ut->z);
         if (best == NO_OBJECT || d < bestD) {
@@ -135,19 +134,7 @@ ObjectId restBed(World& w, Terrain& t, ObjectId u, const Claim& home) {
             bestD = d;
         }
     }
-    if (best != NO_OBJECT || !home.camp || bedrolls >= CAMP_BEDROLLS_MOST) return best;
-    // A bedroll of its own, round the campfire
-    const float start = std::atan2(ut->z - home.z, ut->x - home.x);
-    for (int i = 0; i < 16; ++i) {
-        const float a = start + (i % 2 ? 1.0f : -1.0f) * (float)((i + 1) / 2) * 0.4f;
-        const float x = std::floor(home.x + std::cos(a) * CAMP_BEDROLL_RING) + 0.5f;
-        const float z = std::floor(home.z + std::sin(a) * CAMP_BEDROLL_RING) + 0.5f;
-        if (!tileClear(w, t, x, z)) continue;
-        const ObjectId bed = makeProp(w, PropKind::Bedroll, Transform{ x, t.heightAt(x, z), z }, a);
-        w.add(bed, Owner{ faction });
-        return bed;
-    }
-    return NO_OBJECT;
+    return best;
 }
 
 void endRetreat(World& w, Terrain& t, ObjectId u) {
@@ -459,4 +446,32 @@ void outdoorDecaySystem(World& w, double gameSeconds) {
         if (d.hours >= OUTDOOR_DECAY_HOURS) gone.push_back(e);
     }
     for (ObjectId e : gone) removeProp(w, e);
+}
+
+void claimBedSystem(World& w, Terrain& t) {
+    for (const Claim& c : claimsOf(w)) {
+        if (c.owner == FACTION_PLAYER || isMobFaction(c.owner)) continue;
+        int units = 0, beds = 0;
+        for (ObjectId u : w.view<Entity, Transform>()) {
+            if (w.has<Corpse>(u) || w.has<Mob>(u) || factionOf(w, u) != c.owner || inPrisonerCage(w, u)) continue;
+            if (dist(*w.get<Transform>(u), c.x, c.z) <= c.radius) ++units;
+        }
+        for (ObjectId p : w.view<Prop, Transform, Owner>()) {
+            if (!isBed(w.get<Prop>(p)->kind) || w.get<Owner>(p)->faction != c.owner) continue;
+            if (dist(*w.get<Transform>(p), c.x, c.z) <= c.radius) ++beds;   // bedroll blueprints count: no more are laid for them
+        }
+        if (beds >= units) continue;
+        // One more bedroll blueprint somewhere round the middle of the claim, nearest the middle first
+        const float reach = std::min(c.radius - 1.0f, 10.0f);
+        bool laid = false;
+        for (int r = 2; r <= (int)reach && !laid; ++r) {
+            for (int i = 0; i < 16 && !laid; ++i) {
+                const float a = (float)i * 0.3927f + (float)r * 0.7f;
+                const float x = std::floor(c.x + std::cos(a) * (float)r) + 0.5f, z = std::floor(c.z + std::sin(a) * (float)r) + 0.5f;
+                if (!tileClear(w, t, x, z)) continue;
+                placeFreeBlueprint(w, t, PropKind::Bedroll, x, z, a, c.owner);
+                laid = true;
+            }
+        }
+    }
 }

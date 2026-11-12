@@ -241,6 +241,9 @@ struct Behaviors {
     bool block = false;
     bool sneak = false;
     std::uint64_t carried = 0;  // what the unit carried when the automation last looked, to see when that changes
+    float social = 0.0f;        // Socialize and Sit Down: real seconds left of the chat or the sit, once it has begun (not saved)
+    bool began = false;         // that has begun
+    int slot = -1;              // Playing: which side of the table; Dancing: its place on the circle (not saved)
 };
 
 struct Combat {
@@ -323,6 +326,10 @@ struct Corpse {
 inline bool outCold(World& w, ObjectId e) { return w.has<Unconscious>(e) || w.has<Corpse>(e); }
 struct Carrying {
     ObjectId unit = NO_OBJECT;
+};
+// A unit carrying a rescued one to near the middle of its claim, with no bed free: how long it may take. Not saved.
+struct RescueWalk {
+    float left = 60.0f;
 };
 struct CarryOrder {
     ObjectId target = NO_OBJECT;

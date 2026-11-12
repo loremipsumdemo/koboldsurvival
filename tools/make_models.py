@@ -274,6 +274,14 @@ def table():
         cyl(-0.3, 0.78, 0.12, 0.08, 0.09, 0.08, PALE_WOOD), cyl(0.3, 0.78, -0.08, 0.2, 0.02, 0.2, IRON)]
 
 
+def game_table():
+    """A square table with a map, dice and cards on it, a seat on each side."""
+    return legs(0.6, 0.6, 0.72, 0.08, DARK_WOOD) + [
+        box(0, 0.72, 0, 1.4, 0.06, 1.4, WOOD), box(0, 0.78, 0, 0.9, 0.012, 0.7, CANVAS, 8), box(0.1, 0.792, -0.05, 0.3, 0.008, 0.02, RED, 30),
+        box(-0.25, 0.792, 0.05, 0.02, 0.008, 0.3, BLUE, 20), box(0.5, 0.78, 0.4, 0.14, 0.012, 0.2, LINEN, 20), box(0.52, 0.792, 0.42, 0.14, 0.012, 0.2, LINEN, -10),
+        box(-0.5, 0.78, -0.4, 0.07, 0.07, 0.07, LINEN, 25), box(-0.38, 0.78, -0.32, 0.07, 0.07, 0.07, RED, 50)]
+
+
 def end_table():
     return legs(0.19, 0.19, 0.42, 0.045, DARK_WOOD) + [
         box(0, 0.42, 0, 0.42, 0.17, 0.42, DARK_WOOD), box(0, 0.45, 0.205, 0.32, 0.11, 0.02, WOOD), box(0, 0.49, 0.22, 0.04, 0.03, 0.03, BRASS),
@@ -756,6 +764,28 @@ def stone_stockpile():
     return parts
 
 
+def iron_stockpile():
+    """Iron ingots stacked on a low pallet."""
+    parts = [box(0, 0, 0, 1.3, 0.1, 1.0, DARK_WOOD)]
+    for y, n in ((0.1, 3), (0.26, 2)):
+        for i in range(n):
+            x = (i - (n - 1) / 2) * 0.4
+            for z in (-0.22, 0.22):
+                parts.append(box(x, y, z, 0.36, 0.16, 0.38, STEEL if (i + (y > 0.2)) % 2 else IRON))
+    return parts
+
+
+def ore_stockpile():
+    """Raw ore lumps heaped on a low pallet."""
+    parts = [box(0, 0, 0, 1.3, 0.1, 1.0, DARK_WOOD)]
+    for x, z, y, w, h, c in ((-0.3, -0.2, 0.1, 0.5, 0.3, STONE), (0.3, -0.2, 0.1, 0.5, 0.3, DARK_STONE), (-0.3, 0.22, 0.1, 0.5, 0.3, DARK_STONE),
+                             (0.3, 0.22, 0.1, 0.5, 0.3, STONE), (0.0, 0.0, 0.4, 0.5, 0.26, STONE)):
+        parts.append(ball(x, y, z, w, h, w * 0.85, c))
+    for x, y, z in ((-0.3, 0.32, -0.2), (0.32, 0.3, 0.22), (0.05, 0.6, 0.0), (0.3, 0.3, -0.2)):
+        parts.append(ball(x, y, z, 0.16, 0.12, 0.16, (190, 110, 60)))
+    return parts
+
+
 def ladder(pal=WOOD_PAL):
     """Two rails and rungs, from the ground up past the upper floor."""
     main, dark, light, foot = pal
@@ -786,13 +816,14 @@ def stair_step(pal=WOOD_PAL):
 BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
     'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Stall': stall, 'LockedChest': locked_chest,
-    'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'EndTable': end_table,
+    'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'GameTable': game_table, 'EndTable': end_table,
     'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
     'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'WeaponBench': weapon_workbench, 'ArmorBench': armor_workbench, 'AmmoBench': ammunition_workbench, 'Airship': airship, 'Foundation': foundation,
     'WoodWall': wood_wall, 'WoodDoor': wood_door, 'Ladder': ladder, 'UpperFloor': upper_floor,
     'DragonCrystal': dragon_crystal, 'WoodStockpile': wood_stockpile, 'StoneStockpile': stone_stockpile,
+    'IronStockpile': iron_stockpile, 'OreStockpile': ore_stockpile,
     'Wheelbarrow': wheelbarrow, 'TamingCage': taming_cage,
 }
 # Props the game draws itself, with no model file

@@ -90,14 +90,20 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
                           const Stats& stats, float share = -1.0f);
 
 enum class ScenarioId : int {
-    Vagabond = 0,   // one unit, every stat at level 1, nothing carried
+    Outpost = 0,    // Outpost (Recommended): your own camp like the other factions have, and as many units as they start with. They can
+                    // be customized but not added or removed
+    Vagabond,       // one unit, every stat at level 1, nothing carried
     Custom,         // Custom Squad: build your own
     Count
 };
 const char* scenarioNameKey(ScenarioId id);
 const char* scenarioDescKey(ScenarioId id);
 inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
-inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom; }
+inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom || id == ScenarioId::Outpost; }
+// Whether the level is given your own camp (an Altar, a Campfire, Bedrolls, stockpiles and the like), as the other factions have
+inline bool scenarioHasCamp(ScenarioId id) { return id == ScenarioId::Outpost; }
+// How many units the Outpost starts with, as many as a faction of the level starts with
+inline constexpr int OUTPOST_UNITS = 10;
 inline bool scenarioMobKindEditable(ScenarioId id) { return id == ScenarioId::Custom; }
 Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
 

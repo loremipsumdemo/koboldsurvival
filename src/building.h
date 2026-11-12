@@ -20,7 +20,8 @@
 inline constexpr int FOUNDATION_MIN = 3;
 inline constexpr int FOUNDATION_MAX = 64;
 inline constexpr int STOREY_MAX = 7;                 // the top floor: 8 floors in all, the ground floor 0 to 7
-inline constexpr float BLUEPRINT_REACH = 5.0f;       // logs are handed over and building is done from this far
+inline constexpr float BLUEPRINT_REACH = 8.0f;       // logs are handed over and building is done from this far, on the builder's floor or one above or below
+inline constexpr float BUILD_STAND_OFF = 1.5f;       // a builder walks to this much short of that reach, not up to the piece
 inline constexpr float FLOOR_HEIGHT = 2.4f;          // walls' height: the upper floor sits on them
 inline constexpr float FLOOR_THICK = 0.14f;          // an upper floor's slab
 inline constexpr float FLOOR_TOP = FLOOR_HEIGHT + FLOOR_THICK;   // where a unit on the first upper floor stands
@@ -60,7 +61,24 @@ struct Blueprint {
     int supplied = 0;
     double progress = 0.0;
     float retryIn = 0.0f;
+    // Laid from a Building Blueprint (build_plan.h) by you or an NPC faction: an Auto Placed Blueprint. A piece placed by hand, or
+    // one that is built, is not. A building with any Auto Placed Blueprint left is not finished; cancelling one just takes it off.
+    bool autoPlaced = false;
+    // An Auto Placed piece laid ahead of the floor or foundation it stands on: drawn faint, never built or supplied, until its
+    // stage (below) is reached, when the pieces before it are built.
+    bool ghost = false;
+    int stage = 0;   // the plan's stage it is of (planStageOf)
 };
+// A free blueprint (a prop whose props.txt materials is 0): nothing is brought to it and nobody builds it. It finishes itself
+// FREE_BUILD_HOURS of game time after it is placed (a unit standing on it is asked to move first), and is let go if it is still
+// not finished FREE_BUILD_EXPIRE_HOURS after. Saved.
+inline constexpr double FREE_BUILD_HOURS = 1.0;
+inline constexpr double FREE_BUILD_EXPIRE_HOURS = 24.0;
+struct FreeBuild {
+    double hours = 0.0;
+};
+// On every piece of an NPC building that is being pulled down (npc_builders.h): drawn tinted red. Saved.
+struct Condemned {};
 
 // A unit climbing a ladder, up or down, or walking up or down stairs. Not saved.
 struct Climbing {
@@ -192,6 +210,10 @@ int woodLogItem();
 // A prop that is not a building piece, placed from the Build tab: finished at once when props.txt gives it no materials,
 // else a blueprint of the placer's faction that is built like any piece
 ObjectId placeCostedProp(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey = 0);
+// A free blueprint of this prop for the owner (above), whatever its kind. Only the developer's placing skips it.
+ObjectId placeFreeBlueprint(World& w, const Terrain& t, PropKind kind, float x, float z, float yaw, int owner, int storey = 0);
+// Free blueprints grow, finish and expire as game hours pass
+void freeBuildSystem(World& w, Terrain& t, double gameHours);
 bool isBuildingPiece(PropKind kind);
 // Building material this piece needs in all (one unit for most), and seconds of building at Carpentry 1
 int materialsNeeded(World& w, ObjectId prop);
@@ -238,6 +260,11 @@ ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int
 PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner = FACTION_PLAYER, int level = 0, int dir = 0);
 ObjectId placePiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner = FACTION_PLAYER,
                     BuildMaterial material = BuildMaterial::Wood, int level = 0, int dir = 0);
+// A ghost: an Auto Placed Blueprint of this plan stage laid with none of placePiece's rules, ahead of the foundation or floor it
+// stands on (a piece that costs nothing, or a level the game has no floor for, gives NO_OBJECT). Nothing builds or supplies it
+// until it is made a real blueprint (Blueprint::ghost off).
+ObjectId placeGhostPiece(World& w, const Terrain& t, PropKind kind, int x, int z, int owner, BuildMaterial material, int level, int dir,
+                         int stage);
 // Stairs: the step a direction takes, and the direction stairs rise toward
 inline constexpr int STAIRS_DX[4] = { 0, 1, 0, -1 };
 inline constexpr int STAIRS_DZ[4] = { -1, 0, 1, 0 };
@@ -245,6 +272,12 @@ inline constexpr float STAIRS_SECONDS = 1.2f;
 int stairsDir(World& w, ObjectId stairs);
 // Upper floors with no finished wall or door under them on their building's floor below fall in
 void collapseCheck(World& w);
+// A building (its foundation tiles, by tileKey) being pulled down (npc_builders.h): asks the units on its ground floor to walk out,
+// and says whether any are still there
+bool evacuateBuilding(World& w, Terrain& t, const std::vector<long long>& tiles);
+// Takes the whole building down at once: every piece of it goes, blueprints and ghosts too; props, items and units above the ground
+// floor are put down on it
+void pullDownBuilding(World& w, Terrain& t, const std::vector<long long>& tiles);
 
 // Material is brought to a blueprint: how much it took
 int supplyBlueprint(World& w, ObjectId blueprint, int logs);

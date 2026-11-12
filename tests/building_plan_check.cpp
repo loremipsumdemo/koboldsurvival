@@ -5,6 +5,7 @@
 #include <SDL3/SDL_main.h>
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <string>
 #include "build.h"
 #include "build_plan.h"
@@ -17,6 +18,8 @@
 #include "language.h"
 #include "level.h"
 #include "npc_builders.h"
+#include "npc_camps.h"
+#include "stuck.h"
 #include "pak.h"
 #include "savegame.h"
 #include "simulation.h"
@@ -287,7 +290,13 @@ int main(int, char**) {
         check(steps == 1 && sites == 1, "a grown claim comes back grown");
     }
 
-    // ---- The NPC builders: a faction with an Altar, wood in its stores and a citizen
+    // ---- The NPC builders: a faction with an Altar, wood in its stores and a citizen. They build from the plans in MAP/BLUEPRINT,
+    // which holds whatever the player has saved, so these run in a folder of their own with the one plan.
+    const std::filesystem::path home_ = std::filesystem::current_path();
+    std::filesystem::create_directories("plan_check_tmp/MAP/BLUEPRINT");
+    std::filesystem::current_path("plan_check_tmp");
+    check(writePlanFile(planFilePath("small_house"), house, err), "the plan is written to a folder of its own: " + err);
+    reloadPlanLibrary();
     {
         World town;
         Terrain flat(256);
@@ -348,6 +357,253 @@ int main(int, char**) {
         const Claim* grown = claimOf(claimsOf(town), homeAltar);
         check(grown && grown->radius >= CLAIM_RADIUS + CLAIM_GROWTH_STEP, "and the claim has grown");
     }
+
+    // ---- A whole plan laid at once: the foundation and ghosts, which become blueprints a stage at a time
+    {
+        World g;
+        Terrain gt(256);
+        Rng grng;
+        grng.gen.seed(5);
+        altarAt(g, gt, 100.5f, 100.5f, FACTION_PLAYER);
+        const BuildPlan turned = planTurned(house, 0);
+        const ObjectId anchor = placePlanAll(g, gt, turned, planFoundationRects(turned), 110, 100, FACTION_PLAYER, BuildMaterial::Wood);
+        check(anchor != NO_OBJECT, "a whole plan is laid in the player's claim");
+        g.add(anchor, PlanSite{ "small_house", 110, 100, 0, (int)BuildMaterial::Wood, 0, 0.0 });
+        auto count = [&](int& real, int& ghosts, int& notAuto) {
+            real = ghosts = notAuto = 0;
+            for (ObjectId e : g.view<Blueprint>()) {
+                const Blueprint* bp = g.get<Blueprint>(e);
+                (bp->ghost ? ghosts : real) += 1;
+                notAuto += bp->autoPlaced ? 0 : 1;
+            }
+        };
+        int real = 0, ghosts = 0, notAuto = 0;
+        count(real, ghosts, notAuto);
+        check(real == 9 && ghosts >= 17 && notAuto == 0, "9 foundation blueprints and the walls, door and floors as ghosts, all Auto Placed");
+        lookAround(g, gt, grng);
+        count(real, ghosts, notAuto);
+        check(real == 9, "ghosts stay ghosts while the foundation is not built");
+        for (ObjectId e : g.view<Blueprint, Foundation>()) {
+            g.get<Blueprint>(e)->supplied = 99;
+            finishBlueprint(g, gt, e);
+        }
+        lookAround(g, gt, grng);
+        count(real, ghosts, notAuto);
+        check(real >= 8 && ghosts >= 9, "the foundation built, the walls and door become blueprints and the floor above stays a ghost");
+        // Cancelling an Auto Placed piece takes it off what is left to build
+        ObjectId wall = NO_OBJECT;
+        for (ObjectId e : g.view<Blueprint, Prop>()) {
+            if (propInfo(g.get<Prop>(e)->kind).wallRule) wall = e;
+        }
+        const int before = real + ghosts;
+        check(wall != NO_OBJECT && destroyBuilding(g, wall), "a blueprint wall is cancelled");
+        count(real, ghosts, notAuto);
+        check(real + ghosts == before - 1, "and it no longer counts");
+        // Built to the end it needs no more looking after
+        for (int round = 0; round < 6; ++round) {
+            finishAllBlueprints(g, gt);
+            lookAround(g, gt, grng);
+        }
+        bool site = false;
+        for (ObjectId e : g.view<PlanSite>()) site = site || e != NO_OBJECT;
+        check(!site && g.count<Blueprint>() == 0, "once everything is built the plan is let go");
+    }
+
+    // ---- Ghosts, the idle time and a condemned building are saved
+    {
+        World r;
+        Terrain rt(256);
+        altarAt(r, rt, 100.5f, 100.5f, FACTION_PLAYER);
+        const BuildPlan turned = planTurned(house, 0);
+        const ObjectId anchor = placePlanAll(r, rt, turned, planFoundationRects(turned), 110, 100, FACTION_PLAYER, BuildMaterial::Wood);
+        r.add(anchor, PlanSite{ "small_house", 110, 100, 0, (int)BuildMaterial::Wood, 0, 1.5, 33.25, 77, 5.5 });
+        r.add(anchor, Condemned{});
+        int ghostsBefore = 0;
+        for (ObjectId e : r.view<Blueprint>()) ghostsBefore += r.get<Blueprint>(e)->ghost ? 1 : 0;
+        GameState gs;
+        Terrain keep(256);
+        Rng rrng;
+        const MapChoice map{ "packed", "test", "test", "" };
+        const std::string file = "building_plan_check_ghost.sav";
+        check(writeSaveFile(file, captureWorld(r, gs, Camera{}, rrng, 1000, "test", map)), "a game with ghosts is saved");
+        SaveData loaded;
+        check(readSaveFile(file, loaded), "and read back");
+        std::remove(file.c_str());
+        World back;
+        Rng after;
+        restoreWorld(back, keep, after, loaded);
+        int ghostsAfter = 0, autoAfter = 0, condemnedAfter = 0;
+        for (ObjectId e : back.view<Blueprint>()) {
+            ghostsAfter += back.get<Blueprint>(e)->ghost ? 1 : 0;
+            autoAfter += back.get<Blueprint>(e)->autoPlaced ? 1 : 0;
+        }
+        for (ObjectId e : back.view<Condemned>()) condemnedAfter += e != NO_OBJECT;
+        check(ghostsAfter == ghostsBefore && ghostsBefore > 0 && autoAfter == (int)back.count<Blueprint>(), "ghosts and Auto Placed pieces come back");
+        check(condemnedAfter == 1, "a condemned piece comes back condemned");
+        for (ObjectId e : back.view<PlanSite>()) {
+            const PlanSite* ps = back.get<PlanSite>(e);
+            check(ps->idleHours == 33.25 && ps->mark == 77 && ps->demolishHours == 5.5, "a site's idle time and its coming down come back");
+        }
+    }
+
+    // ---- An NPC building that makes no progress is condemned, and comes down a day later
+    {
+        World s;
+        Terrain st(256);
+        Rng srng;
+        srng.gen.seed(21);
+        altarAt(s, st, 100.5f, 100.5f, npc);
+        bool condemned = false, gone = false;
+        for (int round = 0; round < 400 && !gone; ++round) {
+            lookAround(s, st, srng);
+            int n = 0;
+            for (ObjectId e : s.view<Condemned>()) n += e != NO_OBJECT;
+            if (n > 0) condemned = true;
+            else if (condemned) gone = true;
+        }
+        check(condemned, "an NPC building with no material to build with is condemned after 10 days");
+        check(gone, "and is pulled down, all of it, a day after that");
+    }
+
+    // ---- Free blueprints: a prop with nothing to bring finishes itself in an hour, and is let go after a day if held up
+    {
+        World f;
+        Terrain ft(256);
+        altarAt(f, ft, 100.5f, 100.5f, FACTION_PLAYER);
+        const ObjectId roll = placeCostedProp(f, ft, PropKind::Bedroll, 102.5f, 100.5f, 0.0f, FACTION_PLAYER);
+        check(f.has<Blueprint>(roll) && f.has<FreeBuild>(roll), "a Bedroll is placed as a free blueprint");
+        check(f.has<Health>(roll), "and has health");
+        freeBuildSystem(f, ft, 0.5);
+        check(f.has<Blueprint>(roll) && f.get<Blueprint>(roll)->progress > 0.4 && f.get<Blueprint>(roll)->progress < 0.6, "half an hour in it is half done");
+        freeBuildSystem(f, ft, 0.6);
+        check(!f.has<Blueprint>(roll) && !f.has<FreeBuild>(roll), "an hour in it is built");
+        const ObjectId held = placeCostedProp(f, ft, PropKind::Campfire, 104.5f, 100.5f, 0.0f, FACTION_PLAYER);
+        makeEntity(f, Transform{ 104.5f, 0.0f, 100.5f }, FACTION_PLAYER);   // stands on it and stays
+        for (int hour = 0; hour < 30; ++hour) freeBuildSystem(f, ft, 1.0);
+        check(!f.has<Prop>(held), "one that is held up is deleted a day after");
+        // Health mends inside an Altar's claim
+        f.get<Health>(roll)->value = 5.0;
+        claimDecaySystem(f, 3600.0 * 2.0);
+        check(f.get<Health>(roll)->value > 5.0, "a prop below its health mends inside an Altar's claim");
+        const ObjectId far = placeBuiltProp(f, ft, PropKind::Bedroll, 200.5f, 200.5f, 0.0f, FACTION_PLAYER);
+        f.get<Health>(far)->value = 5.0;
+        claimDecaySystem(f, 3600.0 * 2.0);
+        check(f.get<Health>(far)->value == 5.0, "and does not outside one");
+    }
+
+    // ---- A door lies along the walls beside it, a wall pulling more than another door; a building leaves a tile clear all round
+    {
+        World d;
+        Terrain dt(256);
+        altarAt(d, dt, 100.5f, 100.5f, FACTION_PLAYER);
+        placeFoundation(d, dt, 110, 110, 118, 118, FACTION_PLAYER);
+        finishAllBlueprints(d, dt);
+        placePiece(d, dt, PropKind::WoodWall, 111, 110, FACTION_PLAYER);
+        placePiece(d, dt, PropKind::WoodWall, 113, 110, FACTION_PLAYER);
+        const ObjectId along = placePiece(d, dt, PropKind::WoodDoor, 112, 110, FACTION_PLAYER);
+        placePiece(d, dt, PropKind::WoodWall, 115, 111, FACTION_PLAYER);
+        placePiece(d, dt, PropKind::WoodWall, 115, 113, FACTION_PLAYER);
+        const ObjectId across = placePiece(d, dt, PropKind::WoodDoor, 115, 112, FACTION_PLAYER);
+        placePiece(d, dt, PropKind::WoodWall, 117, 115, FACTION_PLAYER);
+        placePiece(d, dt, PropKind::WoodDoor, 117, 117, FACTION_PLAYER);
+        const ObjectId beside = placePiece(d, dt, PropKind::WoodDoor, 117, 116, FACTION_PLAYER);
+        check(std::fabs(d.get<Prop>(along)->yaw) < 0.1f, "a door between walls to its east and west lies east-west");
+        check(std::fabs(d.get<Prop>(across)->yaw - 1.5707963f) < 0.1f, "one between walls to its north and south lies north-south");
+        check(std::fabs(d.get<Prop>(beside)->yaw - 1.5707963f) < 0.1f, "a wall on one side and a door on the other: toward the wall");
+        const std::vector<PlanRect> rects = planFoundationRects(planTurned(house, 0));
+        check(planSurroundingsClear(d, rects, 140, 140), "open ground is clear");
+        const ObjectId chest = placeBuiltProp(d, dt, PropKind::LockedChest, 143.5f, 140.5f, 0.0f, FACTION_PLAYER);
+        check(!planSurroundingsClear(d, rects, 140, 140), "a prop in the ring of tiles round the building is not");
+        d.destroy(chest);
+        placeBuiltProp(d, dt, PropKind::LockedChest, 141.5f, 141.5f, 0.0f, FACTION_PLAYER);
+        check(!planSurroundingsClear(d, rects, 140, 140), "nor one on the building");
+        check(!planSurroundingsClear(d, rects, 107, 107) && planSurroundingsClear(d, rects, 120, 125), "nor another building's foundation within a tile of it");
+    }
+
+    // ---- A claim has a bed for each of its units, and lays no more than that
+    {
+        World b;
+        Terrain bt(256);
+        altarAt(b, bt, 100.5f, 100.5f, npc);
+        for (int i = 0; i < 3; ++i) makeEntity(b, Transform{ 100.5f + (float)i, 0.0f, 103.5f }, npc);
+        auto beds = [&]() {
+            int n = 0;
+            for (ObjectId e : b.view<Prop>()) n += isBed(b.get<Prop>(e)->kind) ? 1 : 0;
+            return n;
+        };
+        for (int i = 0; i < 6; ++i) claimBedSystem(b, bt);
+        check(beds() == 3, "3 units in a claim and no bed: 3 bedroll blueprints, and no more however often it looks");
+        bool allBlueprints = true;
+        for (ObjectId e : b.view<Prop>()) allBlueprints = allBlueprints && (!isBed(b.get<Prop>(e)->kind) || b.has<FreeBuild>(e));
+        check(allBlueprints, "each a free blueprint");
+        for (int hour = 0; hour < 3; ++hour) freeBuildSystem(b, bt, 1.0);
+        for (int i = 0; i < 3; ++i) claimBedSystem(b, bt);
+        check(beds() == 3 && b.count<Blueprint>() == 0, "once built they count, and still no more are laid");
+    }
+
+    // ---- A unit shut in breaks its way out, after trying to move about five times; a day of it and it loses consciousness
+    {
+        World s;
+        Terrain st(256);
+        Rng srng;
+        srng.gen.seed(3);
+        altarAt(s, st, 40.5f, 40.5f, FACTION_PLAYER);
+        placeFoundation(s, st, 44, 44, 48, 48, FACTION_PLAYER);
+        for (int i = 44; i <= 48; ++i) {
+            placePiece(s, st, PropKind::WoodWall, i, 44, FACTION_PLAYER);
+            placePiece(s, st, PropKind::WoodWall, i, 48, FACTION_PLAYER);
+            if (i > 44 && i < 48) {
+                placePiece(s, st, PropKind::WoodWall, 44, i, FACTION_PLAYER);
+                placePiece(s, st, PropKind::WoodWall, 48, i, FACTION_PLAYER);
+            }
+        }
+        finishAllBlueprints(s, st);
+        rebuildBlocking(s, st);
+        auto walls = [&]() {
+            int n = 0;
+            for (ObjectId e : s.view<Prop>()) n += propInfo(s.get<Prop>(e)->kind).wallRule ? 1 : 0;
+            return n;
+        };
+        const int before = walls();
+        const ObjectId prisoner = makeEntity(s, Transform{ 46.5f, st.standHeight(46.5f, 46.5f), 46.5f }, FACTION_PLAYER);
+        check(before == 16 && !stuckReachable(s, st, Vec2{ 46.5f, 46.5f }, Vec2{ 56.5f, 46.5f }), "a closed room: no way to a spot outside it");
+        check(stuckBlocker(s, st, Vec2{ 46.5f, 46.5f }, Vec2{ 56.5f, 46.5f }) != NO_OBJECT, "and a wall is what is in the way");
+        walkSoloTo(s, st, prisoner, Vec2{ 56.5f, 46.5f }, 0);
+        int rounds = 0, brokeAt = -1;
+        for (int step = 0; step < 1200 && brokeAt < 0; ++step) {
+            stuckSystem(s, st, srng, 0.5f);
+            if (const Stuck* k = s.get<Stuck>(prisoner)) rounds = std::max(rounds, k->rounds);
+            // It moves where it is told at once, and has stopped when it gets there
+            if (SoloMove* so = s.get<SoloMove>(prisoner); so && !so->waypoints.empty()) {
+                Transform* pt = s.get<Transform>(prisoner);
+                pt->x = so->waypoints.back().x;
+                pt->z = so->waypoints.back().z;
+                s.remove<SoloMove>(prisoner);
+            }
+            if (walls() < before) brokeAt = step;
+        }
+        check(rounds >= STUCK_ROUNDS_BEFORE_BREAKING && brokeAt >= 0, "it moves about 5 times, and then breaks a wall");
+        check(brokeAt > (int)(STUCK_ROUNDS_BEFORE_BREAKING * STUCK_IDLE_SECONDS / 0.5f) - 2, "and not before 5 times its 10 idle seconds");
+        // A day of it
+        World d;
+        Terrain dt2(256);
+        const ObjectId lost = makeEntity(d, Transform{ 10.5f, 0.0f, 10.5f }, FACTION_PLAYER);
+        d.add(lost, PathGoal{ Vec2{ 30.5f, 10.5f }, 0.0f });
+        Stuck forever;
+        forever.hours = STUCK_FAINT_HOURS - 0.0001;
+        forever.wander = 0.0f;
+        d.add(lost, forever);
+        d.add(lost, SoloMove{});
+        d.get<SoloMove>(lost)->next = 0;
+        d.get<SoloMove>(lost)->waypoints.clear();
+        Rng drng;
+        for (int step = 0; step < 20; ++step) stuckSystem(d, dt2, drng, 0.5f);
+        check(d.has<Unconscious>(lost) || d.count<Stuck>() == 0, "shut in for a day, a unit loses consciousness");
+    }
+
+    std::filesystem::current_path(home_);
+    std::filesystem::remove_all("plan_check_tmp");
+    reloadPlanLibrary();
 
     // ---- Which material comes next
     NpcBuildCount have;
