@@ -120,6 +120,16 @@ using Vec2f = std::pair<float, float>;
 
 std::int64_t cellKey(int cx, int cz) { return (std::int64_t)(((std::uint64_t)(std::uint32_t)cx << 32) | (std::uint32_t)cz); }
 
+// What the buildings put in the units' way, found again only when a piece is added, finished or removed
+struct SteerTiles {
+    bool valid = false;
+    std::uint64_t revisions[4] = { 0, 0, 0, 0 };
+    std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
+    std::unordered_set<long long> floors;            // finished upper floor tiles, by levelKey
+    std::unordered_set<long long> upperWalls;        // finished walls on upper floors, by levelKey
+    std::vector<std::pair<long long, ObjectId>> doors;   // finished doors, by tile (locked or not: that is looked at each step)
+};
+
 struct SteerFrame {
     std::vector<ObjectId> units;
     std::vector<Vec2f> vel;
@@ -142,9 +152,7 @@ struct SteerFrame {
     std::vector<int> faction;
     std::vector<char> fighting;
     std::unordered_map<long long, ObjectId> doors;   // locked doors, by tile
-    std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
-    std::unordered_set<long long> floors;            // finished upper floor tiles, by levelKey
-    std::unordered_set<long long> upperWalls;        // finished walls on upper floors, by levelKey
+    const SteerTiles* tiles = nullptr;               // the finished walls and floors, kept from step to step
     bool underAttack(ObjectId e) const { return std::binary_search(attacked.begin(), attacked.end(), e); }
 };
 
@@ -711,7 +719,7 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
         const int level = up->level;
         auto onFloor = [&](float x, float z) {
             const long long k = levelKey((int)std::floor(x), (int)std::floor(z), level);
-            return s.floors.count(k) > 0 && s.upperWalls.count(k) == 0;
+            return s.tiles->floors.count(k) > 0 && s.tiles->upperWalls.count(k) == 0;
         };
         if (onFloor(nx, tr->z)) tr->x = nx;
         if (onFloor(tr->x, nz)) tr->z = nz;
@@ -731,9 +739,9 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
     };
     // Pressed against a wall: noted, so a stranger hostile to its owner can break it
     auto againstWall = [&](float x, float z) {
-        if (s.walls.empty()) return;
-        const auto it = s.walls.find(tileKey((int)std::floor(x), (int)std::floor(z)));
-        if (it != s.walls.end() && !w.has<Commandable>(e)) w.add(e, AtDoor{ it->second, 0.0f });
+        if (s.tiles->walls.empty()) return;
+        const auto it = s.tiles->walls.find(tileKey((int)std::floor(x), (int)std::floor(z)));
+        if (it != s.tiles->walls.end() && !w.has<Commandable>(e)) w.add(e, AtDoor{ it->second, 0.0f });
     };
     if (t.isFree(nx, tr->z) && !doorStops(nx, tr->z)) tr->x = nx;
     else if (std::fabs(velocity.first) > 1e-3f) againstWall(nx + (velocity.first > 0.0f ? AGENT_CLEARANCE : -AGENT_CLEARANCE), tr->z);
@@ -779,33 +787,46 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         if (const Upstairs* up = w.get<Upstairs>(units[i])) s.level[i] = 1 + (std::int64_t)up->level;
         else if (w.has<Occupying>(units[i])) s.level[i] = 1;
     }
-    for (ObjectId p : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-        if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs) || w.has<Blueprint>(p)) continue;
-        if (info.stairs) {
-            // Their top step is floor of the level above; their steps can't be walked across up on their own floor
-            int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
-            pieceTiles(w, p, x0, z0, x1, z1);
-            const int lv = storeyOf(w, p), d = stairsDir(w, p);
-            const Transform* pt = w.get<Transform>(p);
-            s.floors.insert(levelKey((int)std::floor(pt->x) + STAIRS_DX[d], (int)std::floor(pt->z) + STAIRS_DZ[d], lv + 1));
-            if (lv > 0) {
-                for (int z = z0; z <= z1; ++z) {
-                    for (int x = x0; x <= x1; ++x) s.upperWalls.insert(levelKey(x, z, lv));
+    // Where the walls, doors and floors are only changes when a piece is added, finished or removed, so the tables are kept and
+    // made again then. Whether a door is locked can change any time: that is looked at every step.
+    SteerTiles& tiles = w.resource<SteerTiles>();
+    const std::uint64_t seen[4] = { w.revision<Prop>(), w.revision<Storey>(), w.revision<Blueprint>(), w.revision<Transform>() };
+    if (!tiles.valid || !std::equal(seen, seen + 4, tiles.revisions)) {
+        tiles = SteerTiles{};
+        std::copy(seen, seen + 4, tiles.revisions);
+        tiles.valid = true;
+        for (ObjectId p : w.view<Prop, Transform>()) {
+            const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+            if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs) || w.has<Blueprint>(p)) continue;
+            if (info.stairs) {
+                // Their top step is floor of the level above; their steps can't be walked across up on their own floor
+                int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+                pieceTiles(w, p, x0, z0, x1, z1);
+                const int lv = storeyOf(w, p), d = stairsDir(w, p);
+                const Transform* pt = w.get<Transform>(p);
+                tiles.floors.insert(levelKey((int)std::floor(pt->x) + STAIRS_DX[d], (int)std::floor(pt->z) + STAIRS_DZ[d], lv + 1));
+                if (lv > 0) {
+                    for (int z = z0; z <= z1; ++z) {
+                        for (int x = x0; x <= x1; ++x) tiles.upperWalls.insert(levelKey(x, z, lv));
+                    }
                 }
+                continue;
             }
-            continue;
+            const Transform* pt = w.get<Transform>(p);
+            const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
+            const int storey = storeyOf(w, p);
+            const long long key = tileKey(px, pz);
+            if (info.upperFloor) tiles.floors.insert(levelKey(px, pz, storey));
+            else if (storey > 0) {
+                if (info.wallRule) tiles.upperWalls.insert(levelKey(px, pz, storey));
+            }
+            else if (info.wallRule) tiles.walls[key] = p;
+            else tiles.doors.push_back({ key, p });
         }
-        const Transform* pt = w.get<Transform>(p);
-        const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
-        const int storey = storeyOf(w, p);
-        const long long key = tileKey(px, pz);
-        if (info.upperFloor) s.floors.insert(levelKey(px, pz, storey));
-        else if (storey > 0) {
-            if (info.wallRule) s.upperWalls.insert(levelKey(px, pz, storey));
-        }
-        else if (info.wallRule) s.walls[key] = p;
-        else if (const Lock* l = w.get<Lock>(p); l && l->locked) s.doors[key] = p;
+    }
+    s.tiles = &tiles;
+    for (const auto& [key, p] : tiles.doors) {
+        if (const Lock* l = w.get<Lock>(p); l && l->locked) s.doors[key] = p;
     }
     std::sort(s.attacked.begin(), s.attacked.end());
 

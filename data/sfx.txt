@@ -59,3 +59,5 @@ CarryUp	carry_up.mp3	effects	Units: an Unconscious unit picked up to be carried
 PutDown	put_down.mp3	effects	Units: a carried unit put down on the ground
 Dies	dies.mp3	effects	Units: an Unconscious unit died (its Dying reached 100)
 Recovers	recovers.mp3	effects	Units: an Unconscious unit woke up in a bed or bedroll
+DanceStep	dance_step.mp3	effects	Units: a dancer's foot lands at the bottom of a hop (very light)
+MotivationChime	motivation_chime.mp3	effects	Faction: Motivation rose up to its threshold

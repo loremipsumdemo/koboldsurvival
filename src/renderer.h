@@ -239,7 +239,9 @@ public:
     void drawGroundItemName(World& w, const Camera& cam, int winW, int winH, ObjectId item);
 
     void drawUnitNames(World& w, const Camera& cam, int winW, int winH, bool players, bool others);
-    void drawPropTooltip(const std::vector<std::string>& lines, float mx, float my);
+    // barRow: the line (from 0) drawn over a bar filled barFill, with a mark at barMark; -1 for none
+    void drawPropTooltip(const std::vector<std::string>& lines, float mx, float my, int barRow = -1, float barFill = 0.0f, float barMark = 0.0f,
+                         bool barLit = false);
     void showItemTooltip(int item, int count, float mx, float my) { drawItemTooltip(item, count, mx, my); }
 
     void drawFloatingNumbers(const std::vector<FloatingNumber>& floats, const Camera& cam, int winW, int winH);
@@ -284,6 +286,7 @@ public:
     struct FireSpot {
         float x, y, z, size, seed;
         float energy = 0.0f;   // 0 to 1: a motivated faction's Altar burns bigger, brighter and quicker
+        bool lit = false;      // over the Motivation threshold: its flames rise much higher
     };
     std::vector<FireSpot> fires_;
     TextTex glow_;   // a soft round spot, bright in the middle
@@ -459,6 +462,16 @@ private:
     BuildPreview buildPreview_;
     Cutaway cutaway_;
     GLuint glyphVao_ = 0, glyphVbo_ = 0;
+    // glyphVbo_ holds GLYPH_RING_QUADS quads, each drawn from a place of its own: writing over one the card may still be reading
+    // makes the driver wait for it. When the ring is full it is handed back to the driver and started again.
+    // Set by drawFrame for drawTerrain to call once the ground and sea floor are down (the sky only fills what they left)
+    std::function<void()> skyLater_;
+    static constexpr int GLYPH_RING_QUADS = 4096;
+    int glyphRingAt_ = 0;
+    // Soft glowing quads (fires) with a color each, all drawn in one call
+    GLuint glowProgram_ = 0, glowVao_ = 0, glowVbo_ = 0;
+    GLint uMVPGlow_ = -1;
+    std::vector<float> glowScratch_;
     struct TerrainChunk {
         GLuint vao = 0, vbo = 0, ebo = 0;
         GLsizei indexCount = 0;
@@ -661,7 +674,13 @@ private:
     void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
     void drawModelInstances();
-    struct ModelDrawCount { int models = 0, copies = 0, draws = 0; } modelDraws_;
+    static constexpr size_t HEAVY_MODEL_TRIANGLES = 5000;
+    struct ModelDrawCount {
+        int models = 0, copies = 0, draws = 0;
+        long long triangles = 0;                // all the triangles sent
+        int heavyCopies = 0;                    // copies of models over HEAVY_MODEL_TRIANGLES triangles (the units and mobs)
+        long long heavyTriangles = 0;
+    } modelDraws_;
 public:
     // The last frame's instanced models: how many models, copies of them, and draw calls
     std::string modelDrawText() const;

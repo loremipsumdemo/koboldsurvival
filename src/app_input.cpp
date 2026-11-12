@@ -477,9 +477,11 @@ void App::onMouseWheel() {
         mapCz = gz - offY * k;
         clampMapView(box, (float)terrain.size(), mapCx, mapCz, mapSpan);
     } else if (screen == Screen::Playing && unitPanelHovered(winW, winH) && factionTab == FACTION_TAB_FACTION) {
-        const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
-        repScroll = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace,
-                                    factionTab, (int)reputationFactions().size(), repScroll + step).repFirst;
+        // The tab shown scrolls, a few rows at a time
+        const int sub = std::clamp(factionSub, 0, 2);
+        const float notch = 36.0f * uiScaleFor((float)winH);
+        factionScroll[sub] = layoutUnitPanel(winW, winH, (int)ownUnitList().size(), unitPanelRow, squadCollapsed, squadPlace, factionTab,
+                                             (int)reputationFactions().size(), factionScroll[sub] - e.wheel.y * notch, sub).subScroll;
     } else if (screen == Screen::Playing && unitPanelHovered(winW, winH)) {
         if (unitPanelWheel * e.wheel.y < 0.0f) unitPanelWheel = 0.0f;
         unitPanelWheel += e.wheel.y;
@@ -487,7 +489,7 @@ void App::onMouseWheel() {
         if (rows != 0) {
             unitPanelWheel -= rows * SQUAD_WHEEL_NOTCHES_PER_ROW;
             unitPanelRow = layoutUnitPanel(winW, winH, (int)ownUnitList().size(),
-                                           unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), repScroll).scrollRow;
+                                           unitPanelRow - rows, squadCollapsed, squadPlace, factionTab, (int)reputationFactions().size(), 0.0f, factionSub).scrollRow;
         }
     } else if (screen == Screen::Playing && !onTalkOrTrade(winW, winH, e.wheel.mouse_x, e.wheel.mouse_y)
                && sidebarFor(winW, winH, sidebarScroll).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
@@ -721,8 +723,9 @@ void App::onMouseButtonUp() {
     }
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && adjustRelease()) return;
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && buildRelease()) return;
-    if (squadThumbDrag && e.button.button == SDL_BUTTON_LEFT) {
+    if ((squadThumbDrag || factionThumbDrag) && e.button.button == SDL_BUTTON_LEFT) {
         squadThumbDrag = false;
+        factionThumbDrag = false;
         return;
     }
     if (mapDragging && e.button.button == SDL_BUTTON_LEFT) {
@@ -924,6 +927,16 @@ void App::onMouseMotion() {
     }
     if (grabWhich) {
         applyGrab(winW, winH, e.motion.x, e.motion.y);
+        return;
+    }
+    if (factionThumbDrag) {
+        if ((e.motion.state & SDL_BUTTON_LMASK) && screen == Screen::Playing) {
+            const UnitPanelLayout fp = squadPanelLayout(winW, winH);
+            const float frac = scrollFracAt(fp.subTrack, fp.subThumb, e.motion.y - factionThumbGrab);
+            factionScroll[std::clamp(factionSub, 0, 2)] = frac * fp.subScrollMax;
+        } else {
+            factionThumbDrag = false;
+        }
         return;
     }
     if (squadThumbDrag) {

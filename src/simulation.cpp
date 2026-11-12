@@ -80,6 +80,7 @@ void queueFloatingNumber(World& w, const FloatingNumber& number) {
 
 void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool running) {
     w.resource<WorldClock>().seconds = gs.clockSeconds;
+    invalidateClaims(w);   // what is kept of the claims is good for one step
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
     PROFILED("factionSystem", factionSystem(w, dt));

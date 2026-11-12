@@ -63,6 +63,8 @@ enum class Sfx : int {
     PutDown,
     Dies,
     Recovers,
+    DanceStep,
+    MotivationChime,
     Count
 };
 

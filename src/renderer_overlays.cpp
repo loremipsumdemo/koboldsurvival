@@ -15,6 +15,16 @@ const RGBA LABEL_TEXT{ 1.0f, 0.93f, 0.86f, 1.0f };
 const RGBA LABEL_HOT_FILL{ 0.12f, 0.04f, 0.02f, 0.85f };
 
 const RGBA LABEL_HOT_TEXT{ 1.0f, 0.80f, 0.25f, 1.0f };
+
+// Names and status emotes of units that are not yours are drawn only this far (tiles on the ground) from where the camera looks.
+// Farther off they are small crowded clutter, and each one costs a text lookup and two draws.
+constexpr float LABEL_RANGE = 70.0f;
+
+bool labelled(const Camera& cam, World& w, ObjectId u, const Transform* tr) {
+    if (w.has<Commandable>(u)) return true;
+    const float dx = tr->x - cam.focusX, dz = tr->z - cam.focusZ;
+    return dx * dx + dz * dz <= LABEL_RANGE * LABEL_RANGE;
+}
 }
 
 void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH) {
@@ -122,14 +132,15 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const unsigned long long sinceHop = ticks % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
+    const float nameRow = listTextHeight("Ag") + 2.0f * s;
     for (ObjectId u : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u)) continue;
+        if (!labelled(cam, w, u, tr) || !withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
         const bool named = w.has<Name>(u) && (w.has<Commandable>(u) ? playerNames : otherNames);
-        if (named) bottom -= listTextHeight("Ag") + 2.0f * s;
+        if (named) bottom -= nameRow;
         if (sx < -size || sx > winW + size || bottom < 0.0f || bottom - size > winH) continue;
         const std::vector<EmoteId> emotes = emotesOf(w, u);
         if (emotes.empty()) continue;
@@ -207,16 +218,18 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const Transform* tr = w.get<Transform>(u);
         const Name* nm = w.get<Name>(u);
         if (!(w.has<Commandable>(u) ? players : others)) continue;
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!labelled(cam, w, u, tr) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
 
-        const std::string tag = "[" + nm->text + "]";
-        const float tw = listTextWidth(tag), th = listTextHeight(tag);
+        // The line looked up once, and drawn twice
+        const TextLine& line = listLine("[" + nm->text + "]");
+        if (!line.tex.tex) continue;
+        const float tw = line.w, th = line.h;
         if (sx < -tw || sx > winW + tw || sy < -th || sy > winH + th) continue;
         const float x = sx - tw * 0.5f, y = sy - th;
-        drawListText(tag, x + 1.5f * s, y + 1.5f * s, shadow);
-        drawListText(tag, x, y, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : WHITE);
+        drawTexture(line.tex.tex, x + 1.5f * s, y + 1.5f * s, tw, th, shadow);
+        drawTexture(line.tex.tex, x, y, tw, th, w.has<Hostile>(u) ? hostile : w.has<Neutral>(u) ? neutral : WHITE);
     }
 }
 

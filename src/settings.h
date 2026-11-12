@@ -56,6 +56,7 @@ struct GameSettings {
     int detailRange = 256;
     int viewDistance = 1024;
     int renderScale = 100;
+    bool renderScaleSet = false;   // the settings file had a render scale (not saved): without one, a weak graphics card is given a lower default
     int formationShape = (int)FormationShape::Rectangle;
     bool formationLoose = false;
     bool showFps = false;
@@ -135,7 +136,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
-        else if (key == "renderScale")     s.renderScale = parseInt(val, s.renderScale);
+        else if (key == "renderScale")     { s.renderScale = parseInt(val, s.renderScale); s.renderScaleSet = true; }
         else if (key == "debugLogging")    s.debugLogging = (val == "1");
         else if (key == "clouds")          s.clouds = (val == "1");
         else if (key == "cloudShadows")    s.cloudShadows = (val == "1");

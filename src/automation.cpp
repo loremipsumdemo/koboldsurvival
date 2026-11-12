@@ -922,7 +922,7 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
 }
 
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
-    const std::vector<Claim> claims = claimsOf(w);
+    const std::vector<Claim> claims = cachedClaims(w);
     {
         // Whoever stopped dancing, for any reason, goes to an open place; the circles that still have dancers keep turning, and the
         // rest are at rest
@@ -948,6 +948,18 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
         for (ObjectId p : active) rings.seconds.try_emplace(p, 0.0);
+        // Each dancer's foot lands once a hop: a light thud, as the clock carries its hop round past the bottom
+        DanceHops& hops = w.resource<DanceHops>();
+        const double before = hops.clock;
+        hops.clock += dt;
+        for (ObjectId u : w.view<Dancing>()) {
+            const Behaviors* db = w.get<Behaviors>(u);
+            if (!db || !db->busy || !db->began) continue;
+            const double offset = (double)danceHopPhase(0.0, u);
+            if (std::floor(hops.clock / DANCE_HOP_SECONDS + offset) > std::floor(before / DANCE_HOP_SECONDS + offset)) {
+                queueSoundFrom(w, Sfx::DanceStep, u);
+            }
+        }
     }
     for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);

@@ -176,6 +176,9 @@ struct TipRow {
     RGBA tint{ 1.0f, 1.0f, 1.0f, 1.0f };
     std::string change;
     RGBA changeTint{ 1.0f, 1.0f, 1.0f, 1.0f };
+    // A bar behind the row's text, filled this much (0 to 1; below 0: none), with a mark at barMark, amber while barLit
+    float bar = -1.0f, barMark = 0.0f;
+    bool barLit = false;
 };
 
 constexpr float LOD_NEAR_TILES = 96.0f;

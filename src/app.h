@@ -92,7 +92,10 @@ struct AppSession {
     float unitPanelWheel = 0.0f;
     bool runMode = false;
     int repView = FACTION_PLAYER;
-    int repScroll = 0;
+    float factionScroll[3] = { 0.0f, 0.0f, 0.0f };   // the Faction tab's tabs' scrolling, in pixels
+    int factionSub = 0;                              // which of them shows (FACTION_SUB_*)
+    bool factionThumbDrag = false;
+    float factionThumbGrab = 0.0f;
     bool behaviorAddOpen = false;
     ObjectId behaviorUiUnit = NO_OBJECT;
     struct PercentPrompt {

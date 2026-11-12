@@ -284,10 +284,29 @@ bool App::pressOnFactionTabs() {
             factionTab = next;
             return true;
         }
+        if (factionTab == FACTION_TAB_FACTION) {
+            // The Faction tab's own tabs, and the scrollbar of the one showing
+            for (int i = 0; i < 3; ++i) {
+                if (!fp.subTabs[(size_t)i].contains(tx, ty)) continue;
+                if (factionSub != i) playSfx(Sfx::UiTab);
+                factionSub = i;
+                return true;
+            }
+            const int sub = std::clamp(factionSub, 0, 2);
+            if (fp.subScrollable() && fp.subThumb.contains(tx, ty)) {
+                factionThumbDrag = true;
+                factionThumbGrab = ty - fp.subThumb.y;
+                return true;
+            }
+            if (fp.subScrollable() && fp.subTrack.contains(tx, ty)) {
+                factionScroll[sub] = std::clamp(fp.subScroll + (ty < fp.subThumb.y ? -1.0f : 1.0f) * fp.view.h * 0.8f, 0.0f, fp.subScrollMax);
+                return true;
+            }
+        }
         bool picked = false;
         for (size_t i = 0; i < fp.repRows.size(); ++i) {
             const size_t idx = (size_t)fp.repFirst + i;
-            if (!fp.repRows[i].contains(tx, ty) || idx >= factions().size()) continue;
+            if (!fp.view.contains(tx, ty) || !fp.repRows[i].contains(tx, ty) || idx >= factions().size()) continue;
             if (reputationFactions()[idx].id != repView) playSfx(Sfx::UiClick);
             repView = reputationFactions()[idx].id;
             picked = true;

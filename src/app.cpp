@@ -60,6 +60,19 @@ int App::init() {
                                       (version ? version : "?") + " on " + (card ? card : "?") +
                                       ".\nUpdating the graphics driver may help.");
     }
+    {
+        // No render scale chosen yet, on a card that shares the processor's memory or draws in software: start at 75%, which
+        // costs little in looks and a good deal of the ground pass. Chosen once; the settings menu changes it as before.
+        const std::string card = reinterpret_cast<const char*>(glGetString(GL_RENDERER) ? glGetString(GL_RENDERER) : (const GLubyte*)"");
+        const bool weak = (card.find("Intel") != std::string::npos && card.find("Arc") == std::string::npos) ||
+                          card.find("llvmpipe") != std::string::npos || card.find("SwiftShader") != std::string::npos ||
+                          card.find("Radeon(TM) Graphics") != std::string::npos || card.find("Radeon Graphics") != std::string::npos;
+        if (!settings.renderScaleSet) {
+            if (weak) settings.renderScale = 75;
+            settings.renderScaleSet = true;
+            saveSettings(settings, settingsFilePath());
+        }
+    }
     glewExperimental = GL_TRUE;
     GLenum glewErr = glewInit();
     if (glewErr != GLEW_OK)

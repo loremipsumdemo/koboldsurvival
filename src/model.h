@@ -18,6 +18,10 @@ struct Model {
     std::vector<float> positions;
     std::vector<GLuint> triangles;
     GLuint surface = 0;   // a building piece's material texture laid over it in world space (not owned), or 0
+    // A coarser copy of a model with many triangles (the units and mobs), for when it is far from the camera: about a quarter of the
+    // triangles, in vertex and index buffers of its own, with this model's textures (which it does not own). Empty for a model that
+    // is light already.
+    std::vector<Model> lods;
 };
 
 bool loadGLBModel(const char* path, Model& m);

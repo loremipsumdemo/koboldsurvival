@@ -387,22 +387,36 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         const bool baked = skyKind == (int)SkyKind::Cave || skyKind == (int)SkyKind::Galaxy;
         glUniform1i(uSkyUseBaked_, baked ? 1 : 0);
         glUniform1i(uSkyBaked_, 0);
-        if (baked) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, skyCube_);
-        }
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        glBindVertexArray(skyVao_);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        glBindVertexArray(0);
-        glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
+        // The sky is a quad at the far plane. Where there is water it waits until the ground is down and fills only what is left
+        // (depth still at its far value), so the card does not work out sky pixels that terrain covers. Over a void the ground's edge
+        // blends into the sky behind it, so there it is drawn first.
+        auto paintSky = [this, baked](bool afterGround) {
+            glUseProgram(skyProgram_);
+            if (baked) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, skyCube_);
+            }
+            if (afterGround) glDepthFunc(GL_LEQUAL);
+            else glDisable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
+            glBindVertexArray(skyVao_);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            glBindVertexArray(0);
+            glDepthMask(GL_TRUE);
+            glDepthFunc(GL_LESS);
+            glEnable(GL_DEPTH_TEST);
+        };
+        if (!hasTheme_ || theme_.waterShown) skyLater_ = [paintSky]() { paintSky(true); };
+        else paintSky(false);
     }
 
     glUseProgram(colorProgram_);
     glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
     drawTerrain(t, cam);
+    if (skyLater_) {   // drawTerrain paints it between the ground and the water; this is only if it did not get that far
+        skyLater_();
+        skyLater_ = nullptr;
+    }
 
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
@@ -641,7 +655,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             if (info.claimsLand) {
                 const Owner* fo = w.get<Owner>(e);
                 const double v = motivationOf(w, fo ? fo->faction : FACTION_PLAYER);
-                if (v > MOTIVATION_FAST) f.energy = 0.5f + 0.5f * std::clamp((float)((v - MOTIVATION_FAST) / 25.0), 0.0f, 1.0f);
+                if (v > MOTIVATION_FAST) {
+                    f.energy = 0.5f + 0.5f * std::clamp((float)((v - MOTIVATION_FAST) / 25.0), 0.0f, 1.0f);
+                    f.lit = true;
+                }
             }
             fires_.push_back(f);
         }
@@ -693,7 +710,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (const Model* m = unitModel(w, e)) {
             if (!(m->maxY > m->minY)) continue;
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            queueModelMatrix(*m, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f,
+            // A unit far off is drawn from a coarser copy of its model (a quarter of the triangles)
+            const Model* shown = m;
+            if (!m->lods.empty()) {
+                const float lx = tr->x - camX, ly = tr->y - camY, lz = tr->z - camZ;
+                if (lx * lx + ly * ly + lz * lz > MODEL_LOD_FAR_TILES * MODEL_LOD_FAR_TILES) shown = &m->lods.front();
+            }
+            queueModelMatrix(*shown, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f,
                              unitHue(w, e));
             continue;
         }
@@ -1130,17 +1153,43 @@ ObjectId Renderer::nearestGroundItem(const std::vector<ObjectId>& items, World& 
 
 // Fires: each a few soft flames rising and fading, over a warm glow on the ground and round the fire that stands in
 // for its light, and shows more the darker it is. Added to what is behind them, so they brighten and never darken.
+constexpr float FIRE_LIT_RISE = 3.2f;   // how many times higher a motivated Altar's flames rise
+
 void Renderer::drawFires(const Camera& cam) {
     if (fires_.empty() || !glow_.tex) return;
     (void)cam;
     const float now = (float)(SDL_GetTicks() % 3600000u) / 1000.0f;
     // How dark it is: none at midday, all once the sun is low
     const float dark = std::clamp(1.0f - skySun_[1] * 2.5f, 0.2f, 1.0f);
-    glUseProgram(glyphProgram_);
-    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glDepthMask(GL_FALSE);
+    // Every quad of every fire goes into one list, each with its own color, and is drawn in a single call. They are added to what
+    // is behind them, so the order they are drawn in makes no difference.
+    std::vector<float>& quads = glowScratch_;
+    quads.clear();
+    const float glowAspect = glow_.aspect;
+    auto corner = [&](float x, float y, float z, float u, float v, const RGBA& c) {
+        const float vert[9] = { x, y, z, u, v, c.r, c.g, c.b, c.a };
+        quads.insert(quads.end(), vert, vert + 9);
+    };
+    // Two triangles for a quad whose corners are given in the order drawQuadVerts takes them
+    auto quad = [&](const float* q, const RGBA& c) {
+        for (int k : { 0, 1, 2, 0, 2, 3 }) corner(q[k * 5], q[k * 5 + 1], q[k * 5 + 2], q[k * 5 + 3], q[k * 5 + 4], c);
+    };
+    // The same corners drawGlyph would make: a picture standing up facing the camera
+    auto glyph = [&](float x, float y, float z, float h, const RGBA& c) {
+        float dx = billX_ - x, dz = billZ_ - z;
+        float len = std::sqrt(dx * dx + dz * dz);
+        if (len < 1e-4f) { dx = 0.0f; dz = 1.0f; len = 1.0f; }
+        dx /= len;
+        dz /= len;
+        const float rx = dz, rz = -dx, hw = h * glowAspect * 0.5f, hh = h * 0.5f, cy = y + hh;
+        const float q[4 * 5] = {
+            x - rx * hw, cy - hh, z - rz * hw, 0.0f, 1.0f,
+            x + rx * hw, cy - hh, z + rz * hw, 1.0f, 1.0f,
+            x + rx * hw, cy + hh, z + rz * hw, 1.0f, 0.0f,
+            x - rx * hw, cy + hh, z - rz * hw, 0.0f, 0.0f
+        };
+        quad(q, c);
+    };
     for (const FireSpot& f : fires_) {
         const float flicker = 0.88f + 0.12f * std::sin(now * 3.0f + f.seed * 5.0f) * std::sin(now * 2.0f + f.seed);
         // The glow on the ground under it
@@ -1153,10 +1202,10 @@ void Renderer::drawFires(const Camera& cam) {
             f.x + reach, gy + 0.03f, f.z + reach, 1.0f, 1.0f,
             f.x - reach, gy + 0.03f, f.z + reach, 0.0f, 1.0f
         };
-        drawQuadVerts(glow_.tex, ground, RGBA{ 1.0f, 0.62f, 0.28f, (0.10f + 0.45f * dark) * flicker * (1.0f + 0.5f * e) });
+        quad(ground, RGBA{ 1.0f, 0.62f, 0.28f, (0.10f + 0.45f * dark) * flicker * (1.0f + 0.5f * e) });
         // The glow round the fire itself
         const float halo = f.size * 4.5f * (1.0f + 0.6f * e);
-        drawGlyph(glow_, f.x, f.y + f.size * 0.4f - halo * 0.5f, f.z, halo, RGBA{ 1.0f, 0.55f, 0.2f, (0.12f + 0.3f * dark + 0.3f * e) * flicker });
+        glyph(f.x, f.y + f.size * 0.4f - halo * 0.5f, f.z, halo, RGBA{ 1.0f, 0.55f, 0.2f, (0.12f + 0.3f * dark + 0.3f * e) * flicker });
         // The flames: each rises from the fire's foot, drifting in, shrinking and reddening as it goes
         const int FLAMES = 9 + (int)(10.0f * e);
         for (int i = 0; i < FLAMES; ++i) {
@@ -1166,14 +1215,31 @@ void Renderer::drawFires(const Camera& cam) {
             const float sway2 = std::cos(seed * 23.0f + now * 1.9f);
             const float spread = f.size * 0.32f * (1.0f - life * 0.8f);
             const float px = f.x + sway * spread, pz = f.z + sway2 * spread;
-            const float py = f.y + life * f.size * 1.7f * (1.0f + 0.5f * e);
+            // Over the Motivation threshold the flames climb far higher than the fire's own size
+            const float py = f.y + life * f.size * 1.7f * (1.0f + 0.5f * e) * (f.lit ? FIRE_LIT_RISE : 1.0f);
             const float side = f.size * (0.95f - 0.6f * life) * (1.0f + 0.4f * e);
             const RGBA tint{ 1.0f, 0.85f - 0.55f * life, 0.35f - 0.3f * life, (1.0f - life) * 0.75f };
-            drawGlyph(glow_, px, py - side * 0.3f, pz, side, tint);
+            glyph(px, py - side * 0.3f, pz, side, tint);
         }
     }
-    glDepthMask(GL_TRUE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_BLEND);
+    if (!quads.empty() && glowProgram_) {
+        glUseProgram(glowProgram_);
+        glUniformMatrix4fv(uMVPGlow_, 1, GL_FALSE, viewProj_.m);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glow_.tex);
+        glBindVertexArray(glowVao_);
+        glBindBuffer(GL_ARRAY_BUFFER, glowVbo_);
+        glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(quads.size() * sizeof(float)), quads.data(), GL_STREAM_DRAW);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        glDepthMask(GL_FALSE);
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)(quads.size() / 9));
+        glDepthMask(GL_TRUE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_BLEND);
+        glBindVertexArray(0);
+    }
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
     glUniform4f(uTint_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
 }

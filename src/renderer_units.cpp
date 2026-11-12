@@ -2,6 +2,7 @@
 #include "renderer_internal.h"
 #include "building.h"
 #include "build_plan.h"
+#include "schedule.h"
 #include <cstddef>
 
 using namespace render_detail;
@@ -52,8 +53,9 @@ Renderer::UnitPose Renderer::unitPose(World& w, ObjectId e) const {
     else p.lift = unitHover(w, e);
     // A dancer hops as it goes round
     if (const Behaviors* b = w.get<Behaviors>(e); b && b->busy && b->began && b->step.kind == BehaviorKind::Dance) {
-        const float phase = (float)(SDL_GetTicks() % 500u) / 500.0f;
-        p.lift += std::sin(phase * 3.14159265f) * 0.22f;
+        // On the game's own hop clock, so it stops while the game is paused
+        const float phase = danceHopPhase(w.resource<DanceHops>().clock, e);
+        p.lift += std::sin(phase * 3.14159265f) * DANCE_HOP_HEIGHT;
     }
     return p;
 }
@@ -200,9 +202,10 @@ GLuint Renderer::modelInstVao(const Model& m) {
 
 // Every queued copy goes up to the card in one upload, and each model is then one draw (per texture it has) of its copies
 std::string Renderer::modelDrawText() const {
-    char text[128];
-    std::snprintf(text, sizeof text, "instanced models: %d models, %d copies, %d draw calls", modelDraws_.models,
-                  modelDraws_.copies, modelDraws_.draws);
+    char text[224];
+    std::snprintf(text, sizeof text, "instanced models: %d models, %d copies, %d draw calls, %.2f M triangles (%d heavy copies, %.2f M)",
+                  modelDraws_.models, modelDraws_.copies, modelDraws_.draws, (double)modelDraws_.triangles / 1.0e6,
+                  modelDraws_.heavyCopies, (double)modelDraws_.heavyTriangles / 1.0e6);
     return text;
 }
 
@@ -254,6 +257,12 @@ void Renderer::drawModelInstances() {
             }
             ++modelDraws_.models;
             modelDraws_.copies += (int)list.size();
+            const long long tris = (long long)(m.triangles.size() / 3) * (long long)list.size();
+            modelDraws_.triangles += tris;
+            if (m.triangles.size() / 3 > HEAVY_MODEL_TRIANGLES) {
+                modelDraws_.heavyCopies += (int)list.size();
+                modelDraws_.heavyTriangles += tris;
+            }
         }
         first += list.size();
         list.clear();

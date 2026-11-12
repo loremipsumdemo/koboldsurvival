@@ -88,6 +88,35 @@ void main() {
 }
 )";
 
+const char* GLOW_VS = R"(
+#version 330 core
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec2 aUV;
+layout(location=2) in vec4 aColor;
+uniform mat4 uMVP;
+out vec2 vUV;
+out vec4 vColor;
+void main() {
+    vUV = aUV;
+    vColor = aColor;
+    gl_Position = uMVP * vec4(aPos, 1.0);
+}
+)";
+
+// The glyph shader as it is with no saturation, faction color, hue or shine, and the tint coming with each corner
+const char* GLOW_FS = R"(
+#version 330 core
+in vec2 vUV;
+in vec4 vColor;
+uniform sampler2D uTex;
+out vec4 FragColor;
+void main() {
+    vec4 c = texture(uTex, vUV);
+    if (c.a < 0.1) discard;
+    FragColor = clamp(c, 0.0, 1.0) * vColor;
+}
+)";
+
 const char* MODEL_INST_VS = R"(
 #version 330 core
 layout(location=0) in vec3 aPos;
@@ -628,8 +657,30 @@ bool Renderer::initGl() {
     glGenVertexArrays(1, &glyphVao_);
     glGenBuffers(1, &glyphVbo_);
     glBindBuffer(GL_ARRAY_BUFFER, glyphVbo_);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 5 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, GLYPH_RING_QUADS * 4 * 5 * sizeof(float), nullptr, GL_STREAM_DRAW);
+    glyphRingAt_ = 0;
     setupGlyphLayout(glyphVao_, glyphVbo_);
+
+    // The fires' glow: position, texture position and color for every corner, so quads of any color go in one draw
+    glowProgram_ = linkProgram("glow", GLOW_VS, GLOW_FS);
+    if (glowProgram_) {
+        uMVPGlow_ = glGetUniformLocation(glowProgram_, "uMVP");
+        glUseProgram(glowProgram_);
+        glUniform1i(glGetUniformLocation(glowProgram_, "uTex"), 0);
+        glUseProgram(0);
+        glGenVertexArrays(1, &glowVao_);
+        glGenBuffers(1, &glowVbo_);
+        glBindVertexArray(glowVao_);
+        glBindBuffer(GL_ARRAY_BUFFER, glowVbo_);
+        constexpr GLsizei STRIDE = 9 * sizeof(float);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE, (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, STRIDE, (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(5 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glBindVertexArray(0);
+    }
     return true;
 }
 
@@ -714,18 +765,28 @@ void Renderer::shutdown() {
     glDeleteVertexArrays(1, &dynVao_);
     glDeleteBuffers(1, &glyphVbo_);
     glDeleteVertexArrays(1, &glyphVao_);
+    glDeleteProgram(glowProgram_);
+    glDeleteBuffers(1, &glowVbo_);
+    glDeleteVertexArrays(1, &glowVao_);
+    glowProgram_ = glowVbo_ = glowVao_ = 0;
     releasePreviewGl();
     releaseTerrainGl();
     colorProgram_ = glyphProgram_ = 0;
 }
 
 void Renderer::drawQuadVerts(GLuint tex, const float* v, RGBA tint) {
+    constexpr GLsizeiptr QUAD_BYTES = 4 * 5 * sizeof(float);
     glUniform4f(uTint_, tint.r, tint.g, tint.b, tint.a);
     glBindVertexArray(glyphVao_);
     glBindBuffer(GL_ARRAY_BUFFER, glyphVbo_);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * 5 * sizeof(float), v);
+    if (glyphRingAt_ >= GLYPH_RING_QUADS) {
+        glBufferData(GL_ARRAY_BUFFER, GLYPH_RING_QUADS * QUAD_BYTES, nullptr, GL_STREAM_DRAW);
+        glyphRingAt_ = 0;
+    }
+    glBufferSubData(GL_ARRAY_BUFFER, glyphRingAt_ * QUAD_BYTES, QUAD_BYTES, v);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glDrawArrays(GL_TRIANGLE_FAN, glyphRingAt_ * 4, 4);
+    ++glyphRingAt_;
 }
 
 void Renderer::setSaturation(float sat) {

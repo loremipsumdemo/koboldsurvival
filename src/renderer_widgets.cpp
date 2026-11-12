@@ -177,6 +177,7 @@ float Renderer::tipWidth(const std::vector<TipRow>& rows) {
     for (const TipRow& r : rows) {
         float rowW = listTextWidth(r.text);
         if (!r.change.empty()) rowW += gap + listTextWidth(r.change);
+        if (r.bar >= 0.0f) rowW = std::max(rowW + 12.0f * s, 170.0f * s);   // a bar wants some length
         w = std::max(w, rowW);
     }
     return w + 2.0f * pad;
@@ -194,6 +195,14 @@ void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float 
     drawRect(Rect{ x, y, width, tipHeight(rows.size()) }, RGBA{ 0.0f, 0.0f, 0.0f, 0.5f });
     float ty = y + pad;
     for (const TipRow& r : rows) {
+        if (r.bar >= 0.0f) {
+            // The bar fills the row, the text over it; a mark where the threshold is
+            const Rect b{ x + pad - 3.0f * s, ty - 1.0f * s, width - 2.0f * pad + 6.0f * s, lineH + 2.0f * s };
+            drawRect(b, RGBA{ 0.12f, 0.05f, 0.07f, 0.9f });
+            drawRect(Rect{ b.x, b.y, b.w * std::clamp(r.bar, 0.0f, 1.0f), b.h },
+                     r.barLit ? RGBA{ 0.95f, 0.62f, 0.15f, 0.95f } : RGBA{ 0.55f, 0.36f, 0.20f, 0.9f });
+            drawRect(Rect{ b.x + b.w * std::clamp(r.barMark, 0.0f, 1.0f) - s, b.y, 2.0f * s, b.h }, theme::GOLD);
+        }
         drawListText(r.text, x + pad, ty, r.tint);
         if (!r.change.empty()) {
             drawListText(r.change, x + pad + listTextWidth(r.text) + 6.0f * s, ty, r.changeTint);
@@ -202,10 +211,16 @@ void Renderer::drawTip(const std::vector<TipRow>& rows, float x, float y, float 
     }
 }
 
-void Renderer::drawPropTooltip(const std::vector<std::string>& lines, float mx, float my) {
+void Renderer::drawPropTooltip(const std::vector<std::string>& lines, float mx, float my, int barRow, float barFill, float barMark,
+                               bool barLit) {
     if (lines.empty()) return;
     std::vector<TipRow> rows;
     for (size_t i = 0; i < lines.size(); ++i) rows.push_back(TipRow{ lines[i], i == 0 ? TIP_HEADING : TIP_TEXT });
+    if (barRow >= 0 && (size_t)barRow < rows.size()) {
+        rows[(size_t)barRow].bar = barFill;
+        rows[(size_t)barRow].barMark = barMark;
+        rows[(size_t)barRow].barLit = barLit;
+    }
     const float s = uiScale();
     const float w = tipWidth(rows), h = tipHeight(rows.size());
     float x = mx + 14.0f * s, y = my + 18.0f * s;

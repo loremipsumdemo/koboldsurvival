@@ -7,6 +7,7 @@
 #include "claims.h"
 #include "factions.h"
 #include "items.h"
+#include "motivation.h"
 #include "language.h"
 #include "stats.h"
 #include "systems.h"
@@ -23,6 +24,11 @@ std::string upkeepLine(World& w, ObjectId e) {
         }
     }
     return hours > 1e-9 ? langf("MISC_PROP_UPKEEP", { std::to_string((int)std::floor(hours)) }) : std::string(lang("MISC_NO_UPKEEP"));
+}
+
+int altarFaction(World& w, ObjectId e) {
+    const Owner* own = w.get<Owner>(e);
+    return own ? own->faction : FACTION_PLAYER;
 }
 
 std::string healthLine(const Health& hp) {
@@ -106,8 +112,23 @@ std::vector<std::string> propInfoLines(World& w, ObjectId e) {
         else if (!lockShutFor(w, e, NO_OBJECT)) out.push_back(lang("MISC_PROP_LOCK_YOURS"));
         else out.push_back(langf("MISC_PROP_LOCK_SHUT", { std::to_string(lock->level) }));
     }
-    if (info.claimsLand) out.push_back(upkeepLine(w, e));
+    if (info.claimsLand) {
+        out.push_back(upkeepLine(w, e));
+        const int faction = altarFaction(w, e);
+        out.push_back(langf("UILABEL_MOTIVATION_BAR", { std::to_string((int)motivationOf(w, faction)), std::to_string((int)motivationMax(w, faction)) }));
+    }
     return out;
+}
+
+bool altarMotivationBar(World& w, ObjectId e, MotivationBarInfo& out) {
+    const Prop* p = w.get<Prop>(e);
+    if (!p || !propInfo(p->kind).claimsLand) return false;
+    const int faction = altarFaction(w, e);
+    const double now = motivationOf(w, faction), most = motivationMax(w, faction);
+    out.fill = most > 0.0 ? (float)std::clamp(now / most, 0.0, 1.0) : 0.0f;
+    out.mark = most > 0.0 ? (float)std::clamp(MOTIVATION_FAST / most, 0.0, 1.0) : 0.0f;
+    out.fast = now > MOTIVATION_FAST;
+    return true;
 }
 
 std::vector<std::string> altarInfoLines(World& w, ObjectId e) {

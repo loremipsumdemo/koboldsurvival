@@ -8,6 +8,7 @@
 #include <cstring>
 #include <limits>
 #include <string>
+#include <unordered_map>
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -54,6 +55,108 @@ GLuint readIndex(const Accessor& a, size_t i) {
         return v;
     }
     }
+}
+}
+
+namespace {
+struct LodMesh {
+    std::vector<float> verts;   // 5 floats a vertex, as the model's own
+    std::vector<GLuint> indices;
+    std::vector<DrawRange> draws;
+};
+
+// The mesh with its vertices merged by a grid of cells of this size. Two things keep its shape and its picture:
+//  - a merged vertex is put at the average place of EVERYTHING in its cell, whichever texture patch or draw range the original
+//    came from, so vertices that sat together on a seam still sit together and no crack opens between them;
+//  - vertices are only merged if they lie in the same coarse patch (1/4 by 1/4) of their texture, and a merged vertex takes the
+//    average texture position of those it merges, so the picture is not smeared across seams.
+// A triangle left with fewer than three different corners is dropped. Each draw range (one texture) keeps its own triangles.
+LodMesh clusterMesh(const std::vector<float>& verts, const std::vector<GLuint>& indices, const std::vector<DrawRange>& draws,
+                    float cell, const float lo[3]) {
+    struct Sum { float x = 0, y = 0, z = 0; int n = 0; };
+    auto cellOf = [&](float x, float low) {
+        return (std::uint64_t)std::min(65535.0f, std::max(0.0f, std::floor((x - low) / cell)));
+    };
+    auto placeKey = [&](const float* p) { return cellOf(p[0], lo[0]) | cellOf(p[1], lo[1]) << 16 | cellOf(p[2], lo[2]) << 32; };
+    // Where each cell's vertices average to, over every vertex any triangle uses
+    std::unordered_map<std::uint64_t, Sum> places;
+    std::vector<char> seen(verts.size() / 5, 0);
+    for (const GLuint v : indices) {
+        if (seen[v]) continue;
+        seen[v] = 1;
+        const float* p = &verts[(size_t)v * 5];
+        Sum& s = places[placeKey(p)];
+        s.x += p[0];
+        s.y += p[1];
+        s.z += p[2];
+        ++s.n;
+    }
+    LodMesh out;
+    for (const DrawRange& d : draws) {
+        struct Made { GLuint index = 0; float u = 0, v = 0; int n = 0; };
+        std::unordered_map<std::uint64_t, Made> groups;   // by place cell and texture patch, in this draw range only
+        std::vector<GLuint> mapped((size_t)d.indexCount);
+        std::unordered_map<GLuint, GLuint> remap;         // original vertex to merged one
+        for (GLsizei i = 0; i < d.indexCount; ++i) {
+            const GLuint v = indices[(size_t)(d.firstIndex + i)];
+            auto known = remap.find(v);
+            if (known == remap.end()) {
+                const float* p = &verts[(size_t)v * 5];
+                const std::uint64_t patch = ((std::uint64_t)((int)std::floor(p[3] * 4.0f) & 0xFF) << 48) |
+                                            ((std::uint64_t)((int)std::floor(p[4] * 4.0f) & 0xFF) << 56);
+                Made& g = groups[placeKey(p) | patch];
+                if (g.n == 0) {
+                    const Sum& s = places[placeKey(p)];
+                    g.index = (GLuint)(out.verts.size() / 5);
+                    out.verts.insert(out.verts.end(), { s.x / (float)s.n, s.y / (float)s.n, s.z / (float)s.n, 0.0f, 0.0f });
+                }
+                g.u += p[3];
+                g.v += p[4];
+                ++g.n;
+                known = remap.emplace(v, g.index).first;
+            }
+            mapped[(size_t)i] = known->second;
+        }
+        for (const auto& kv : groups) {
+            float* uv = &out.verts[(size_t)kv.second.index * 5 + 3];
+            uv[0] = kv.second.u / (float)kv.second.n;
+            uv[1] = kv.second.v / (float)kv.second.n;
+        }
+        DrawRange made{ d.texture, 0, (GLsizei)out.indices.size() };
+        for (GLsizei i = 0; i + 2 < d.indexCount; i += 3) {
+            const GLuint a = mapped[(size_t)i], b = mapped[(size_t)i + 1], c = mapped[(size_t)i + 2];
+            if (a == b || b == c || a == c) continue;
+            out.indices.insert(out.indices.end(), { a, b, c });
+        }
+        made.indexCount = (GLsizei)out.indices.size() - made.firstIndex;
+        if (made.indexCount > 0) out.draws.push_back(made);
+    }
+    return out;
+}
+
+// The coarse copy with about this many triangles, by trying cell sizes (the count falls roughly with the square of the size)
+bool makeLod(const std::vector<float>& verts, const std::vector<GLuint>& indices, const std::vector<DrawRange>& draws,
+             const float lo[3], float diagonal, size_t target, LodMesh& out) {
+    float cell = diagonal / std::sqrt((float)target) * 0.5f;
+    out = clusterMesh(verts, indices, draws, cell, lo);
+    for (int pass = 0; pass < 3; ++pass) {
+        const float n = (float)(out.indices.size() / 3);
+        if (n > (float)target * 0.8f && n < (float)target * 1.25f) break;
+        cell *= std::sqrt(std::max(n, 1.0f) / (float)target);
+        out = clusterMesh(verts, indices, draws, cell, lo);
+    }
+    return !out.indices.empty() && out.indices.size() * 10 < indices.size() * 9;
+}
+
+void setLodLayout(GLuint vao, GLuint vbo, GLuint ebo) {
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
 }
 }
 
@@ -180,10 +283,42 @@ bool loadGLBModel(const char* path, Model& m) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
+
+    // A model with this many triangles is too much to draw whole for a unit far off: one coarser copy, a quarter of the
+    // triangles, for that
+    constexpr size_t LOD_FROM_TRIANGLES = 4000;
+    const size_t triangleCount = indices.size() / 3;
+    if (triangleCount > LOD_FROM_TRIANGLES) {
+        const float lo[3] = { minX, minY, minZ };
+        const float diagonal = std::sqrt((maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY) + (maxZ - minZ) * (maxZ - minZ));
+        LodMesh mesh;
+        if (makeLod(verts, indices, m.draws, lo, diagonal, triangleCount / 4, mesh)) {
+            Model lod;
+            lod.minX = minX; lod.minY = minY; lod.minZ = minZ;
+            lod.maxX = maxX; lod.maxY = maxY; lod.maxZ = maxZ;
+            lod.draws = mesh.draws;
+            lod.triangles = mesh.indices;
+            glGenVertexArrays(1, &lod.vao);
+            glGenBuffers(1, &lod.vbo);
+            glGenBuffers(1, &lod.ebo);
+            glBindBuffer(GL_ARRAY_BUFFER, lod.vbo);
+            glBufferData(GL_ARRAY_BUFFER, mesh.verts.size() * sizeof(float), mesh.verts.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lod.ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(GLuint), mesh.indices.data(), GL_STATIC_DRAW);
+            setLodLayout(lod.vao, lod.vbo, lod.ebo);
+            m.lods.push_back(std::move(lod));
+        }
+    }
     return true;
 }
 
 void destroyModel(Model& m) {
+    for (Model& lod : m.lods) {   // their textures are this model's; the buffers are their own
+        if (lod.ebo) glDeleteBuffers(1, &lod.ebo);
+        if (lod.vbo) glDeleteBuffers(1, &lod.vbo);
+        if (lod.vao) glDeleteVertexArrays(1, &lod.vao);
+        if (lod.instVao) glDeleteVertexArrays(1, &lod.instVao);
+    }
     for (GLuint t : m.textures) {
         if (t) glDeleteTextures(1, &t);
     }

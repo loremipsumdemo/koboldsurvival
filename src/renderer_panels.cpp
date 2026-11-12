@@ -249,8 +249,31 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         tab(L.tabFaction, lang("UILABEL_FACTION_TAB"), L.tab == FACTION_TAB_FACTION);
     }
     if (L.tab == FACTION_TAB_FACTION) {
-        drawSquadGrid(w, L, renameText);
-        if (L.repHeading.w > 0.0f) drawReputationList(w, L, repView);
+        {
+            const float th = listTextHeight("Ag");
+            static const char* const SUB_KEYS[3] = { "UILABEL_FACTION_SUB_SQUADS", "UILABEL_FACTION_SUB_REPUTATION", "UILABEL_FACTION_SUB_SETTINGS" };
+            for (int i = 0; i < 3; ++i) {
+                const Rect& r = L.subTabs[(size_t)i];
+                if (r.w <= 0.0f) continue;
+                const bool on = L.sub == i, hot = !on && r.contains(mouseX_, mouseY_);
+                if (hot) noteHover(r);
+                drawRect(r, on ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.9f });
+                if (on) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GOLD);
+                const std::string t = fitText(lang(SUB_KEYS[i]), r.w - 6.0f * s, false);
+                drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - th) * 0.5f, on ? WHITE : theme::TEXT_DIM);
+            }
+        }
+        if (L.sub == FACTION_SUB_REPUTATION) {
+            drawReputationList(w, L, repView);
+        } else if (L.view.w > 0.0f && L.view.h > 0.0f) {
+            beginClip(L.view);
+            drawSquadGrid(w, L, renameText);
+            endClip();
+        }
+        if (L.subScrollable()) {
+            drawRect(L.subTrack, RGBA{ 0.24f, 0.10f, 0.12f, bgAlpha });
+            drawRect(L.subThumb, L.subThumb.contains(mouseX_, mouseY_) ? RGBA{ 0.96f, 0.88f, 0.76f, 1.0f } : RGBA{ 0.80f, 0.70f, 0.60f, 1.0f });
+        }
         return;
     }
 
@@ -342,11 +365,18 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
     const float th = listTextHeight("Ag");
     const SquadBook& book = w.resource<SquadBook>();
     const std::array<int, SQUAD_COUNT> sizes = squadSizes(w);
+    const bool inView = L.view.contains(mouseX_, mouseY_);
+    // The part of a rectangle that shows in the view: where hovering it counts
+    auto visibleRect = [&](const Rect& r) {
+        const float x0 = std::max(r.x, L.view.x), y0 = std::max(r.y, L.view.y);
+        const float x1 = std::min(r.x + r.w, L.view.x + L.view.w), y1 = std::min(r.y + r.h, L.view.y + L.view.h);
+        return Rect{ x0, y0, std::max(0.0f, x1 - x0), std::max(0.0f, y1 - y0) };
+    };
     for (int k = 0; k < SQUAD_COUNT; ++k) {
         const Rect& r = L.squadCells[(size_t)k];
         if (r.w <= 0.0f) continue;
         const bool current = k == book.current;
-        const bool hot = r.contains(mouseX_, mouseY_);
+        const bool hot = inView && r.contains(mouseX_, mouseY_);
         if (hot) noteHover(r);
         drawRect(r, current ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.75f });
         if (current) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GOLD);
@@ -360,7 +390,7 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
         if (!name.empty()) {
             const std::string fitted = fitText(name, r.x + r.w - inset - nameX, false);
             drawListText(fitted, nameX, r.y + 2.0f * s, WHITE);
-            if (!renameText && fitted != name) noteTip(name, r);
+            if (!renameText && fitted != name) noteTip(name, visibleRect(r));
         }
         const std::string count = std::to_string(sizes[(size_t)k]) + "/" + std::to_string(SQUAD_SIZE);
         const RGBA countTint = sizes[(size_t)k] >= SQUAD_SIZE ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f }
@@ -369,40 +399,25 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
     }
     if (L.manageSquadsButton.w > 0.0f) {
         const Rect& b = L.manageSquadsButton;
-        const bool hot = b.contains(mouseX_, mouseY_);
+        const bool hot = inView && b.contains(mouseX_, mouseY_);
         if (hot) noteHover(b);
         drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
         const std::string shown = fitText(lang("UILABEL_MANAGE_SQUADS"), b.w - 6.0f * s, false);
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
-        noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), b);
+        noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), visibleRect(b));
     }
     if (L.factionRulesButton.w > 0.0f) {
         const Rect& b = L.factionRulesButton;
-        const bool hot = b.contains(mouseX_, mouseY_);
+        const bool hot = inView && b.contains(mouseX_, mouseY_);
         if (hot) noteHover(b);
         drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
         const std::string shown = fitText(lang("UILABEL_FACTION_RULES"), b.w - 6.0f * s, false);
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
-        noteTip(lang("UILABEL_FACTION_RULES_TIP"), b);
-    }
-    if (L.motivationBar.w > 0.0f) {
-        const Rect& b = L.motivationBar;
-        const double now = motivationOf(w, FACTION_PLAYER), most = motivationMax(w, FACTION_PLAYER);
-        const bool fast = now > MOTIVATION_FAST;
-        drawRect(b, RGBA{ 0.12f, 0.05f, 0.07f, 0.9f });
-        const float frac = most > 0.0 ? (float)std::clamp(now / most, 0.0, 1.0) : 0.0f;
-        drawRect(Rect{ b.x, b.y, b.w * frac, b.h }, fast ? RGBA{ 0.95f, 0.62f, 0.15f, 0.95f } : RGBA{ 0.55f, 0.36f, 0.20f, 0.9f });
-        // The threshold, over 100: the mark and a faint line
-        const float mark = most > 0.0 ? b.x + b.w * (float)std::clamp(MOTIVATION_FAST / most, 0.0, 1.0) : b.x;
-        drawRect(Rect{ mark - 1.0f, b.y, 2.0f * s, b.h }, theme::GOLD);
-        const std::string label = langf("UILABEL_MOTIVATION_BAR", { std::to_string((int)now), std::to_string((int)most) });
-        drawListText(fitText(label, b.w - 8.0f * s, false), b.x + 4.0f * s, b.y + (b.h - th) * 0.5f, WHITE);
-        if (b.contains(mouseX_, mouseY_)) noteHover(b);
-        noteTip(langf("UILABEL_MOTIVATION_TIP", { std::to_string((int)MOTIVATION_FAST), std::to_string((int)std::lround(MOTIVATION_SPEED_BONUS * 100.0f)) }), b);
+        noteTip(lang("UILABEL_FACTION_RULES_TIP"), visibleRect(b));
     }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;
-        const bool hot = b.contains(mouseX_, mouseY_);
+        const bool hot = inView && b.contains(mouseX_, mouseY_);
         if (hot) noteHover(b);
         drawRect(b, renameText ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
         const std::string label = renameText ? lang("UILABEL_SQUAD_RENAME_DONE")
@@ -429,13 +444,16 @@ void Renderer::drawReputationList(World& w, const UnitPanelLayout& L, int repVie
         drawListText(name, h.x + d + 12.0f * s, h.y + (h.h - th) * 0.5f, theme::GOLD);
     }
     const std::vector<FactionDef>& list = reputationFactions();
+    if (L.view.w <= 0.0f || L.view.h <= 0.0f) return;
+    beginClip(L.view);
+    const bool inView = L.view.contains(mouseX_, mouseY_);
     for (size_t i = 0; i < L.repRows.size(); ++i) {
         const size_t idx = (size_t)L.repFirst + i;
         if (idx >= list.size()) break;
         const Rect& r = L.repRows[i];
         const int other = list[idx].id;
         const bool self = other == repView;
-        const bool hot = r.contains(mouseX_, mouseY_);
+        const bool hot = inView && r.contains(mouseX_, mouseY_);
         if (hot && !self) noteHover(r);
         drawRect(r, self ? theme::alpha(theme::GOLD_DEEP, 0.55f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 0.95f : 0.6f });
         const float d = 10.0f * s;
@@ -451,10 +469,13 @@ void Renderer::drawReputationList(World& w, const UnitPanelLayout& L, int repVie
         drawListText(name, nameX, r.y + (r.h - th) * 0.5f, WHITE);
         drawListText(valueText, r.x + r.w - 8.0f * s - vw, r.y + (r.h - th) * 0.5f, valueTint);
         if (!self) {
-            noteTip(lang(value <= REP_HOSTILE ? "UILABEL_REP_HOSTILE" : value >= REP_ALLIED ? "UILABEL_REP_ALLIED" : "UILABEL_REP_NEUTRAL"),
-                    Rect{ r.x + r.w - 8.0f * s - vw, r.y, vw + 8.0f * s, r.h });
+            if (inView) {
+                noteTip(lang(value <= REP_HOSTILE ? "UILABEL_REP_HOSTILE" : value >= REP_ALLIED ? "UILABEL_REP_ALLIED" : "UILABEL_REP_NEUTRAL"),
+                        Rect{ r.x + r.w - 8.0f * s - vw, r.y, vw + 8.0f * s, r.h });
+            }
         }
     }
+    endClip();
 }
 
 GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOpen, int offset, int lineCount,

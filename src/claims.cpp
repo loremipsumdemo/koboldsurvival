@@ -59,6 +59,29 @@ std::vector<Claim> claimsOf(World& w) {
     return out;
 }
 
+namespace {
+struct ClaimCache {
+    std::vector<Claim> claims;
+    std::uint64_t revisions[4] = { 0, 0, 0, 0 };
+    std::uint64_t generation = 1, builtGeneration = 0;
+};
+}
+
+const std::vector<Claim>& cachedClaims(World& w) {
+    ClaimCache& c = w.resource<ClaimCache>();
+    const std::uint64_t now[4] = { w.revision<Prop>(), w.revision<Owner>(), w.revision<Blueprint>(), w.revision<ClaimGrowth>() };
+    if (c.builtGeneration != c.generation || !std::equal(now, now + 4, c.revisions)) {
+        c.claims = claimsOf(w);
+        std::copy(now, now + 4, c.revisions);
+        c.builtGeneration = c.generation;
+    }
+    return c.claims;
+}
+
+void invalidateClaims(World& w) {
+    ++w.resource<ClaimCache>().generation;
+}
+
 bool campSheltered(World& w, const std::vector<Claim>& claims, float x, float z, int faction) {
     if (claimAt(claims, x, z, faction)) return true;
     for (ObjectId e : w.view<Prop, Transform>()) {
@@ -153,7 +176,7 @@ bool lockShutFor(World& w, const std::vector<Claim>& claims, ObjectId prop, Obje
 bool lockShutForFaction(World& w, ObjectId prop, int faction) {
     const Lock* lock = w.get<Lock>(prop);
     const Prop* p = w.get<Prop>(prop);
-    if ((p && propInfo(p->kind).claimsLand) || (lock && lock->locked)) return lockShutForFaction(w, claimsOf(w), prop, faction);
+    if ((p && propInfo(p->kind).claimsLand) || (lock && lock->locked)) return lockShutForFaction(w, cachedClaims(w), prop, faction);
     return false;
 }
 
@@ -179,6 +202,7 @@ void claimOwnership(World& w, ObjectId prop) {
     const int faction = c->owner;
     if (Owner* own = w.get<Owner>(prop)) own->faction = faction;
     else w.add(prop, Owner{ faction });
+    invalidateClaims(w);
     // A camp's claim owns what is in it, but locks none of it
     if (c->camp) return;
     if (Lock* lock = w.get<Lock>(prop)) lock->faction = faction;
@@ -430,6 +454,7 @@ void claimGrowthSystem(World& w, float dt) {
             watch.noRoomSeen.erase(altar);
             if (ClaimGrowth* g = w.get<ClaimGrowth>(altar)) ++g->steps;
             else w.add(altar, ClaimGrowth{ 1 });
+            invalidateClaims(w);
             // A camp of another faction that the larger claim reaches is destroyed: an Altar's land comes first
             for (const Claim& k : now) {
                 if (!k.camp || k.owner == c.owner) continue;

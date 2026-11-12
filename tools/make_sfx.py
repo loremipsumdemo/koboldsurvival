@@ -16,6 +16,8 @@ SOUNDS lists each sound's key, function and peak level in dB below full scale. L
 finished work and events come next, repeating work sounds are quieter, and the interface sounds heard all the time are
 quietest (UiHover, then UiClick). Working sounds repeat every 1.6 seconds (the Forge's every 3), so each must be shorter.
 
+To make only some of the sounds, name their keys: python tools/make_sfx.py DanceStep MotivationChime
+
 To add a sound: write a function, add it to SOUNDS, add the key to the Sfx enum in src/sounds.h, SFX_KEYS in
 src/game_tables.cpp and data/sfx.txt (with a new file name), then run this script. To change one, edit its function or
 level and run this script.
@@ -511,6 +513,17 @@ def put_down():
     return mix((0.0, rustle(0.13, 1500.0), 0.5), (0.0, voice(160.0, 118.0, 0.16, (560.0, 1050.0), 0.2, 0.2), 0.35), (0.1, thud(105.0, 0.2, 55.0, 0.055)))
 
 
+def dance_step():
+    # A light foot landing mid-dance: a short soft thud and a trace of dust
+    return mix((0.0, thud(110.0, 0.07, 60.0, 0.02), 0.8), (0.0, rustle(0.04, 1400.0), 0.15))
+
+
+def motivation_chime():
+    # Two bright bells lifting, then a longer one: a faction's spirits rising over its threshold
+    return mix((0.0, bell(659.3, 0.5, 0.18), 0.6), (0.11, bell(987.8, 0.7, 0.24), 0.75), (0.11, bell(1975.5, 0.5, 0.12), 0.2),
+               (0.24, bell(1318.5, 0.9, 0.3), 0.7))
+
+
 # Key: (function, peak level in dB).
 SOUNDS = {
     'UiHover': (ui_hover, -26),
@@ -574,6 +587,8 @@ SOUNDS = {
     'LevelUp': (level_up, -6),
     'CarryUp': (carry_up, -7),
     'PutDown': (put_down, -10),
+    'DanceStep': (dance_step, -24),
+    'MotivationChime': (motivation_chime, -8),
 }
 
 # Key: (longest it may be in seconds, highest peak it may have in dB), for the sounds with a job that demands it.
@@ -591,6 +606,7 @@ LIMITS = {
     'WorkTraining': (1.5, MAX_PEAK),
     'WorkLockpick': (1.5, MAX_PEAK),
     'ForgeBurning': (2.9, MAX_PEAK),
+    'DanceStep': (0.25, MAX_PEAK),
 }
 
 
@@ -686,7 +702,12 @@ def main():
     at = 0.0
     failed = []
     print(f'{"key":<17}{"file":<13}{"at":>7}{"length":>8}{"peak":>7}{"loud":>7}')
+    only = set(sys.argv[1:])   # keys named on the command line: make just those, leaving the other files as they are
+    if only - set(SOUNDS):
+        sys.exit(f'not sounds: {sorted(only - set(SOUNDS))}')
     for key, (make, level) in SOUNDS.items():
+        if only and key not in only:
+            continue
         random = np.random.default_rng(zlib.crc32(key.encode()))
         path = os.path.join(OUT, files[key])
         encode(finish(make(), level), path)
@@ -696,9 +717,12 @@ def main():
         failed += [f'{key}: {p}' for p in problems(key, length, peak, loudness, onset)]
         preview += [heard.astype(float), gap]
         at += length + len(gap) / RATE
-    os.makedirs(os.path.dirname(PREVIEW), exist_ok=True)
-    write_wav(PREVIEW, np.concatenate(preview))
-    print(f'Wrote {len(SOUNDS)} sounds to {OUT}, and a preview to {PREVIEW}')
+    if only:
+        print(f'Wrote {len(only)} sounds to {OUT}')
+    else:
+        os.makedirs(os.path.dirname(PREVIEW), exist_ok=True)
+        write_wav(PREVIEW, np.concatenate(preview))
+        print(f'Wrote {len(SOUNDS)} sounds to {OUT}, and a preview to {PREVIEW}')
     if failed:
         sys.exit('Problems:\n  ' + '\n  '.join(failed))
 

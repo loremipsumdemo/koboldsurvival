@@ -135,7 +135,7 @@ PanelPlace defaultPanelPlace(PanelId which) {
 
 UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed,
                                        const PanelPlace& place, int tab,
-                                       int factionCount, int repScroll) {
+                                       int factionCount, float subScroll, int sub) {
     const float s = uiScaleFor(H);
     const SquadMetrics m(s);
     const Rect open = panelRect(PanelId::Squad, place, W, H);
@@ -164,29 +164,58 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
     }
     const float bodyY = body.y + m.tabH;
     if (L.tab == FACTION_TAB_FACTION) {
-        // The squads first, as a numpad: squad 1 at the bottom left and 9 at the top right
-        const float gridGap = 4.0f * s, cellH = 36.0f * s;
-        const float cellW = (open.w - 2.0f * m.pad - 2.0f * gridGap) / 3.0f;
-        const float gridTop = bodyY + m.pad * 0.5f;
-        for (int k = 0; k < SQUAD_COUNT; ++k) {
-            const int row = 2 - k / 3, col = k % 3;
-            L.squadCells[(size_t)k] = Rect{ open.x + m.pad + col * (cellW + gridGap), gridTop + row * (cellH + gridGap), cellW, cellH };
-        }
-        L.manageSquadsButton = Rect{ open.x + m.pad, gridTop + 3.0f * cellH + 2.0f * gridGap + m.gap, open.w - 2.0f * m.pad, m.toggleH };
-        L.renameButton = Rect{ open.x + m.pad, L.manageSquadsButton.y + L.manageSquadsButton.h + m.gap, open.w - 2.0f * m.pad, m.toggleH };
-        L.factionRulesButton = Rect{ open.x + m.pad, L.renameButton.y + L.renameButton.h + m.gap, open.w - 2.0f * m.pad, m.toggleH };
+        L.sub = std::clamp(sub, 0, 2);
+        const float subW = (open.w - 2.0f * m.pad - 2.0f * m.gap) / 3.0f, subY = bodyY + 2.0f * s, subH = m.tabH - 4.0f * s;
+        for (int i = 0; i < 3; ++i) L.subTabs[(size_t)i] = Rect{ open.x + m.pad + i * (subW + m.gap), subY, subW, subH };
 
-        const float rowH = 24.0f * s, rowGap = 2.0f * s;
-        L.motivationBar = Rect{ open.x + m.pad, L.factionRulesButton.y + L.factionRulesButton.h + m.gap, open.w - 2.0f * m.pad, rowH };
-        L.repHeading = Rect{ open.x + m.pad, L.motivationBar.y + L.motivationBar.h + m.gap, open.w - 2.0f * m.pad, rowH };
-        const float listTop = L.repHeading.y + rowH + rowGap;
-        const float room = body.y + body.h - m.pad * 0.5f - listTop;
-        L.repVisible = std::max(0, (int)std::floor((room + rowGap) / (rowH + rowGap) + 0.001f));
-        L.repFirst = std::clamp(repScroll, 0, std::max(0, factionCount - L.repVisible));
-        for (int i = L.repFirst; i < factionCount && i < L.repFirst + L.repVisible; ++i) {
-            L.repRows.push_back(Rect{ open.x + m.pad, listTop + (i - L.repFirst) * (rowH + rowGap), open.w - 2.0f * m.pad, rowH });
+        const float gridGap = 4.0f * s, cellH = 36.0f * s, rowH = 24.0f * s, rowGap = 2.0f * s;
+        const float bottom = body.y + body.h - m.pad * 0.5f;
+        float viewTop = subY + subH + m.gap;
+        // Reputation keeps its heading at the top, and the list scrolls under it
+        if (L.sub == FACTION_SUB_REPUTATION) {
+            L.repHeading = Rect{ open.x + m.pad, viewTop, open.w - 2.0f * m.pad, rowH };
+            viewTop += rowH + rowGap;
         }
-        if (listTop > body.y + body.h) L.repHeading = Rect{};
+        L.view = Rect{ open.x, viewTop, open.w, std::max(0.0f, bottom - viewTop) };
+        float contentH = 0.0f;
+        if (L.sub == FACTION_SUB_SQUADS) contentH = m.pad * 0.5f + 3.0f * cellH + 2.0f * gridGap + 2.0f * (m.gap + m.toggleH);
+        else if (L.sub == FACTION_SUB_REPUTATION) contentH = std::max(0.0f, (float)factionCount * (rowH + rowGap) - rowGap);
+        else contentH = m.toggleH;
+        L.subContentH = contentH;
+        L.subScrollMax = std::max(0.0f, contentH - L.view.h);
+        L.subScroll = std::clamp(subScroll, 0.0f, L.subScrollMax);
+        // The scrollbar takes its width from the contents when it shows
+        const float barW = m.scrollW;
+        const float contentW = open.w - 2.0f * m.pad - (L.subScrollable() ? barW + m.gap : 0.0f);
+        if (L.subScrollable()) {
+            L.subTrack = Rect{ open.x + open.w - m.pad - barW, L.view.y, barW, L.view.h };
+            L.subThumb = scrollThumb(L.subTrack, L.view.h / contentH, std::min(16.0f * s, L.subTrack.h), L.subScroll / L.subScrollMax);
+        }
+        const float x0 = open.x + m.pad, top = L.view.y - L.subScroll;
+        if (L.sub == FACTION_SUB_SQUADS) {
+            // The squads first, as a numpad: squad 1 at the bottom left and 9 at the top right
+            const float cellW = (contentW - 2.0f * gridGap) / 3.0f;
+            const float gridTop = top + m.pad * 0.5f;
+            for (int k = 0; k < SQUAD_COUNT; ++k) {
+                const int row = 2 - k / 3, col = k % 3;
+                L.squadCells[(size_t)k] = Rect{ x0 + col * (cellW + gridGap), gridTop + row * (cellH + gridGap), cellW, cellH };
+            }
+            L.manageSquadsButton = Rect{ x0, gridTop + 3.0f * cellH + 2.0f * gridGap + m.gap, contentW, m.toggleH };
+            L.renameButton = Rect{ x0, L.manageSquadsButton.y + L.manageSquadsButton.h + m.gap, contentW, m.toggleH };
+        } else if (L.sub == FACTION_SUB_REPUTATION) {
+            // Only the rows that show at all are made (a cut-off one is still drawn whole, and cut where it meets the view)
+            const float step = rowH + rowGap;
+            const int first = std::max(0, (int)std::floor(L.subScroll / step));
+            L.repFirst = std::min(first, std::max(0, factionCount));
+            for (int i = L.repFirst; i < factionCount; ++i) {
+                const float y = top + (float)i * step;
+                if (y >= L.view.y + L.view.h) break;
+                L.repRows.push_back(Rect{ x0, y, contentW, rowH });
+            }
+            L.repVisible = (int)L.repRows.size();
+        } else {
+            L.factionRulesButton = Rect{ x0, top, contentW, m.toggleH };
+        }
         return L;
     }
     const float rowW = open.w - 2.0f * m.pad;
