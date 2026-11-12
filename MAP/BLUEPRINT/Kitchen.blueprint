@@ -1,0 +1,30 @@
+format 1
+name Kitchen
+npcs 1
+size 4 4 2
+fill Foundation 0 3 0 0
+fill Foundation 0 3 1 0
+fill Foundation 0 3 2 0
+fill Foundation 0 3 3 0
+fill UpperFloor 0 3 0 0
+fill UpperFloor 0 3 1 0
+fill UpperFloor 0 3 2 0
+fill UpperFloor 0 3 3 0
+piece WoodWall 0.500 0.500 0 0.0000
+piece WoodWall 1.500 0.500 0 0.0000
+piece WoodWall 2.500 0.500 0 0.0000
+piece WoodWall 3.500 0.500 0 0.0000
+piece WoodWall 0.500 1.500 0 0.0000
+piece RawFoodStorage 1.500 1.500 0 0.0000
+visual -0.500 0.000 0.000 0.0 90.4 0.0 1.000 1.000 1.000
+piece FoodStorage 2.500 1.500 0 0.0000
+visual 0.000 0.000 -0.500 0.0 0.0 0.0 1.000 1.000 1.000
+piece WoodWall 3.500 1.500 0 0.0000
+piece WoodWall 0.500 2.500 0 0.0000
+piece Stove 1.500 2.500 0 0.0000
+visual -0.432 0.000 0.349 0.0 89.7 0.0 1.000 1.000 1.000
+piece WoodDoor 3.500 2.500 0 0.0000
+piece WoodWall 0.500 3.500 0 0.0000
+piece WoodWall 1.500 3.500 0 0.0000
+piece WoodWall 2.500 3.500 0 0.0000
+piece WoodWall 3.500 3.500 0 0.0000

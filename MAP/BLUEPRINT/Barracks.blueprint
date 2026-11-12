@@ -1,0 +1,64 @@
+format 1
+name Barracks
+npcs 1
+size 8 7 2
+fill Foundation 0 6 0 0
+fill Foundation 0 6 1 0
+fill Foundation 0 6 2 0
+fill Foundation 0 6 3 0
+fill Foundation 0 6 4 0
+fill Foundation 0 6 5 0
+fill Foundation 0 6 6 0
+fill UpperFloor 0 6 0 0
+fill UpperFloor 0 6 1 0
+fill UpperFloor 0 6 2 0
+fill UpperFloor 0 6 3 0
+fill UpperFloor 0 6 4 0
+fill UpperFloor 0 6 5 0
+fill UpperFloor 0 6 6 0
+piece WoodWall 0.500 0.500 0 0.0000
+piece StandingTorch 1.500 0.500 0 0.0000
+piece WoodWall 3.500 0.500 0 0.0000
+piece WoodWall 4.500 0.500 0 0.0000
+piece WoodWall 5.500 0.500 0 0.0000
+piece WoodWall 6.500 0.500 0 0.0000
+piece PrisonerCage 7.500 0.500 0 0.0000
+piece TrainingDummy 1.500 1.500 0 0.0000
+visual 0.000 0.000 -0.366 0.0 11.8 0.0 1.000 1.000 1.000
+piece WoodDoor 3.500 1.500 0 0.0000
+piece Bedroll 4.500 1.500 0 0.0000
+piece Bedroll 5.500 1.500 0 0.0000
+piece WoodDoor 6.500 1.500 0 0.0000
+piece TrainingDummy 0.500 2.500 0 0.0000
+visual 0.397 0.000 0.000 0.0 105.7 0.0 1.000 1.000 1.000
+piece WoodWall 3.500 2.500 0 0.0000
+piece Bedroll 4.500 2.500 0 0.0000
+piece Bedroll 5.500 2.500 0 0.0000
+piece WoodWall 6.500 2.500 0 0.0000
+piece PrisonerCage 7.500 2.500 0 0.0000
+piece TrainingDummy 1.500 3.500 0 0.0000
+visual 0.000 0.000 0.000 0.0 43.3 0.0 1.000 1.000 1.000
+piece WoodDoor 3.500 3.500 0 0.0000
+piece Bedroll 4.500 3.500 0 0.0000
+piece Bedroll 5.500 3.500 0 0.0000
+piece WoodDoor 6.500 3.500 0 0.0000
+piece TrainingDummy 0.500 4.500 0 0.0000
+visual 0.000 0.000 0.140 0.0 93.3 0.0 1.000 1.000 1.000
+piece WoodWall 3.500 4.500 0 0.0000
+piece Bedroll 4.500 4.500 0 0.0000
+piece Bedroll 5.500 4.500 0 0.0000
+piece WoodWall 6.500 4.500 0 0.0000
+piece PrisonerCage 7.500 4.500 0 0.0000
+piece TrainingDummy 1.500 5.500 0 0.0000
+visual 0.000 0.000 0.296 0.0 131.5 0.0 1.000 1.000 1.000
+piece WoodDoor 3.500 5.500 0 0.0000
+piece Bedroll 4.500 5.500 0 0.0000
+piece Bedroll 5.500 5.500 0 0.0000
+piece WoodDoor 6.500 5.500 0 0.0000
+piece WoodWall 0.500 6.500 0 0.0000
+piece StandingTorch 1.500 6.500 0 0.0000
+piece WoodWall 3.500 6.500 0 0.0000
+piece WoodWall 4.500 6.500 0 0.0000
+piece WoodWall 5.500 6.500 0 0.0000
+piece WoodWall 6.500 6.500 0 0.0000
+piece PrisonerCage 7.500 6.500 0 0.0000

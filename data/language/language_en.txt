@@ -137,8 +137,6 @@ UILABEL_TEMPERAMENT_NEUTRAL	Neutral
 UILABEL_TEMPERAMENT_AGGRESSIVE	Aggressive
 UILABEL_TEMPERAMENT	Temperament: {0}
 MISC_AUTOSAVE_FAILED	Autosave failed.
-UILABEL_PARTY_MAP	Map: {0}
-UILABEL_PARTY_LEVEL	Level: {0}
 
 # ----------------------------------------------------------------------
 # Settings
@@ -581,7 +579,6 @@ MISC_DIES	{0} dies
 MISC_RECOVERS	{0} wakes up
 MISC_CORPSE_NO_PLACE	The dead can't be placed there
 MISC_TAMING_CAGE_ANIMALS_ONLY	Only animals can be put in a Taming Cage
-MISC_FEEDS_CAGED	{0} feeds {1} some {2} (fed {3} times)
 MISC_CANT_OCCUPY_YET	{0} can't occupy anything for a moment
 MISC_REASON_LOCKPICKING	picking locks
 MISC_REASON_TRAINING	training
@@ -854,7 +851,6 @@ UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nea
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
 UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
 UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
-MISC_AUTO_SUPPLY_SET	{0} will haul building materials to your blueprints
 MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
 UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
 MISC_BED_PUBLIC	Public: anyone may sleep here
@@ -984,7 +980,6 @@ MISC_BLUEPRINT_NEEDS_NAME	Give the plan a name first
 MISC_BLUEPRINT_OUTSIDE	{0} pieces are outside the box and will not be saved: press Save again to save without them
 MISC_BLUEPRINT_NO_PLANS	No plans are saved yet
 MISC_BLUEPRINT_NO_FOUNDATION	A plan needs a foundation of 3 by 3 or more
-MISC_BLUEPRINT_NO_DOOR	A plan needs a door
 UILABEL_LOCK	Lock
 MISC_BUILD_SEALED	That ground is claimed by another faction
 MISC_BUILD_CLAIM_OVERLAP	That claim would overlap another claim
@@ -1153,7 +1148,6 @@ FACTION_BLUE	Blue Faction
 FACTION_YELLOW	Yellow Faction
 FACTION_FACTIONLESS	Factionless
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
-UILABEL_REPUTATION	Reputation
 UILABEL_FACTION_TAB	Faction
 UILABEL_REP_HOSTILE	Hostile: they attack each other on sight (-25 or lower)
 UILABEL_REP_ALLIED	Allies: they help each other when one is attacked (50 or higher)

@@ -103,7 +103,7 @@ int main(int, char**) {
     check(readPlanFile(planFilePath("small_house"), house, err), "MAP/BLUEPRINT/small_house.blueprint reads: " + err);
     check(house.w == 3 && house.d == 3 && house.floors == 2, "it is a 3 by 3, two floors");
     check(house.pieces.size() == 9 + 9 + 7 + 1 + 1, "it has 9 foundation tiles, 9 floor tiles, 7 walls, a door and a chest");
-    check(planProblem(house).empty(), "it is sound: a foundation, closed edges and a door");
+    check(planProblem(house).empty(), "it is sound: a foundation and closed edges");
     check(planStageCount(house) == 3, "it is built in three stages: foundation, the ground floor's pieces, the floor above");
     BuildPlan again;
     check(planFromText(planToText(house), again, err) && planToText(again) == planToText(house), "a plan is written and read back the same");
@@ -111,7 +111,7 @@ int main(int, char**) {
 
     BuildPlan open = house;
     open.pieces.erase(std::remove_if(open.pieces.begin(), open.pieces.end(), [](const PlanPiece& p) { return propInfo(p.kind).door; }), open.pieces.end());
-    check(!planProblem(open).empty(), "a plan with no door is refused");
+    check(planProblem(open).empty(), "a plan with no door is saved all the same");
     BuildPlan gap = house;
     gap.pieces.erase(std::remove_if(gap.pieces.begin(), gap.pieces.end(), [](const PlanPiece& p) { return propInfo(p.kind).wallRule && p.x < 1.0f && p.z < 1.0f; }), gap.pieces.end());
     check(planProblem(gap).empty(), "a plan with a gap in its walls is saved all the same");

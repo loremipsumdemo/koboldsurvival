@@ -137,8 +137,6 @@ UILABEL_TEMPERAMENT_NEUTRAL	中立
 UILABEL_TEMPERAMENT_AGGRESSIVE	好斗
 UILABEL_TEMPERAMENT	性情：{0}
 MISC_AUTOSAVE_FAILED	自动存档失败。
-UILABEL_PARTY_MAP	地图：{0}
-UILABEL_PARTY_LEVEL	关卡：{0}
 
 # ----------------------------------------------------------------------
 # Settings
@@ -581,7 +579,6 @@ MISC_DIES	{0}死了
 MISC_RECOVERS	{0}醒了过来
 MISC_CORPSE_NO_PLACE	死者无法放在那里
 MISC_TAMING_CAGE_ANIMALS_ONLY	驯养笼只能关动物
-MISC_FEEDS_CAGED	{0} 给 {1} 喂了 {2}（已喂 {3} 次）
 MISC_CANT_OCCUPY_YET	{0} 暂时无法占用任何东西
 MISC_REASON_LOCKPICKING	开锁
 MISC_REASON_TRAINING	训练
@@ -854,7 +851,6 @@ UILABEL_BEHAVIOR_SLEEP_TIP	从黄昏（18:00）到黎明（06:00），去最近�
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	自动建造：在最远 5 格的距离建造你的蓝图。缺少材料（木头、铁锭或龙晶）的蓝图会先得到材料：带在身上的，或从你的堆放区和仓库取来的。材料由蓝图保管，开始建造时才消耗。木工技能让建造更快。如果某个部件的位置上站着单位，会先请那个单位让开，建造者则继续去建下一个。
 UILABEL_WAIT_NO_BLUEPRINT	没有蓝图需要它
 UILABEL_WAIT_NO_LOGS	身上和仓库里都没有建材
-MISC_AUTO_SUPPLY_SET	{0} 将把建材搬运到你的蓝图
 MISC_AUTO_CONSTRUCT_SET	{0} 将建造你的蓝图
 UILABEL_WAIT_NO_STOCKPILE	你没有还有空间的堆放区
 MISC_BED_PUBLIC	公共：任何人都可以在此睡觉
@@ -984,7 +980,6 @@ MISC_BLUEPRINT_NEEDS_NAME	请先给蓝图起个名字
 MISC_BLUEPRINT_OUTSIDE	有 {0} 个部件在方框之外，不会被保存：再按一次保存即可不含它们保存
 MISC_BLUEPRINT_NO_PLANS	还没有保存的蓝图
 MISC_BLUEPRINT_NO_FOUNDATION	蓝图需要至少 3×3 的地基
-MISC_BLUEPRINT_NO_DOOR	蓝图需要一扇门
 UILABEL_LOCK	上锁
 MISC_BUILD_SEALED	那片土地属于另一势力
 MISC_BUILD_CLAIM_OVERLAP	该领地会与其他领地重叠
@@ -1153,7 +1148,6 @@ FACTION_BLUE	蓝色阵营
 FACTION_YELLOW	黄色阵营
 FACTION_FACTIONLESS	无派系
 MISC_REPUTATION_DROPS	与{0}的声望下降{1}，降至{2}
-UILABEL_REPUTATION	声望
 UILABEL_FACTION_TAB	阵营
 UILABEL_REP_HOSTILE	敌对：一见面就互相攻击（-25 或更低）
 UILABEL_REP_ALLIED	同盟：一方遭到攻击时互相帮助（50 或更高）

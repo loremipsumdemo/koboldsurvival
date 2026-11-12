@@ -1,0 +1,62 @@
+format 1
+name Armory
+npcs 1
+size 5 5 3
+fill Foundation 0 4 0 0
+fill Foundation 0 4 1 0
+fill Foundation 0 4 2 0
+fill Foundation 0 4 3 0
+fill Foundation 0 4 4 0
+fill UpperFloor 0 4 0 0
+fill UpperFloor 0 0 1 0
+fill UpperFloor 2 4 1 0
+fill UpperFloor 0 0 2 0
+fill UpperFloor 2 4 2 0
+fill UpperFloor 0 0 3 0
+fill UpperFloor 2 4 3 0
+fill UpperFloor 0 4 4 0
+fill UpperFloor 0 3 0 1
+fill UpperFloor 0 3 1 1
+fill UpperFloor 0 3 2 1
+fill UpperFloor 0 3 3 1
+fill UpperFloor 0 3 4 1
+piece WoodWall 0.500 0.500 0 0.0000
+piece WoodWall 1.500 0.500 0 0.0000
+piece WoodWall 2.500 0.500 0 0.0000
+piece WoodWall 3.500 0.500 0 0.0000
+piece WoodWall 4.500 0.500 0 0.0000
+piece WoodWall 0.500 1.500 0 0.0000
+piece WeaponRack 2.500 1.500 0 0.0000
+visual -0.209 0.000 0.000 0.0 89.2 0.0 1.000 1.000 1.000
+piece ArmorStand 3.500 1.500 0 0.0000
+visual 0.420 0.000 -0.421 0.0 315.0 0.0 1.000 1.000 1.000
+piece WoodWall 4.500 1.500 0 0.0000
+piece WoodWall 0.500 2.500 0 0.0000
+piece Stairs 1.500 2.500 0 0.0000
+piece WoodDoor 4.500 2.500 0 0.0000
+piece WoodWall 0.500 3.500 0 0.0000
+piece WoodWall 4.500 3.500 0 0.0000
+piece WoodWall 0.500 4.500 0 0.0000
+piece WoodWall 1.500 4.500 0 0.0000
+piece WoodWall 2.500 4.500 0 0.0000
+piece WoodWall 3.500 4.500 0 0.0000
+piece WoodWall 4.500 4.500 0 0.0000
+piece WoodWall 0.500 0.500 1 0.0000
+piece WoodWall 1.500 0.500 1 0.0000
+piece WoodWall 2.500 0.500 1 0.0000
+piece WoodWall 3.500 0.500 1 0.0000
+piece SupportBeam 4.500 0.500 1 0.0000
+piece WoodWall 0.500 1.500 1 0.0000
+piece WoodWall 3.500 1.500 1 0.0000
+piece StandingTorch 4.500 1.500 1 0.0000
+piece WoodWall 0.500 2.500 1 0.0000
+piece WoodDoor 3.500 2.500 1 0.0000
+piece WoodWall 0.500 3.500 1 0.0000
+piece Barrel 2.500 3.500 1 0.0000
+piece WoodWall 3.500 3.500 1 0.0000
+piece StandingTorch 4.500 3.500 1 0.0000
+piece WoodWall 0.500 4.500 1 0.0000
+piece WoodWall 1.500 4.500 1 0.0000
+piece WoodWall 2.500 4.500 1 0.0000
+piece WoodWall 3.500 4.500 1 0.0000
+piece SupportBeam 4.500 4.500 1 0.0000
