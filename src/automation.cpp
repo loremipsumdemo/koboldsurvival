@@ -28,6 +28,19 @@ bool fullFor(World& w, ObjectId u, int item) {
     return encumbranceFor(carriedWeightOf(w, u) + (def ? def->weight : 0.0f), statsOf(w, u)) >= ENCUMBERED_SHARE;
 }
 
+// Picking up a pile off the ground: no room for it, or it would leave the unit encumbered, unless it carries nothing else
+// (then even a heavy pile is taken, one at a time)
+bool fullForPickup(World& w, ObjectId u, int item, int count) {
+    const Inventory* inv = w.get<Inventory>(u);
+    if (!inv || slotsRoomFor(inv->slots.data(), INVENTORY_SLOTS, item) <= 0) return true;
+    bool empty = true;
+    for (const ItemStack& s : inv->slots) empty = empty && (s.item <= 0 || s.count <= 0);
+    if (empty) return false;
+    const ItemDef* def = findItem(item);
+    const float add = (def ? def->weight : 0.0f) * (float)std::max(1, count);
+    return encumbranceFor(carriedWeightOf(w, u) + add, statsOf(w, u)) >= ENCUMBERED_SHARE;
+}
+
 // What a haul rule carries to its prop: bones for Auto-Haul Bones; for Auto-Haul, what the prop takes, but only fuel to an Altar
 bool haulCarries(World& w, const BehaviorRule& r, ObjectId prop, int item) {
     const Prop* p = w.get<Prop>(prop);
@@ -98,7 +111,7 @@ ObjectId groundHaulTarget(World& w, const std::vector<Claim>& claims, ObjectId u
         bool stored = false;
         for (const BehaviorRule& r : b.rules) stored = stored || (r.on && isHaul(r.kind) && storeCouldTake(w, claims, u, r, item));
         if (!stored) continue;
-        if (fullFor(w, u, item)) {
+        if (fullForPickup(w, u, item, w.get<GroundItem>(g)->count)) {
             why = BehaviorWait::CarryFull;
             continue;
         }
@@ -119,7 +132,7 @@ ObjectId groundHaulTarget(World& w, const std::vector<Claim>& claims, ObjectId u
             bool stored = false;
             for (const BehaviorRule& r : b.rules) stored = stored || (r.on && isHaul(r.kind) && storeCouldTake(w, claims, u, r, s.item));
             if (!stored) continue;
-            if (fullFor(w, u, s.item)) why = BehaviorWait::CarryFull;
+            if (fullForPickup(w, u, s.item, s.count)) why = BehaviorWait::CarryFull;
             else best = bench;
         }
     }
@@ -1161,7 +1174,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             const bool walking = so && so->next < so->waypoints.size();
             if (it && gi && ut && distSq(*it, *ut) <= PICKUP_REACH * PICKUP_REACH) {
                 const int count = gi->count;
-                const int left = fullFor(w, u, gi->item) ? count : addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
+                const int left = fullForPickup(w, u, gi->item, count) ? count : addToInventory(*w.get<Inventory>(u), gi->item, gi->count);
                 if (left < count) {
                     const std::string name = itemNameOf(gi->item);
                     queueLog(w, langf("MISC_PICKS_UP", { nameOf(w, u), std::to_string(count - left), name }), LogKind::Pickup, npcOnly(w, u));

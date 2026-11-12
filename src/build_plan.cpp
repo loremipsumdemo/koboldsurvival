@@ -147,10 +147,8 @@ std::string planProblem(const BuildPlan& plan) {
     if (rects.empty()) return "MISC_BLUEPRINT_NO_FOUNDATION";
     const PlanRect& big = rects.front();
     if (big.x1 - big.x0 < FOUNDATION_MIN - 1 || big.z1 - big.z0 < FOUNDATION_MIN - 1) return "MISC_BLUEPRINT_NO_FOUNDATION";
-    // A door, so that it is a building a unit can go into and out of
-    bool door = false;
-    for (const PlanPiece& p : plan.pieces) door = door || (p.level == 0 && propInfo(p.kind).door);
-    return door ? std::string() : std::string("MISC_BLUEPRINT_NO_DOOR");
+    // A door is not needed: a plan is saved with or without one
+    return std::string();
 }
 
 // ---- Files

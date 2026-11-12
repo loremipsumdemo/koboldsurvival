@@ -1,0 +1,89 @@
+format 1
+name Inn
+npcs 1
+size 7 6 3
+fill Foundation 0 5 0 0
+fill Foundation 0 6 1 0
+fill Foundation 0 5 2 0
+fill Foundation 0 5 3 0
+fill Foundation 0 5 4 0
+fill Foundation 0 5 5 0
+fill UpperFloor 0 5 0 0
+fill UpperFloor 0 5 1 0
+fill UpperFloor 0 5 2 0
+fill UpperFloor 0 5 3 0
+fill UpperFloor 0 0 4 0
+fill UpperFloor 4 5 4 0
+fill UpperFloor 0 5 5 0
+fill UpperFloor 0 5 0 1
+fill UpperFloor 0 5 1 1
+fill UpperFloor 0 5 2 1
+fill UpperFloor 0 5 3 1
+fill UpperFloor 0 5 4 1
+fill UpperFloor 0 5 5 1
+piece WoodWall 0.500 0.500 0 0.0000
+piece WoodWall 1.500 0.500 0 0.0000
+piece WoodWall 2.500 0.500 0 0.0000
+piece WoodWall 3.500 0.500 0 0.0000
+piece WoodWall 4.500 0.500 0 0.0000
+piece WoodWall 5.500 0.500 0 0.0000
+piece StandingTorch 6.500 0.500 0 0.0000
+piece WoodWall 0.500 1.500 0 0.0000
+piece Bench 1.500 1.500 0 0.0000
+visual 0.000 0.000 0.000 0.0 89.8 0.0 1.000 1.000 1.000
+piece Table 2.500 1.500 0 0.0000
+visual 0.000 0.000 0.000 0.0 90.0 0.0 1.000 1.000 1.000
+piece WoodDoor 5.500 1.500 0 0.0000
+piece WoodWall 0.500 2.500 0 0.0000
+piece WoodWall 5.500 2.500 0 0.0000
+piece StandingTorch 6.500 2.500 0 0.0000
+piece WoodWall 0.500 3.500 0 0.0000
+piece WoodWall 5.500 3.500 0 0.0000
+piece Bench 6.500 3.500 0 0.0000
+visual 0.000 0.000 0.034 0.0 270.1 0.0 1.000 1.000 1.000
+piece WoodWall 0.500 4.500 0 0.0000
+piece Stairs 2.500 4.500 0 4.7124
+piece WoodWall 5.500 4.500 0 0.0000
+piece Bench 6.500 4.500 0 0.0000
+visual 0.000 0.000 0.500 0.0 270.5 0.0 1.000 1.000 1.000
+piece WoodWall 0.500 5.500 0 0.0000
+piece WoodWall 1.500 5.500 0 0.0000
+piece WoodWall 2.500 5.500 0 0.0000
+piece WoodWall 3.500 5.500 0 0.0000
+piece WoodWall 4.500 5.500 0 0.0000
+piece WoodWall 5.500 5.500 0 0.0000
+piece WoodWall 0.500 0.500 1 0.0000
+piece WoodWall 1.500 0.500 1 0.0000
+piece WoodWall 2.500 0.500 1 0.0000
+piece WoodWall 3.500 0.500 1 0.0000
+piece WoodWall 4.500 0.500 1 0.0000
+piece WoodWall 5.500 0.500 1 0.0000
+piece WoodWall 0.500 1.500 1 0.0000
+piece Bed 1.500 1.500 1 0.0000
+visual 0.000 0.000 0.000 0.0 269.5 0.0 1.000 1.000 1.000
+piece Bed 2.500 1.500 1 0.0000
+visual 0.000 0.000 0.000 0.0 269.6 0.0 1.000 1.000 1.000
+piece Bed 3.500 1.500 1 0.0000
+visual 0.000 0.000 0.000 0.0 270.2 0.0 1.000 1.000 1.000
+piece Bed 4.500 1.500 1 0.0000
+visual 0.000 0.000 0.000 0.0 270.1 0.0 1.000 1.000 1.000
+piece WoodWall 5.500 1.500 1 0.0000
+piece WoodWall 0.500 2.500 1 0.0000
+piece WoodWall 5.500 2.500 1 0.0000
+piece WoodWall 0.500 3.500 1 0.0000
+piece Bed 2.500 3.500 1 0.0000
+visual 0.000 0.000 -0.187 0.0 90.4 0.0 1.000 1.000 1.000
+piece Bed 3.500 3.500 1 0.0000
+visual 0.000 0.000 -0.185 0.0 90.0 0.0 1.000 1.000 1.000
+piece Bed 4.500 3.500 1 0.0000
+visual 0.000 0.000 -0.192 0.0 90.3 0.0 1.000 1.000 1.000
+piece WoodWall 5.500 3.500 1 0.0000
+piece WoodWall 0.500 4.500 1 0.0000
+piece StandingTorch 4.500 4.500 1 0.0000
+piece WoodWall 5.500 4.500 1 0.0000
+piece WoodWall 0.500 5.500 1 0.0000
+piece WoodWall 1.500 5.500 1 0.0000
+piece WoodWall 2.500 5.500 1 0.0000
+piece WoodWall 3.500 5.500 1 0.0000
+piece WoodWall 4.500 5.500 1 0.0000
+piece WoodWall 5.500 5.500 1 0.0000

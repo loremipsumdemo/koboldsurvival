@@ -2057,8 +2057,23 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
         const float d2 = (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z) + floors * floors;
         (corner(e) ? wanted : rest).push_back({ d2, e });
     }
-    std::sort(wanted.begin(), wanted.end());
-    std::sort(rest.begin(), rest.end());
+    // Builders are spread: a blueprint nobody else is working comes before one that has builders, the nearest first among
+    // equals. The count is of live units' jobs, so a unit that dies, is ordered away, gives up or whose blueprint is gone
+    // frees its claim with no clean-up.
+    std::unordered_map<ObjectId, int> builders;
+    for (ObjectId o : w.view<BuildJob>()) {
+        const BuildJob* j = w.get<BuildJob>(o);
+        if (o == u || w.has<Corpse>(o) || j->target == NO_OBJECT || !w.has<Blueprint>(j->target)) continue;
+        ++builders[j->target];
+    }
+    auto spread = [&](const std::pair<float, ObjectId>& a, const std::pair<float, ObjectId>& b) {
+        const auto ca = builders.find(a.second), cb = builders.find(b.second);
+        const int na = ca == builders.end() ? 0 : ca->second, nb = cb == builders.end() ? 0 : cb->second;
+        if (na != nb) return na < nb;
+        return a < b;
+    };
+    std::sort(wanted.begin(), wanted.end(), spread);
+    std::sort(rest.begin(), rest.end(), spread);
     wanted.insert(wanted.end(), rest.begin(), rest.end());
     // Blueprints on another floor than the unit's are left out when no ladders or stairs lead there (a few checks at most)
     {
