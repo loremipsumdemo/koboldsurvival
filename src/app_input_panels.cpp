@@ -26,7 +26,7 @@ bool App::mouseDownOnPanels() {
             if (labels.empty()) {
                 itemMenu.open = false;
             } else {
-                const ItemMenuLayout ml = renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH);
+                const ItemMenuLayout ml = renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH, labels);
                 const int hit = itemMenuButtonAt(ml, mx, my);
                 const bool onMenu = ml.box.contains(mx, my);
                 const ObjectId unit = itemMenu.unit;

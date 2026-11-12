@@ -102,7 +102,7 @@ void App::drawGamePanels() {
     if (itemMenu.open) {
         const std::vector<std::string> labels = menuLabels();
         if (!labels.empty()) {
-            renderer.drawItemMenu(renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH),
+            renderer.drawItemMenu(renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), winW, winH, labels),
                                   labels, mouseX, mouseY);
         }
     }

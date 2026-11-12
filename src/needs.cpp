@@ -45,7 +45,10 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                 if (bh->step.kind == BehaviorKind::Play) comfortGain = std::max(comfortGain, PLAY_COMFORT_PER_HOUR);
                 if (bh->step.kind == BehaviorKind::Dance) comfortGain = std::max(comfortGain, DANCE_COMFORT_PER_HOUR);
             }
-            const double restRate = restGain > 0.0 ? restGain : outCold(w, e) ? 0.0 : -restedLossPerHour(n->maxRested);
+            // Sitting down (the task) keeps a unit from tiring
+            const Behaviors* sit = w.get<Behaviors>(e);
+            const bool sitting = sit && sit->busy && sit->step.kind == BehaviorKind::SitDown && seat != NO_OBJECT;
+            const double restRate = restGain > 0.0 ? restGain : (outCold(w, e) || sitting) ? 0.0 : -restedLossPerHour(n->maxRested);
             driftNeed(n->rested, n->maxRested, n->restedPart, restRate, gameHours);
             driftNeed(n->comfort, n->maxComfort, n->comfortPart, comfortGain > 0.0 ? comfortGain : -COMFORT_LOSS_PER_HOUR,
                       gameHours);

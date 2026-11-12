@@ -659,6 +659,12 @@ void App::updateHover() {
                 }
             }
             bp.marks.insert(bp.marks.end(), bpBoxMarks.begin(), bpBoxMarks.end());
+            // The plan's front, its +x side: the same arrow a plan shows when it is placed, so the plan is drawn facing the way it will
+            bp.arrow = true;
+            bp.arrowX = (float)(BLUEPRINT_CORNER + bpEdit.w) + 1.6f;
+            bp.arrowZ = (float)BLUEPRINT_CORNER + (float)bpEdit.d * 0.5f;
+            bp.arrowDX = 1.0f;
+            bp.arrowDZ = 0.0f;
         }
         // A Building Blueprint taken up from the Build tab: its foundation under the pointer
         if (planPick.active && screen == Screen::Playing && !panelOpen && !mapOpen && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {

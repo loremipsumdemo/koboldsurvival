@@ -141,6 +141,7 @@ struct ItemMenuLayout {
     std::vector<Rect> buttons;
 };
 
-ItemMenuLayout layoutItemMenu(float x, float y, int buttonCount, float rowH, int W, int H);
+// minButtonW: the widest label's width and its margins, so a long label is not wider than its button
+ItemMenuLayout layoutItemMenu(float x, float y, int buttonCount, float rowH, int W, int H, float minButtonW = 0.0f);
 
 int itemMenuButtonAt(const ItemMenuLayout& L, float x, float y);

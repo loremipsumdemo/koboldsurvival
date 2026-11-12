@@ -475,18 +475,27 @@ struct CancelAskLayout {
     Rect box, title, note, yes, no;
 };
 
-CancelAskLayout layoutCancelAsk(int W, int H) {
+CancelAskLayout layoutCancelAsk(int W, int H, float textW) {
     const float s = uiScaleFor((float)H);
     CancelAskLayout L;
-    const float bw = 150.0f * s, bh = 40.0f * s, gap = 12.0f * s, pad = 18.0f * s, line = 30.0f * s;
-    const float w = 2.0f * bw + gap + 2.0f * pad, h = pad + 2.0f * line + gap + bh + pad;
+    const float bh = 40.0f * s, gap = 12.0f * s, pad = 18.0f * s, line = 30.0f * s;
+    // As wide as its longest line, and no narrower than its two buttons
+    const float bw = 150.0f * s;
+    const float w = std::max(2.0f * bw + gap, textW) + 2.0f * pad, h = pad + 2.0f * line + gap + bh + pad;
     L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
     L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad, line };
     L.note = Rect{ L.box.x + pad, L.title.y + line, w - 2.0f * pad, line };
-    L.yes = Rect{ L.box.x + pad, L.note.y + line + gap, bw, bh };
-    L.no = Rect{ L.yes.x + bw + gap, L.yes.y, bw, bh };
+    const float btnW = (w - 2.0f * pad - gap) * 0.5f;
+    L.yes = Rect{ L.box.x + pad, L.note.y + line + gap, btnW, bh };
+    L.no = Rect{ L.yes.x + btnW + gap, L.yes.y, btnW, bh };
     return L;
 }
+}
+
+// The widest of the dialog's lines
+float App::cancelAskTextWidth() {
+    const std::string title = langf("UILABEL_CANCEL_ALL_TITLE", { std::to_string(session.cancelList.size()) });
+    return std::max({ renderer.listTextWidth(title), renderer.listTextWidth(lang("UILABEL_CANCEL_ALL_NOTE")) });
 }
 
 // Cancels these blueprints (each still one of yours that is unfinished); what was brought to them drops. How many went.
@@ -506,7 +515,7 @@ int App::cancelBlueprints(const std::vector<ObjectId>& list) {
 bool App::pressOnCancelAsk() {
     if (!session.askCancel) return false;
     if (e.button.button != SDL_BUTTON_LEFT) return true;
-    const CancelAskLayout L = layoutCancelAsk(winW, winH);
+    const CancelAskLayout L = layoutCancelAsk(winW, winH, cancelAskTextWidth());
     if (L.yes.contains(e.button.x, e.button.y)) {
         const int n = cancelBlueprints(session.cancelList);
         if (n > 0) {
@@ -521,7 +530,7 @@ bool App::pressOnCancelAsk() {
 
 void App::drawCancelAsk() {
     if (!session.askCancel) return;
-    const CancelAskLayout L = layoutCancelAsk(winW, winH);
+    const CancelAskLayout L = layoutCancelAsk(winW, winH, cancelAskTextWidth());
     const float th = renderer.listTextHeight("Ag");
     renderer.drawScrim();
     renderer.drawThemedPanel(L.box);

@@ -1,7 +1,9 @@
 #include "app.h"
 #include "build.h"
 #include "level_file.h"
+#include "recipes.h"
 #include "spawn_cluster.h"
+#include "systems_internal.h"
 #include "useitem.h"
 
 using namespace play;
@@ -76,6 +78,10 @@ DeveloperLayout layoutDeveloper(int W, int H, EditorTab tab) {
         const float helpH = 44.0f * s;
         L.help = Rect{ L.panel.x + pad, L.panel.y + h - pad - helpH, w - 2.0f * pad, helpH };
         listBottom = L.help.y - 6.0f * s;
+        if (!sweepTab) {
+            L.gather = Rect{ L.panel.x + pad, L.help.y - gap - line, w - 2.0f * pad, line };
+            listBottom = L.gather.y - gap;
+        }
     }
     L.themeArea = Rect{ L.panel.x + pad, top, w - 2.0f * pad, listBottom - top };
     L.picker = layoutSpawnPicker(L.themeArea, s);
@@ -372,17 +378,27 @@ void App::spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, 
     p.listScroll = std::max(0, p.listScroll - (int)notches);
 }
 
-int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds) {
+int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds, int storey) {
     spawnPickerCommit(p, true);
     if (p.tool != EditorTool::Unit && p.tool != EditorTool::Mob && p.tool != EditorTool::Prop && p.tool != EditorTool::Item) return 0;
     // Props kept a footprint apart, units and mobs a body apart, items a little
     float spacing = 0.6f;
     if (p.tool == EditorTool::Prop) spacing = std::max(1.0f, footprintReach(propInfo((PropKind)p.picked).foot) * 2.0f);
     else if (p.tool != EditorTool::Item) spacing = 1.0f;
-    const std::vector<Vec2> spots = clusterSpots(world, terrain, rng, x, z, p.cluster, spacing, p.tool == EditorTool::Prop);
+    std::vector<Vec2> spots = clusterSpots(world, terrain, rng, x, z, p.cluster, spacing, p.tool == EditorTool::Prop);
+    if (storey > 0) {
+        // On an upper floor: only where there is floor of that level, and the point clicked itself when the ground search finds it
+        // taken (it looks at the ground below)
+        if (spots.empty()) spots.push_back(Vec2{ x, z });
+        const BuildingMap& m = cachedBuildingMap(world);
+        spots.erase(std::remove_if(spots.begin(), spots.end(), [&](const Vec2& s) {
+            return !floorSurfaceOn(world, m, (int)std::floor(s.x), (int)std::floor(s.z), storey);
+        }), spots.end());
+    }
     int placed = 0;
     for (const Vec2& spot : spots) {
         LevelObject o;
+        o.storey = storey;
         o.yaw = p.yaw;
         o.kind = p.picked;
         o.x = spot.x;
@@ -472,6 +488,10 @@ bool App::pressOnDeveloper() {
             else devThemeConfirm = false;
             return true;
         }
+        if (L.gather.contains(x, y)) {
+            showNotice(langf("MISC_GATHERED", { std::to_string(gatherUnits()) }), 2.0f);
+            return true;
+        }
         spawnPickerClick(devSpawn, L.picker, x, y);
         return true;
     }
@@ -492,11 +512,45 @@ bool App::pressOnDeveloper() {
         return true;
     }
     if (e.button.button != SDL_BUTTON_LEFT) return false;
-    if (const auto hit = pickGround(cam, terrain, x, y, winW, winH)) {
-        const int placed = spawnAt(devSpawn, hit->first, hit->second, false);
+    // On the floor of a building the pointer is over (the same pick as a click to move), so a prop is put on that floor, not the ground below
+    int storey = 0;
+    if (const auto hit = pickFloor(x, y, storey)) {
+        const int placed = spawnAt(devSpawn, hit->first, hit->second, false, storey);
         if (placed > 0) showNotice(langf("MISC_SPAWNED", { std::to_string(placed) }), 2.0f);
     }
     return true;
+}
+
+// Every unit of yours to the ground floor, around the point the camera is looking at: for a unit lost upstairs or stuck
+int App::gatherUnits() {
+    std::vector<ObjectId> units;
+    for (ObjectId u : world.view<Entity, Transform>()) {
+        if (isUnit(world, u) && factionOf(world, u) == FACTION_PLAYER && !world.has<Corpse>(u) && !world.has<Carried>(u)) units.push_back(u);
+    }
+    if (units.empty()) return 0;
+    std::sort(units.begin(), units.end());
+    const std::vector<Vec2> spots = clusterSpots(world, terrain, rng, cam.focusX, cam.focusZ, (int)units.size(), 1.0f, false);
+    for (size_t i = 0; i < units.size(); ++i) {
+        const ObjectId u = units[i];
+        // Whatever it was doing there is over (its squad is kept)
+        if (Behaviors* b = world.get<Behaviors>(u)) systems_detail::stopAutoStep(world, u, *b);
+        systems_detail::endPropTasks(world, u);
+        world.remove<BuildJob>(u);
+        world.remove<StallJob>(u);
+        world.remove<CraftJob>(u);
+        world.remove<Climbing>(u);
+        world.remove<Route>(u);
+        world.remove<SoloMove>(u);
+        world.remove<IdleSpot>(u);
+        world.remove<Upstairs>(u);
+        const Vec2 at = i < spots.size() ? spots[i] : Vec2{ cam.focusX, cam.focusZ };
+        Transform* tr = world.get<Transform>(u);
+        tr->x = at.x;
+        tr->z = at.z;
+        tr->y = terrain.standHeight(at.x, at.z);
+    }
+    playSfx(Sfx::Drop);
+    return (int)units.size();
 }
 
 void App::drawDeveloper() {
@@ -529,6 +583,8 @@ void App::drawDeveloper() {
         return;
     }
     drawSpawnPicker(devSpawn, L.picker);
+    renderer.drawButton(L.gather, lang("UILABEL_DEV_GATHER"), true, L.gather.contains(mouseX, mouseY));
+    if (L.gather.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_DEV_GATHER_TIP"), L.gather);
     float y = L.help.y;
     for (const std::string& line : renderer.wrapListText(lang("UILABEL_DEVELOPER_HELP"), L.help.w)) {
         renderer.drawListText(line, L.help.x, y, gray);

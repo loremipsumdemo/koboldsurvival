@@ -328,8 +328,10 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     (void)s;
 }
 
-ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH) {
-    return layoutItemMenu(x, y, buttonCount, listTextHeight("Ag"), winW, winH);
+ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH, const std::vector<std::string>& labels) {
+    float widest = 0.0f;
+    for (const std::string& l : labels) widest = std::max(widest, listTextWidth(l));
+    return layoutItemMenu(x, y, buttonCount, listTextHeight("Ag"), winW, winH, labels.empty() ? 0.0f : widest + 20.0f * uiScaleFor((float)winH));
 }
 
 void Renderer::drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my) {

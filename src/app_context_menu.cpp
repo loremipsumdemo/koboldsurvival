@@ -241,6 +241,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         }
         if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
+        // Break is added last, and only with Shift held (openContextMenuOn)
         if (breakableKind(p->kind) && !world.has<Blueprint>(target)) out.push_back(MenuAction::Destroy);
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
         if (const Blueprint* bp = world.get<Blueprint>(target); bp && world.has<Owner>(target) && world.get<Owner>(target)->faction == FACTION_PLAYER) {
@@ -332,12 +333,15 @@ std::vector<std::string> App::contextLabels() {
 }
 
 ItemMenuLayout App::contextMenuLayout() {
-    return renderer.itemMenuLayout(session.contextMenu.x, session.contextMenu.y, (int)session.contextMenu.actions.size(), winW, winH);
+    return renderer.itemMenuLayout(session.contextMenu.x, session.contextMenu.y, (int)session.contextMenu.actions.size(), winW, winH, contextLabels());
 }
 
 bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel) {
     if (target == NO_OBJECT) return false;
     std::vector<MenuAction> actions = menuActionsFor(target);
+    // Break is the last option, and only offered while Shift is held
+    const bool canBreak = std::find(actions.begin(), actions.end(), MenuAction::Destroy) != actions.end();
+    actions.erase(std::remove(actions.begin(), actions.end(), MenuAction::Destroy), actions.end());
     const bool disband = squadPanel && world.has<Commandable>(target);
     // From the Squad panel, a unit of yours in or holding something (a bed, a seat, a cage, a Wheelbarrow, an Airship)
     // can be told to get out of it itself
@@ -349,6 +353,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     }
     if (squadPanel && (world.has<Commandable>(target) || world.has<Citizen>(target))) actions.push_back(MenuAction::Rename);
     if (disband) actions.push_back(MenuAction::Disband);
+    if (canBreak && (SDL_GetModState() & SDL_KMOD_SHIFT) != 0) actions.push_back(MenuAction::Destroy);
     if (actions.empty()) return false;
     if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
         session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::AppeaseGhosts } };
