@@ -191,7 +191,7 @@ bool App::partyAction(Action action, int param) {
         if (party.empty() || !partyNamesValid(party)) return true;
         stopNameEdit();
         closeDropdown();
-        startMapLevel(pendingMap);
+        fadeOutThen([this] { startMapLevel(pendingMap); });
         return true;
     default:
         return false;

@@ -26,10 +26,17 @@ void App::refuse(const std::string& text) {
     playSfx(Sfx::UiError);
 }
 
+void App::fadeOutThen(std::function<void()> then) {
+    if (afterFadeOut) return;
+    afterFadeOut = std::move(then);
+    fadeOutFrom = SDL_GetTicksNS();
+}
+
 void App::startMapLevel(const MapChoice& choice) {
     std::string err;
     renderer.pickLoadingArt();
-    const LoadProgress progress = [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what); };
+    LoadingScreen loading(window, renderer);
+    const LoadProgress progress = [&](float p, const std::string& what) { loading.show(p, what); };
     if (!loadLevelGround(choice, terrain, renderer, err, progress)) {
         refuse(langf("MISC_LOAD_FAILED", { choice.name, err }));
         return;
@@ -76,6 +83,7 @@ void App::startMapLevel(const MapChoice& choice) {
     const ObjectId firstUnit = firstSquadUnit(world);
     if (firstUnit != NO_OBJECT) world.add(firstUnit, Selected{});
     followUnit = firstUnit;
+    loading.fadeOut();
 }
 
 void App::openParty(const MapChoice& choice) {
@@ -126,7 +134,7 @@ void App::performAction(Action action, int param) {
         if (!saves.empty()) {
             const auto newest = std::max_element(saves.begin(), saves.end(),
                                                  [](const SaveSummary& a, const SaveSummary& b) { return a.timestamp < b.timestamp; });
-            loadSave(newest->path);
+            fadeOutThen([this, path = newest->path] { loadSave(path); });
         }
         return;
     case Action::NewGame: {
@@ -148,7 +156,7 @@ void App::performAction(Action action, int param) {
         openWorldGen();
         return;
     case Action::BuildingBlueprints:
-        openBlueprintEditor();
+        fadeOutThen([this] { openBlueprintEditor(); });
         return;
     case Action::Language:
         settingsUi.tab = SettingsTab::Language;

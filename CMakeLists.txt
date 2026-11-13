@@ -208,6 +208,9 @@ add_executable(koboldsurvival
 # Packs data/ into data.pak. Built as a normal C++ target so it works on any machine that builds the game.
 add_executable(pack_data tools/pack_data.cpp)
 set_target_properties(pack_data PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tools")
+# It fills in the see-through pixels of the pictures it packs, so it reads and writes PNG: stb_image.h and
+# stb_image_write.h live in the tinygltf repo root
+target_include_directories(pack_data PRIVATE ${tinygltf_SOURCE_DIR})
 
 target_include_directories(koboldsurvival PRIVATE
     src

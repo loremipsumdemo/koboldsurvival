@@ -23,6 +23,7 @@ ma_sound_group buses[BUS_COUNT];
 struct Track {
     ma_sound sound;
     bool ready = false;
+    bool started = false;   // false for a track opened ahead by preloadTrack and not yet asked to play
     std::string requested;
 };
 Track tracks[TRACK_COUNT];
@@ -60,6 +61,19 @@ void releaseTrack(Track& t) {
         ma_sound_uninit(&t.sound);
         t.ready = false;
     }
+    t.started = false;
+}
+
+// Opens the bus's track, ready to play from its start, without starting it
+void openRequested(Bus bus, const std::string& file) {
+    const int slot = trackSlot(bus);
+    Track& t = tracks[slot];
+    releaseTrack(t);
+    t.requested = file;
+    if (file.empty()) return;
+    if (openTrack(&t.sound, file, &buses[slot]) != MA_SUCCESS) return;
+    t.ready = true;
+    ma_sound_set_looping(&t.sound, MA_TRUE);
 }
 
 bool decodeEffect(const std::string& file, std::vector<float>& frames) {
@@ -146,15 +160,17 @@ void playTrack(Bus bus, const std::string& file) {
     const int slot = trackSlot(bus);
     if (!engineReady || slot < 0) return;
     Track& t = tracks[slot];
-    if (file == t.requested) return;
-    releaseTrack(t);
-    t.requested = file;
-    if (file.empty()) return;
+    if (file != t.requested) openRequested(bus, file);
+    if (t.ready && !t.started) {
+        ma_sound_start(&t.sound);
+        t.started = true;
+    }
+}
 
-    if (openTrack(&t.sound, file, &buses[slot]) != MA_SUCCESS) return;
-    t.ready = true;
-    ma_sound_set_looping(&t.sound, MA_TRUE);
-    ma_sound_start(&t.sound);
+void preloadTrack(Bus bus, const std::string& file) {
+    const int slot = trackSlot(bus);
+    if (!engineReady || slot < 0 || file == tracks[slot].requested) return;
+    openRequested(bus, file);
 }
 
 void stopTracks() {
