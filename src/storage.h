@@ -12,6 +12,11 @@ StorageLayout storageLayout(World& w, int W, int H);
 ItemStack* storageSlot(World& w, int slot);
 int storageShown(World& w);
 int storageScrollMax(World& w);
+// The slot of the open store that an input cell of its window is (counting the rows scrolled past), or -1 for an output
+// cell or one past the store's slots
+int storageAbsoluteSlot(World& w, int cell);
+// Moves, merges or swaps stacks between two slots of a store, if `from` still holds what `expected` says (see moveSlotStack)
+bool moveStorageStack(World& w, ObjectId prop, int from, int to, const ItemStack& expected);
 // The faction a unit steals from by taking from this store (its owner's, or the claim's it stands in), or -1
 int stolenFromBy(World& w, ObjectId prop, ObjectId unit);
 // An item taken: marked stolen from that faction, or unmarked if it was stolen from the taker's own

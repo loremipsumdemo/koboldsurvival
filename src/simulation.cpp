@@ -55,8 +55,8 @@ void queueSoundFrom(World& w, Sfx s, ObjectId e) {
     else queueSound(w, s);
 }
 
-void queueLog(World& w, const std::string& text, LogKind kind, bool npc, Tint tint) {
-    events(w).log.push_back(LogLine{ text, tint, kind, npc });
+void queueLog(World& w, const std::string& text, LogKind kind, LogWho who, Tint tint) {
+    events(w).log.push_back(makeLogLine(w, text, kind, who, tint));
 }
 
 void queueUnitLabel(World& w, ObjectId unit, const std::string& text, bool red) {

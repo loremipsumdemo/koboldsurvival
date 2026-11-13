@@ -284,7 +284,7 @@ void shop(World& w, Rng& rng, ObjectId buyer, ObjectId stall) {
     }
     if (bought > 0) {
         queueSoundFrom(w, Sfx::ItemMove, stall);
-        queueLog(w, langf("MISC_SHOPPER_BOUGHT", { nameOf(w, buyer), factionName(buyerFaction), std::to_string(bought) }), LogKind::Pickup);
+        queueLog(w, langf("MISC_SHOPPER_BOUGHT", { nameOf(w, buyer), factionName(buyerFaction), std::to_string(bought) }), LogKind::Pickup, LogWho(false, buyer));
     } else {
         queueUnitLabel(w, buyer, lang("MISC_SHOPPER_NOTHING"));
     }
@@ -315,7 +315,7 @@ void shopperSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float d
                 holdTasks(w, u);
                 w.add(u, Shopper{ s, 150.0f });
                 goTo(w, t, u, s);
-                queueLog(w, langf("MISC_SHOPPER_COMING", { nameOf(w, u), factionName(factionOf(w, u)) }), LogKind::Seen);
+                queueLog(w, langf("MISC_SHOPPER_COMING", { nameOf(w, u), factionName(factionOf(w, u)) }), LogKind::Seen, LogWho(false, u));
             }
         }
     }
@@ -413,7 +413,7 @@ void steal(World& w, ObjectId raider, ObjectId prop) {
     if (took > 0) {
         queueSoundFrom(w, Sfx::Take, prop);
         queueLog(w, langf("MISC_RAIDER_STOLE", { nameOf(w, raider), std::to_string(took), propDisplayName(w, prop) }), LogKind::Seen,
-                 false, Tint::Red);
+                 LogWho(false, raider), Tint::Red);
     }
 }
 
@@ -477,7 +477,7 @@ void raiderSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float dt
                     w.add(u, Raider{ target, false, 240.0f, 0.0f, 0.0f });
                     goTo(w, t, u, target);
                     queueLog(w, langf(breakIn ? "MISC_RAIDER_BREAKING_IN" : "MISC_RAIDER_COMING", { nameOf(w, u), propDisplayName(w, target) }),
-                             LogKind::Seen, false, Tint::Red);
+                             LogKind::Seen, LogWho(false, u), Tint::Red);
                 }
             }
         }

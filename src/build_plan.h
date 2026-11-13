@@ -24,6 +24,8 @@ struct PlanPiece {
     int level = 0;              // a floor: the level it is laid on (0 the ground floor); the piece's floor otherwise
     float yaw = 0.0f;           // stairs: dir * a quarter turn, as the game keeps it
     PropVisual visual;
+    bool bedPublic = false;     // a bed or bedroll set Public (open to anyone), not kept for its faction
+    bool unlocked = false;      // a door or a lockable prop left unlocked
 };
 
 struct BuildPlan {

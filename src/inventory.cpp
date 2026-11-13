@@ -105,6 +105,30 @@ int countInSlots(const ItemStack* slots, int slotCount, int item) {
     return n;
 }
 
+bool moveSlotStack(ItemStack* slots, int slotCount, int from, int to, const ItemStack& expected) {
+    if (!slots || from == to || from < 0 || to < 0 || from >= slotCount || to >= slotCount) return false;
+    ItemStack& a = slots[from];
+    ItemStack& b = slots[to];
+    if (expected.item <= 0 || expected.count <= 0 || a.item != expected.item || a.count != expected.count) return false;
+    if (b.item == 0 || b.count <= 0) {
+        b = a;
+        a = ItemStack{};
+        return true;
+    }
+    if (b.item == a.item) {
+        const int room = std::max(0, stackLimit(a.item) - b.count);
+        if (room > 0) {
+            const int put = std::min(room, a.count);
+            b.count += put;
+            a.count -= put;
+            if (a.count <= 0) a = ItemStack{};
+            return true;
+        }
+    }
+    std::swap(a, b);
+    return true;
+}
+
 float carriedWeight(const Inventory& inv) {
     float total = 0.0f;
     for (const ItemStack& s : inv.slots) {

@@ -226,6 +226,9 @@ bool App::pressOnStorage() {
                     if (!cells[i].contains(x, y) || !at || at->item == 0) continue;
                     if (e.button.button == SDL_BUTTON_LEFT) {
                         session.storageDrag = (int)i;
+                        session.storageDragProp = session.storageProp;
+                        session.storageDragAt = storageAbsoluteSlot(world, (int)i);
+                        session.storageDragExpect = *at;
                     } else if (e.button.button == SDL_BUTTON_RIGHT) {
                         std::string why;
                         if (takeFromStorage(world, (int)i, why)) queueSound(world, Sfx::ItemMove);
@@ -360,7 +363,26 @@ bool App::pressToGrabPanel() {
     return false;
 }
 
+// A press on the Game tab's Filter menu, which is drawn over the other panels: it is the first thing to take the press
+bool App::pressOnLogFilter() {
+    if (screen != Screen::Playing || !logFilterOpen || infoTab != 1) return false;
+    const GameLogLayout cl = gameLogPanel(winW, winH);
+    const float x = e.button.x, y = e.button.y;
+    if (!cl.filterOpen || !cl.filterMenu.contains(x, y)) return false;
+    if (e.button.button == SDL_BUTTON_LEFT) {
+        for (const GameLogLayout::FilterRow& fr : cl.filterRows) {
+            if (!fr.heading && fr.r.contains(x, y)) {
+                logFilter.on[(int)fr.kind] = !logFilter.on[(int)fr.kind];
+                playSfx(Sfx::UiClick);
+                break;
+            }
+        }
+    }
+    return true;
+}
+
 bool App::mouseDownOnPopups() {
+    if (pressOnLogFilter()) return true;
     if (pressOnPlanPopup()) return true;
     if (pressOnAdjustWidget()) return true;
     if (pressOnRename()) return true;

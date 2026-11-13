@@ -128,7 +128,7 @@ void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
             continue;
         }
         if (a.occupyBanned) {
-            refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, a.unit) }));
+            logBlocked(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, a.unit) }), a.unit);
             continue;
         }
         if (a.action == PropAction::Inventory) {
@@ -150,7 +150,7 @@ void App::reportPropArrivals(const std::vector<PropArrival>& arrivals) {
         }
         if (a.placed) continue;
         if (a.unreachable) {
-            refuse(lang("MISC_PROP_UNREACHABLE"));
+            logBlocked(langf("MISC_UNIT_CANT_REACH", { nameOf(world, a.unit), propNameOf(world, a.prop) }), a.unit);
         } else if (a.taken && info.use == PropUse::Occupy) {
             refuse(lang("MISC_PROP_TAKEN"));
         } else if (a.taken) {
@@ -308,7 +308,7 @@ void App::showEvents() {
     for (ObjectId u : ev.wakes.died) queueSoundFrom(world, Sfx::Dies, u);
     showWorkGains(ev.gains);
 
-    for (const LogLine& ln : ev.log) gameLog.add(ln.text, ln.tint, ln.kind, ln.npc);
+    for (const LogLine& ln : ev.log) gameLog.add(ln);
     const size_t logCount = gameLog.lines.size();
     if (logCount > logSeen && logOffset > 0) logOffset += (int)(logCount - logSeen);
     logSeen = logCount;

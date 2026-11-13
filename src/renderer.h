@@ -251,6 +251,8 @@ public:
                                     bool collapsed = false, const PanelPlace& place = PanelPlace{});
     void drawGameLog(const GameLogLayout& L, const std::vector<const LogLine*>& rows, const LogFilter& filter,
                        float mx, float my, const InfoTime& time = InfoTime{});
+    // The Game tab's Filter menu, drawn after the other panels so that it is over them
+    void drawGameLogFilter(const GameLogLayout& L, const LogFilter& filter, float mx, float my);
 
     void drawPartySetup(const std::vector<Button>& buttons, const std::vector<PartyMember>& p, const PartyUi& ui,
                         const PartyPanels& P, float mx, float my);

@@ -100,6 +100,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
             s.craftKeep = co->keep;
         }
         s.bedPublic = w.has<BedPublic>(e);
+        s.startsUnlocked = w.has<StartsUnlocked>(e);
         if (const StallStock* ss = w.get<StallStock>(e)) s.stallPayment = ss->payment;
         d.props.push_back(std::move(s));
     }
@@ -337,6 +338,7 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d, LoadStages& 
         }
         if (s.blueprint && propInfo((PropKind)s.kind).door) world.remove<Lock>(e);
         if (s.bedPublic) world.add(e, BedPublic{});
+        if (s.startsUnlocked) world.add(e, StartsUnlocked{});
         if (StallStock* ss = world.get<StallStock>(e); ss && s.stallPayment) ss->payment = *s.stallPayment;
     }
     for (size_t i = 0; i < d.props.size(); ++i) {

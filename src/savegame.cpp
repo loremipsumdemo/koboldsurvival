@@ -147,6 +147,7 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
     if (p.storeFilter) w.line("storefilter", i, *p.storeFilter);
     if (!p.craftRecipe.empty() || p.craftKeep > 0) w.line("craftorder", i, p.craftRecipe.empty() ? std::string("-") : p.craftRecipe, p.craftKeep);
     if (p.bedPublic) w.line("bedpublic", i);
+    if (p.startsUnlocked) w.line("startsunlocked", i);
     if (p.stallPayment) w.line("stallpay", i, *p.stallPayment);
     for (const auto& r : p.stallRequests) w.line("stallreq", i, r[0], r[1], r[2]);
 }
@@ -255,6 +256,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "storeslisted", [](Line& l) { int v = 0; if (!l.read(v)) return false; l.d.storesListed = v != 0; return true; } },
         { "stallhaul", [](Line& l) { int v = 0; if (!l.read(v)) return false; l.d.stallHaulListed = v != 0; return true; } },
         { "bedpublic", [](Line& l) { SaveProp* p = l.prop(); if (!p) return false; p->bedPublic = true; return true; } },
+        { "startsunlocked", [](Line& l) { SaveProp* p = l.prop(); if (!p) return false; p->startsUnlocked = true; return true; } },
         { "stallpay", [](Line& l) {
             SaveProp* p = l.prop();
             unsigned m = 0;

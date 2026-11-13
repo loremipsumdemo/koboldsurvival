@@ -93,7 +93,10 @@ Inventory systems_detail::randomNpcLoot(Rng& rng) {
 }
 
 Storage startingStorage(PropKind kind, Rng& rng) {
+    // The slots and capacity props.txt gives this kind, as a store made by makeProp has them
     Storage st;
+    st.slots.assign((size_t)std::max(1, propInfo(kind).slots), ItemStack{});
+    st.capacity = propInfo(kind).capacity;
     std::vector<int> choices;
     for (const ItemDef& d : itemDatabase()) {
         if (!propAcceptsItem(kind, d.id)) continue;
@@ -106,7 +109,7 @@ Storage startingStorage(PropKind kind, Rng& rng) {
     const bool chest = kind == PropKind::LockedChest;
     const int stacks = rng.range(chest ? 3 : STORAGE_STACKS_MIN, chest ? 6 : STORAGE_STACKS_MAX);
     int slot = 0;
-    for (int i = 0; i < stacks && slot < STORAGE_SLOTS; ++i) {
+    for (int i = 0; i < stacks && slot < (int)st.slots.size(); ++i) {
         const int item = choices[(size_t)rng.range(0, (int)choices.size() - 1)];
         const int most = std::max(1, std::min(stackLimit(item), STORAGE_STACK_MOST));
         st.slots[(size_t)slot++] = ItemStack{ item, rng.range(1, most) };

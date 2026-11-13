@@ -1204,14 +1204,15 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
         w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
     }
     if (info->door) {
-        w.add(prop, Lock{ true, std::max(1, info->lockLevel), ownerOf(w, prop) });
+        // Shut, unless the plan it was put down from has it unlocked
+        w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), std::max(1, info->lockLevel), ownerOf(w, prop) });
         w.add(prop, Health{ DOOR_HEALTH * tough, DOOR_HEALTH * tough });
     }
     // Stairs and ladders can be broken too, by units walled in (stuck.h)
     if (info->stairs) w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
     else if (info->ladder) w.add(prop, Health{ DOOR_HEALTH * tough, DOOR_HEALTH * tough });
     queueSoundFrom(w, Sfx::DoneTree, prop);
-    queueLog(w, langf("MISC_BUILT", { lang(info->nameKey) }), LogKind::Other, ownerOf(w, prop) != FACTION_PLAYER);
+    queueLog(w, langf("MISC_BUILT", { lang(info->nameKey) }), LogKind::Other, LogWho(ownerOf(w, prop) != FACTION_PLAYER, prop));
     return true;
 }
 
@@ -1444,7 +1445,7 @@ void doorSystem(World& w, float dt) {
         h->value -= std::max(1.0, (double)n.attack);
         queueSoundFrom(w, Sfx::Hit, at.door);
         if (h->value <= 0.0) {
-            queueLog(w, langf("MISC_DOOR_SMASHED", { nameOf(w, u), info ? lang(info->nameKey) : std::string() }), LogKind::Seen);
+            queueLog(w, langf("MISC_DOOR_SMASHED", { nameOf(w, u), info ? lang(info->nameKey) : std::string() }), LogKind::Seen, LogWho(false, u));
             const ObjectId door = at.door;
             destroyBuilding(w, door);
             for (ObjectId o : w.view<AtDoor>()) {

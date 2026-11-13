@@ -82,14 +82,14 @@ void factionSystem(World& w, float dt) {
             w.add(u, Hostile{});
             if (wasNeutral && !outCold(w, u)) {
                 queueSound(w, Sfx::TurnHostile);
-                queueLog(w, langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen);
+                queueLog(w, langf("MISC_TURNS_HOSTILE", { nameOf(w, u) }), LogKind::Seen, LogWho(false, u));
             }
         } else if (!hostile && !w.has<Neutral>(u)) {
             const bool wasHostile = w.has<Hostile>(u);
             w.remove<Hostile>(u);
             w.add(u, Neutral{});
             if (wasHostile && !outCold(w, u)) {
-                queueLog(w, langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen);
+                queueLog(w, langf("MISC_CALMS_DOWN", { nameOf(w, u) }), LogKind::Seen, LogWho(false, u));
                 if (Combat* c = w.get<Combat>(u); c && c->target != NO_OBJECT && w.has<Commandable>(c->target)) {
                     c->target = NO_OBJECT;
                 }

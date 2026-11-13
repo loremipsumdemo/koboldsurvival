@@ -26,6 +26,8 @@ struct DealJob {
     ObjectId target = NO_OBJECT;
     ObjectId cage = NO_OBJECT;   // when carrying it to a cage
     float toX = 0.0f, toZ = 0.0f;  // when carrying it out of the claim
+    float homeX = 0.0f, homeZ = 0.0f;   // that claim's centre, which the carrier goes back towards
+    bool hasHome = false;
     float stuck = 0.0f;
     bool ordered = false;        // your order, not the task: no task to end
 };

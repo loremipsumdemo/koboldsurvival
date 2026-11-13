@@ -368,7 +368,8 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "burns_corpses") p.burnsCorpses = true;
         else if (flag == "destroyed_by_hand") p.byHand = true;
         else if (flag == "debris") p.debris = true;
-        else if (flag == "seat") p.seat = true;
+        else if (flag == "sleeping") p.sleeping = true;
+        else if (flag == "resting") p.resting = true;
         else if (flag == "cage") p.cage = true;
         else if (flag == "airship") p.airship = p.moves = true;
         else if (flag == "wheelbarrow") p.wheelbarrow = p.moves = true;
@@ -466,6 +467,11 @@ bool readPropRow(const NamedColumns& cell, const Row& r, PropInfo& p, std::strin
         if (!found) { why = "unknown emote " + cell(r, "emote"); return false; }
     }
     if (!readPropFlags(cell(r, "flags"), p, why)) return false;
+    if (p.sleeping != (p.restedPerHour > 0.0)) {
+        why = "a Sleeping prop (flag sleeping) has rested above 0, and rested above 0 needs the sleeping flag";
+        return false;
+    }
+    if (p.sleeping && p.resting) { why = "a prop is Sleeping or Resting, not both"; return false; }
     // Optional: health. Without the column, 30 for each tile of its size; the pieces of a building, nature and debris have none here
     // (a piece gets its health when it is built)
     if (cell.at.count("health")) {

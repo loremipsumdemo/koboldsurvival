@@ -55,6 +55,21 @@ int storageScrollMax(World& w) {
     return std::max(0, rows - STORAGE_VISIBLE_ROWS);
 }
 
+int storageAbsoluteSlot(World& w, int cell) {
+    const Storage* st = w.get<Storage>(session.storageProp);
+    if (!st || cell < 0 || cell >= storageShown(w)) return -1;
+    const size_t at = (size_t)(std::clamp(session.storageScroll, 0, storageScrollMax(w)) * STORAGE_COLUMNS + cell);
+    return at < st->slots.size() ? (int)at : -1;
+}
+
+bool moveStorageStack(World& w, ObjectId prop, int from, int to, const ItemStack& expected) {
+    Storage* st = w.get<Storage>(prop);
+    if (!st || !w.has<Prop>(prop)) return false;
+    if (!moveSlotStack(st->slots.data(), (int)st->slots.size(), from, to, expected)) return false;
+    propStorageChanged(w, prop);
+    return true;
+}
+
 // A window cell: the shown input cells first (from the row scrolled to), then the output cells
 ItemStack* storageSlot(World& w, int slot) {
     if (slot < 0) return nullptr;

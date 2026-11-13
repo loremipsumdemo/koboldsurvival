@@ -106,6 +106,9 @@ void autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int storey = -1);
 void stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop);
 void stopAutoStep(World& w, ObjectId u, Behaviors& b);
 bool openTile(const Terrain& t, float x, float z);
+// A random clear tile (no foundation, no prop) from halfway from the unit to a claim's centre to that centre, for a unit that is
+// to go back in from the claim's edge. False if none of a few tries is clear.
+bool claimInnerSpot(World& w, const Terrain& t, ObjectId u, float centreX, float centreZ, Vec2& out);
 
 inline bool walkingNow(World& w, ObjectId u) {
     if (w.has<Route>(u) || w.has<Climbing>(u)) return true;

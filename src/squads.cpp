@@ -168,7 +168,7 @@ int settleSquads(World& w) {
             ++sizes[(size_t)next];
         } else {
             makeCitizen(w, u);
-            queueLog(w, langf("MISC_SQUADS_FULL_CITIZEN", { nameOf(w, u) }), LogKind::Other);
+            queueLog(w, langf("MISC_SQUADS_FULL_CITIZEN", { nameOf(w, u) }), LogKind::Other, LogWho(false, u));
             ++toCitizens;
         }
     }

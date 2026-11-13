@@ -19,7 +19,7 @@
 #   equip_slot        : head, torso, legs, feet, accessory, main_hand, off_hand, either_hand, two_hand. Empty for none
 #   tags              : optional, comma-separated words that sort the item for props that take only some items:
 #                       raw_food (Raw Food Storage, which takes it only if it is not a consumable), water (Water Tank),
-#                       ore. Food Storage takes every consumable, the Weapon Rack every weapon, and the Armor Stand
+#                       ore. Food Pantry takes every consumable, the Weapon Rack every weapon, and the Armor Stand
 #                       every armor item (shields included).
 #                       Ranged weapons: bow_short (Short Bow), bow_long (Long Bow) and crossbow; they shoot items
 #                       tagged arrow (the bows) or bolt (the crossbow), one for each shot.

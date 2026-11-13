@@ -116,7 +116,7 @@ void campPropSystem(World& w, float dt) {
     }
     for (ObjectId e : lost) {
         queueLog(w, langf("MISC_CAMP_PROP_LOST", { lang(propInfo(w.get<Prop>(e)->kind).nameKey) }), LogKind::Other,
-                 w.get<Owner>(e)->faction != FACTION_PLAYER);
+                 LogWho(w.get<Owner>(e)->faction != FACTION_PLAYER, e));
         breakBuilding(w, e);
     }
 }
@@ -206,7 +206,7 @@ void claimOwnership(World& w, ObjectId prop) {
     // A camp's claim owns what is in it, but locks none of it
     if (c->camp) return;
     if (Lock* lock = w.get<Lock>(prop)) lock->faction = faction;
-    else if (propInfo(p->kind).use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
+    else if (propInfo(p->kind).use == PropUse::Storage) w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), BUILT_LOCK_LEVEL, faction });
 }
 
 namespace {
@@ -469,7 +469,7 @@ void claimGrowthSystem(World& w, float dt) {
                 if (!k.camp || k.owner == c.owner) continue;
                 if (claimsOverlap(c.x, c.z, bigger, k.x, k.z, k.radius)) breakBuilding(w, k.altar);
             }
-            if (c.owner == FACTION_PLAYER) queueLog(w, langf("MISC_CLAIM_GROWS", { factionName(c.owner), std::to_string((int)bigger) }), LogKind::Other);
+            if (c.owner == FACTION_PLAYER) queueLog(w, langf("MISC_CLAIM_GROWS", { factionName(c.owner), std::to_string((int)bigger) }), LogKind::Other, LogWho(false, c.altar));
         }
     }
 }

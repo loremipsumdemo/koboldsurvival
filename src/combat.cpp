@@ -118,9 +118,19 @@ ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<O
     return best;
 }
 
+// In a Sleeping or Resting prop (a bed, a bedroll, a chair, a bench, a stool). An Airship or other vehicle is not one: a unit
+// aboard is not got out of it for a blow, and a cage is not got out of.
+static bool onRestingProp(World& w, ObjectId u) {
+    const Occupying* in = w.get<Occupying>(u);
+    const Prop* held = in ? w.get<Prop>(in->prop) : nullptr;
+    return held && (isBed(held->kind) || isSeat(held->kind));
+}
+
 void onAttacked(World& w, ObjectId a, ObjectId d) {
     const int fa = factionOf(w, a), fd = factionOf(w, d);
     pushingAttacked(w, a, d);
+    // Attacked in a bed or on a seat, by anyone, hit or missed: it will not sleep through it
+    if (onRestingProp(w, d)) w.add(d, RousedByAttack{});
     if (fa == fd) return;
     fleeFromAirship(w, a, d);
     const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);
@@ -147,20 +157,26 @@ void onAttacked(World& w, ObjectId a, ObjectId d) {
         if (!factionsAllied(w, fu, fd) || factionsAllied(w, fu, fa) || !sees(u)) continue;
         if (isPassive(w, u) || isBlocking(w, u)) continue;
         Combat& c = *w.get<Combat>(u);
+        // One asleep or sitting about in sight of the fight joins it like any other: it gets up (see RousedByAttack)
+        const bool resting = onRestingProp(w, u);
         if (w.has<Commandable>(u)) {
             const bool busy = w.has<AttackOrder>(u) || w.has<SoloMove>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u) ||
                               w.has<TalkOrder>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
                               w.has<PropOrder>(u) || w.has<Working>(u) ||
-                              w.has<Occupying>(u) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
+                              (w.has<Occupying>(u) && !resting) || w.has<Carrying>(u) || w.has<DefendOrder>(u);
             const ActiveSquad* sq = w.has<ActiveSquadMember>(u) ? w.get<ActiveSquad>(w.get<ActiveSquadMember>(u)->squad) : nullptr;
             if (busy || (sq && !sq->arrived) || c.target != NO_OBJECT || !canStrike(w, u, a)) continue;
             leaveSquad(w, u);
             w.add(u, AttackOrder{ a });
             c.target = a;
+            if (resting) w.add(u, RousedByAttack{});
         } else {
             // Its friends who see it stay angry at the attacker's faction until none of them are left in sight
             if (!factionsHostile(w, fu, fa)) provoke(w, u, fa);
-            if (c.target == NO_OBJECT && canStrike(w, u, a) && !w.has<Fleeing>(u)) c.target = a;
+            if (c.target == NO_OBJECT && canStrike(w, u, a) && !w.has<Fleeing>(u)) {
+                c.target = a;
+                if (resting) w.add(u, RousedByAttack{});
+            }
         }
     }
 }
@@ -583,7 +599,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
             if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p)) && canSee(w, t, h, p)) {
                 hc.target = p;
-                if (w.has<Commandable>(p)) queueLog(w, langf("MISC_LOG_NOTICES", { nameOf(w, h), nameOf(w, p) }), LogKind::Seen, false, Tint::Gray);
+                if (w.has<Commandable>(p)) queueLog(w, langf("MISC_LOG_NOTICES", { nameOf(w, h), nameOf(w, p) }), LogKind::Seen, LogWho(false, h), Tint::Gray);
                 drinkForFight(w, h, hc);
                 break;
             }

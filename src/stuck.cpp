@@ -292,13 +292,48 @@ bool breakStep(World& w, Terrain& t, ObjectId u, Stuck& st, float d, bool moving
     queueSoundFrom(w, Sfx::Hit, target);
     if (h->value > 0.0) return false;
     const PropInfo& info = propInfo(w.get<Prop>(target)->kind);
-    queueLog(w, langf("MISC_DOOR_SMASHED", { nameOf(w, u), lang(info.nameKey) }), LogKind::Seen);
+    queueLog(w, langf("MISC_DOOR_SMASHED", { nameOf(w, u), lang(info.nameKey) }), LogKind::Seen, LogWho(false, u));
     destroyBuilding(w, target);
     return true;
 }
 }
 
+// A unit on the ground that stands in a tile that is closed (a wall built on it, a foundation or door that came to be there, the
+// ground made steep) is moved to the nearest open spot. It is seen so on two looks a second apart, so that a tile that is only
+// changing is let be. Units carried, on a prop, climbing, or on an upper floor or an Airship are not looked at.
+void freeTrappedSystem(World& w, Terrain& t, float dt) {
+    static float wait = 0.0f;
+    wait += dt;
+    if (wait < FREE_TRAPPED_SECONDS) return;
+    wait = 0.0f;
+    for (ObjectId u : w.view<Entity, Faction, Transform>()) {
+        Transform* ut = w.get<Transform>(u);
+        if (!ut || w.has<Carried>(u) || w.has<Occupying>(u) || w.has<Climbing>(u) || storeyOf(w, u) != 0) {
+            w.remove<Trapped>(u);
+            continue;
+        }
+        if (openTile(t, ut->x, ut->z)) {
+            w.remove<Trapped>(u);
+            continue;
+        }
+        if (!w.has<Trapped>(u)) {
+            w.add(u, Trapped{});
+            continue;
+        }
+        const Vec2 to = t.snap(Vec2{ ut->x, ut->z });
+        if (!openTile(t, to.x, to.z)) continue;   // nowhere near is open: it stays, and is looked at again
+        ut->x = to.x;
+        ut->z = to.z;
+        ut->y = t.standHeight(to.x, to.z);
+        w.remove<SoloMove>(u);
+        w.remove<Trapped>(u);
+        queueLog(w, langf("MISC_UNSTUCK", { nameOf(w, u), std::to_string(tileOf(to.x)), std::to_string(tileOf(to.z)) }), LogKind::Seen,
+                 LogWho(false, u));
+    }
+}
+
 void stuckSystem(World& w, Terrain& t, Rng& rng, float dt) {
+    freeTrappedSystem(w, t, dt);
     for (ObjectId u : w.view<PathGoal, Transform>()) {
         PathGoal* g = w.get<PathGoal>(u);
         if (!g) continue;

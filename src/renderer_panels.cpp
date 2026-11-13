@@ -27,6 +27,7 @@ const FilterEntry kFilterEntries[] = {
     { "UILABEL_TASK_MESSAGES", LogKind::Other, true },
     { "UILABEL_FAILED_PATHFINDING", LogKind::PathFail, false },
     { "UILABEL_FAILED_TASK", LogKind::TaskFail, false },
+    { "UILABEL_BLOCKED_ORDERS", LogKind::Blocked, false },
 };
 
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));
@@ -512,6 +513,10 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     L.collapsed = collapsed;
     L.textX = x + pad;
     L.textW = w - 2.0f * pad - scrollW - gap;
+    // The lines are laid out from here, in the middle of what is left of the body; the Game tab's start with a * button
+    const float rowsFrom = L.bodyTop + tabH;
+    L.rowsTop = rowsFrom + (L.bodyBottom - rowsFrom - (float)linesVisible * lineH) * 0.5f;
+    L.starW = listTextWidth("*") + 10.0f * s;
 
     const int end = lineCount - L.offset;
     L.shown = std::min(linesVisible, std::max(0, end));
@@ -605,32 +610,47 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         }
         return;
     }
-    const float top = bodyTop + (L.bodyBottom - bodyTop - L.linesVisible * L.lineH) * 0.5f;
+    const float top = L.rowsTop;
     const int count = (int)rows.size();
+    // The Game tab's lines each start with a * that goes to where the message happened: gold when it has a place
+    const bool stars = L.tab == 1;
+    const float startX = L.textX + (stars ? L.starW : 0.0f), startW = L.textW - (stars ? L.starW : 0.0f);
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
         const LogLine& ln = *rows[(size_t)(L.first + k)];
         const int row = L.linesVisible - L.shown + k;
-        drawListText(fitText(ln.text, L.textW, false), L.textX, top + row * L.lineH, logTint(ln.tint));
+        const float y = top + row * L.lineH;
+        if (stars) {
+            const Rect star{ L.textX, y, L.starW, L.lineH };
+            if (ln.located && star.contains(mx, my)) {
+                noteHover(star);
+                noteTip(lang("UILABEL_LOG_GO_TO"), star);
+                drawRect(star, RGBA{ 1.0f, 1.0f, 1.0f, 0.12f });
+            }
+            drawListText("*", star.x + (star.w - listTextWidth("*")) * 0.5f, y, ln.located ? theme::GOLD : theme::alpha(gray, 0.45f));
+        }
+        drawListText(fitText(ln.text, startW, false), startX, y, logTint(ln.tint));
     }
     if (L.scrollable()) drawScrollBar(L.track, L.thumb);
+}
 
-    if (L.filterOpen) {
-        drawRect(L.filterMenu, theme::alpha(theme::MENU_FILL, 0.97f));
-        const float th = listTextHeight("Ag");
-        for (const GameLogLayout::FilterRow& fr : L.filterRows) {
-            if (fr.heading) {
-                drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, theme::GOLD);
-                continue;
-            }
-            if (fr.r.contains(mx, my)) {
-                noteHover(fr.r);
-                drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
-            }
-            const bool on = filter.on[(int)fr.kind];
-            drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, WHITE);
-            const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
-            drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
-                         on ? theme::OK_TEXT : gray);
+void Renderer::drawGameLogFilter(const GameLogLayout& L, const LogFilter& filter, float mx, float my) {
+    if (!L.filterOpen || L.collapsed) return;
+    const float s = uiScale();
+    drawRect(L.filterMenu, theme::alpha(theme::MENU_FILL, 0.99f));
+    const float th = listTextHeight("Ag");
+    for (const GameLogLayout::FilterRow& fr : L.filterRows) {
+        if (fr.heading) {
+            drawListText(fr.label, fr.r.x + 6.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, theme::GOLD);
+            continue;
         }
+        if (fr.r.contains(mx, my)) {
+            noteHover(fr.r);
+            drawRect(fr.r, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f });
+        }
+        const bool on = filter.on[(int)fr.kind];
+        drawListText(fr.label, fr.r.x + 16.0f * s, fr.r.y + (fr.r.h - th) * 0.5f, WHITE);
+        const std::string state = on ? lang("UILABEL_ON") : lang("UILABEL_OFF");
+        drawListText(state, fr.r.x + fr.r.w - 10.0f * s - listTextWidth(state), fr.r.y + (fr.r.h - th) * 0.5f,
+                     on ? theme::OK_TEXT : theme::TEXT_QUIET);
     }
 }

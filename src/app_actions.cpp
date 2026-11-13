@@ -26,6 +26,22 @@ void App::refuse(const std::string& text) {
     playSfx(Sfx::UiError);
 }
 
+void App::logBlocked(const std::string& text, ObjectId at) {
+    gameLog.add(makeLogLine(world, text, LogKind::Blocked, LogWho(false, at)));
+    if (at == NO_OBJECT || factionOf(world, at) == FACTION_PLAYER) playSfx(Sfx::UiError);   // other factions' units are only noted
+}
+
+// The camera goes to where a message happened, and the floor looked at is that message's floor
+void App::goToLogLine(const LogLine& line) {
+    if (!line.located) return;
+    followUnit = NO_OBJECT;   // or the camera would go straight back to the unit it follows
+    cam.focusX = line.x;
+    cam.focusY = line.y;
+    cam.focusZ = line.z;
+    cam.clampState();
+    session.floorLevel = line.storey;
+}
+
 void App::fadeOutThen(std::function<void()> then) {
     if (afterFadeOut) return;
     afterFadeOut = std::move(then);

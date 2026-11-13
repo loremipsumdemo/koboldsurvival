@@ -72,6 +72,10 @@ struct PlaySession {
     ObjectId storageProp = NO_OBJECT;
     ObjectId storageUnit = NO_OBJECT;
     int storageDrag = -1;
+    // What a drag from the open store picked up, confirmed against the store when it is let go
+    ObjectId storageDragProp = NO_OBJECT;
+    int storageDragAt = -1;   // its slot in the store, or -1 for one of the output cells
+    ItemStack storageDragExpect;
     int storageScroll = 0;   // rows scrolled down in a big store's window
     ContextMenu contextMenu;
     ObjectId disbandTarget = NO_OBJECT;

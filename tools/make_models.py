@@ -206,9 +206,25 @@ def stall():
 
 
 def locked_chest():
-    return [box(0, 0, 0, 0.9, 0.36, 0.56, WOOD), cyl(0.44, 0.36, 0, 0.54, 0.88, 0.3, DARK_WOOD, 0, 90),
-            box(-0.3, 0, 0, 0.06, 0.37, 0.58, IRON), box(0.3, 0, 0, 0.06, 0.37, 0.58, IRON),
-            box(0, 0.26, 0.285, 0.1, 0.12, 0.03, BRASS), box(0, 0.32, 0.29, 0.05, 0.05, 0.03, IRON)]
+    """A strongbox: planked body on a dark plinth, a domed lid, iron straps and corner plates, and a brass padlock on a hasp.
+    Its front, where the lock is, faces +z."""
+    parts = [box(0, 0, 0, 0.94, 0.06, 0.6, DARK_WOOD),                                   # plinth
+             box(0, 0.06, 0, 0.9, 0.3, 0.56, WOOD)]                                       # body
+    for y in (0.15, 0.24):                                                                # plank seams, front and back
+        parts += [box(0, y, 0.282, 0.9, 0.012, 0.01, DARK_WOOD), box(0, y, -0.282, 0.9, 0.012, 0.01, DARK_WOOD)]
+    # The lid is a half cylinder lying along x, resting on the body
+    parts.append(cyl(0.45, 0.36, 0, 0.56, 0.9, 0.56, DARK_WOOD, 0, 90))
+    for x in (-0.3, 0.3):
+        parts.append(box(x, 0.06, 0, 0.07, 0.3, 0.585, IRON))                           # strap down the body
+        parts.append(cyl(x + 0.035, 0.36, 0, 0.6, 0.07, 0.6, IRON, 0, 90))             # and over the lid
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            parts.append(box(sx * 0.435, 0.06, sz * 0.27, 0.075, 0.3, 0.075, IRON))     # corner plates
+    parts += [box(0, 0.2, 0.287, 0.15, 0.2, 0.03, IRON),                                 # hasp plate on the front
+              box(0, 0.12, 0.315, 0.11, 0.1, 0.045, BRASS),                              # padlock body
+              box(0, 0.22, 0.315, 0.05, 0.05, 0.03, BRASS),                              # its shackle
+              box(0, 0.145, 0.34, 0.02, 0.035, 0.01, DARK_STONE)]                        # keyhole
+    return parts
 
 
 def prisoner_cage():

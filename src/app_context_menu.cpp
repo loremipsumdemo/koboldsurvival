@@ -676,7 +676,7 @@ void App::pickMenuAction(MenuAction a) {
         } else if (occupier != NO_OBJECT) {
             issuePropOrder(world, terrain, { occupier }, target, PropAction::Occupy);
         }
-        else if (banned != NO_OBJECT) refuse(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, banned) }));
+        else if (banned != NO_OBJECT) logBlocked(langf("MISC_CANT_OCCUPY_YET", { nameOf(world, banned) }), banned);
         break;
     }
     case MenuAction::PutDown:
