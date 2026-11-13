@@ -70,6 +70,13 @@ ItemStack App::draggedStack() {
     return inv && dragSlot >= 0 && dragSlot < INVENTORY_SLOTS ? inv->slots[dragSlot] : ItemStack{};
 }
 
+// Whether what a drag picked up is still in the slot it was picked up from, in the same amount
+bool App::dragStillThere() {
+    if (!world.has<Entity>(dragUnit)) return false;
+    const ItemStack now = draggedStack();
+    return now.item != 0 && now.item == dragExpect.item && now.count == dragExpect.count;
+}
+
 void App::drawGamePanels() {
     const std::vector<ObjectId> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
@@ -90,14 +97,17 @@ void App::drawGamePanels() {
     if (!cl.filterOpen) drawPanelLock(PanelId::Info);
     const ObjectId shown = sidebarUnitOf(world);
     {
+        // Under the Filter menu, which is over this panel, the panel is not pointed at
+        const bool underMenu = cl.filterOpen && cl.filterMenu.contains(mouseX, mouseY);
+        const float px = underMenu ? -10000.0f : (float)mouseX, py = underMenu ? -10000.0f : (float)mouseY;
         const int draggedId = itemDrag ? draggedStack().item : 0;
         const SidebarLayout sl = sidebarFor(winW, winH, sidebarScroll);
         sidebarScroll = sl.scroll;
-        renderer.drawInventorySidebar(sl, world, shown, mouseX, mouseY,
+        renderer.drawInventorySidebar(sl, world, shown, px, py,
                                       itemDrag && dragGear < 0 ? dragSlot : -1,
                                       itemDrag && dragGear >= 0 ? dragGear : -1,
                                       draggedId, shownIsYours());
-        if (shown != NO_OBJECT && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, mouseX, mouseY);
+        if (shown != NO_OBJECT && !itemDrag) renderer.drawBehaviorTip(sl, world, shown, px, py);
     }
     drawPanelLock(PanelId::Unit);
     if (itemMenu.open) {
@@ -107,6 +117,7 @@ void App::drawGamePanels() {
                                   labels, mouseX, mouseY);
         }
     }
+    renderer.drawGameLogFilter(cl, logFilter, mouseX, mouseY);
     if (itemDrag) {
         const ItemStack dragged = draggedStack();
         if (dragged.item != 0) renderer.drawDraggedStack(mouseX, mouseY, dragged.item, dragged.count);

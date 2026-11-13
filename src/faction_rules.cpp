@@ -260,6 +260,12 @@ void dealJobSystem(World& w, Terrain& t, float dt) {
         auto dealt = [&]() {
             if (w.has<Entity>(target)) w.add(target, Dealt{ faction });
         };
+        // After carrying one out, a unit of the faction's own (not one you ordered) goes back in: to a random clear tile (no
+        // foundation, no prop) from halfway to the claim's centre to the centre
+        auto backSpot = [&](Vec2& out) {
+            if (job.ordered || !job.hasHome) return false;
+            return claimInnerSpot(w, t, u, job.homeX, job.homeZ, out);
+        };
         if (outCold(w, u) || w.has<Carried>(u) || !w.has<Transform>(target) || !outCold(w, target) || w.has<Corpse>(target)) {
             end(BEHAVIOR_RETRY_SECONDS);
             continue;
@@ -310,6 +316,9 @@ void dealJobSystem(World& w, Terrain& t, float dt) {
                     pickUp(w, u, target);
                     job.toX = to.x;
                     job.toZ = to.z;
+                    job.homeX = c->x;
+                    job.homeZ = c->z;
+                    job.hasHome = true;
                     job.phase = DealJob::Phase::Carry;
                     walkSoloTo(w, t, u, to, 0);
                     continue;
@@ -344,7 +353,10 @@ void dealJobSystem(World& w, Terrain& t, float dt) {
                 if (job.cage == NO_OBJECT && job.stuck > 3.0f) {
                     putDown(w, u);
                     dealt();
+                    Vec2 back;
+                    const bool goBack = backSpot(back);
                     end(0.0f);
+                    if (goBack) walkSoloTo(w, t, u, back, 0);
                 } else if (job.stuck > 12.0f) {
                     end(BEHAVIOR_RETRY_SECONDS * 3.0f);
                 } else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) {
@@ -369,7 +381,10 @@ void dealJobSystem(World& w, Terrain& t, float dt) {
         putDown(w, u);
         queueLog(w, langf("MISC_CARRIES_OUT", { nameOf(w, u), nameOf(w, target) }), LogKind::Other, npcOnly(w, u, target));
         dealt();
+        Vec2 back;
+        const bool goBack = backSpot(back);
         end(0.0f);
+        if (goBack) walkSoloTo(w, t, u, back, 0);
     }
 }
 
@@ -403,7 +418,7 @@ void joinFaction(World& w, ObjectId u, int faction) {
         if (Entity* en = w.get<Entity>(u)) en->speed = HOSTILE_WALK_SPEED;
         if (!w.has<Dialogue>(u)) w.add(u, defaultDialogue());
     }
-    queueLog(w, langf("MISC_JOINS_FACTION", { nameOf(w, u), factionName(faction) }), LogKind::Other);
+    queueLog(w, langf("MISC_JOINS_FACTION", { nameOf(w, u), factionName(faction) }), LogKind::Other, LogWho(false, u));
 }
 
 void recruitOnWaking(World& w, ObjectId u) {
@@ -483,13 +498,13 @@ void factionRulesSystem(World& w, float frameDt) {
         if (!tp.warned) {
             tp.warned = true;
             if (rule == TrespassRule::Warn) {
-                queueLog(w, langf("MISC_TRESPASS_WARNED", { nameOf(w, u), factionName(owner) }), LogKind::Other, !yoursInvolved,
+                queueLog(w, langf("MISC_TRESPASS_WARNED", { nameOf(w, u), factionName(owner) }), LogKind::Other, LogWho(!yoursInvolved, u),
                          yoursInvolved ? Tint::Red : Tint::Gray);
             }
         }
         if (tp.attacked || (rule == TrespassRule::Warn && tp.seconds < TRESPASS_WARN_SECONDS)) continue;
         tp.attacked = true;
-        queueLog(w, langf("MISC_TRESPASS_ATTACKED", { nameOf(w, u), factionName(owner) }), LogKind::Other, !yoursInvolved,
+        queueLog(w, langf("MISC_TRESPASS_ATTACKED", { nameOf(w, u), factionName(owner) }), LogKind::Other, LogWho(!yoursInvolved, u),
                  yoursInvolved ? Tint::Red : Tint::Gray);
         // The owner's units who see it turn on it; a trespasser on your land turns on yours, so they fight it
         if (factionPlayerControlled(owner)) {

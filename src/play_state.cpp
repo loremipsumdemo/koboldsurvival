@@ -12,6 +12,9 @@ void closeStorage() {
     session.storageScroll = 0;
     session.storageUnit = NO_OBJECT;
     session.storageDrag = -1;
+    session.storageDragProp = NO_OBJECT;
+    session.storageDragAt = -1;
+    session.storageDragExpect = ItemStack{};
 }
 
 void closeLoot() {

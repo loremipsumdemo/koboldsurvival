@@ -36,7 +36,7 @@ void makeHostile(World& w, ObjectId unit) {
     w.remove<Neutral>(unit);
     w.add(unit, Hostile{});
     queueSound(w, Sfx::TurnHostile);
-    queueLog(w, langf("MISC_TURNS_HOSTILE", { nameOf(w, unit) }), LogKind::Seen);
+    queueLog(w, langf("MISC_TURNS_HOSTILE", { nameOf(w, unit) }), LogKind::Seen, LogWho(false, unit));
 }
 
 bool disbandUnit(World& w, ObjectId u) {
@@ -83,7 +83,7 @@ bool disbandUnit(World& w, ObjectId u) {
     else w.add(u, Faction{ faction });
     if (factionsHostile(w, faction, FACTION_PLAYER)) w.add(u, Hostile{});
     else w.add(u, Neutral{});
-    queueLog(w, langf(w.has<Mob>(u) ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { nameOf(w, u) }), LogKind::Other);
+    queueLog(w, langf(w.has<Mob>(u) ? "MISC_DISBANDED_MOB" : "MISC_DISBANDED", { nameOf(w, u) }), LogKind::Other, LogWho(false, u));
     return true;
 }
 

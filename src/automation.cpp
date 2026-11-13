@@ -281,6 +281,10 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
 
 // How near the middle of its claim a rescued unit is put down when there is no bed for it
 constexpr float RESCUE_PARK_REACH = 4.0f;
+// A unit with nothing to do for this long, within this many tiles of its claim's edge (a third of a small claim's radius at most),
+// walks back in
+constexpr float EDGE_IDLE_SECONDS = 5.0f;
+constexpr float EDGE_IDLE_BAND = 2.0f;
 
 // The middle of the faction's nearest claim, an Altar's or a camp's
 bool claimMiddle(const std::vector<Claim>& claims, int faction, float x, float z, Vec2& out) {
@@ -830,6 +834,34 @@ bool systems_detail::openTile(const Terrain& t, float x, float z) {
     return x >= 0.0f && z >= 0.0f && x < t.size() && z < t.size() && t.walkable((int)std::floor(x), (int)std::floor(z));
 }
 
+bool systems_detail::claimInnerSpot(World& w, const Terrain& t, ObjectId u, float centreX, float centreZ, Vec2& out) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    unsigned seed = (unsigned)u * 2654435761u + (unsigned)(ut->x * 16.0f) * 40503u + (unsigned)(ut->z * 16.0f);
+    auto next = [&]() {
+        seed = seed * 1664525u + 1013904223u;
+        return (float)(seed >> 8) / (float)(1u << 24);
+    };
+    for (int i = 0; i < 16; ++i) {
+        const float f = 0.5f + 0.5f * next();
+        const float x = std::floor(ut->x + (centreX - ut->x) * f) + 0.5f;
+        const float z = std::floor(ut->z + (centreZ - ut->z) * f) + 0.5f;
+        if (!openTile(t, x, z) || foundationAt(w, (int)std::floor(x), (int)std::floor(z)) != NO_OBJECT) continue;
+        bool clear = true;
+        for (ObjectId p : w.view<Prop, Transform>()) {
+            const Transform* pt = w.get<Transform>(p);
+            if (std::fabs(pt->x - x) < 1.0f && std::fabs(pt->z - z) < 1.0f) {
+                clear = false;
+                break;
+            }
+        }
+        if (!clear) continue;
+        out = Vec2{ x, z };
+        return true;
+    }
+    return false;
+}
+
 void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop) {
     Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
@@ -924,6 +956,25 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
 
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     const std::vector<Claim> claims = cachedClaims(w);
+    // Whoever was attacked in a bed or on a seat wakes and gets off it, and keeps off beds and seats for a while (as one
+    // turned out of a bed does). One out cold, carried or locked in stays where it is.
+    for (ObjectId u : w.view<RousedByAttack>()) {
+        w.remove<RousedByAttack>(u);
+        const Occupying* in = w.get<Occupying>(u);
+        const Needs* needs = w.get<Needs>(u);
+        if (!in || !w.has<Prop>(in->prop) || outOfAction(w, u) || (needs && needs->hp <= 0)) continue;
+        const ObjectId bed = in->prop;
+        w.remove<Occupying>(u);
+        w.remove<PropOrder>(u);
+        stepOffProp(w, t, u, bed);
+        w.add(u, OccupyBan{ EVACUATE_OCCUPY_BAN_SECONDS });
+        if (Behaviors* b = w.get<Behaviors>(u); b && b->busy && (isBedStep(b->step.kind) || b->step.kind == BehaviorKind::SitDown)) {
+            b->busy = false;
+            b->began = false;
+            b->recovered = 0.0f;
+            if (BehaviorRule* rule = stepRule(*b)) rule->cooldown = EVACUATE_OCCUPY_BAN_SECONDS;
+        }
+    }
     {
         // Whoever left a dance a moment ago is held at its new place until it has been shown getting there
         for (ObjectId u : w.view<LeavingDance, Transform>()) {
@@ -1428,12 +1479,33 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         }
 
         // Rescue always comes before Rest, wherever the list has them
+        bool started = false;
         for (BehaviorRule& r : b->rules) {
             if (r.kind == BehaviorKind::Rest) {
                 BehaviorRule* rescue = rescueRule(*b);
-                if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) break;
+                if (rescue && tryStep(w, t, claims, u, *b, *rescue, rng)) {
+                    started = true;
+                    break;
+                }
             }
-            if (tryStep(w, t, claims, u, *b, r, rng)) break;
+            if (tryStep(w, t, claims, u, *b, r, rng)) {
+                started = true;
+                break;
+            }
+        }
+        // Nothing to do: after a while idle, a unit near the edge of its claim goes back in, to the middle half of it
+        if (started) {
+            b->idleFor = 0.0f;
+        } else if ((b->idleFor += dt) >= EDGE_IDLE_SECONDS) {
+            b->idleFor = 0.0f;
+            const Transform* ut = w.get<Transform>(u);
+            const Claim* c = ut ? claimAt(claims, ut->x, ut->z, factionOf(w, u)) : nullptr;
+            const float band = std::min(EDGE_IDLE_BAND, c ? c->radius / 3.0f : 0.0f);
+            Vec2 to;
+            if (c && c->radius - std::hypot(ut->x - c->x, ut->z - c->z) < band && storeyOf(w, u) == 0 &&
+                claimInnerSpot(w, t, u, c->x, c->z, to)) {
+                autoWalk(w, t, u, to, 0);
+            }
         }
     }
 }

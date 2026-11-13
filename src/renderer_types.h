@@ -142,6 +142,8 @@ struct GameLogLayout {
     Rect thumb;
     float textX = 0.0f, textW = 0.0f;
     float lineH = 0.0f;
+    float rowsTop = 0.0f;   // where the first of the visible lines starts
+    float starW = 0.0f;     // the Game tab's * button at the start of each line
     int linesVisible = 0;
     int lineCount = 0;
     int offset = 0;

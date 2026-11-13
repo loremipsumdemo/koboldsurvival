@@ -427,7 +427,7 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                     w.remove<Working>(u);
                     grantXp(w, u, StatId::Strength, DEBRIS_CLEAR_XP, w.has<Commandable>(u) ? "MISC_REASON_CLEARING" : nullptr);
                 }
-                if (w.has<Commandable>(workers[0])) queueLog(w, langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other);
+                if (w.has<Commandable>(workers[0])) queueLog(w, langf("MISC_CLEARS_DEBRIS", { nameOf(w, workers[0]) }), LogKind::Other, LogWho(false, workers[0]));
                 queueSoundFrom(w, Sfx::Drop, prop);
                 breakBuilding(w, prop);
             }

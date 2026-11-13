@@ -193,11 +193,13 @@ bool App::mouseDownOnPanels() {
                     dragUnit = picked[0];
                     dragSlot = slot;
                     dragGear = -1;
+                    dragExpect = inv->slots[slot];
                 } else if (worn && gear >= 0 && worn->items[gear] != 0) {
                     itemDrag = true;
                     dragUnit = picked[0];
                     dragSlot = -1;
                     dragGear = gear;
+                    dragExpect = ItemStack{ worn->items[gear], 1 };
                 }
             }
             for (const UnitCell& c : pl.cells) {

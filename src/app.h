@@ -123,6 +123,7 @@ struct AppSession {
     ObjectId dragUnit = NO_OBJECT;
     int dragSlot = -1;
     int dragGear = -1;
+    ItemStack dragExpect;   // what was picked up (the item and how many), confirmed in its slot when the drag is let go
     struct ItemMenu {
         bool open = false;
         ObjectId unit = NO_OBJECT;
@@ -176,6 +177,7 @@ struct App : AppSession {
     bool pressOnLoot();
     bool pressOnStorage();
     bool pressOnPanelBars();
+    bool pressOnLogFilter();
     bool pressOnFactionTabs();
     bool pressOnSelectMenu();
     bool pressOnFactionGrid();
@@ -220,6 +222,7 @@ struct App : AppSession {
     void drawWorldOverlays();
     void drawGamePanels();
     ItemStack draggedStack();
+    bool dragStillThere();
     void drawStoragePanel();
     void updateDisbandHold();
     float disbandHeldShare();
@@ -304,6 +307,10 @@ struct App : AppSession {
     void refreshSaves();
     void showNotice(const std::string& text, float seconds = 2.5f);
     void refuse(const std::string& text);
+    // An order that cannot be carried out, said in the Game tab of the Information Panel (the Blocked orders filter) with the
+    // place of the unit it is about, and with the error sound (for your own units only)
+    void logBlocked(const std::string& text, ObjectId at);
+    void goToLogLine(const LogLine& line);
     void closePanel();
     // levels: the level editor's levels for this map, in place of saved games
     void openPanel(bool saveMode, bool levels = false);

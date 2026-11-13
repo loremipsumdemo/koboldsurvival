@@ -139,6 +139,7 @@ struct SaveProp {
     int material = 0;
     std::optional<std::uint32_t> storeFilter;
     bool bedPublic = false;
+    bool startsUnlocked = false;   // put down from a plan that has its lock open: see StartsUnlocked
     std::optional<std::uint32_t> stallPayment;
     std::vector<std::array<int, 3>> stallRequests;   // a Stall's orders: the store (prop index), item, count
 };

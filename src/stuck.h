@@ -59,6 +59,11 @@ bool stuckReachable(World& w, const Terrain& t, Vec2 from, Vec2 goal);
 // 40, stairs 60), or NO_OBJECT if no way is shut by one
 ObjectId stuckBlocker(World& w, const Terrain& t, Vec2 from, Vec2 goal);
 
+// A unit found standing in a closed tile (inside a wall, say), seen once; found there again a second later it is moved to the
+// nearest open spot and the Game tab says so. Not saved.
+inline constexpr float FREE_TRAPPED_SECONDS = 1.0f;
+struct Trapped {};
+
 void stuckSystem(World& w, Terrain& t, Rng& rng, float dt);
 
 // Planning a way, paced. A unit whose way was planned may not have one planned again for REPATH_SECONDS, unless the walk is an

@@ -380,6 +380,7 @@ UILABEL_ITEM_MESSAGES	Item Messages
 UILABEL_MESSAGE	Message
 UILABEL_GAME	Game
 UILABEL_FILTER	Filter
+UILABEL_LOG_GO_TO	Go to where this happened
 UILABEL_MONTH_NAME	{0} Month
 MISC_UNIT	Unit
 MISC_YOU	You
@@ -585,6 +586,7 @@ MISC_RECOVERS	{0} wakes up
 MISC_CORPSE_NO_PLACE	The dead can't be placed there
 MISC_TAMING_CAGE_ANIMALS_ONLY	Only animals can be put in a Taming Cage
 MISC_CANT_OCCUPY_YET	{0} can't occupy anything for a moment
+MISC_UNIT_CANT_REACH	{0} can't reach {1}
 MISC_REASON_LOCKPICKING	picking locks
 MISC_REASON_TRAINING	training
 MISC_XP_GAINED	+{0} {1} XP
@@ -1205,7 +1207,6 @@ PROP_BONES	Bones
 PROP_STALL	Stall
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once
-MISC_PROP_UNREACHABLE	Unreachable
 PROP_LOCKED_CHEST	Locked Chest
 PROP_PRISONER_CAGE	Prisoner Cage
 MISC_PROP_LOCKED	Locked
@@ -1219,7 +1220,7 @@ PROP_STANDING_TORCH	Standing Torch
 PROP_SUPPORT_BEAM	Support Beam
 PROP_TRAINING_DUMMY	Training Dummy
 PROP_RAW_FOOD_STORAGE	Raw Food Storage
-PROP_FOOD_STORAGE	Food Storage
+PROP_FOOD_STORAGE	Food Pantry
 PROP_WEAPON_RACK	Weapon Rack
 PROP_ARMOR_STAND	Armor Stand
 PROP_WATER_TANK	Water Tank
@@ -1809,5 +1810,7 @@ SCENARIO_OUTPOST_DESC	Start with your own camp, set up like the other factions':
 UILABEL_TASK_MESSAGES	Task Messages
 UILABEL_FAILED_PATHFINDING	Failed pathfinding
 UILABEL_FAILED_TASK	Failed task
+UILABEL_BLOCKED_ORDERS	Blocked orders
 MISC_PATH_FAILED	{0} can't find a way to ({1}, {2})
+MISC_UNSTUCK	{0} was freed from a wall and moved to ({1}, {2})
 MISC_TASK_FAILED	{0} gave up a task: {1}

@@ -193,7 +193,8 @@ struct PropInfo {
     bool burnsCorpses = false;
     bool byHand = false;
     bool debris = false;
-    bool seat = false;
+    bool sleeping = false;       // a Sleeping prop (a bed or bedroll): an occupant lies in it and sleeps
+    bool resting = false;        // a Resting prop (a chair, bench or stool): an occupant sits
     bool cage = false;
     bool airship = false;   // floats, and flies its occupants (up to workers of them) over any ground
     bool wheelbarrow = false;    // its occupant pushes it about in front of them, with its store
@@ -237,7 +238,8 @@ bool inputMatches(const PropInfo& info, int item);
 // From data/props.txt. Any number outside the table gets its first row.
 const PropInfo& propInfo(PropKind kind);
 
-inline bool isBed(PropKind kind) { return propInfo(kind).restedPerHour > 0.0; }
+// A Sleeping prop (props.txt's sleeping flag), which is also what gives rested
+inline bool isBed(PropKind kind) { return propInfo(kind).sleeping; }
 // The kinds a new level scatters (PROP_COPIES of each). The others come only from building, camps or debris.
 const std::vector<PropKind>& scatteredPropKinds();
 // In the table's order, the Build tab's
@@ -258,7 +260,8 @@ inline bool hasStorage(const PropInfo& info) {
     return info.use == PropUse::Storage || info.use == PropUse::PassiveCrafting || info.wheelbarrow ||
            (info.use == PropUse::Crafting && info.input != 0) || info.advanced;
 }
-inline bool isSeat(PropKind kind) { return propInfo(kind).seat; }
+// A Resting prop (props.txt's resting flag)
+inline bool isSeat(PropKind kind) { return propInfo(kind).resting; }
 
 constexpr int STORAGE_SLOTS = 12;
 constexpr int STORAGE_COLUMNS = 6;

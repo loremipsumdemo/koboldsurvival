@@ -1,9 +1,23 @@
 #include "game_log.h"
 #include "components.h"
 
-bool npcOnly(World& w, ObjectId a, ObjectId b) {
+LogWho npcOnly(World& w, ObjectId a, ObjectId b) {
     const bool yours = (a != NO_OBJECT && w.has<Commandable>(a)) || (b != NO_OBJECT && w.has<Commandable>(b));
-    return !yours;
+    return LogWho(!yours, a != NO_OBJECT ? a : b);
+}
+
+LogLine makeLogLine(World& w, const std::string& text, LogKind kind, LogWho who, Tint tint) {
+    LogLine ln{ text, tint, kind, who.npc };
+    if (who.at != NO_OBJECT) {
+        if (const Transform* t = w.get<Transform>(who.at)) {
+            ln.located = true;
+            ln.x = t->x;
+            ln.y = t->y;
+            ln.z = t->z;
+            ln.storey = storeyOf(w, who.at);
+        }
+    }
+    return ln;
 }
 
 void GameLog::say(const std::string& text) {
@@ -44,8 +58,12 @@ Tint tintFor(World& w, ObjectId attacker, ObjectId target) {
 }
 
 void GameLog::add(const std::string& text, Tint tint, LogKind kind, bool npc) {
-    lines.push_back(LogLine{ text, tint, kind, npc });
-    const LogKind bucket = npc ? LogKind::Npc : kind;
+    add(LogLine{ text, tint, kind, npc });
+}
+
+void GameLog::add(const LogLine& line) {
+    lines.push_back(line);
+    const LogKind bucket = line.npc ? LogKind::Npc : line.kind;
     if (++kindCount[(int)bucket] > LOG_LIMIT) {
         for (auto it = lines.begin(); it != lines.end(); ++it) {
             if ((it->npc ? LogKind::Npc : it->kind) == bucket) {

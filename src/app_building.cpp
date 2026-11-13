@@ -267,7 +267,10 @@ void App::drawFoundationSize() {
         std::string text = langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildLevel + 1) });
         if (propInfo(session.buildPick.kind).stairs) text += "  " + lang("MISC_STAIRS_TURN");
         const float pad = 6.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
-        const Rect box{ std::floor((float)mouseX + 18.0f * s), std::floor((float)mouseY + 18.0f * s), tw + 2.0f * pad, th + 2.0f * pad };
+        // A row of its own just above where a hovered prop's tooltip starts (Renderer::drawPropTooltip), lined up with it,
+        // so the two never share a line
+        const float boxH = th + 2.0f * pad;
+        const Rect box{ std::floor((float)mouseX + 14.0f * s), std::floor((float)mouseY + 18.0f * s - boxH - 2.0f * s), tw + 2.0f * pad, boxH };
         renderer.drawRect(box, RGBA{ 0.0f, 0.0f, 0.0f, 0.65f });
         renderer.drawListText(text, box.x + pad, box.y + pad, RGBA{ 0.75f, 0.85f, 1.0f, 1.0f });
         return;

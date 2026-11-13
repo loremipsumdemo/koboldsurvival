@@ -232,6 +232,7 @@ struct Behaviors {
     bool pending = true;
     float recovered = 0.0f;
     bool busy = false;
+    float idleFor = 0.0f;       // seconds with no behavior to do, for moving off the claim's edge (not saved)
     BehaviorRule step;
     ObjectId stepProp = NO_OBJECT;
     float wait = 0.0f;          // real seconds before the automation takes its next step
@@ -421,6 +422,9 @@ inline int storeyOf(World& w, ObjectId e) {
 // A bed or bedroll inside a building set to Public: anyone may use it. Without it, a bed on a faction's foundation is
 // only for that faction.
 struct BedPublic {};
+// On a prop put down from a building plan that has it unlocked: its lock is open from the start, whenever the lock is
+// made (a door's when it is built, a store's when it comes to be owned). Saved.
+struct StartsUnlocked {};
 
 // A Stall's orders: items picked from your stores to be hauled to it (each tried once), and what it takes as payment
 struct StallRequest {
@@ -506,6 +510,9 @@ struct Occupying {
 struct OccupyBan {
     float secondsLeft = 0.0f;
 };
+// On a unit attacked while in a bed or on a seat: it wakes and gets off it on the game's next step (automationSystem,
+// where the ground is known). Never for a vehicle or a cage. Not saved.
+struct RousedByAttack {};
 
 struct Working {
     ObjectId prop = NO_OBJECT;

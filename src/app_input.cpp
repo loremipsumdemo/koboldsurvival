@@ -766,10 +766,33 @@ void App::onMouseButtonUp() {
     }
     if (e.button.button == SDL_BUTTON_LEFT && session.storageDrag >= 0) {
         const int from = session.storageDrag;
+        const ObjectId fromProp = session.storageDragProp;
+        const int fromAt = session.storageDragAt;
+        const ItemStack expect = session.storageDragExpect;
         session.storageDrag = -1;
+        session.storageDragProp = NO_OBJECT;
+        session.storageDragAt = -1;
+        session.storageDragExpect = ItemStack{};
         if (session.storageProp != NO_OBJECT) {
             const float x = e.button.x, y = e.button.y;
-            if (storageLayout(world, winW, winH).panel.contains(x, y)) {
+            // Confirmed before anything is done: the same store, still holding what was picked up where it was picked up.
+            // If not (it was spent, moved, taken, or the window scrolled), the drag is dropped and nothing happens.
+            const ItemStack* live = storageSlot(world, from);
+            const bool stillThere = expect.item != 0 && fromProp == session.storageProp && live && live->item == expect.item &&
+                                    live->count == expect.count;
+            const StorageLayout stl = storageLayout(world, winW, winH);
+            if (!stillThere) {
+                playSfx(Sfx::UiError);
+            } else if (stl.panel.contains(x, y)) {
+                // Another cell of the same store: the stack goes there, joins the stack there, or trades places with it
+                int target = -1;
+                for (size_t i = 0; i < stl.slots.size(); ++i) {
+                    if (stl.slots[i].contains(x, y)) target = (int)i;
+                }
+                const int toAt = storageAbsoluteSlot(world, target);
+                if (fromAt >= 0 && toAt >= 0 && moveStorageStack(world, session.storageProp, fromAt, toAt, expect)) {
+                    queueSound(world, Sfx::ItemMove);
+                }
             } else if (sidebarFor(winW, winH, sidebarScroll).panel.contains(x, y)) {
                 std::string why;
                 if (takeFromStorage(world, from, why)) queueSound(world, Sfx::ItemMove);
@@ -779,6 +802,15 @@ void App::onMouseButtonUp() {
             }
         }
         return;
+    }
+    if (e.button.button == SDL_BUTTON_LEFT && itemDrag && !dragStillThere()) {
+        // What was picked up is not in its slot any more (used, moved, taken by someone else): nothing is done with it
+        itemDrag = false;
+        dragUnit = NO_OBJECT;
+        dragSlot = -1;
+        dragGear = -1;
+        dragExpect = ItemStack{};
+        playSfx(Sfx::UiError);
     }
     if (e.button.button == SDL_BUTTON_LEFT && itemDrag && session.storageProp != NO_OBJECT &&
         storageLayout(world, winW, winH).panel.contains(e.button.x, e.button.y)) {
@@ -815,12 +847,19 @@ void App::onMouseButtonUp() {
             const float rx = e.button.x, ry = e.button.y;
             const bool overSidebar = sl.panel.contains(rx, ry);
             const int gear = gearSlotAt(sl, rx, ry);
-            const bool onGrid = sidebarSlotAt(sl, rx, ry) >= 0;
+            const int gridSlot = sidebarSlotAt(sl, rx, ry);
+            const bool onGrid = gridSlot >= 0;
             std::string why;
             if (dragGear < 0) {
                 if (gear >= 0) {
                     if (equipFromInventory(world, dragUnit, dragSlot, gear, why)) queueSound(world, Sfx::ItemMove);
                     else if (!why.empty()) refuse(why);
+                } else if (onGrid) {
+                    // Another slot of the same inventory: the stack goes there, joins the stack there, or trades places with it
+                    Inventory* inv = world.get<Inventory>(dragUnit);
+                    if (inv && gridSlot != dragSlot && moveSlotStack(inv->slots.data(), INVENTORY_SLOTS, dragSlot, gridSlot, dragExpect)) {
+                        queueSound(world, Sfx::ItemMove);
+                    }
                 } else if (!overSidebar) {
                     if (dropStack(world, dragUnit, dragSlot)) queueSound(world, Sfx::ItemMove);
                 }
@@ -838,6 +877,7 @@ void App::onMouseButtonUp() {
         dragUnit = NO_OBJECT;
         dragSlot = -1;
         dragGear = -1;
+        dragExpect = ItemStack{};
     }
     if (e.button.button == SDL_BUTTON_LEFT && leftDown) {
         leftDown = false;

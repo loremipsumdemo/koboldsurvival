@@ -282,6 +282,20 @@ bool App::infoPanelClick(int W, int H, float tx, float ty) {
         if (cl.filterMenu.contains(tx, ty)) return true;
         logFilterOpen = false;
     }
+    // The * at the start of a line of the Game tab: the camera goes to where the message happened
+    if (infoTab == 1) {
+        const std::vector<const LogLine*> rows = infoLines(gameLog, infoTab, logFilter);
+        for (int k = 0; k < cl.shown && cl.first + k < (int)rows.size(); ++k) {
+            const int row = cl.linesVisible - cl.shown + k;
+            if (!Rect{ cl.textX, cl.rowsTop + row * cl.lineH, cl.starW, cl.lineH }.contains(tx, ty)) continue;
+            const LogLine& line = *rows[(size_t)(cl.first + k)];
+            if (line.located) {
+                goToLogLine(line);
+                playSfx(Sfx::UiClick);
+            }
+            return true;
+        }
+    }
     return false;
 }
 
@@ -485,6 +499,7 @@ bool App::overPanels(float x, float y, int W, int H) {
     return overGamePanels(squadPanelLayout(W, H),
                           sidebarFor(W, H, sidebarScroll), true, x, y)
         || gameLogPanel(W, H).panel.contains(x, y)
+        || (logFilterOpen && infoTab == 1 && gameLogPanel(W, H).filterMenu.contains(x, y))
         || (session.lootUnit != NO_OBJECT && layoutLoot(W, H).panel.contains(x, y))
         || (mapOpen && worldMapFor(W, H).window.contains(x, y))
         || (!labels.empty() && renderer.itemMenuLayout(itemMenu.x, itemMenu.y, (int)labels.size(), W, H, labels).box.contains(x, y));

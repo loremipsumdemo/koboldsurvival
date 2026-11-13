@@ -73,7 +73,7 @@ void tameAnimal(World& w, ObjectId animal, int faction) {
     b.passive = false;
     b.busy = false;
     b.pending = true;
-    queueLog(w, langf("MISC_TAMED", { nameOf(w, animal), factionName(faction) }), LogKind::Other, !factionPlayerControlled(faction),
+    queueLog(w, langf("MISC_TAMED", { nameOf(w, animal), factionName(faction) }), LogKind::Other, LogWho(!factionPlayerControlled(faction), animal),
              factionPlayerControlled(faction) ? Tint::Green : Tint::Gray);
     queueSoundFrom(w, Sfx::Unlocked, animal);
 }

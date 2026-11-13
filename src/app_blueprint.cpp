@@ -137,7 +137,10 @@ void App::updateBlueprintEditor() {
     }
     // Whether it differs from what was saved is worked out (the whole box read off and written out) only when the pieces or the
     // box's size have changed, not on a timer. Every change to a piece adds or removes a component, so the revisions say so.
-    const std::uint64_t rev = world.revision<Prop>() + world.revision<Storey>() + world.revision<PropVisual>() + world.revision<Foundation>();
+    // A bed made Public or Private is a component too; a lock opened or shut is not, so the open ones are counted.
+    std::uint64_t rev = world.revision<Prop>() + world.revision<Storey>() + world.revision<PropVisual>() + world.revision<Foundation>() +
+                        world.revision<BedPublic>() + world.revision<Lock>();
+    for (ObjectId e : world.view<Lock>()) rev += world.get<Lock>(e)->locked ? 0 : 1000003ull * (e + 1);
     if (bpEdit.dirtyRev != rev || bpEdit.dirtyW != bpEdit.w || bpEdit.dirtyD != bpEdit.d) {
         bpEdit.dirty = blueprintText() != bpEdit.savedText;
         bpEdit.dirtyRev = rev;

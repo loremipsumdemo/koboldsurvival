@@ -198,6 +198,10 @@ std::string planToText(const BuildPlan& plan) {
                           v.sx, v.sy, v.sz);
             out << line;
         }
+        // How the piece on the line before is set: a bed open to anyone, a lock left open. Left out, a bed is its faction's
+        // and a lock is shut, as the game makes them.
+        if (p->bedPublic) out << "public\n";
+        if (p->unlocked) out << "unlocked\n";
     }
     return out.str();
 }
@@ -256,6 +260,10 @@ bool planFromText(const std::string& text, BuildPlan& out, std::string& err) {
             PropVisual v;
             ok = (bool)(ls >> v.dx >> v.dy >> v.dz >> v.rx >> v.ry >> v.rz >> v.sx >> v.sy >> v.sz) && !plan.pieces.empty();
             if (ok) plan.pieces.back().visual = clampPropVisual(v);
+        } else if (key == "public" || key == "unlocked") {
+            // Of the piece on the line before
+            ok = !plan.pieces.empty();
+            if (ok) (key == "public" ? plan.pieces.back().bedPublic : plan.pieces.back().unlocked) = true;
         } else {
             ok = false;
         }
@@ -377,6 +385,8 @@ BuildPlan capturePlan(World& w, const std::string& name, int boxW, int boxD, int
             p.yaw = w.get<Prop>(e)->yaw;
             if (const PropVisual* v = w.get<PropVisual>(e); v && !v->plain()) p.visual = *v;
         }
+        p.bedPublic = isBed(kind) && w.has<BedPublic>(e);
+        if (const Lock* lock = w.get<Lock>(e)) p.unlocked = !lock->locked;
         plan.pieces.push_back(p);
     }
     // The same plan is always written the same way
@@ -412,16 +422,32 @@ bool planPieceFits(World& w, const Terrain& t, const PlanPiece& p, int x, int z,
     return checkBuildSpot(w, t, p.kind, (float)x + p.x, (float)z + p.z, p.level, owner) == BuildCheck::Ok;
 }
 
+namespace {
+// How the plan has a piece set, put on the prop made for it (a blueprint or a ghost yet, perhaps): a bed open to anyone, a
+// lock left open. A lock that is not made until later (a door's, when it is built) opens then, by StartsUnlocked.
+void applyPieceSettings(World& w, ObjectId e, const PlanPiece& p) {
+    if (e == NO_OBJECT) return;
+    if (p.bedPublic && isBed(p.kind)) w.add(e, BedPublic{});
+    if (p.unlocked) {
+        w.add(e, StartsUnlocked{});
+        if (Lock* lock = w.get<Lock>(e)) lock->locked = false;
+    }
+}
+}
+
 ObjectId placePlanPiece(World& w, const Terrain& t, const PlanPiece& p, int x, int z, int owner, BuildMaterial material) {
     const PropInfo& info = propInfo(p.kind);
     if (info.foundation || !planPieceFits(w, t, p, x, z, owner)) return NO_OBJECT;
     if (info.onFoundation) {
         const int tx = x + (int)std::floor(p.x), tz = z + (int)std::floor(p.z);
-        return placePiece(w, t, p.kind, tx, tz, owner, takesMaterial(p.kind) ? material : BuildMaterial::Wood, p.level,
-                          info.stairs ? dirOfYaw(p.yaw) : 0);
+        const ObjectId piece = placePiece(w, t, p.kind, tx, tz, owner, takesMaterial(p.kind) ? material : BuildMaterial::Wood, p.level,
+                                          info.stairs ? dirOfYaw(p.yaw) : 0);
+        applyPieceSettings(w, piece, p);
+        return piece;
     }
     const ObjectId e = placeCostedProp(w, t, p.kind, (float)x + p.x, (float)z + p.z, p.yaw, owner, p.level);
     if (e != NO_OBJECT && !p.visual.plain()) w.add(e, p.visual);
+    applyPieceSettings(w, e, p);
     return e;
 }
 
@@ -448,8 +474,9 @@ ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const
                 if (info.foundation || info.door != (pass == 1)) continue;
                 if (info.onFoundation) {
                     const int tx = x + (int)std::floor(p->x), tz = z + (int)std::floor(p->z);
-                    placeGhostPiece(w, t, p->kind, tx, tz, owner, takesMaterial(p->kind) ? material : BuildMaterial::Wood, p->level,
-                                    info.stairs ? dirOfYaw(p->yaw) : 0, stage);
+                    const ObjectId ghost = placeGhostPiece(w, t, p->kind, tx, tz, owner, takesMaterial(p->kind) ? material : BuildMaterial::Wood,
+                                                           p->level, info.stairs ? dirOfYaw(p->yaw) : 0, stage);
+                    applyPieceSettings(w, ghost, *p);
                     continue;
                 }
                 // A prop that costs nothing is put down when its stage comes (npcBuilderSystem); one that costs is a ghost too. On the
@@ -464,6 +491,7 @@ ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const
                     bp->stage = stage;
                 }
                 if (!p->visual.plain()) w.add(e, p->visual);
+                applyPieceSettings(w, e, *p);
             }
         }
     }
