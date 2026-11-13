@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <set>
+#include <utility>
 #include <vector>
 #include "components.h"
 #include "ecs.h"
@@ -34,6 +36,16 @@ struct ClaimGrowth {
     int steps = 0;
 };
 std::vector<Claim> claimsOf(World& w);
+// On an Altar: the tiles beyond its core that its owner drew as the Perimeter, the ground the Fortified defend. Each is a ground floor
+// tile, and counts on every floor above it. Always there, and never drawn or erased: the 5 by 5 tiles round the Altar. Saved.
+struct Perimeter {
+    std::set<std::pair<int, int>> tiles;
+};
+inline constexpr int PERIMETER_CORE_RADIUS = 2;
+// Every tile of the Altar's Perimeter, its core included
+std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar);
+bool inPerimeterCore(World& w, ObjectId altar, int x, int z);
+
 // The same claims, kept: worked out again only when a Prop, Owner, Blueprint or ClaimGrowth is added or removed, when
 // invalidateClaims says one was changed in place, and at the start of every simulation step. For lookups made many times a
 // step (every unit's lock check); the reference is good until the next call that may change a prop, so copy it to hold on.

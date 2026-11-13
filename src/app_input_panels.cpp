@@ -268,9 +268,13 @@ bool App::mouseDownOnPanels() {
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
-                const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey);
+                const float yaw = propInfo(session.buildPick.kind).perimeter ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
+                const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey, FACTION_PLAYER, nullptr, yaw);
                 if (why == BuildCheck::Ok) {
-                    placeCostedProp(world, terrain, session.buildPick.kind, bx, bz, 0.0f, FACTION_PLAYER, storey);
+                    const ObjectId made = placeCostedProp(world, terrain, session.buildPick.kind, bx, bz, yaw, FACTION_PLAYER, storey);
+                    if (takesMaterial(session.buildPick.kind) && (BuildMaterial)session.buildMaterial != BuildMaterial::Wood) {
+                        world.add(made, Material{ (BuildMaterial)session.buildMaterial });
+                    }
                     playSfx(Sfx::UiClick);
                 } else {
                     refuse(lang(buildRefusalKey(why)));

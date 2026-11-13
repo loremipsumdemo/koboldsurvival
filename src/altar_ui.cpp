@@ -3,12 +3,12 @@
 #include <cmath>
 #include "components.h"
 
-AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll) {
+AltarLayout layoutAltar(int W, int H, const std::array<int, 3>& counts, const std::array<int, 3>& scroll, int columns) {
     const float s = uiScaleFor((float)H);
     const float margin = 16.0f * s, pad = 14.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 150.0f * s;
     const float rowH = 40.0f * s, rowGap = 3.0f * s;
     AltarLayout L;
-    const float boxW = std::min((float)W - 2.0f * margin, 820.0f * s);
+    const float boxW = std::min((float)W - 2.0f * margin, (columns > 2 ? 1060.0f : 820.0f) * s);
     const float boxH = std::min((float)H - 2.0f * margin, 600.0f * s);
     L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
@@ -18,9 +18,9 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 2>& counts, const st
     y += line + 2.0f * s;
     L.totals = Rect{ x, y, w, line };
     y += line + gap;
-    const float colW = (w - gap) * 0.5f;
+    const float colW = (w - gap * (float)(columns - 1)) / (float)columns;
     const float listBottom = L.box.y + boxH - pad - btnH - gap;
-    for (int c = 0; c < 2; ++c) {
+    for (int c = 0; c < columns; ++c) {
         const float cx = x + c * (colW + gap);
         L.heads[(size_t)c] = Rect{ cx, y, colW, line };
         L.lists[(size_t)c] = Rect{ cx, y + line + 2.0f * s, colW, std::max(0.0f, listBottom - (y + line + 2.0f * s)) };
@@ -54,6 +54,30 @@ Rect ghostButton(const AltarRow& r, int H) {
     return Rect{ r.row.x + r.row.w - w - 4.0f * s, r.move.y, w, r.move.h };
 }
 
+PerimeterLayout layoutPerimeter(int W, int H, float px, float py) {
+    const float s = uiScaleFor((float)H);
+    const float pad = 10.0f * s, gap = 6.0f * s, line = 26.0f * s, btnH = 30.0f * s, boxW = 220.0f * s;
+    PerimeterLayout L;
+    const float boxH = pad + line + gap + 5.0f * (btnH + gap) + pad - gap;
+    const float ox = std::clamp(px < 0.0f ? (W - boxW) * 0.5f : px, 0.0f, std::max(0.0f, (float)W - boxW));
+    const float oy = std::clamp(py < 0.0f ? 64.0f * s : py, 0.0f, std::max(0.0f, (float)H - boxH));
+    L.panel = Rect{ std::floor(ox), std::floor(oy), boxW, boxH };
+    const float x = L.panel.x + pad, w = boxW - 2.0f * pad;
+    float y = L.panel.y + pad;
+    L.title = Rect{ x, y, w, line };
+    y += line + gap;
+    L.draw = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.erase = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.reset = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.confirm = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.cancel = Rect{ x, y, w, btnH };
+    return L;
+}
+
 RenameLayout layoutRename(int W, int H) {
     const float s = uiScaleFor((float)H);
     const float pad = 16.0f * s, gap = 8.0f * s, line = 28.0f * s, btnH = 32.0f * s, btnW = 140.0f * s;
@@ -74,7 +98,7 @@ int altarMaxScroll(const AltarLayout& L, int column, int count) {
     return std::max(0, count - L.visible[(size_t)column]);
 }
 
-SquadsLayout layoutSquads(int W, int H, const std::array<int, 2>& counts, const std::array<int, 2>& scroll) {
+SquadsLayout layoutSquads(int W, int H, const std::array<int, 3>& counts, const std::array<int, 3>& scroll) {
     const float s = uiScaleFor((float)H);
     SquadsLayout L;
     L.roster = layoutAltar(W, H, counts, scroll);

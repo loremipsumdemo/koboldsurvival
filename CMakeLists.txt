@@ -157,6 +157,7 @@ add_executable(koboldsurvival
     src/app_input_popups.cpp
     src/app_squads.cpp
     src/app_altar.cpp
+    src/app_perimeter.cpp
     src/app_spawn.cpp
     src/app_faction_rules.cpp
     src/app_prop_adjust.cpp

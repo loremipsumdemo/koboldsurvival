@@ -110,6 +110,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.danceProp >= 0) w.line("dance", i, u.danceProp, u.danceSlot, u.danceBegan, u.danceLeft, u.danceClock);
     if (u.squad >= 0) w.line("squad", i, u.squad);
     if (u.citizen) w.line("citizen", i);
+    if (u.fortified) w.line("fortified", i);
 }
 
 void writeProp(Writer& w, size_t i, const SaveProp& p) {
@@ -128,6 +129,7 @@ void writeProp(Writer& w, size_t i, const SaveProp& p) {
         w.line("visual", i, v.dx, v.dy, v.dz, v.rx, v.ry, v.rz, v.sx, v.sy, v.sz);
     }
     if (p.claimSteps) w.line("claimsteps", i, *p.claimSteps);
+    for (const auto& [x, z] : p.perimeter) w.line("perimeter", i, x, z);
     if (p.site) {
         w.line("plansite", i, p.site->plan, p.site->x, p.site->z, p.site->turns, p.site->material, p.site->stage, p.site->hours);
         // How long an NPC building has stood without progress, and how long it has been coming down (-1 not at all)
@@ -345,6 +347,13 @@ const std::unordered_map<std::string, Handler>& handlers() {
             p->bonesItems.push_back(s);
             return true;
         } },
+        { "perimeter", [](Line& l) {
+            SaveProp* p = l.prop();
+            int x = 0, z = 0;
+            if (!p || !l.read(x, z)) return false;
+            p->perimeter.push_back({ x, z });
+            return true;
+        } },
         { "claimsteps", [](Line& l) {
             SaveProp* p = l.prop();
             int steps = 0;
@@ -442,6 +451,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "slot", [](Line& l) { SaveUnit* u = l.unit(); return u && l.slotInto(u->stacks); } },
         { "squad", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->squad); } },
         { "citizen", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->citizen = true; return u != nullptr; } },
+        { "fortified", [](Line& l) { SaveUnit* u = l.unit(); if (u) u->fortified = true; return u != nullptr; } },
         { "npcsched", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->npcSchedule) && u->npcSchedule >= 0 && u->npcSchedule < 3; } },
         { "citgroup", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->citizenGroup) && u->citizenGroup >= 0; } },
         { "bgroup", [](Line& l) {

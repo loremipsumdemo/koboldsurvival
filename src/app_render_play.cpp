@@ -331,6 +331,7 @@ void App::drawPlayingScreen() {
     if (mapOpen) drawWorldMapPopup();
     drawPropAdjust();
     drawAltar();
+    drawPerimeterPanel();
     drawManageSquads();
     drawFactionRules();
     drawCraftWindow();

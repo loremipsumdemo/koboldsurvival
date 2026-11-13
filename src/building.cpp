@@ -434,6 +434,7 @@ const char* pieceRefusalKey(PieceCheck c) {
     case PieceCheck::Taken: return "MISC_BUILD_TILE_TAKEN";
     case PieceCheck::NeedsFloor: return "MISC_BUILD_NEEDS_FLOOR";
     case PieceCheck::TooSteep: return "MISC_FOUNDATION_TOO_STEEP";
+    case PieceCheck::NearPerimeter: return "MISC_BUILD_NEAR_PERIMETER";
     case PieceCheck::Ok: break;
     }
     return "";
@@ -446,7 +447,7 @@ int woodLogItem() {
 
 bool takesMaterial(PropKind kind) {
     const PropInfo& i = propInfo(kind);
-    return i.foundation || i.wallRule || i.door || i.upperFloor || i.ladder || i.stairs;
+    return i.foundation || i.wallRule || i.door || i.upperFloor || i.ladder || i.stairs || i.perimeter;
 }
 
 BuildMaterial materialOf(World& w, ObjectId prop) {
@@ -481,6 +482,34 @@ const char* materialNameKey(BuildMaterial m) {
     case BuildMaterial::Crystal: return "UILABEL_MATERIAL_CRYSTAL";
     default: return "UILABEL_MATERIAL_WOOD";
     }
+}
+
+namespace {
+// Whether rectangle q is on rectangle r or directly beside one of its sides
+bool rectsTouch(int qx0, int qz0, int qx1, int qz1, int rx0, int rz0, int rx1, int rz1) {
+    auto overlap = [](int ax0, int az0, int ax1, int az1, int bx0, int bz0, int bx1, int bz1) {
+        return ax0 <= bx1 && ax1 >= bx0 && az0 <= bz1 && az1 >= bz0;
+    };
+    return overlap(qx0, qz0, qx1, qz1, rx0 - 1, rz0, rx1 + 1, rz1) || overlap(qx0, qz0, qx1, qz1, rx0, rz0 - 1, rx1, rz1 + 1);
+}
+}
+
+bool touchesPerimeterPiece(World& w, int x0, int z0, int x1, int z1) {
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        if (!propInfo(w.get<Prop>(e)->kind).perimeter || storeyOf(w, e) != 0) continue;
+        int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+        pieceTiles(w, e, px0, pz0, px1, pz1);
+        if (rectsTouch(std::min(x0, x1), std::min(z0, z1), std::max(x0, x1), std::max(z0, z1), px0, pz0, px1, pz1)) return true;
+    }
+    return false;
+}
+
+bool touchesFoundation(World& w, int x0, int z0, int x1, int z1) {
+    for (ObjectId e : w.view<Foundation>()) {
+        const Foundation* f = w.get<Foundation>(e);
+        if (rectsTouch(x0, z0, x1, z1, f->x0, f->z0, f->x0 + f->w - 1, f->z0 + f->h - 1)) return true;
+    }
+    return false;
 }
 
 bool isBuildingPiece(PropKind kind) {
@@ -518,6 +547,10 @@ void pieceTiles(World& w, ObjectId prop, int& x0, int& z0, int& x1, int& z1) {
     const Transform* tr = w.get<Transform>(prop);
     x0 = x1 = tr ? tileOf(tr->x) : 0;
     z0 = z1 = tr ? tileOf(tr->z) : 0;
+    if (const PropInfo* pi = infoOf(w, prop); tr && pi && pi->perimeter) {
+        propTileRect(*pi, tr->x, tr->z, w.get<Prop>(prop)->yaw, x0, z0, x1, z1);
+        return;
+    }
     if (tr && isStairs(w, prop)) {
         int xs[4], zs[4];
         stairsTiles(w, prop, xs, zs);
@@ -730,8 +763,17 @@ PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, i
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (info.airship || info.foundation || storeyOf(w, e) != 0) continue;
         const Transform* tr = w.get<Transform>(e);
+        if (info.perimeter) {
+            int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+            pieceTiles(w, e, px0, pz0, px1, pz1);
+            for (int z = pz0; z <= pz1; ++z) {
+                for (int x = px0; x <= px1; ++x) propTiles.insert(tileKey(x, z));
+            }
+            continue;
+        }
         propTiles.insert(tileKey(tileOf(tr->x), tileOf(tr->z)));
     }
+    if (touchesPerimeterPiece(w, x0, z0, x1, z1)) return PieceCheck::NearPerimeter;
     const std::vector<Claim> claims = claimsOf(w);
     bool touches = false;
     int fresh = 0;
@@ -1203,6 +1245,12 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
     if (info->wallRule) {
         w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
     }
+    if (info->perimeter) {
+        // Ten times as strong as a wall or door; a gate is shut, unless the plan it was put down from has it unlocked
+        const double hp = (info->solid ? WALL_HEALTH : DOOR_HEALTH) * tough * PERIMETER_STRENGTH;
+        w.add(prop, Health{ hp, hp });
+        if (!info->solid) w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), std::max(1, info->lockLevel), ownerOf(w, prop) });
+    }
     if (info->door) {
         // Shut, unless the plan it was put down from has it unlocked
         w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), std::max(1, info->lockLevel), ownerOf(w, prop) });
@@ -1264,6 +1312,16 @@ void rebuildBlocking(World& w, Terrain& t) {
             int xs[4], zs[4];
             stairsTiles(w, e, xs, zs);
             for (int i = 0; i < 3; ++i) t.setBlocked(xs[i], zs[i], true);
+            continue;
+        }
+        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter) {
+            // A Perimeter Wall closes every tile it covers; a Gate is walked through while it lets you
+            if (!pi.solid) continue;
+            int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+            pieceTiles(w, e, x0, z0, x1, z1);
+            for (int z = z0; z <= z1; ++z) {
+                for (int x = x0; x <= x1; ++x) t.setBlocked(x, z, true);
+            }
             continue;
         }
         if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
@@ -1338,6 +1396,17 @@ void refreshBuildingTiles(World& w, Terrain& t) {
             stairsTiles(w, e, xs, zs);
             for (int i = 0; i < 3; ++i) {
                 if (changed.count(tileKey(xs[i], zs[i]))) t.setBlocked(xs[i], zs[i], true);
+            }
+            continue;
+        }
+        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter) {
+            if (!pi.solid) continue;
+            int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+            pieceTiles(w, e, px0, pz0, px1, pz1);
+            for (int z = pz0; z <= pz1; ++z) {
+                for (int x = px0; x <= px1; ++x) {
+                    if (changed.count(tileKey(x, z))) t.setBlocked(x, z, true);
+                }
             }
             continue;
         }
@@ -1422,7 +1491,7 @@ void doorSystem(World& w, float dt) {
         at.since += dt;
         const Lock* l = w.get<Lock>(at.door);
         const PropInfo* info = infoOf(w, at.door);
-        const bool wall = info && info->wallRule;
+        const bool wall = info && (info->wallRule || info->solid);
         const bool barrier = wall ? w.has<Prop>(at.door) : (l && l->locked);
         if (at.since > AT_DOOR_FORGET_SECONDS || !barrier || w.has<Commandable>(u) || outCold(w, u)) {
             if (at.since > AT_DOOR_FORGET_SECONDS || !barrier) w.remove<AtDoor>(u);

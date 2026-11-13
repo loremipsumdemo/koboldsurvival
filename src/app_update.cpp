@@ -568,7 +568,8 @@ void App::updateHover() {
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
                 bp.lift = storeyBaseHeight(storey);
-                bp.valid = buildSpotOk(session.buildPick.kind, bp.x, bp.z, storey, claims);
+                bp.yaw = propInfo(session.buildPick.kind).perimeter ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
+                bp.valid = buildSpotOk(session.buildPick.kind, bp.x, bp.z, storey, claims, bp.yaw);
             }
         }
         if (placing) updateBuildPaint();
@@ -626,9 +627,11 @@ void App::updateHover() {
             }
             bp.otherRings.insert(bp.otherRings.end(), campRings.begin(), campRings.end());
         }
+        updatePerimeter();
+        if (perim.active && screen == Screen::Playing) perimeterPreview(bp, bmx, bmy);
         // Hovering an Altar, or a campfire's claim: its ring, with the others around it
         ObjectId hoverAltar = NO_OBJECT;
-        if (!placing && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
+        if (!placing && !perim.active && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {
             for (ObjectId e : propsAt(bmx, bmy)) {
                 const Claim* c = claimOf(claims, e);
                 if (!c) continue;

@@ -79,6 +79,7 @@ struct SaveUnit {
     int propAction = 0;
     int squad = -1;        // a military unit's squad, 0 to 8
     bool citizen = false;
+    bool fortified = false;   // a citizen of yours that is Fortified (squads.h)
     int citizenGroup = 0;  // the behavior group a citizen of yours follows, 0 for Group 1
     int npcSchedule = 0;   // another faction's unit: 1 or 2 for an Irregular schedule (schedule.h)
     std::optional<int> coloration;     // from version 17: a boss's hue turn, degrees
@@ -129,6 +130,7 @@ struct SaveProp {
     std::optional<Health> health;
     std::optional<PropVisual> visual;   // from version 17: how it is drawn apart from where it stands
     std::optional<int> claimSteps;      // from version 19: an Altar's claim, grown this many steps
+    std::vector<std::pair<int, int>> perimeter;   // an Altar's Perimeter, beyond its core: the ground tiles drawn
     std::optional<SaveSite> site;       // from version 19: a building laid from a plan, being built
     std::string craftRecipe;            // from version 17: an Advanced Crafting prop's order: its recipe's key, or empty
     int craftKeep = 0;                  //   and the stock it keeps

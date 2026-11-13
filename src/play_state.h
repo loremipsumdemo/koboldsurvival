@@ -12,7 +12,7 @@ constexpr float TALK_COOLDOWN = 1.0f;
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
                         ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
-                        BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit, CancelAllBuild };
+                        BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit, CancelAllBuild, SetPerimeter };
 struct ContextMenu {
     bool open = false;
     float x = 0.0f, y = 0.0f;
@@ -59,7 +59,7 @@ struct PlaySession {
     // The floor what is being placed goes on: the highest finished floor seen under the pointer (upper floors: the one
     // looked at)
     int buildLevel = 0;
-    int buildDir = 0;   // stairs being placed: the way they rise (0 north, 1 east, 2 south, 3 west), turned with R
+    int buildDir = 0;   // stairs being placed: the way they rise (0 north, 1 east, 2 south, 3 west), turned with R; a Perimeter piece: its quarter turns
     bool askMaterial = false;
     PropKind askKind = PropKind::Wagon;
     bool areaDrag = false;   // an area of Deconstruct or Cancel Construction being dragged out from dragTileX, dragTileZ

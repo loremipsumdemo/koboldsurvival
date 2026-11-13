@@ -120,8 +120,50 @@ void makeCitizen(World& w, ObjectId u) {
     addBehavior(b.rules, stayNearHome());
 }
 
+std::vector<ObjectId> fortifiedUnits(World& w) {
+    std::vector<ObjectId> out;
+    for (ObjectId u : w.view<Entity, Citizen, Fortified>()) {
+        if (factionOf(w, u) == FACTION_PLAYER) out.push_back(u);
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+void makeFortified(World& w, ObjectId u) {
+    if (!w.has<Entity>(u) || w.has<Fortified>(u)) return;
+    makeCitizen(w, u);
+    if (!w.has<Citizen>(u)) return;
+    w.add(u, Fortified{});
+    // Its own tasks: what keeps any unit going, and none of the citizen's work
+    Behaviors* b = w.get<Behaviors>(u);
+    if (!b) return;
+    static const BehaviorKind KEEP[] = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Rescue, BehaviorKind::Rest, BehaviorKind::LeaveBed,
+                                         BehaviorKind::DealWithDowned };
+    std::vector<BehaviorRule> next;
+    for (const BehaviorRule& r : defaultBehaviors()) {
+        if (std::find(std::begin(KEEP), std::end(KEEP), r.kind) != std::end(KEEP)) next.push_back(r);
+    }
+    if (b->busy) b->busy = false;
+    w.remove<SoloMove>(u);
+    b->rules = std::move(next);
+    b->pending = true;
+    b->idleFor = 0.0f;
+}
+
+void unmakeFortified(World& w, ObjectId u) {
+    if (!w.has<Fortified>(u)) return;
+    w.remove<Fortified>(u);
+    if (Citizen* c = w.get<Citizen>(u)) c->applied = -1;   // its behavior group is made again
+    if (Behaviors* b = w.get<Behaviors>(u)) {
+        b->busy = false;
+        b->pending = true;
+    }
+    w.remove<SoloMove>(u);
+}
+
 bool makeMilitary(World& w, ObjectId u, int preferred) {
     if (!w.has<Entity>(u)) return false;
+    w.remove<Fortified>(u);
     if (w.has<Commandable>(u)) return moveToSquad(w, u, preferred) || squadOf(w, u) >= 0;
     const int squad = squadWithRoom(w, preferred);
     if (squad < 0) return false;

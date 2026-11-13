@@ -71,6 +71,7 @@ void captureProps(World& w, SaveData& d, IdMap& ids) {
         s.yaw = p->yaw;
         if (const PropVisual* pv = w.get<PropVisual>(e); pv && !pv->plain()) s.visual = *pv;
         if (const ClaimGrowth* g = w.get<ClaimGrowth>(e); g && g->steps > 0) s.claimSteps = g->steps;
+        if (const Perimeter* pm = w.get<Perimeter>(e)) s.perimeter.assign(pm->tiles.begin(), pm->tiles.end());
         if (const PlanSite* ps = w.get<PlanSite>(e)) {
             s.site = SaveSite{ ps->plan, ps->x, ps->z, ps->turns, ps->material, ps->stage, ps->hours, ps->idleHours, ps->mark, ps->demolishHours };
         }
@@ -285,6 +286,7 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (w.has<Commandable>(u)) captureOrders(w, u, su, propIds, unitIds);
     if (const SquadMember* sm = w.get<SquadMember>(u)) su.squad = sm->squad;
     su.citizen = w.has<Citizen>(u);
+    su.fortified = w.has<Fortified>(u);
     if (const Citizen* c = w.get<Citizen>(u)) su.citizenGroup = c->group;
     if (const NpcSchedule* ns = w.get<NpcSchedule>(u)) su.npcSchedule = ns->kind;
 }
@@ -299,6 +301,11 @@ std::vector<ObjectId> restoreProps(World& world, const SaveData& d, LoadStages& 
         world.get<Prop>(e)->yaw = s.yaw;   // as it was saved, whatever way a new one would face
         if (s.visual) world.add(e, *s.visual);
         if (s.claimSteps) world.add(e, ClaimGrowth{ *s.claimSteps });
+        if (!s.perimeter.empty()) {
+            Perimeter pm;
+            pm.tiles.insert(s.perimeter.begin(), s.perimeter.end());
+            world.add(e, std::move(pm));
+        }
         if (s.site) {
             world.add(e, PlanSite{ s.site->plan, s.site->x, s.site->z, s.site->turns, s.site->material, s.site->stage, s.site->hours,
                                    s.site->idleHours, s.site->mark, s.site->demolishHours });
@@ -408,6 +415,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     if (u.citizen) {
         world.remove<Commandable>(e);
         world.add(e, Citizen{ std::max(0, u.citizenGroup), -1 });
+        if (u.fortified) world.add(e, Fortified{});
     } else if (u.squad >= 0 && u.squad < SQUAD_COUNT) {
         world.add(e, SquadMember{ u.squad });
     }

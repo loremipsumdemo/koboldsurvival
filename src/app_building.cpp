@@ -402,12 +402,12 @@ void App::updateBuildPaint() {
 
 // Whether a prop may go here, kept for the spot it was asked about until the props change or a quarter second passes (a claim
 // can change without a prop being added or removed). The pointer rests on one spot for most frames, and the check walks every prop.
-bool App::buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims) {
+bool App::buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims, float yaw) {
     SpotCache& c = spotCache;
     const std::uint64_t props = world.revision<Prop>(), owners = world.revision<Owner>(), foundations = world.revision<Foundation>(),
                         storeys = world.revision<Storey>(), blueprints = world.revision<Blueprint>();
     const Uint64 now = SDL_GetTicks();
-    if (c.filled && c.kind == kind && c.x == x && c.z == z && c.storey == storey && c.props == props && c.owners == owners &&
+    if (c.filled && c.kind == kind && c.x == x && c.z == z && c.yaw == yaw && c.storey == storey && c.props == props && c.owners == owners &&
         c.foundations == foundations && c.storeys == storeys && c.blueprints == blueprints && now - c.tick < 250) {
         return c.ok;
     }
@@ -415,6 +415,7 @@ bool App::buildSpotOk(PropKind kind, float x, float z, int storey, const std::ve
     c.kind = kind;
     c.x = x;
     c.z = z;
+    c.yaw = yaw;
     c.storey = storey;
     c.props = props;
     c.owners = owners;
@@ -422,7 +423,7 @@ bool App::buildSpotOk(PropKind kind, float x, float z, int storey, const std::ve
     c.storeys = storeys;
     c.blueprints = blueprints;
     c.tick = now;
-    c.ok = checkBuildSpot(world, terrain, kind, x, z, storey, FACTION_PLAYER, &claims) == BuildCheck::Ok;
+    c.ok = checkBuildSpot(world, terrain, kind, x, z, storey, FACTION_PLAYER, &claims, yaw) == BuildCheck::Ok;
     return c.ok;
 }
 
@@ -564,7 +565,7 @@ void App::finishAreaTool() {
         if (!cancel && (info.debris || info.claimsLand || info.airship)) continue;
         const Transform* tr = world.get<Transform>(e);
         int ax0 = tileOf(tr->x), az0 = tileOf(tr->z), ax1 = ax0, az1 = az0;
-        if (info.stairs) pieceTiles(world, e, ax0, az0, ax1, az1);
+        if (info.stairs || info.perimeter) pieceTiles(world, e, ax0, az0, ax1, az1);
         if (ax1 < x0 || ax0 > x1 || az1 < z0 || az0 > z1) continue;
         found.push_back({ storeyOf(world, e), e });
     }

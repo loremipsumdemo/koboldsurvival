@@ -202,7 +202,7 @@ public:
                    const std::vector<TradeGhost>& theirs, const std::vector<TradeGhost>& yours, int dragFrom,
                    const TradeStatus& status, bool showValue, float mx, float my);
     // The altar's roster. cols: each column's units, ghosts (units moving into it) included
-    void drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
+    void drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 3>& cols,
                          const std::map<ObjectId, int>& moves, const AltarTotals& totals, ObjectId pinned, float mx, float my);
     // Manage Squads. heads: each column's squad name; totals: the line under the title (warn: drawn as a warning)
     struct SquadsRosterText {

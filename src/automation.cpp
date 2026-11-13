@@ -285,6 +285,36 @@ constexpr float RESCUE_PARK_REACH = 4.0f;
 // walks back in
 constexpr float EDGE_IDLE_SECONDS = 5.0f;
 constexpr float EDGE_IDLE_BAND = 2.0f;
+// A Fortified unit with nothing to do goes to a spot on the edge of its Altar's Perimeter, and after this long idle there to another
+constexpr float GUARD_SECONDS = 8.0f;
+
+// A random open tile on the edge of the Perimeter (a tile of it with a side tile outside it) of the Altar whose claim is nearest the
+// unit, among its own faction's. False if there is none.
+bool guardSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, Vec2& to) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    const int faction = factionOf(w, u);
+    const Claim* home = nullptr;
+    float best = 0.0f;
+    for (const Claim& c : claims) {
+        if (c.owner != faction || c.camp || !w.has<Prop>(c.altar)) continue;
+        const float d2 = distSq(c.x, c.z, ut->x, ut->z);
+        if (!home || d2 < best) {
+            home = &c;
+            best = d2;
+        }
+    }
+    if (!home) return false;
+    const std::set<std::pair<int, int>> tiles = perimeterOf(w, home->altar);
+    std::vector<Vec2> edge;
+    for (const auto& [x, z] : tiles) {
+        if (tiles.count({ x + 1, z }) && tiles.count({ x - 1, z }) && tiles.count({ x, z + 1 }) && tiles.count({ x, z - 1 })) continue;
+        if (openTile(t, (float)x + 0.5f, (float)z + 0.5f)) edge.push_back(Vec2{ (float)x + 0.5f, (float)z + 0.5f });
+    }
+    if (edge.empty()) return false;
+    to = edge[(size_t)rng.range(0, (int)edge.size() - 1)];
+    return true;
+}
 
 // The middle of the faction's nearest claim, an Altar's or a camp's
 bool claimMiddle(const std::vector<Claim>& claims, int faction, float x, float z, Vec2& out) {
@@ -1496,6 +1526,13 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         // Nothing to do: after a while idle, a unit near the edge of its claim goes back in, to the middle half of it
         if (started) {
             b->idleFor = 0.0f;
+        } else if (w.has<Fortified>(u)) {
+            // Fortified: guards the Perimeter, a spot at a time
+            if ((b->idleFor += dt) >= GUARD_SECONDS) {
+                b->idleFor = 0.0f;
+                Vec2 to;
+                if (storeyOf(w, u) == 0 && guardSpot(w, t, claims, u, rng, to)) autoWalk(w, t, u, to, 0);
+            }
         } else if ((b->idleFor += dt) >= EDGE_IDLE_SECONDS) {
             b->idleFor = 0.0f;
             const Transform* ut = w.get<Transform>(u);
