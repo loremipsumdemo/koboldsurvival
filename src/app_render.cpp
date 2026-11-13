@@ -388,7 +388,8 @@ void App::render() {
     renderer.setGraphicsOptions(settings.clouds, settings.cloudShadows, settings.variedSurfaces);
     renderer.setRenderScale(settings.renderScale);
     renderer.setDetailRange(settings.detailRange);
-    renderer.setViewDistance(settings.viewDistance);
+    renderer.setViewDistance(viewDistanceTiles(settings));
+    renderer.setHeldReach((float)streamRadiusFor(viewDistanceTiles(settings)) * (float)CHUNK_TILES);
     if (bench.on) {
         renderer.setGraphicsOptions(bench.clouds, bench.shadows, bench.varied);
         renderer.setRenderScale(bench.renderScale);

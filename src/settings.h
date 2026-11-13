@@ -38,12 +38,15 @@ inline constexpr int UI_SCALE_STEP = 5;
 
 // The detail distance: how far from the view's centre props, units and the ground's and water's fine detail are drawn
 inline constexpr int DETAIL_RANGE_MIN = 16;
-inline constexpr int DETAIL_RANGE_MAX = 1024;
+inline constexpr int DETAIL_RANGE_MAX = 2048;
 inline constexpr int DETAIL_RANGE_STEP = 8;
-// The view distance: how far from the view's centre the ground's terrain chunks are drawn at all
-inline constexpr int VIEW_DISTANCE_MIN = 64;
-inline constexpr int VIEW_DISTANCE_MAX = 1024;
-inline constexpr int VIEW_DISTANCE_STEP = 32;
+// The tiles the ground is drawn at its full detail out to (renderer_types.h's LOD_NEAR_TILES is the same number)
+inline constexpr int FULL_DETAIL_TILES = 1024;
+// The view distance: how far from the view's centre the ground's terrain chunks are drawn at all, as a percent of FULL_DETAIL_TILES:
+// 100 (1x, the least) to 1000 (10x, the most)
+inline constexpr int VIEW_DISTANCE_MIN = 100;
+inline constexpr int VIEW_DISTANCE_MAX = 1000;
+inline constexpr int VIEW_DISTANCE_STEP = 50;
 
 struct GameSettings {
     int displayMode = DISPLAY_BORDERLESS;
@@ -53,8 +56,8 @@ struct GameSettings {
     int refreshHz = 0;
     bool vsync = true;
     int fpsLimit = 60;
-    int detailRange = 256;
-    int viewDistance = 1024;
+    int detailRange = 2048;
+    int viewDistance = 200;   // a percent of FULL_DETAIL_TILES (see viewDistanceTiles)
     int renderScale = 100;
     bool renderScaleSet = false;   // the settings file had a render scale (not saved): without one, a weak graphics card is given a lower default
     int formationShape = (int)FormationShape::Rectangle;
@@ -96,6 +99,8 @@ struct GameSettings {
 
     std::array<std::array<float, 4>, 3> panels{};
 };
+// How many tiles the view distance setting reaches
+inline int viewDistanceTiles(const GameSettings& s) { return FULL_DETAIL_TILES * s.viewDistance / 100; }
 
 inline const char* panelSettingKey(int i) {
     static const char* keys[3] = { "panelSquad", "panelUnit", "panelInfo" };
@@ -132,7 +137,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "fpsLimit")        s.fpsLimit = parseInt(val, s.fpsLimit);
         else if (key == "viewRange")       s.detailRange = parseInt(val, s.detailRange);   // the older name of the detail distance
         else if (key == "detailRange")     s.detailRange = parseInt(val, s.detailRange);
-        else if (key == "viewDistance")    s.viewDistance = parseInt(val, s.viewDistance);
+        else if (key == "viewMultiplier")  s.viewDistance = parseInt(val, s.viewDistance);   // (the older "viewDistance" was in tiles: not read)
         else if (key == "formationShape")  s.formationShape = parseInt(val, s.formationShape);
         else if (key == "formationLoose")  s.formationLoose = (val == "1");
         else if (key == "showFps")         s.showFps = (val == "1");
@@ -216,7 +221,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "vsync=" << (s.vsync ? 1 : 0) << "\n";
     out << "fpsLimit=" << s.fpsLimit << "\n";
     out << "detailRange=" << s.detailRange << "\n";
-    out << "viewDistance=" << s.viewDistance << "\n";
+    out << "viewMultiplier=" << s.viewDistance << "\n";
     out << "formationShape=" << s.formationShape << "\n";
     out << "formationLoose=" << (s.formationLoose ? 1 : 0) << "\n";
     out << "showFps=" << (s.showFps ? 1 : 0) << "\n";

@@ -241,7 +241,7 @@ void App::updateCamera() {
     if (!editing && !bpEdit.active) keepCameraNearUnits(world, cam);
     PROFILED("floorView", updateFloorView());
     cam.updateClearance(terrain);
-    if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), STREAM_RADIUS, STREAM_LOADS_PER_FRAME));
+    if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), streamRadiusFor(viewDistanceTiles(settings)), STREAM_LOADS_PER_FRAME));
 }
 
 void App::stepSimulation() {

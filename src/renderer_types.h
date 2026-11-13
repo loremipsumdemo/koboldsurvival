@@ -183,10 +183,13 @@ struct TipRow {
     bool barLit = false;
 };
 
-constexpr float LOD_NEAR_TILES = 96.0f;
-constexpr float LOD_MID_TILES = 224.0f;
-constexpr float LOD_FAR_TILES = 448.0f;    // past these, the terrain is drawn at an eighth, then a sixteenth of its detail
-constexpr float LOD_FARTHEST_TILES = 720.0f;
+// The terrain is drawn at its full detail out to LOD_NEAR_TILES from the eye (settings.h's FULL_DETAIL_TILES), then at a half, a quarter,
+// an eighth and a sixteenth out to each of these, and past the last at a sixty-fourth (a chunk is then two triangles)
+constexpr float LOD_NEAR_TILES = 1024.0f;
+constexpr float LOD_MID_TILES = 2048.0f;
+constexpr float LOD_FAR_TILES = 4096.0f;
+constexpr float LOD_FARTHEST_TILES = 8192.0f;
+constexpr float LOD_VAST_TILES = 16384.0f;
 struct DetailRange {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     float focusX = 0.0f, focusZ = 0.0f, viewRange = 0.0f;

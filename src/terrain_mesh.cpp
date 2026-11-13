@@ -63,6 +63,21 @@ float cornerHeight(const Terrain& t, const ChunkData& c, int gx, int gz) {
 }
 }
 
+void chunkTileColor(const ChunkData& c, int tx, int tz, float h, uint8_t out[3]) {
+    tx = std::clamp(tx, 0, CHUNK_TILES - 1);
+    tz = std::clamp(tz, 0, CHUNK_TILES - 1);
+    const size_t ti = (size_t)tz * CHUNK_TILES + tx;
+    const Biome bt = ti < c.biome.size() ? (Biome)c.biome[ti] : Biome::None;
+    Rgb col = (bt == Biome::None) ? bandColor(h) : biomeColor(bt);
+    if (c.veg.size() == (size_t)CHUNK_TILES * CHUNK_TILES) {
+        const float v = c.veg[ti] / 255.0f * kCanopyShare;
+        col = { col.r + (kCanopyR - col.r) * v, col.g + (kCanopyG - col.g) * v, col.b + (kCanopyB - col.b) * v };
+    }
+    out[0] = (uint8_t)std::clamp((int)(col.r * 255.0f), 0, 255);
+    out[1] = (uint8_t)std::clamp((int)(col.g * 255.0f), 0, 255);
+    out[2] = (uint8_t)std::clamp((int)(col.b * 255.0f), 0, 255);
+}
+
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c) {
     const int a = tilesAcross(t, c), b = tilesDown(t, c);
     float lo = 0.0f, hi = 0.0f;

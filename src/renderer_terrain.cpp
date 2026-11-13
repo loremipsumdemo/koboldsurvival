@@ -103,6 +103,7 @@ uniform vec3 uUnderwater;
 uniform vec3 uFogColor;
 uniform float uFog;
 uniform float uVoidCut;
+uniform vec4 uHole;           // xy: a point; z, w: ground nearer than z or farther than w from it is not drawn (z 0: all of it is)
 uniform vec3 uGroundTint;
 uniform float uTintAmount;
 uniform vec3 uEye;
@@ -115,6 +116,10 @@ out vec4 fragColor;
 void main() {
     // Over a void, ground far below sea level isn't there. Where it stops wanders up and down smoothly, like a broken-off
     // underside, and the last pixel is blended into what is behind so the edge doesn't stair-step.
+    if (uHole.z > 0.0) {
+        float away = distance(vPos.xz, uHole.xy);
+        if (away < uHole.z || away > uHole.w) discard;
+    }
     vec2 dx = dFdx(vXZ), dy = dFdy(vXZ);
     float dYx = dFdx(vPos.y), dYy = dFdy(vPos.y);
     float cover = 1.0;
@@ -379,6 +384,9 @@ constexpr float kWaterBiasSlope = 0.0f;
 constexpr float kWaterBiasUnits = 4.0f;
 constexpr float kFarPlane = CAMERA_FAR;
 constexpr int MAX_BUILDS_PER_FRAME = 8;
+// The coarse far ground lies under everything past this far from the point the camera turns about, so that wherever a chunk is not
+// ready (not loaded yet, or not built yet) the far ground shows instead of a gap
+constexpr float FAR_HOLE_TILES = 160.0f;
 
 bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     for (const auto& p : f.p) {
@@ -616,6 +624,7 @@ bool Renderer::initTerrainGl() {
     groundShader_.fog = glGetUniformLocation(g, "uFog");
     groundShader_.tile = glGetUniformLocation(g, "uTile");
     groundShader_.voidCut = glGetUniformLocation(g, "uVoidCut");
+    groundShader_.hole = glGetUniformLocation(g, "uHole");
     groundShader_.groundTint = glGetUniformLocation(g, "uGroundTint");
     groundShader_.tintAmount = glGetUniformLocation(g, "uTintAmount");
 
@@ -726,7 +735,63 @@ void Renderer::releaseChunk(TerrainChunk& c) {
     c = TerrainChunk{};
 }
 
+void Renderer::releaseFar() {
+    if (farVao_) glDeleteVertexArrays(1, &farVao_);
+    if (farVbo_) glDeleteBuffers(1, &farVbo_);
+    if (farEbo_) glDeleteBuffers(1, &farEbo_);
+    farVao_ = farVbo_ = farEbo_ = 0;
+    farIndexCount_ = 0;
+    farFor_ = nullptr;
+}
+
+// The coarse ground of the whole world as one mesh, set a little below where it really is (what is near is drawn over it by the chunks)
+void Renderer::buildFar(const Terrain::FarField& f, const Terrain& t) {
+    releaseFar();
+    const int n = f.res;
+    std::vector<TerrainVertex> verts((size_t)n * n);
+    const float drop = f.spacing * 0.5f + 4.0f;
+    auto h = [&](int i, int j) { return f.heights[(size_t)std::clamp(j, 0, n - 1) * n + std::clamp(i, 0, n - 1)]; };
+    const float hs = t.heightScale();
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            const float dhdx = (h(i + 1, j) - h(i - 1, j)) / (2.0f * f.spacing) / hs;
+            const float dhdz = (h(i, j + 1) - h(i, j - 1)) / (2.0f * f.spacing) / hs;
+            const float nl = std::sqrt(dhdx * dhdx + 1.0f + dhdz * dhdz);
+            const size_t k = (size_t)j * n + i;
+            verts[k] = { (float)i * f.spacing, h(i, j) - drop, (float)j * f.spacing, -dhdx / nl, 1.0f / nl, -dhdz / nl,
+                         f.rgb[k * 3] / 255.0f, f.rgb[k * 3 + 1] / 255.0f, f.rgb[k * 3 + 2] / 255.0f };
+        }
+    }
+    std::vector<uint32_t> idx;
+    idx.reserve((size_t)(n - 1) * (n - 1) * 6);
+    for (int j = 0; j < n - 1; ++j) {
+        for (int i = 0; i < n - 1; ++i) {
+            const uint32_t p = (uint32_t)(j * n + i), q = p + 1, r = p + (uint32_t)n, s = r + 1;
+            idx.insert(idx.end(), { p, r, s, p, s, q });
+        }
+    }
+    glGenVertexArrays(1, &farVao_);
+    glGenBuffers(1, &farVbo_);
+    glGenBuffers(1, &farEbo_);
+    glBindVertexArray(farVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, farVbo_);
+    const GLsizei stride = sizeof(TerrainVertex);
+    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(TerrainVertex), verts.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, farEbo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(uint32_t), idx.data(), GL_STATIC_DRAW);
+    glBindVertexArray(0);
+    farIndexCount_ = (GLsizei)idx.size();
+    farFor_ = &f;
+}
+
 void Renderer::releaseTerrain() {
+    releaseFar();
     for (TerrainChunk& c : chunks_) releaseChunk(c);
     chunks_.clear();
     terrainSize_ = 0;
@@ -792,6 +857,7 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
                  chunkScratch_.idx.data(), GL_DYNAMIC_DRAW);
     slot.indexCount = (GLsizei)chunkScratch_.idx.size();
     slot.step = step;
+    slot.stale = false;
     for (int k = 0; k < 4; ++k) slot.nbStep[k] = nbStep[k];
     glBindVertexArray(0);
 }
@@ -860,6 +926,14 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     int builds = 0;
     static std::vector<std::pair<float, int>> drawOrder;   // distance from the eye, chunk
     drawOrder.clear();
+    struct BuildWant {
+        float focusDist2;
+        int id, step;
+        float dist;     // from the eye
+        bool visible;   // in the frustum
+    };
+    static std::vector<BuildWant> toBuild;   // the chunks in range, to be made as they are wanted
+    toBuild.clear();
     for (int id = 0; id < (int)chunks_.size(); ++id) {
         TerrainChunk& slot = chunks_[(size_t)id];
         const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
@@ -870,9 +944,9 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         if (slot.version != c->version) {
             slot.version = c->version;
             slot.bounds = chunkBounds(t, *c);
-            slot.step = 0;
+            slot.stale = true;   // its old mesh is drawn until the new one is made, so an edit never leaves a hole
         }
-        if (!chunkVisible(planes, slot.bounds)) continue;
+        const bool visible = chunkVisible(planes, slot.bounds);
 
         const float mx = 0.5f * (slot.bounds.x0 + slot.bounds.x1);
         const float my = 0.5f * (slot.bounds.minY + slot.bounds.maxY);
@@ -886,30 +960,68 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         }
         const float dx = mx - ex, dy = my - ey, dz = mz - ez;
         const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        const int step = dist < LOD_NEAR_TILES ? 1 : dist < LOD_MID_TILES ? 2 : dist < LOD_FAR_TILES ? 4 : dist < LOD_FARTHEST_TILES ? 8 : 16;
-
-        const int cx = id % chunksPerSide_, cz = id / chunksPerSide_;
-        int nb[4] = { 0, 0, 0, 0 };
-        if (cx > 0) nb[0] = chunks_[(size_t)(id - 1)].step;
-        if (cx < chunksPerSide_ - 1) nb[1] = chunks_[(size_t)(id + 1)].step;
-        if (cz > 0) nb[2] = chunks_[(size_t)(id - chunksPerSide_)].step;
-        if (cz < chunksPerSide_ - 1) nb[3] = chunks_[(size_t)(id + chunksPerSide_)].step;
-        const bool neighboursChanged = std::memcmp(nb, slot.nbStep, sizeof nb) != 0;
-
-        if ((slot.step != step || neighboursChanged) && builds < MAX_BUILDS_PER_FRAME) {
-            buildChunk(t, *c, id, step, nb);
-            ++builds;
+        int step = dist < LOD_NEAR_TILES ? 1 : dist < LOD_MID_TILES ? 2 : dist < LOD_FAR_TILES ? 4 : dist < LOD_FARTHEST_TILES ? 8 : dist < LOD_VAST_TILES ? 16 : 64;
+        // A chunk keeps its level until it is clearly past the edge of it, so one near a limit does not change level (and have its
+        // neighbours remade) on every small move of the camera
+        {
+            static const float limits[5] = { LOD_NEAR_TILES, LOD_MID_TILES, LOD_FAR_TILES, LOD_FARTHEST_TILES, LOD_VAST_TILES };
+            static const int steps[6] = { 1, 2, 4, 8, 16, 64 };
+            int now = -1;
+            for (int k = 0; k < 6; ++k) {
+                if (steps[k] == slot.step) now = k;
+            }
+            if (now >= 0 && steps[now] != step) {
+                const float lo = now == 0 ? 0.0f : limits[now - 1] * 0.93f;
+                const float hi = now == 5 ? 1.0e9f : limits[now] * 1.07f;
+                if (dist >= lo && dist < hi) step = steps[now];
+            }
         }
-        if (slot.step == 0) continue;
-        drawOrder.push_back({ dist, id });
+
+        // Every chunk in range is made ready, whether or not the camera is looking at it, nearest first to the point the camera
+        // turns about, so that turning never waits on the ground
+        const float fdx = mx - cam.focusX, fdz = mz - cam.focusZ;
+        toBuild.push_back({ fdx * fdx + fdz * fdz, id, step, dist, visible });
+    }
+    std::sort(toBuild.begin(), toBuild.end(), [](const BuildWant& a, const BuildWant& b) { return a.focusDist2 < b.focusDist2; });
+    for (const BuildWant& want : toBuild) {
+        if (builds >= MAX_BUILDS_PER_FRAME) break;
+        TerrainChunk& slot = chunks_[(size_t)want.id];
+        const ChunkData* c = t.chunkAt(want.id % chunksPerSide_, want.id / chunksPerSide_);
+        if (!c) continue;
+        const int cx = want.id % chunksPerSide_, cz = want.id / chunksPerSide_;
+        int nb[4] = { 0, 0, 0, 0 };
+        if (cx > 0) nb[0] = chunks_[(size_t)(want.id - 1)].step;
+        if (cx < chunksPerSide_ - 1) nb[1] = chunks_[(size_t)(want.id + 1)].step;
+        if (cz > 0) nb[2] = chunks_[(size_t)(want.id - chunksPerSide_)].step;
+        if (cz < chunksPerSide_ - 1) nb[3] = chunks_[(size_t)(want.id + chunksPerSide_)].step;
+        if (!slot.stale && slot.step == want.step && std::memcmp(nb, slot.nbStep, sizeof nb) == 0) continue;
+        buildChunk(t, *c, want.id, want.step, nb);
+        ++builds;
+    }
+    // What is drawn is worked out after the chunks are made, so one made this frame is drawn this frame
+    for (const BuildWant& want : toBuild) {
+        if (want.visible && chunks_[(size_t)want.id].step != 0) drawOrder.push_back({ want.dist, want.id });
     }
     // Over a void the ground blends, so it keeps the far-to-near order that needs; otherwise the nearest goes first
     if (blendEdge) std::sort(drawOrder.begin(), drawOrder.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
     else std::sort(drawOrder.begin(), drawOrder.end());
+    glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
     for (const auto& [distance, id] : drawOrder) {
         const TerrainChunk& slot = chunks_[(size_t)id];
         glBindVertexArray(slot.vao);
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    // Past the chunks that are held, the whole world's coarse ground, from the edge of what is held out to the view distance
+    if (t.streamed() && viewDistance_ > std::min(heldReach_, FAR_HOLE_TILES)) {
+        if (const Terrain::FarField* far = t.farField(); far && far->res > 1) {
+            if (farFor_ != far) buildFar(*far, t);
+            if (farVao_) {
+                glUniform4f(groundShader_.hole, cam.focusX, cam.focusZ, std::min(heldReach_, FAR_HOLE_TILES), (float)viewDistance_);
+                glBindVertexArray(farVao_);
+                glDrawElements(GL_TRIANGLES, farIndexCount_, GL_UNSIGNED_INT, nullptr);
+                glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
+            }
+        }
     }
     glBindVertexArray(0);
     if (blendEdge) glDisable(GL_BLEND);

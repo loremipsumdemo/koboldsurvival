@@ -1,4 +1,6 @@
-#pragma once
+﻿#pragma once
+#include <algorithm>
+#include <cstdlib>
 #include <functional>
 #include <string>
 #include <vector>
@@ -37,6 +39,9 @@ void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, con
 constexpr int START_ITEM_COUNT = 32;
 constexpr float START_ITEM_RANGE = 20.0f;
 constexpr int STREAM_RADIUS = 4;
+constexpr int STREAM_RADIUS_MAX = 12;   // chunks kept loaded round the focus however far you can see (768 tiles); the far ground is drawn past them
+// The chunks kept loaded round the focus: enough to cover the view distance, at most STREAM_RADIUS_MAX
+inline int streamRadiusFor(int viewDistance) { return std::min(STREAM_RADIUS_MAX, std::max(STREAM_RADIUS, (viewDistance + 63) / 64 + 1)); }
 constexpr int STREAM_LOADS_PER_FRAME = 4;
 
 std::vector<Vec2> streamFocuses(World& w, const Camera& cam);

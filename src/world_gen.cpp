@@ -209,6 +209,9 @@ public:
         rgba = generator_.preview(px, &cancel);
         return !rgba.empty();
     }
+    bool farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& cancel) const override {
+        return generator_.farField(res, heights, rgb, cancel);
+    }
     const MapTheme* theme() const override { return &generator_.settings().theme; }
     bool walledIn() const override { return mapStyleInfo(generator_.settings().style).walled; }
 
@@ -420,6 +423,42 @@ std::vector<uint8_t> WorldGenerator::preview(int px, const std::atomic<bool>* ca
     });
     if (stop.load()) out.clear();
     return out;
+}
+
+bool WorldGenerator::farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& stop) const {
+    if (res < 2) return false;
+    const auto eachRow = [&](const auto& body) {
+        std::atomic<int> next{ 0 };
+        const auto work = [&]() {
+            for (int j = next++; j < res && !stop.load(); j = next++) body(j);
+        };
+        const int helpers = std::clamp((int)std::thread::hardware_concurrency() - 2, 0, 15);
+        std::vector<std::thread> threads;
+        for (int i = 0; i < helpers; ++i) threads.emplace_back(work);
+        work();
+        for (std::thread& t : threads) t.join();
+    };
+    const auto at = [&](int i) { return (int)((int64_t)i * s_.size / (res - 1)); };
+    std::vector<int> mm((size_t)res * res);
+    eachRow([&](int j) {
+        for (int i = 0; i < res; ++i) mm[(size_t)j * res + i] = heightAt(at(i), at(j));
+    });
+    heights.resize((size_t)res * res);
+    rgb.resize((size_t)res * res * 3);
+    eachRow([&](int j) {
+        for (int i = 0; i < res; ++i) {
+            const size_t k = (size_t)j * res + i;
+            const int h = mm[k];
+            heights[k] = (float)h / 1000.0f;
+            uint8_t veg = 0, px[4];
+            const Biome b = biomeOf(s_, at(i), at(j), h, 0, veg);
+            previewColor(s_.theme, b, h, veg, 0, px);
+            rgb[k * 3] = px[0];
+            rgb[k * 3 + 1] = px[1];
+            rgb[k * 3 + 2] = px[2];
+        }
+    });
+    return !stop.load();
 }
 
 std::shared_ptr<const ChunkSource> generatedChunkSource(const WorldGenSettings& settings) {
