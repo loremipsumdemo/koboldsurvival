@@ -24,6 +24,9 @@ const FilterEntry kFilterEntries[] = {
     { "UILABEL_PICKUP", LogKind::Pickup, false },
     { "UILABEL_DROP", LogKind::Drop, false },
     { "UILABEL_LOOT", LogKind::Loot, false },
+    { "UILABEL_TASK_MESSAGES", LogKind::Other, true },
+    { "UILABEL_FAILED_PATHFINDING", LogKind::PathFail, false },
+    { "UILABEL_FAILED_TASK", LogKind::TaskFail, false },
 };
 
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));

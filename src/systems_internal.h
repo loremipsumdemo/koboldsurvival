@@ -23,6 +23,7 @@
 #include "ghosts.h"
 #include "airship.h"
 #include "building.h"
+#include "stuck.h"
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;
@@ -31,6 +32,7 @@ inline constexpr float PICKUP_REACH = 2.0f;
 inline constexpr int CHAIN_REPLANS = 3;
 
 inline constexpr float FOLLOW_DISTANCE = 1.6f;
+inline constexpr float FOLLOW_DIRECT_DISTANCE = 3.0f;   // tiles: this near the unit it follows, a follower walks straight at it
 
 inline void endPropTasks(World& w, ObjectId u) {
     w.remove<LootOrder>(u);

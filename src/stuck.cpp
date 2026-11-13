@@ -93,6 +93,83 @@ void setPathGoal(World& w, ObjectId u, Vec2 goal) {
     w.add(u, g);
 }
 
+void notePathfind(World& w, ObjectId u) {
+    PathPace* p = w.get<PathPace>(u);
+    if (!p) p = &w.add(u, PathPace{});
+    p->wait = REPATH_SECONDS;
+    p->pending = false;
+}
+
+bool deferPath(World& w, ObjectId u, Vec2 target, int storey, bool whole) {
+    PathPace* p = w.get<PathPace>(u);
+    if (!p || p->wait <= 0.0f || !w.resource<SimStepping>().on || !w.has<Transform>(u)) return false;
+    // A whole walk being kept stays one, when only its way is asked for again
+    if (!(p->pending && p->whole && !whole)) {
+        p->whole = whole;
+        p->storey = storey;
+    }
+    p->pending = true;
+    p->target = target;
+    if (whole) w.remove<Route>(u);
+    SoloMove* so = w.get<SoloMove>(u);
+    if (!so) so = &w.add(u, SoloMove{});
+    if (so->next < so->waypoints.size()) {
+        so->waypoints.back() = target;   // goes on with the walk it has
+    } else {
+        so->waypoints.assign(1, target);
+        so->next = 0;
+        so->held = true;
+    }
+    return true;
+}
+
+void notePathFailed(World& w, ObjectId u, Vec2 target) {
+    if (!w.has<Entity>(u)) return;
+    PathPace* p = w.get<PathPace>(u);
+    if (!p) p = &w.add(u, PathPace{});
+    if (p->quiet > 0.0f && std::hypot(p->failed.x - target.x, p->failed.z - target.z) < 1.0f) return;
+    p->failed = target;
+    p->quiet = PATH_FAIL_QUIET_SECONDS;
+    queueLog(w, langf("MISC_PATH_FAILED", { nameOf(w, u), std::to_string(tileOf(target.x)), std::to_string(tileOf(target.z)) }),
+             LogKind::PathFail, npcOnly(w, u));
+}
+
+void notePathResult(World& w, const Terrain& t, ObjectId u, Vec2 from, Vec2 target, const std::vector<Vec2>& path) {
+    const Vec2 goal = t.snap(target);
+    const Vec2 end = path.empty() ? from : path.back();
+    if (std::hypot(end.x - goal.x, end.z - goal.z) > PATH_FAIL_GAP) notePathFailed(w, u, target);
+}
+
+void noteTaskFailed(World& w, ObjectId u, const std::string& task) {
+    if (!w.has<Entity>(u)) return;
+    queueLog(w, langf("MISC_TASK_FAILED", { nameOf(w, u), task }), LogKind::TaskFail, npcOnly(w, u));
+}
+
+void pathPaceSystem(World& w, Terrain& t, float dt) {
+    for (ObjectId u : w.view<PathPace>()) {
+        PathPace* p = w.get<PathPace>(u);
+        if (!p) continue;
+        p->wait -= dt;
+        p->quiet -= dt;
+        if (p->wait > 0.0f) continue;
+        if (!p->pending) {
+            if (p->quiet <= 0.0f) w.remove<PathPace>(u);
+            continue;
+        }
+        const PathPace kept = *p;
+        p->pending = false;
+        // Only if it still means to go there: an order since, or the walk given up, drops the plan
+        SoloMove* so = w.get<SoloMove>(u);
+        if (!so || !w.has<Transform>(u) || so->waypoints.empty() || so->waypoints.back().x != kept.target.x ||
+            so->waypoints.back().z != kept.target.z) {
+            if (so) so->held = false;
+            continue;
+        }
+        if (kept.whole) walkSoloTo(w, t, u, kept.target, kept.storey);
+        else planSoloMove(w, t, u, kept.target);
+    }
+}
+
 bool stuckReachable(World& w, const Terrain& t, Vec2 from, Vec2 goal) {
     (void)w;
     const Vec2 sg = t.snap(goal);

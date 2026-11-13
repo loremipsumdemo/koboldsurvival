@@ -107,6 +107,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.citizen && u.citizenGroup > 0) w.line("citgroup", i, u.citizenGroup);
     if (u.npcSchedule > 0) w.line("npcsched", i, u.npcSchedule);
     if (u.stepKind >= 0) w.line("step", i, behaviorKey((BehaviorKind)u.stepKind));
+    if (u.danceProp >= 0) w.line("dance", i, u.danceProp, u.danceSlot, u.danceBegan, u.danceLeft, u.danceClock);
     if (u.squad >= 0) w.line("squad", i, u.squad);
     if (u.citizen) w.line("citizen", i);
 }
@@ -670,6 +671,10 @@ const std::unordered_map<std::string, Handler>& handlers() {
             if (!u || !l.read(key)) return false;
             u->stepKind = behaviorNamed(key);
             return u->stepKind >= 0;
+        } },
+        { "dance", [](Line& l) {
+            SaveUnit* u = l.unit();
+            return u && l.read(u->danceProp, u->danceSlot, u->danceBegan, u->danceLeft, u->danceClock);
         } },
         { "end", [](Line& l) {
             size_t props = 0, units = 0;

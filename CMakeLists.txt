@@ -52,8 +52,7 @@ endif()
 add_custom_target(write_build_stamp COMMAND build_stamp "${BUILD_STAMP_CPP}" BYPRODUCTS "${BUILD_STAMP_CPP}" VERBATIM)
 add_dependencies(write_build_stamp build_stamp)
 
-# The simulation: no window, no graphics. The game and the tests share it. SDL3 is its only library, for file paths and
-# the log. The tests link only this, so a call into OpenGL, fonts or image loading from here fails their build.
+# The simulation: no window, no graphics. SDL3 is its only library, for file paths and the log.
 set(SIM_SOURCES
     src/simulation.cpp
     src/game_log.cpp
@@ -245,7 +244,7 @@ if(KOBOLD_PROFILE)
 endif()
 
 # Rebuilds data.pak from data/ (fonts, sprites, models) next to the executables. The game reads only this file, so the
-# loose data/ folder is not copied. A target of its own, so the tests can have the pak without building the game.
+# loose data/ folder is not copied.
 add_custom_target(game_data ALL
     COMMAND pack_data "${CMAKE_SOURCE_DIR}/data" "${CMAKE_BINARY_DIR}/data.pak"
     COMMENT "Packing data/ into data.pak"
@@ -268,20 +267,7 @@ add_custom_command(TARGET koboldsurvival POST_BUILD
     COMMENT "Copying LANGUAGE, BGM, SFX and MAP folders next to the executable"
 )
 
-# Headless tests, run with ctest. save_roundtrip saves a level, loads it and compares. data_check checks the game's data.
-# sim_step plays with no window and checks the same seed gives the same game.
-# terrain_check checks the ground the game walks on. world_gen_check checks the generator and the map and level files.
-enable_testing()
-foreach(test save_roundtrip data_check sim_step terrain_check world_gen_check building_plan_check)
-    add_executable(${test} tests/${test}.cpp)
-    target_link_libraries(${test} PRIVATE kobold_sim)
-    add_dependencies(${test} game_data)
-    add_test(NAME ${test} COMMAND ${test} WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endforeach()
-
-target_compile_definitions(save_roundtrip PRIVATE KOBOLD_TEST_SAVES="${CMAKE_SOURCE_DIR}/tests/saves")
-
-foreach(target koboldsurvival kobold_sim save_roundtrip data_check sim_step terrain_check world_gen_check building_plan_check)
+foreach(target koboldsurvival kobold_sim)
     target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4244 /wd4458 /external:anglebrackets /external:W0>

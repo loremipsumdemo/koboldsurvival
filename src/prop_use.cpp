@@ -324,6 +324,7 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
         }
         const SoloMove* so = w.get<SoloMove>(u);
         if (!so || so->next >= so->waypoints.size()) {
+            noteTaskFailed(w, u, propDisplayName(w, prop));   // stopped short of the prop
             w.remove<PropOrder>(u);
             w.remove<SoloMove>(u);
         }

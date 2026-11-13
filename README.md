@@ -43,7 +43,7 @@ values filled in by the game.
 When you add anything the player can read, add a key instead of writing English in the code: button and menu labels,
 tooltips, messages, prop, item and mob names, and default text such as the starting world name. Put the English in
 `language_en.txt` and the translation in every other language file, then show it with `lang("KEY")` or
-`langf("KEY", { ... })`. `data_check` lists any key a language file is missing.
+`langf("KEY", { ... })`.
 
 Every language file keeps the same keys in the same order, under the same `#` category headers (Settings, Building,
 Props and so on). Put a new key under the header it belongs to, or add it anywhere and run

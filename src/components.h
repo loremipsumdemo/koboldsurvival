@@ -172,6 +172,7 @@ struct ChaseRoute {
 struct SoloMove {
     std::vector<Vec2> waypoints;
     size_t next = 0;
+    bool held = false;   // waiting for its way to be planned (stuck.h): it stands, and counts as walking
 };
 
 struct ItemStack {

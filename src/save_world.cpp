@@ -10,6 +10,8 @@
 #include "recipes.h"
 #include "build.h"
 #include "hostility.h"
+#include "schedule.h"
+#include <map>
 #include <sstream>
 #include <unordered_map>
 
@@ -233,6 +235,16 @@ void captureBehaviors(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds) 
     const bool resting = b->busy && isBedStep(b->step.kind) && w.has<Occupying>(u);
     const bool rescuing = b->busy && b->step.kind == BehaviorKind::Rescue && w.has<Carrying>(u);
     if (resting || rescuing) su.stepKind = idx(b->step.kind);
+    // Nor its dance: the recreation tasks above it in the list would be picked first
+    if (b->busy && b->step.kind == BehaviorKind::Dance && b->slot >= 0 && idOf(propIds, b->stepProp) >= 0) {
+        su.danceProp = idOf(propIds, b->stepProp);
+        su.danceSlot = b->slot;
+        su.danceBegan = b->began && w.has<Dancing>(u);
+        su.danceLeft = su.danceBegan ? b->social : 0.0f;
+        const std::map<ObjectId, double>& rings = w.resource<DanceRings>().seconds;
+        const auto ring = rings.find(b->stepProp);
+        su.danceClock = ring == rings.end() ? 0.0 : ring->second;
+    }
 }
 
 void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const IdMap& unitIds) {
@@ -430,6 +442,26 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& 
                 b.busy = true;
                 b.step = r;
                 if (const Occupying* oc = world.get<Occupying>(e)) b.stepProp = oc->prop;
+                break;
+            }
+        }
+        // Back to its dance, at its place on the circle, with the circle where it was
+        Behaviors* dancer = world.get<Behaviors>(e);
+        if (dancer && !dancer->busy && u.danceProp >= 0 && u.danceProp < (int)props.size() && u.danceSlot >= 0 &&
+            world.has<Prop>(props[(size_t)u.danceProp]) && !world.has<Occupying>(e) && !world.has<Carried>(e) && !outCold(world, e)) {
+            const ObjectId center = props[(size_t)u.danceProp];
+            for (const BehaviorRule& r : dancer->rules) {
+                if (r.kind != BehaviorKind::Dance || !r.on) continue;
+                dancer->busy = true;
+                dancer->step = r;
+                dancer->stepProp = center;
+                dancer->slot = u.danceSlot;
+                dancer->began = u.danceBegan;
+                dancer->social = u.danceLeft;
+                if (u.danceBegan) {
+                    world.add(e, Dancing{});
+                    world.resource<DanceRings>().seconds[center] = u.danceClock;
+                }
                 break;
             }
         }

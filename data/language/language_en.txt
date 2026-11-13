@@ -1800,3 +1800,9 @@ UILABEL_MOTIVATION_BAR	Motivation {0} / {1}
 UILABEL_MOTIVATION_TIP	Motivation: each unit dancing round your Altars and Campfires gives 1 point for every in-game hour, and it ticks down about 10 an hour. Over {0}, your units walk {1}% faster inside your claims, and your Altar's fire burns bigger. The most it holds is 125, and 25 more for every complete building
 SCENARIO_OUTPOST_NAME	Outpost (Recommended)
 SCENARIO_OUTPOST_DESC	Start with your own camp, set up like the other factions': an Altar, a Campfire, Bedrolls, stockpiles with supplies, caged animals to tame, and as many units as they start with. You can customize your units, but not add or remove them.
+# Failed pathfinding and failed tasks, in the Information Panel
+UILABEL_TASK_MESSAGES	Task Messages
+UILABEL_FAILED_PATHFINDING	Failed pathfinding
+UILABEL_FAILED_TASK	Failed task
+MISC_PATH_FAILED	{0} can't find a way to ({1}, {2})
+MISC_TASK_FAILED	{0} gave up a task: {1}

@@ -1800,3 +1800,9 @@ UILABEL_MOTIVATION_BAR	干劲 {0} / {1}
 UILABEL_MOTIVATION_TIP	干劲：每个在你的祭坛和篝火旁跳舞的单位每游戏小时提供1点，并以每小时约10点的速度下降。超过{0}时，你的单位在你的领地内移动速度提高{1}%，祭坛的火焰也会更旺。上限为125，每有一座完整建筑再加25
 SCENARIO_OUTPOST_NAME	前哨（推荐）
 SCENARIO_OUTPOST_DESC	以与其他阵营相同的方式开局：自己的营地，包含祭坛、篝火、铺盖卷、储备充足的堆放区、可驯服的笼中动物，以及与它们相同数量的单位。可以自定义单位，但不能增减。
+# Failed pathfinding and failed tasks, in the Information Panel
+UILABEL_TASK_MESSAGES	任务消息
+UILABEL_FAILED_PATHFINDING	寻路失败
+UILABEL_FAILED_TASK	任务失败
+MISC_PATH_FAILED	{0} 找不到前往 ({1}, {2}) 的路
+MISC_TASK_FAILED	{0} 放弃了任务：{1}

@@ -81,6 +81,13 @@ void queueFloatingNumber(World& w, const FloatingNumber& number) {
 void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool running) {
     w.resource<WorldClock>().seconds = gs.clockSeconds;
     invalidateClaims(w);   // what is kept of the claims is good for one step
+    // Walks planned from here to the end of the step are the game's own, and paced (stuck.h); an order of yours is not
+    struct Stepping {
+        World& w;
+        explicit Stepping(World& world) : w(world) { w.resource<SimStepping>().on = true; }
+        ~Stepping() { w.resource<SimStepping>().on = false; }
+    } stepping(w);
+    pathPaceSystem(w, t, dt);
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
     PROFILED("factionSystem", factionSystem(w, dt));

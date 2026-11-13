@@ -1173,6 +1173,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 continue;
             }
             if (walking && !outputEmpty(w, b->stepProp)) continue;
+            if (!outputEmpty(w, b->stepProp)) noteTaskFailed(w, u, behaviorName(b->step));   // stopped short of it
             w.remove<SoloMove>(u);
             b->busy = false;
             if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
@@ -1200,6 +1201,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 continue;
             }
             if (it && gi && walking) continue;
+            if (it && gi) noteTaskFailed(w, u, behaviorName(b->step));   // stopped short of the item
             w.remove<SoloMove>(u);
             b->busy = false;
             if (BehaviorRule* r = stepRule(*b)) r->cooldown = BEHAVIOR_RETRY_SECONDS;
@@ -1371,7 +1373,10 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             } else {
                 b->busy = false;
                 if (BehaviorRule* r = stepRule(*b)) {
-                    if (b->step.kind == BehaviorKind::AutoHarvest) r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                    if (b->step.kind == BehaviorKind::AutoHarvest) {
+                        r->cooldown = BEHAVIOR_RETRY_SECONDS;
+                        noteTaskFailed(w, u, behaviorName(b->step));   // it never got to work there
+                    }
                     if (b->step.kind == BehaviorKind::Patrol || b->step.kind == BehaviorKind::PatrolSpawn) {
                         r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
                     }
