@@ -224,7 +224,16 @@ void releaseProp(World& w, ObjectId prop) {
     }
     for (ObjectId u : w.view<Behaviors>()) {
         Behaviors* b = w.get<Behaviors>(u);
-        if (b->busy && b->stepProp == prop) b->busy = false;
+        if (b->busy && b->stepProp == prop) {
+            b->busy = false;
+            // A dancer, or one on its way to dance, round a Campfire or Altar that is going: its place on the circle is
+            // given up, and it stops walking to where the circle was. (A dancer is put on open ground by automationSystem.)
+            if (b->step.kind == BehaviorKind::Dance) {
+                b->began = false;
+                b->slot = -1;
+                w.remove<SoloMove>(u);
+            }
+        }
         b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) {
                            return ruleNamesProp(r.kind) && r.prop == prop;
                        }),

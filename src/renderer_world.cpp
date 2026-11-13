@@ -702,7 +702,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
 
     // Units with a model join the props' models, one draw for each model; the few without one are pictures
     for (ObjectId e : w.view<Entity, Transform>()) {
-        const Transform* tr = w.get<Transform>(e);
+        const Transform shown = unitShownAt(w, e);
+        const Transform* tr = &shown;
         if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
         const float tall = std::max(1.0f, unitHeight(w, e));
         if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, 1.5f * tall + 1.0f)) continue;

@@ -42,7 +42,7 @@ constexpr int STREAM_LOADS_PER_FRAME = 4;
 std::vector<Vec2> streamFocuses(World& w, const Camera& cam);
 void primeStreaming(World& w, Terrain& t, const Camera& cam);
 
-void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d);
+void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, const LoadProgress& progress = {});
 SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rng& rng,
                       long long ts, const std::string& name, const MapChoice& map);
 void applySaveCamera(const SaveCamera& c, Camera& cam);
