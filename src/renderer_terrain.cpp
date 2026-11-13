@@ -886,7 +886,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         }
         const float dx = mx - ex, dy = my - ey, dz = mz - ez;
         const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
-        const int step = dist < LOD_NEAR_TILES ? 1 : (dist < LOD_MID_TILES ? 2 : 4);
+        const int step = dist < LOD_NEAR_TILES ? 1 : dist < LOD_MID_TILES ? 2 : dist < LOD_FAR_TILES ? 4 : dist < LOD_FARTHEST_TILES ? 8 : 16;
 
         const int cx = id % chunksPerSide_, cz = id / chunksPerSide_;
         int nb[4] = { 0, 0, 0, 0 };

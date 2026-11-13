@@ -185,6 +185,8 @@ struct TipRow {
 
 constexpr float LOD_NEAR_TILES = 96.0f;
 constexpr float LOD_MID_TILES = 224.0f;
+constexpr float LOD_FAR_TILES = 448.0f;    // past these, the terrain is drawn at an eighth, then a sixteenth of its detail
+constexpr float LOD_FARTHEST_TILES = 720.0f;
 struct DetailRange {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     float focusX = 0.0f, focusZ = 0.0f, viewRange = 0.0f;
@@ -193,7 +195,9 @@ struct DetailRange {
     }
     bool within(float x, float y, float z) const {
         const float dx = x - ex, dy = y - ey, dz = z - ez;
-        if (dx * dx + dy * dy + dz * dz > LOD_MID_TILES * LOD_MID_TILES) return false;
+        // The camera is up in the air as well as back from its focus, so a little more than the range itself
+        const float reach = viewRange + 192.0f;
+        if (dx * dx + dy * dy + dz * dz > reach * reach) return false;
         const float fx = x - focusX, fz = z - focusZ;
         return fx * fx + fz * fz <= viewRange * viewRange;
     }

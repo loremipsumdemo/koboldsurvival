@@ -41,13 +41,12 @@ bool reaches(const BehaviorGroups& g, int ref, int target, std::vector<int>& see
 }
 }
 
-void resetBehaviorGroups(BehaviorGroups& g) {
-    g.military = defaultBehaviors();
+std::vector<BehaviorRule> defaultCitizenBehaviors() {
     // Citizens: their needs (napping only when nearly spent, as they sleep the night through), then building, then
     // hauling (to each of your stores, kept up by storeHaulSync, then items off the ground), then patrolling your town.
     // Harvesting tasks added to it sort in between hauling and the patrol.
-    g.citizen = defaultBehaviors();
-    for (BehaviorRule& r : g.citizen) {
+    std::vector<BehaviorRule> citizen = defaultBehaviors();
+    for (BehaviorRule& r : citizen) {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
     // Each sorts into its place by its category (Auto-Haul to Stalls is in the defaults already)
@@ -61,7 +60,13 @@ void resetBehaviorGroups(BehaviorGroups& g) {
     build.kind = BehaviorKind::AutoConstruct;
     ground.kind = BehaviorKind::AutoHaulGround;
     patrol.kind = BehaviorKind::Patrol;
-    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol, social, sit, play, dance }) addBehavior(g.citizen, r, BEHAVIOR_TASKS_MAX);
+    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol, social, sit, play, dance }) addBehavior(citizen, r, BEHAVIOR_TASKS_MAX);
+    return citizen;
+}
+
+void resetBehaviorGroups(BehaviorGroups& g) {
+    g.military = defaultBehaviors();
+    g.citizen = defaultCitizenBehaviors();
     g.schedule = defaultSchedule();
     g.groupSchedules.clear();
     g.listedStores.clear();

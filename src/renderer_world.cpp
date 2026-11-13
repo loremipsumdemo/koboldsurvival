@@ -1145,7 +1145,7 @@ std::vector<Renderer::GroundStack> Renderer::groundStacks(World& w, const Terrai
         if (!groundLoaded(t, tr->x, tr->z) || cutAway(w, e)) continue;
         const float dx = tr->x - ex, dy = tr->y - ey, dz = tr->z - ez;
         const float dist2 = dx * dx + dy * dy + dz * dz;
-        if (dist2 > LOD_MID_TILES * LOD_MID_TILES || !detail.within(tr->x, tr->y, tr->z)) continue;
+        if (!detail.within(tr->x, tr->y, tr->z)) continue;
         ItemOnScreen os{};
         if (!itemOnScreen(vp, winW, winH, *tr, 1.0f, os)) continue;
         all.push_back(Seen{ { (int)std::floor(tr->x), (int)std::floor(tr->z) }, e, os,
