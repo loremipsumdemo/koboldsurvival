@@ -11,6 +11,8 @@ void setBus(Bus bus, int level, bool on);
 void setGlobal(int level, bool on);
 
 void playTrack(Bus bus, const std::string& file);
+// Opens the bus's track without starting it, so playTrack with the same file starts it at once
+void preloadTrack(Bus bus, const std::string& file);
 void stopTracks();
 
 void preloadEffect(const std::string& file, Bus bus);

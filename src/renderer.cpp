@@ -213,85 +213,6 @@ void setupGlyphLayout(GLuint vao, GLuint vbo) {
     glBindVertexArray(0);
 }
 
-// Transparent and nearly transparent pixels still carry a color, often junk (an alpha of 2 with a bright
-// red, say). Texture filtering and mipmaps blend it into the visible edge, which shows as stray specks
-// and fringes. So each such pixel takes the average color of its nearest visible neighbors, spreading
-// outward; alpha stays as it was.
-static void bleedIntoTransparent(SDL_Surface* rgba) {
-    const int w = rgba->w, h = rgba->h;
-    if (w <= 0 || h <= 0) return;
-    constexpr unsigned char VISIBLE_ALPHA = 26;   // the glyph shader's 0.1 cutoff
-    unsigned char* base = static_cast<unsigned char*>(rgba->pixels);
-    auto px = [&](int x, int y) { return base + (size_t)y * (size_t)rgba->pitch + (size_t)x * 4; };
-
-    std::vector<unsigned char> known((size_t)w * (size_t)h, 0);
-    std::vector<int> frontier, next;
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            if (px(x, y)[3] >= VISIBLE_ALPHA) known[(size_t)y * (size_t)w + (size_t)x] = 1;
-        }
-    }
-    // The unknown pixels next to the given known ones, each once. `queued` marks pixels already in a ring.
-    std::vector<unsigned char> queued((size_t)w * (size_t)h, 0);
-    auto ringAround = [&](const std::vector<int>& from, std::vector<int>& out) {
-        out.clear();
-        for (int i : from) {
-            const int x = i % w, y = i / w;
-            for (int dy = -1; dy <= 1; ++dy) {
-                for (int dx = -1; dx <= 1; ++dx) {
-                    const int nx = x + dx, ny = y + dy;
-                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-                    const size_t j = (size_t)ny * (size_t)w + (size_t)nx;
-                    if (known[j] || queued[j]) continue;
-                    queued[j] = 1;
-                    out.push_back((int)j);
-                }
-            }
-        }
-    };
-    // The visible pixels that border a see-through one: only these can start the first ring
-    std::vector<int> edge;
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            if (!known[(size_t)y * (size_t)w + (size_t)x]) continue;
-            const bool border = (x > 0 && !known[(size_t)y * (size_t)w + (size_t)(x - 1)]) ||
-                                (x + 1 < w && !known[(size_t)y * (size_t)w + (size_t)(x + 1)]) ||
-                                (y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)x]) ||
-                                (y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)x]) ||
-                                (x > 0 && y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)(x - 1)]) ||
-                                (x + 1 < w && y > 0 && !known[(size_t)(y - 1) * (size_t)w + (size_t)(x + 1)]) ||
-                                (x > 0 && y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)(x - 1)]) ||
-                                (x + 1 < w && y + 1 < h && !known[(size_t)(y + 1) * (size_t)w + (size_t)(x + 1)]);
-            if (border) edge.push_back(y * w + x);
-        }
-    }
-    // A few rings outward covers what filtering and the first mipmaps can reach
-    constexpr int RINGS = 8;
-    ringAround(edge, frontier);
-    for (int ring = 0; ring < RINGS && !frontier.empty(); ++ring) {
-        for (int i : frontier) {
-            const int x = i % w, y = i / w;
-            int r = 0, g = 0, b = 0, n = 0;
-            for (int dy = -1; dy <= 1; ++dy) {
-                for (int dx = -1; dx <= 1; ++dx) {
-                    const int nx = x + dx, ny = y + dy;
-                    if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-                    if (!known[(size_t)ny * (size_t)w + (size_t)nx]) continue;
-                    const unsigned char* q = px(nx, ny);
-                    r += q[0]; g += q[1]; b += q[2]; ++n;
-                }
-            }
-            unsigned char* p = px(x, y);
-            p[0] = (unsigned char)(r / n); p[1] = (unsigned char)(g / n); p[2] = (unsigned char)(b / n);
-        }
-        for (int i : frontier) known[(size_t)i] = 1;
-        if (ring + 1 < RINGS) {
-            ringAround(frontier, next);
-            frontier.swap(next);
-        }
-    }
-}
-
 SDL_Surface* decodeRgba(const char* path) {
     const unsigned char* bytes = nullptr;
     size_t size = 0;
@@ -303,7 +224,7 @@ SDL_Surface* decodeRgba(const char* path) {
     }
     SDL_Surface* conv = SDL_ConvertSurface(s, SDL_PIXELFORMAT_ABGR8888);
     SDL_DestroySurface(s);
-    if (conv) bleedIntoTransparent(conv);
+    // The see-through pixels already carry their visible neighbors' color: tools/pack_data.cpp fills them in when packing
     return conv;
 }
 

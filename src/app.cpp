@@ -83,8 +83,10 @@ int App::init() {
     applyDisplay(window, settings, displayInfo);
     SDL_GL_SetSwapInterval(settings.vsync ? 1 : 0);
 
-    if (!renderer.init(fonts.hud, fonts.ui,
-                       [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what, false); }))
+    // The pictures, models and shaders fill the bar up to here; the sounds fill the rest
+    constexpr float SOUNDS_FROM = 0.9f;
+    LoadingScreen loading(window, renderer);
+    if (!renderer.init(fonts.hud, fonts.ui, [&](float p, const std::string& what) { loading.show(p * SOUNDS_FROM, what); }))
         return fatalError(window, "Loading the game's textures, models or shaders failed.");
     renderer.setListFont(fonts.list);
     renderer.setTitleFont(openFontChain(TITLE_NAME_POINTS, true, settings.fontPath, settings.language, nameFontOwned));
@@ -110,13 +112,26 @@ int App::init() {
     lastTicks = SDL_GetTicksNS();
     fpsSince = SDL_GetTicks();
 
+    // Every sound effect, and the first screen's music opened ready to start, so nothing is still loading once the
+    // title screen shows
+    LoadStages stages([&](float p, const std::string& what) { loading.show(p, what); });
+    const int soundCount = (int)Sfx::Count + 1;
+    stages.stage(SOUNDS_FROM, "LOADING_SOUNDS", soundCount);
     audio::init();
     applyAudio();
     for (int i = 0; i < (int)Sfx::Count; ++i) {
         const SfxInfo& info = sfxInfo((Sfx)i);
         audio::preloadEffect(info.file, info.ui ? audio::Bus::Interface : audio::Bus::Effects);
+        stages.step(SOUNDS_FROM + (1.0f - SOUNDS_FROM) * (float)(i + 1) / (float)soundCount, i + 1);
     }
+    const Soundtrack first = soundtrackFor(screen);
+    if (first.music) audio::preloadTrack(audio::Bus::Music, first.music);
+    if (first.ambient) audio::preloadTrack(audio::Bus::Ambient, first.ambient);
 
+    // The full bar goes to black, and the title screen comes up out of black (see run)
+    loading.fadeOut();
+
+    lastTicks = SDL_GetTicksNS();
     return 0;
 }
 
@@ -150,7 +165,10 @@ void App::run() {
 
         renderer.setMenuText(screen != Screen::Playing);
 
-        while (SDL_PollEvent(&e)) handleEvent();
+        // While the screen goes to black for what comes next, nothing else can be clicked
+        while (SDL_PollEvent(&e)) {
+            if (!afterFadeOut || e.type == SDL_EVENT_QUIT) handleEvent();
+        }
 
         PROFILED("frame: update", update());
         PROFILED("frame: updateHover", updateHover());
@@ -159,8 +177,31 @@ void App::run() {
         PROFILED("frame: render", render());
         putUnitsBack();
 
+        // The first screen, and the game once entered, come up out of black. The first frame is wholly black and the
+        // fade is timed from when it shows, since that frame is a slow one (fonts opened, the ground first drawn).
+        bool wentBlack = false;
+        if (afterFadeOut) {
+            const float black = (float)(SDL_GetTicksNS() - fadeOutFrom) / (float)FADE_NS;
+            renderer.drawBlackOver(black, winW, winH);
+            wentBlack = black >= 1.0f;
+        } else if (fadingIn) {
+            const float black = fadeInFrom ? 1.0f - (float)(SDL_GetTicksNS() - fadeInFrom) / (float)FADE_NS : 1.0f;
+            if (black <= 0.0f) fadingIn = false;
+            else renderer.drawBlackOver(black, winW, winH);
+        }
+
         if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);
         PROFILED("frame: swap", SDL_GL_SwapWindow(window));
+        if (fadingIn && !fadeInFrom) fadeInFrom = SDL_GetTicksNS();
+        if (wentBlack) {
+            // The screen is black: now the slow part, and whatever it leaves showing comes up out of black
+            const std::function<void()> then = std::move(afterFadeOut);
+            afterFadeOut = nullptr;
+            then();
+            fadingIn = true;
+            fadeInFrom = 0;
+            lastTicks = SDL_GetTicksNS();
+        }
         PROFILE_FRAME_END();
         if (bench.quit) running = false;
         if (!bench.on) limitFrameRate(frameStart, settings.fpsLimit);

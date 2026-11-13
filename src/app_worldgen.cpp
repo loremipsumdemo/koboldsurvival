@@ -658,7 +658,7 @@ void App::worldGenClick(float x, float y) {
         generateWorld();
     } else if (L.proceed.contains(x, y) && ui.generated) {
         playSfx(Sfx::UiClick);
-        openLevelEditor(ui.generatedName);
+        fadeOutThen([this, name = ui.generatedName] { openLevelEditor(name); });
     } else {
         for (int i = 0; i < WORLD_GEN_ROW_COUNT && !ui.themeTab; ++i) {
             int& value = ui.settings.*WORLD_GEN_ROWS[i].value;
@@ -732,7 +732,8 @@ void App::openLevelEditor(const std::string& mapName) {
     }
     std::string err;
     renderer.pickLoadingArt();
-    const LoadProgress progress = [&](float p, const std::string& what) { loadingFrame(window, renderer, p, std::string(), what); };
+    LoadingScreen loading(window, renderer);
+    const LoadProgress progress = [&](float p, const std::string& what) { loading.show(p, what); };
     if (!loadLevelGround(*map, terrain, renderer, err, progress)) {
         refuse(langf("MISC_LOAD_FAILED", { map->name, err }));
         return;
@@ -759,6 +760,7 @@ void App::openLevelEditor(const std::string& mapName) {
     editor.savedText = levelToText(captureLevel(world, mapName));
     editorFocusCamera();
     primeStreaming(world, terrain, cam);
+    loading.fadeOut();
 }
 
 void App::editorFocusCamera() {

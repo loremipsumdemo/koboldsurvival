@@ -109,6 +109,8 @@ public:
 
     void drawLoadingScreen(float progress, int winW, int winH, const std::string& label = std::string(),
                            const std::string& category = std::string(), bool backdrop = false);
+    // Black over the whole window, this opaque (0 to 1), on top of whatever was drawn this frame: for fades
+    void drawBlackOver(float opacity, int winW, int winH);
     // Picks one of the loading pictures again at random, for the next loading screen
     void pickLoadingArt();
 

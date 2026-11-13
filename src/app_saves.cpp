@@ -117,7 +117,7 @@ void App::loadPicked() {
         if (editorLoad()) closePanel();
         return;
     }
-    loadSave(s.path);
+    fadeOutThen([this, path = s.path] { loadSave(path); });
 }
 
 // The picture of the world taken when the save panel opened (or just before an autosave), kept beside the file
@@ -291,7 +291,7 @@ bool App::savePanelAction(Action action, int param) {
             if (editorLoad()) closePanel();
             return true;
         }
-        loadSave(target.path);
+        fadeOutThen([this, path = target.path] { loadSave(path); });
         return true;
     }
     case Action::LeaveYes:

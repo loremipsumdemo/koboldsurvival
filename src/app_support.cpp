@@ -79,12 +79,38 @@ void onTerminate() {
 }
 
 void loadingFrame(SDL_Window* window, Renderer& renderer, float progress, const std::string& label,
-                  const std::string& category, bool backdrop) {
+                  const std::string& category, bool backdrop, float black) {
     SDL_PumpEvents();
     int winW, winH;
     SDL_GetWindowSizeInPixels(window, &winW, &winH);
     renderer.drawLoadingScreen(progress, winW, winH, label, category, backdrop);
+    renderer.drawBlackOver(black, winW, winH);
     SDL_GL_SwapWindow(window);
+}
+
+void LoadingScreen::fade(float progress, bool toBlack) {
+    // A first frame wholly black (or wholly clear), then the fade timed from when it showed: the first frame of a
+    // screen is a slow one, and would otherwise use the fade up
+    loadingFrame(window_, renderer_, progress, std::string(), what_, false, toBlack ? 0.0f : 1.0f);
+    const Uint64 from = SDL_GetTicksNS();
+    for (float t = 0.0f; t < 1.0f;) {
+        t = std::min(1.0f, (float)(SDL_GetTicksNS() - from) / (float)FADE_NS);
+        loadingFrame(window_, renderer_, progress, std::string(), what_, false, toBlack ? t : 1.0f - t);
+    }
+}
+
+void LoadingScreen::show(float progress, const std::string& what) {
+    what_ = what;
+    if (!shown_) {
+        shown_ = true;
+        fade(progress, false);
+        return;
+    }
+    loadingFrame(window_, renderer_, progress, std::string(), what_);
+}
+
+void LoadingScreen::fadeOut() {
+    if (shown_) fade(1.0f, true);
 }
 
 long long nowMs() {

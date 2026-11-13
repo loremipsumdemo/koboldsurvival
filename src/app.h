@@ -767,6 +767,13 @@ struct App : AppSession {
     float noticeSec = 0.0f;
 
     Uint64 lastTicks = 0;
+    // Fades (FADE_NS long): the first screen and the game come up out of black, and a menu goes to black before the game
+    // is entered from it
+    bool fadingIn = true;
+    Uint64 fadeInFrom = 0;   // when the first, wholly black frame was shown; 0 before it
+    std::function<void()> afterFadeOut;   // set while the screen goes to black: what to do once it is
+    Uint64 fadeOutFrom = 0;
+    void fadeOutThen(std::function<void()> then);
     static constexpr float SIM_STEP_SECONDS = 1.0f / 60.0f;
     static constexpr int SIM_MOST_STEPS_PER_FRAME = 5;
     Uint64 fpsSince = 0;
