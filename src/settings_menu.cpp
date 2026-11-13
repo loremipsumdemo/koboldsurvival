@@ -181,7 +181,11 @@ std::vector<RowSpec> graphicsRows(const GameSettings& s, const DisplayInfo& d) {
     }
     rows.push_back(makeDropdown(RowId::FpsLimit, lang("UILABEL_FRAME_LIMIT"), fps, indexOfValue(fps, s.fpsLimit), true));
     rows.push_back(makeRange(RowId::DetailRange, lang("UILABEL_DETAIL_RANGE"), s.detailRange, DETAIL_RANGE_MIN, DETAIL_RANGE_MAX));
-    rows.push_back(makeRange(RowId::ViewDistance, lang("UILABEL_VIEW_DISTANCE"), s.viewDistance, VIEW_DISTANCE_MIN, VIEW_DISTANCE_MAX));
+    {
+        RowSpec r = makeRange(RowId::ViewDistance, lang("UILABEL_VIEW_DISTANCE"), s.viewDistance, VIEW_DISTANCE_MIN, VIEW_DISTANCE_MAX);
+        r.text = std::to_string(s.viewDistance / 100) + (s.viewDistance % 100 ? ".5" : "") + "x";   // times the full detail distance
+        rows.push_back(r);
+    }
     std::vector<DropOption> scales;
     for (int i = 0; i < RENDER_SCALE_CHOICE_COUNT; ++i) {
         const int v = RENDER_SCALE_CHOICES[i];

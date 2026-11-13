@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -39,6 +40,15 @@ public:
     const ChunkData* chunkAt(int cx, int cz) const;
 
     int stream(const std::vector<Vec2>& focuses, int radius, int maxLoads);
+    // The whole world's ground, coarse (a streamed world only), for drawing past the chunks held. Null until it is made, which
+    // starts at the first ask, on another thread; and null for a source that can't make one.
+    struct FarField {
+        int res = 0;
+        float spacing = 0.0f;   // tiles between corners
+        std::vector<float> heights;
+        std::vector<uint8_t> rgb;
+    };
+    const FarField* farField() const;
     bool streamed() const { return streamed_; }
 
     float heightAt(float x, float z) const;
@@ -112,4 +122,7 @@ private:
     std::unordered_map<long long, float> sightBlocks_;
     std::unordered_set<long long> decks_;
     std::unordered_map<long long, float> heightEdits_;
+    mutable std::future<std::shared_ptr<FarField>> farJob_;
+    mutable std::shared_ptr<FarField> far_;
+    mutable bool farDone_ = false;
 };

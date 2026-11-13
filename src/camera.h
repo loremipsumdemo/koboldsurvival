@@ -5,7 +5,7 @@
 #include "grid.h"
 #include "terrain.h"
 
-inline constexpr float CAMERA_FAR = 8000.0f;
+inline constexpr float CAMERA_FAR = 14000.0f;
 inline constexpr float CAMERA_NEAR_MIN = 0.5f;
 inline constexpr float CAMERA_NEAR_MAX = 6.0f;
 inline constexpr float CAMERA_NEAR_PER_DISTANCE = 0.03f;

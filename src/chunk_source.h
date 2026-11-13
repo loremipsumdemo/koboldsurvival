@@ -29,6 +29,11 @@ public:
         (void)px; (void)rgba; (void)cancel;
         return false;
     }
+    // The ground of the whole map worked out coarsely, res by res corners 1 / (res - 1) of the map's size apart (row 0 at z 0, column 0 at
+    // x 0): heights as chunks hold them, and rgb colours, for drawing what lies past the chunks that are held. False if it can't, or if
+    // cancel was set. Called from other threads too.
+    // The ground it makes by default is from reading every chunk that holds a sample, in the background.
+    virtual bool farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& cancel) const;
     // How this map looks, for a source that has a theme. Null: as surface() says, as it always was.
     virtual const MapTheme* theme() const { return nullptr; }
     // True: the world ends in walls, so its water stops at the map's edge instead of running on to the horizon

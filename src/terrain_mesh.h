@@ -21,6 +21,8 @@ struct ChunkBounds {
 };
 
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c);
+// The color the chunk's mesh gives the tile at (tx, tz) in it, at height h, as bytes
+void chunkTileColor(const ChunkData& c, int tx, int tz, float h, uint8_t out[3]);
 
 void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& out,
                     const int* neighbourSteps = nullptr);

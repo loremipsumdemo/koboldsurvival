@@ -97,6 +97,8 @@ public:
     void setDetailRange(int tiles) { detailRange_ = tiles; }
     // The view distance from the settings, in tiles: ground chunks wholly beyond it from the view's centre aren't drawn
     void setViewDistance(int tiles) { viewDistance_ = tiles; }
+    // How far from the camera the chunks held reach, in tiles (past that the far ground is drawn)
+    void setHeldReach(float tiles) { heldReach_ = tiles; }
     std::string renderScaleText() const;
     // The distances the ground's and water's detail is drawn to, in words, for the debug log
     std::string surfaceBandsText() const;
@@ -481,10 +483,17 @@ private:
         GLsizei indexCount = 0;
         int step = 0;
         int nbStep[4] = { 0, 0, 0, 0 };
+        bool stale = false;   // the chunk's data changed since the mesh was made
         uint32_t version = 0;
         ChunkBounds bounds{};
     };
     std::vector<TerrainChunk> chunks_;
+    // The whole world's ground in one coarse mesh, drawn past the chunks (Terrain::farField)
+    GLuint farVao_ = 0, farVbo_ = 0, farEbo_ = 0;
+    GLsizei farIndexCount_ = 0;
+    const void* farFor_ = nullptr;
+    void releaseFar();
+    void buildFar(const Terrain::FarField& f, const Terrain& t);
     int terrainSize_ = 0;
     int chunksPerSide_ = 0;
     ChunkMesh chunkScratch_;
@@ -502,7 +511,7 @@ private:
     struct TerrainShader {
         GLuint prog = 0;
         GLint viewProj = -1, eye = -1, seaY = -1, depthScale = -1, rockRgb = -1, rockSlope = -1, sunDir = -1;
-        GLint voidCut = -1, groundTint = -1, tintAmount = -1;
+        GLint voidCut = -1, groundTint = -1, tintAmount = -1, hole = -1;
         GLint sunLight = -1, ambient = -1, underwater = -1, fogColor = -1, fog = -1, tile = -1;
         GLint tileShift = -1, tileSize = -1;
         SurfaceUniforms common;
@@ -554,6 +563,7 @@ private:
     int renderScale_ = 100;
     int detailRange_ = 256;
     int viewDistance_ = 1024;
+    float heldReach_ = 256.0f;
     // The walls' and doors' tiles, worked out again only when a prop or a storey is added or removed (see drawWorld)
     struct BuildingTiles {
         bool valid = false;

@@ -1,4 +1,6 @@
-#include "terrain.h"
+﻿#include "terrain.h"
+#include <chrono>
+#include <cstdio>
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -19,7 +21,33 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
     open(std::move(source));
 }
 
+const Terrain::FarField* Terrain::farField() const {
+    static constexpr int FAR_FIELD_RES = 513;
+    if (!streamed_ || farDone_) return far_.get();
+    if (!farJob_.valid()) {
+        const std::shared_ptr<const ChunkSource> src = source_;
+        farJob_ = std::async(std::launch::async, [src]() -> std::shared_ptr<FarField> {
+            auto f = std::make_shared<FarField>();
+            const std::atomic<bool> never{ false };
+            if (!src->farField(FAR_FIELD_RES, f->heights, f->rgb, never)) return nullptr;
+            f->res = FAR_FIELD_RES;
+            f->spacing = (float)src->size() / (float)(FAR_FIELD_RES - 1);
+            return f;
+        });
+        return nullptr;
+    }
+    if (farJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        far_ = farJob_.get();
+        farDone_ = true;
+    }
+    return far_.get();
+}
+
 void Terrain::open(std::shared_ptr<const ChunkSource> source) {
+    far_.reset();
+    farDone_ = false;
+    if (farJob_.valid()) farJob_.wait();
+    farJob_ = {};
     blocked_.clear();
     sightBlocks_.clear();
     decks_.clear();

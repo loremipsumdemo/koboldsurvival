@@ -52,6 +52,8 @@ public:
     // A picture of the whole map, px pixels across, as RGBA
     // Empty if cancel was set before it finished. Uses most of the cores.
     std::vector<uint8_t> preview(int px, const std::atomic<bool>* cancel = nullptr) const;
+    // The ground of the whole map at res by res corners (see ChunkSource::farField). False if cancel was set.
+    bool farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& cancel) const;
 
 private:
     int overworldHeight(int x, int z) const;

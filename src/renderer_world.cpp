@@ -11,10 +11,8 @@
 using namespace render_detail;
 
 namespace {
-bool groundLoaded(const Terrain& t, float x, float z) {
-    const int cx = (int)std::floor(x / CHUNK_TILES), cz = (int)std::floor(z / CHUNK_TILES);
-    return t.chunkAt(cx, cz) != nullptr;
-}
+// Whether to draw what stands at a spot: all of it is, out to the detail distance, loaded chunk or not (the far ground is drawn under it)
+bool groundLoaded(const Terrain&, float, float) { return true; }
 
 void outlineSquare(Batch& b, float cx, float y, float cz, float r, float t, RGBA c) {
     b.quad({ cx - r, y, cz - r }, { cx + r, y, cz - r }, { cx + r, y, cz - r + t }, { cx - r, y, cz - r + t }, c);
