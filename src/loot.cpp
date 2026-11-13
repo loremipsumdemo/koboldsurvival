@@ -33,6 +33,7 @@ void systems_detail::lootOrderSystem(World& w, CarryEvents& ev) {
         }
         const SoloMove* so = w.get<SoloMove>(u);
         if (!so || so->next >= so->waypoints.size()) {
+            noteTaskFailed(w, u, lang("UILABEL_LOOT") + ": " + nameOf(w, target));
             w.remove<LootOrder>(u);
             w.remove<SoloMove>(u);
         }

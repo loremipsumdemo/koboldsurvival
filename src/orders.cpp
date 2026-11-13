@@ -354,6 +354,7 @@ int pickupSystem(World& w, Terrain& t) {
                 if (!w.get<SoloMove>(u)->waypoints.empty()) continue;
             }
             if (ch) ch->skipped.push_back(item);
+            noteTaskFailed(w, u, lang("UILABEL_PICKUP") + ": " + itemNameOf(gi->item));
             endPickup(w, u);
         }
     }

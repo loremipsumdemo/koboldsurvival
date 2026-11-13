@@ -1,5 +1,6 @@
 #include "systems_internal.h"
 #include "schedule.h"
+#include "stuck.h"
 #include <unordered_map>
 #include <unordered_set>
 
@@ -177,6 +178,7 @@ Vec2 chaseStep(World& w, const Terrain& t, SteerFrame& s, ObjectId e, const Tran
         r->waypoints = t.findPath(from, goal);
         r->next = 0;
         r->goal = goal;
+        notePathResult(w, t, e, from, goal, r->waypoints);
     }
     while (r->next < r->waypoints.size()) {
         const Vec2 wp = r->waypoints[r->next];
@@ -296,7 +298,8 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             }
         }
     } else if (SoloMove* so = w.get<SoloMove>(e)) {
-        while (so->next < so->waypoints.size()) {
+        // Held: it stands until its way is planned (stuck.h)
+        while (!so->held && so->next < so->waypoints.size()) {
             Vec2 wp = so->waypoints[so->next];
             float wx = wp.x - tr->x, wz = wp.z - tr->z;
             bool last = so->next + 1 == so->waypoints.size();
@@ -304,7 +307,7 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             if (wx * wx + wz * wz > reach * reach) break;
             ++so->next;
         }
-        if (so->next < so->waypoints.size()) {
+        if (!so->held && so->next < so->waypoints.size()) {
             tx = so->waypoints[so->next].x;
             tz = so->waypoints[so->next].z;
         }
@@ -322,7 +325,8 @@ void steerGoal(World& w, Terrain& t, SteerFrame& s, size_t i, bool running) {
             } else if (!closeEnoughToLead(w, units, e, lead)) {
                 tx = lt->x;
                 tz = lt->z;
-                chasing = true;
+                // Near its lead it just heads for it; a way is only planned from further off
+                chasing = leadGap > FOLLOW_DIRECT_DISTANCE;
             } else if (calm) {
                 s.calmLead[i] = lead;
             }

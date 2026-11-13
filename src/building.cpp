@@ -1782,27 +1782,43 @@ void climbSystem(World& w, Terrain& t, float dt) {
     }
 }
 
-void planSoloMove(World& w, Terrain& t, ObjectId e, Vec2 target) {
+namespace {
+// Plans the way now, whatever the pacing (stuck.h) says
+void planSoloNow(World& w, Terrain& t, ObjectId e, Vec2 target) {
     SoloMove* so = w.get<SoloMove>(e);
     if (!so) so = &w.add(e, SoloMove{});
+    so->held = false;
     const Transform* tr = w.get<Transform>(e);
     if (!tr) return;
+    notePathfind(w, e);
     if (const Upstairs* up = w.get<Upstairs>(e)) {
         const BuildingMap m = buildingMap(w);
         std::vector<Vec2> path = floorPath(w, m, up->level, Vec2{ tr->x, tr->z }, target);
-        if (path.empty()) path = { nearestFloorSpot(w, up->foundation, target, up->level) };
+        if (path.empty()) {
+            path = { nearestFloorSpot(w, up->foundation, target, up->level) };
+            if (std::hypot(path[0].x - target.x, path[0].z - target.z) > PATH_FAIL_GAP) notePathFailed(w, e, target);
+        }
         so->waypoints = std::move(path);
         so->next = 0;
         return;
     }
     so->waypoints = t.findPath({ tr->x, tr->z }, target);
     so->next = 0;
+    notePathResult(w, t, e, Vec2{ tr->x, tr->z }, target, so->waypoints);
+}
+}
+
+void planSoloMove(World& w, Terrain& t, ObjectId e, Vec2 target) {
+    if (deferPath(w, e, target, -1, false)) return;
+    planSoloNow(w, t, e, target);
 }
 
 void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
+    if (deferPath(w, e, target, storey, true)) return;
     w.remove<Route>(e);
     const Transform* tr = w.get<Transform>(e);
     if (!tr) return;
+    notePathfind(w, e);
     const int here = storeyOf(w, e);
     if (storey < 0) {
         storey = 0;
@@ -1815,7 +1831,7 @@ void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
     if (storey == here) {
         if (here == 0) {
             setPathGoal(w, e, target);   // noticed if it cannot get there (stuck.h)
-            planSoloMove(w, t, e, target);
+            planSoloNow(w, t, e, target);
             return;
         }
         const BuildingMap m = buildingMap(w);
@@ -1830,10 +1846,11 @@ void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
         const Vec2 first = r.legs.front().to;
         r.planned = true;
         w.add(e, std::move(r));
-        planSoloMove(w, t, e, first);
+        planSoloNow(w, t, e, first);
         return;
     }
-    planSoloMove(w, t, e, target);
+    if (storey != here) notePathFailed(w, e, target);   // no way between the floors
+    planSoloNow(w, t, e, target);
 }
 
 namespace {
@@ -1873,6 +1890,7 @@ void routeSystem(World& w, Terrain& t, float dt) {
                 r.planned = false;
                 so->waypoints = { goal };
                 so->next = 0;
+                so->held = false;
             } else {
                 w.remove<Route>(u);
                 so->next = so->waypoints.size();
@@ -2195,7 +2213,10 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
             if (!walking(w, u)) {
                 job.stuck += dt;
                 const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, goal) : workStorey(w, goal);
-                if (job.stuck > BUILD_GIVE_UP_SECONDS) end(BEHAVIOR_RETRY_SECONDS * 3.0f);
+                if (job.stuck > BUILD_GIVE_UP_SECONDS) {
+                    noteTaskFailed(w, u, behaviorName(b->step));
+                    end(BEHAVIOR_RETRY_SECONDS * 3.0f);
+                }
                 else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSoloTo(w, t, u, job.phase == BuildJob::Phase::Fetch ? approachOf(w, u, goal) : standOffOf(w, u, goal), storey);
             }
             continue;

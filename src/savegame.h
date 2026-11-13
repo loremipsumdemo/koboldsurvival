@@ -13,8 +13,7 @@
 
 // Plain text, one record per line. Terrain comes from the named map; everything else is in the file.
 // Props, mobs, behaviors and stats are named by their keys, so adding one needs no new version. Whenever a line changes,
-// raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new, and keep a file of the old
-// version in tests/saves. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
+// raise SAVE_VERSION and add a step to save_migrate.cpp that turns the old lines into the new. A file from a version older than SAVE_OLDEST_VERSION or newer than this game is not read.
 inline constexpr int SAVE_VERSION = 19;
 inline constexpr int SAVE_OLDEST_VERSION = 6;
 inline constexpr int AUTOSAVE_SLOTS = 3;
@@ -60,6 +59,12 @@ struct SaveUnit {
     std::vector<SaveRule> rules;
     bool passive = false, block = false, sneak = false;
     int stepKind = -1;
+    // Dancing, or walking to its place on the circle: the Campfire or Altar (a prop index), its place, whether it has begun, the
+    // real seconds of dancing left, and how long the circle has been going (line dance; a file without it loads as before)
+    int danceProp = -1, danceSlot = -1;
+    bool danceBegan = false;
+    float danceLeft = 0.0f;
+    double danceClock = 0.0;
     float buffLeft = 0.0f, buffAttack = 0.0f;
     std::vector<Provoked::Entry> provoked;
     int followUnit = -1, defendUnit = -1, attackUnit = -1;

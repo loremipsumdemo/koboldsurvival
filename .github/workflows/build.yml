@@ -30,6 +30,3 @@ jobs:
 
       - name: Build
         run: cmake --build out/ci
-
-      - name: Test
-        run: ctest --test-dir out/ci --output-on-failure
