@@ -31,6 +31,7 @@ inline constexpr float BLOCKED_RETRY_SECONDS = 4.0f; // a piece with a unit in t
 inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
 inline constexpr double DOOR_HEALTH = 60.0;
 inline constexpr double WALL_HEALTH = 2.0 * DOOR_HEALTH;   // a wall takes twice the breaking a door does
+inline constexpr double PERIMETER_STRENGTH = 10.0;           // a Perimeter Wall or Gate takes ten times what a wall or door does
 inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
 // A foundation is laid only on ground it can be levelled from: its corners, the rest of its building's and (once one of
 // its tiles is finished) the building's level may differ by at most this much
@@ -203,8 +204,15 @@ enum class PieceCheck {
     Taken,
     NeedsFloor,
     TooSteep,
+    NearPerimeter,   // a foundation may not touch a Perimeter Wall or Gate
 };
 const char* pieceRefusalKey(PieceCheck c);
+
+// Whether the tiles of this rectangle are on or directly beside (a side, not a corner) a Perimeter Wall or Gate, blueprints too:
+// no foundation goes there
+bool touchesPerimeterPiece(World& w, int x0, int z0, int x1, int z1);
+// Whether a rectangle of tiles (a Perimeter piece's) is on or directly beside a foundation tile, blueprints too
+bool touchesFoundation(World& w, int x0, int z0, int x1, int z1);
 
 int woodLogItem();
 // A prop that is not a building piece, placed from the Build tab: finished at once when props.txt gives it no materials,

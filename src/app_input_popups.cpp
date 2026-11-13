@@ -383,6 +383,7 @@ bool App::pressOnLogFilter() {
 
 bool App::mouseDownOnPopups() {
     if (pressOnLogFilter()) return true;
+    if (pressOnPerimeter()) return true;
     if (pressOnPlanPopup()) return true;
     if (pressOnAdjustWidget()) return true;
     if (pressOnRename()) return true;

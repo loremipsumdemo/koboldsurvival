@@ -18,6 +18,7 @@
 #include <functional>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -373,13 +374,13 @@ struct App : AppSession {
     struct SpotCache {
         bool filled = false, ok = false;
         PropKind kind = PropKind::Wagon;
-        float x = 0.0f, z = 0.0f;
+        float x = 0.0f, z = 0.0f, yaw = 0.0f;
         int storey = 0;
         std::uint64_t props = 0, owners = 0, foundations = 0, storeys = 0, blueprints = 0;
         Uint64 tick = 0;
     };
     SpotCache spotCache;
-    bool buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims);
+    bool buildSpotOk(PropKind kind, float x, float z, int storey, const std::vector<Claim>& claims, float yaw = 0.0f);
     std::vector<std::array<float, 3>> campRings;   // the campfires whose rings show while a Bedroll is placed
     bool campRingsValid = false;
     std::uint64_t campRingsProps = 0, campRingsOwners = 0, campRingsBlueprints = 0;
@@ -440,6 +441,28 @@ struct App : AppSession {
     bool pressOnStoreFilter();
     void drawStoreFilter();
     void openBehaviorGroups(ObjectId altarProp);
+    // Set Perimeter (app_perimeter.cpp): the tiles of an Altar's Perimeter drawn on a copy, kept by Confirm
+    struct PerimeterUi {
+        bool active = false;
+        ObjectId altar = NO_OBJECT;
+        float cx = 0.0f, cz = 0.0f, radius = 0.0f;   // its claim
+        bool erase = false;                           // the tool: Draw or Erase
+        std::set<std::pair<int, int>> draft;
+        bool drag = false;
+        int dragX = 0, dragZ = 0;
+        float x = -1.0f, y = -1.0f;   // where the window is: -1, the top middle
+        bool moving = false;          // its title bar is held, to move it
+        float grabX = 0.0f, grabY = 0.0f;
+    };
+    PerimeterUi perim;
+    void openPerimeter(ObjectId altarProp);
+    void closePerimeter();
+    void paintPerimeter(int x0, int z0, int x1, int z1, bool erase);
+    bool pressOnPerimeter();
+    bool releasePerimeter();
+    void updatePerimeter();
+    void perimeterPreview(BuildPreview& bp, float mx, float my);
+    void drawPerimeterPanel();
     std::vector<BehaviorOption> groupTaskOptions();
     bool pressOnBehaviorGroups();
     void scrollBehaviorGroups(float mx, float my, float wheel);
@@ -464,7 +487,7 @@ struct App : AppSession {
     void mapPickWheel(float x, float y, float notches);
     void drawMapPickScreen();
     MapPickLayout mapPickLayout();
-    std::array<std::vector<ObjectId>, 2> altarColumns();
+    std::array<std::vector<ObjectId>, 3> altarColumns();
     void applyAltarMoves();
     void drawAltar();
     // Manage Squads (app_altar.cpp)

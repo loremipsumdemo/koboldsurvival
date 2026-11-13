@@ -893,6 +893,8 @@ UILABEL_BUILD_PICKED	Picked
 UILABEL_BUILD_PLACE_HINT	Left-click the ground to place. Right-click or Escape cancels.
 UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
 MISC_BUILD_BLOCKED	No room to build here
+MISC_BUILD_NEAR_PERIMETER	A foundation can't touch a Perimeter Wall or Gate
+MISC_BUILD_NEAR_FOUNDATION	A Perimeter Wall or Gate can't touch a foundation
 MISC_BUILD_UNWALKABLE	The ground here can't be built on
 UILABEL_BUILD_DESTROY	Destroy
 UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
@@ -1072,14 +1074,26 @@ UILABEL_STOCK_STALL_TITLE	Stock {0}
 # ----------------------------------------------------------------------
 MISC_ALTAR_OF	Altar of {0}
 UILABEL_ALTAR_ROSTER	Manage Units
+UILABEL_SET_PERIMETER	Set Perimeter
+UILABEL_PERIMETER_TITLE	Perimeter
+UILABEL_PERIMETER_DRAW	Draw Perimeter
+UILABEL_PERIMETER_ERASE	Erase Perimeter
+UILABEL_PERIMETER_RESET	Reset Perimeter
+UILABEL_PERIMETER_CONFIRM	Confirm Perimeter
+UILABEL_PERIMETER_CANCEL	Cancel Changes
+UILABEL_PERIMETER_HINT	Drag over the ground to draw or erase the Perimeter. The 5 by 5 round the Altar is always part of it
+MISC_PERIMETER_SET	Perimeter set
 UILABEL_MANAGE_UNITS	Manage Units
-UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4})
+UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4}), {5} of them Fortified
 UILABEL_ALTAR_OVER_SOFT_CAP	You have more citizens than the soft cap in Settings
 UILABEL_ALTAR_MILITARY	Military
 UILABEL_ALTAR_CITIZENS	Citizens
 UILABEL_ALTAR_CITIZEN	Citizen
 UILABEL_ALTAR_MILITARY_TIP	Units you command, in nine squads of up to 16
 UILABEL_ALTAR_CITIZENS_TIP	Units the game commands. They stay near your altar
+UILABEL_ALTAR_FORTIFIED	Fortified
+UILABEL_ALTAR_FORTIFIED_TIP	Automated military: they stay at your claim and guard the Perimeter instead of doing citizen tasks
+UILABEL_ALTAR_TO_FORTIFIED_TIP	Move to the fortified
 UILABEL_ALTAR_LEVELS	Combat {0}  Other {1}
 UILABEL_ALTAR_SQUAD_TAG	Squad {0}
 UILABEL_ALTAR_TO_CITIZENS	Moving in
@@ -1263,6 +1277,8 @@ PROP_AIRSHIP	Airship
 PROP_FOUNDATION	Foundation
 PROP_WOOD_WALL	Wall
 PROP_WOOD_DOOR	Door
+PROP_PERIMETER_WALL	Perimeter Wall
+PROP_PERIMETER_GATE	Perimeter Gate
 PROP_LADDER	Ladder
 PROP_UPPER_FLOOR	Floor
 PROP_DRAGON_CRYSTAL	Dragon Crystal

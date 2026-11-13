@@ -15,6 +15,7 @@ enum class BuildCheck {
     NoCamp,
     NoFloor,
     Indoors,
+    BesideFoundation,   // a Perimeter Wall or Gate may not touch a foundation
 };
 
 void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
@@ -22,8 +23,9 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
 // storey: the floor it goes on (0 the ground; above that, it must stand on a finished upper floor of yours)
 // builder: the faction placing it (yours by default)
 // claims: the claims in the world when the caller has them at hand (claimsOf), else they are worked out here
+// yaw: the way it is turned (a Perimeter piece, covering several tiles, is turned in quarters)
 BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0, int builder = FACTION_PLAYER,
-                          const std::vector<Claim>* claims = nullptr);
+                          const std::vector<Claim>* claims = nullptr, float yaw = 0.0f);
 
 bool buildAnywhere(const BuildPick& pick);
 bool selectionInClaim(World& w);

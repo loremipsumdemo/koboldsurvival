@@ -24,7 +24,7 @@ std::string unitNameOf(World& w, ObjectId u) {
 }
 }
 
-void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 2>& cols,
+void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<std::vector<ObjectId>, 3>& cols,
                                const std::map<ObjectId, int>& moves, const AltarTotals& totals, ObjectId pinned,
                                float mx, float my) {
     const float s = uiScale();
@@ -39,16 +39,16 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
         const bool overSoft = totals.citizens > totals.softCap;
         const std::string text = langf("UILABEL_ALTAR_TOTALS", { std::to_string(totals.military), std::to_string(MILITARY_MAX),
                                                                  std::to_string(totals.citizens), std::to_string(totals.softCap),
-                                                                 std::to_string(totals.hardCap) });
+                                                                 std::to_string(totals.hardCap), std::to_string(totals.fortified) });
         const std::string shown = fitTextTip(text, L.totals.w, L.totals);
         drawListText(shown, L.totals.x, L.totals.y + (L.totals.h - th) * 0.5f,
                      overSoft ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f } : theme::TEXT_DIM);
         if (overSoft) noteTip(lang("UILABEL_ALTAR_OVER_SOFT_CAP"), L.totals);
     }
 
-    const char* heads[2] = { "UILABEL_ALTAR_MILITARY", "UILABEL_ALTAR_CITIZENS" };
-    const char* tips[2] = { "UILABEL_ALTAR_MILITARY_TIP", "UILABEL_ALTAR_CITIZENS_TIP" };
-    for (int c = 0; c < 2; ++c) {
+    const char* heads[3] = { "UILABEL_ALTAR_MILITARY", "UILABEL_ALTAR_CITIZENS", "UILABEL_ALTAR_FORTIFIED" };
+    const char* tips[3] = { "UILABEL_ALTAR_MILITARY_TIP", "UILABEL_ALTAR_CITIZENS_TIP", "UILABEL_ALTAR_FORTIFIED_TIP" };
+    for (int c = 0; c < 3; ++c) {
         const Rect& h = L.heads[(size_t)c];
         drawRect(h, theme::alpha(theme::GOLD_DEEP, 0.85f));
         const std::string countText = std::to_string(cols[(size_t)c].size());
@@ -63,11 +63,13 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
             const bool ghost = moves.count(u) > 0;
             std::string tag;
-            if (ghost) tag = lang(c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_CITIZENS" : "UILABEL_ALTAR_TO_MILITARY");
+            if (ghost) tag = lang(c != ALTAR_MILITARY ? "UILABEL_ALTAR_TO_CITIZENS" : "UILABEL_ALTAR_TO_MILITARY");
             else if (c == ALTAR_MILITARY && squadOf(w, u) >= 0) tag = langf("UILABEL_ALTAR_SQUAD_TAG", { std::to_string(squadOf(w, u) + 1) });
-            const bool right = c == ALTAR_MILITARY;
+            // Each unit's arrow moves it to the next column: Military, Citizens, Fortified, and back to Military
+            const bool right = c != ALTAR_FORTIFIED;
             drawRosterRow(w, r, u, ghost, tag, right,
-                          ghost ? "UILABEL_ALTAR_UNDO_TIP" : right ? "UILABEL_ALTAR_TO_CITIZENS_TIP" : "UILABEL_ALTAR_TO_MILITARY_TIP",
+                          ghost ? "UILABEL_ALTAR_UNDO_TIP" : c == ALTAR_MILITARY ? "UILABEL_ALTAR_TO_CITIZENS_TIP"
+                          : c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_FORTIFIED_TIP" : "UILABEL_ALTAR_TO_MILITARY_TIP",
                           pinned, mx, my);
         }
         if (cols[(size_t)c].empty()) {

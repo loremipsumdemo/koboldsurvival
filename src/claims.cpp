@@ -287,6 +287,11 @@ void breakBuilding(World& w, ObjectId e, bool leaveDebris) {
     }
     if (propInfo(kind).foundation) foundationLost(w, e);
     if (propInfo(kind).wallRule || propInfo(kind).door) buildingTilesChanged(w, (int)std::floor(at.x), (int)std::floor(at.z), (int)std::floor(at.x), (int)std::floor(at.z));
+    if (propInfo(kind).perimeter) {
+        int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+        pieceTiles(w, e, x0, z0, x1, z1);
+        buildingTilesChanged(w, x0, z0, x1, z1);
+    }
     if (propInfo(kind).stairs) {
         // Their steps open up to walk across again
         int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
@@ -319,6 +324,24 @@ void breakBuilding(World& w, ObjectId e, bool leaveDebris) {
     const ObjectId debris = makeProp(w, PropKind::Debris, at);
     if (storey > 0) w.add(debris, Storey{ storey });
     claimOwnership(w, debris);
+}
+
+bool inPerimeterCore(World& w, ObjectId altar, int x, int z) {
+    const Transform* t = w.get<Transform>(altar);
+    if (!t) return false;
+    return std::abs(x - (int)std::floor(t->x)) <= PERIMETER_CORE_RADIUS && std::abs(z - (int)std::floor(t->z)) <= PERIMETER_CORE_RADIUS;
+}
+
+std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar) {
+    std::set<std::pair<int, int>> out;
+    if (const Perimeter* p = w.get<Perimeter>(altar)) out = p->tiles;
+    if (const Transform* t = w.get<Transform>(altar)) {
+        const int ax = (int)std::floor(t->x), az = (int)std::floor(t->z);
+        for (int z = az - PERIMETER_CORE_RADIUS; z <= az + PERIMETER_CORE_RADIUS; ++z) {
+            for (int x = ax - PERIMETER_CORE_RADIUS; x <= ax + PERIMETER_CORE_RADIUS; ++x) out.insert({ x, z });
+        }
+    }
+    return out;
 }
 
 bool destroyBuilding(World& w, ObjectId e) {

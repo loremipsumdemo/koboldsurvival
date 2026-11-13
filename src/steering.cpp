@@ -801,7 +801,18 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
         tiles.valid = true;
         for (ObjectId p : w.view<Prop, Transform>()) {
             const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-            if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs) || w.has<Blueprint>(p)) continue;
+            if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs && !info.perimeter) || w.has<Blueprint>(p)) continue;
+            if (info.perimeter) {
+                int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+                pieceTiles(w, p, x0, z0, x1, z1);
+                for (int z = z0; z <= z1; ++z) {
+                    for (int x = x0; x <= x1; ++x) {
+                        if (info.solid) tiles.walls[tileKey(x, z)] = p;
+                        else tiles.doors.push_back({ tileKey(x, z), p });
+                    }
+                }
+                continue;
+            }
             if (info.stairs) {
                 // Their top step is floor of the level above; their steps can't be walked across up on their own floor
                 int x0 = 0, z0 = 0, x1 = 0, z1 = 0;

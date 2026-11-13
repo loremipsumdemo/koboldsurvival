@@ -577,6 +577,11 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             else if (info.ladder) box(tr->x - 0.3f, y, tr->z - 0.08f, tr->x + 0.3f, y + FLOOR_HEIGHT + 0.3f, tr->z + 0.08f, planned, plannedEdge);
             else if (info.door && std::fabs(w.get<Prop>(e)->yaw) > 0.1f) box(tr->x - 0.15f, y, z, tr->x + 0.15f, y + FLOOR_HEIGHT, z + 1.0f, planned, plannedEdge);
             else if (info.door) box(x, y, tr->z - 0.15f, x + 1.0f, y + FLOOR_HEIGHT, tr->z + 0.15f, planned, plannedEdge);
+            else if (info.perimeter) {
+                int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+                propTileRect(info, tr->x, tr->z, w.get<Prop>(e)->yaw, px0, pz0, px1, pz1);
+                box((float)px0 + 0.05f, y, (float)pz0 + 0.05f, (float)px1 + 0.95f, y + info.size, (float)pz1 + 0.95f, planned, plannedEdge);
+            }
             else box(x + 0.05f, y, z + 0.05f, x + 0.95f, y + (info.wallRule ? FLOOR_HEIGHT : info.size), z + 0.95f, planned, plannedEdge);
             return;
         }
@@ -662,7 +667,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             }
             fires_.push_back(f);
         }
-        if (const Model* made = info.door || info.upperFloor || info.ladder ? materialModel(0) : nullptr) {
+        if (const Model* made = info.door || info.upperFloor || info.ladder || info.perimeter ? materialModel(0) : nullptr) {
             queueModel(*made, px, py, pz, info.size, yaw);
         } else if (modelled && visual) {
             queueModelMatrix(propModel(kind), propVisualMatrix(propModel(kind), px, py, pz, info.size, yaw, *visual), propTint_, 1.0f);
@@ -894,6 +899,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 
     for (const BuildPreview::Mark& m : buildPreview_.marks) {
         const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
+                        : m.tone == 3 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.42f}
                                                                         : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
         const float a = 0.08f, y = m.y + lift;
         if (m.outline) {
@@ -929,7 +935,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         for (float gx = startX; gx < endX; gx += cell) {
             for (float gz = startZ; gz < endZ; gz += cell) {
                 const float cx = gx + cell * 0.5f, cz = gz + cell * 0.5f;
-                if (!insideFootprint(f, cx - x0, cz - z0, 0.0f)) continue;
+                if (!insideFootprint(f, cx - x0, cz - z0, buildPreview_.yaw)) continue;
                 const V3 a{ gx, hgt(gx, gz), gz }, bb{ gx + cell, hgt(gx + cell, gz), gz };
                 const V3 c{ gx + cell, hgt(gx + cell, gz + cell), gz + cell }, d{ gx, hgt(gx, gz + cell), gz + cell };
                 b.quad(a, bb, c, d, fill);

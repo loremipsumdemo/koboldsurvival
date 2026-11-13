@@ -397,6 +397,17 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "rare") p.rare = true;
         else if (flag == "stall") p.stall = true;
         else if (flag == "exterior") p.exterior = true;
+        else if (flag == "perimeter_wall") p.perimeter = p.solid = true;
+        else if (flag == "perimeter_gate") p.perimeter = true;
+        else if (flag.rfind("tiles:", 0) == 0) {
+            // tiles:W:D, the tiles it covers (its footprint is that rectangle)
+            if (std::sscanf(flag.c_str(), "tiles:%d:%d", &p.tilesW, &p.tilesD) != 2 || p.tilesW < 1 || p.tilesD < 1) {
+                why = "a tiles flag that is not tiles:W:D";
+                return false;
+            }
+            p.foot.halfW = (float)p.tilesW * 0.5f;
+            p.foot.halfD = (float)p.tilesD * 0.5f;
+        }
         else {
             why = "unknown flag " + flag;
             return false;

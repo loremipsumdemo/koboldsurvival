@@ -664,7 +664,7 @@ WALL_SHAPES = {
     '_cross': [(1, 0), (0, 1), (-1, 0), (0, -1)],
 }
 SHAPED = {'WoodWall'}
-MATERIAL_KEYS = {'Foundation', 'WoodWall', 'WoodDoor', 'UpperFloor', 'Ladder'}
+MATERIAL_KEYS = {'Foundation', 'WoodWall', 'WoodDoor', 'UpperFloor', 'Ladder', 'PerimeterWall', 'PerimeterGate'}
 
 
 def wood_door(pal=WOOD_PAL):
@@ -728,6 +728,46 @@ def crystal_door(pal=CRYSTAL_PAL):
 
 # Each material's door is a design of its own
 DOOR_STYLES = {'': wood_door, '_stone': stone_door, '_metal': metal_door, '_crystal': crystal_door}
+
+
+def perimeter_wall(pal=WOOD_PAL):
+    """A Perimeter Wall: a tall, thick rampart over a 2 by 2 footing, with a pier at each end, bands of darker courses and
+    a walkway on top between two rows of merlons. 3.6 high, 2 along (x) and 2 deep (z)."""
+    main, dark, light, foot = pal
+    H = 3.6
+    parts = [box(0, 0, 0, 2.0, 0.1, 2.0, foot), box(0, 0.1, 0, 1.9, H - 0.7, 1.3, main)]
+    for y in (0.8, 1.6, 2.4):
+        parts.append(box(0, y, 0, 1.94, 0.07, 1.34, dark))
+    for x in (-0.82, 0.82):
+        parts.append(box(x, 0.1, 0, 0.34, H - 0.4, 1.7, dark))
+    parts.append(box(0, H - 0.6, 0, 2.0, 0.16, 1.6, light))
+    for x in (-0.78, -0.26, 0.26, 0.78):
+        for z in (-0.6, 0.6):
+            parts.append(box(x, H - 0.44, z, 0.34, 0.44, 0.26, main))
+    return parts
+
+
+def perimeter_gate(pal=WOOD_PAL):
+    """A Perimeter Gate: two towers joined by a lintel over a pair of tall leaves, across a 4 by 2 footing (x by z), 4.2 high."""
+    main, dark, light, foot = pal
+    H = 4.2
+    parts = [box(0, 0, 0, 4.0, 0.1, 2.0, foot)]
+    for x in (-1.6, 1.6):
+        parts.append(box(x, 0.1, 0, 0.8, H - 0.4, 1.6, main))
+        for y in (0.9, 1.9, 2.9):
+            parts.append(box(x, y, 0, 0.84, 0.07, 1.64, dark))
+        parts.append(box(x, H - 0.3, 0, 1.0, 0.3, 1.8, light))
+    parts.append(box(0, 3.2, 0, 2.36, 0.7, 1.3, dark))
+    for x in (-0.8, 0.0, 0.8):
+        for z in (-0.5, 0.5):
+            parts.append(box(x, 3.9, z, 0.4, 0.3, 0.26, main))
+    for x in (-0.6, 0.6):
+        parts.append(box(x, 0.1, 0, 1.14, 3.0, 0.2, main))
+        for y in (0.7, 1.6, 2.5):
+            parts.append(box(x, y, 0, 1.16, 0.12, 0.24, IRON))
+    parts.append(box(-0.1, 1.4, 0.13, 0.08, 0.3, 0.06, IRON))
+    parts.append(box(0.1, 1.4, 0.13, 0.08, 0.3, 0.06, IRON))
+    return parts
 
 
 def dragon_crystal():
@@ -837,7 +877,7 @@ BUILDERS = {
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
     'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'WeaponBench': weapon_workbench, 'ArmorBench': armor_workbench, 'AmmoBench': ammunition_workbench, 'Airship': airship, 'Foundation': foundation,
-    'WoodWall': wood_wall, 'WoodDoor': wood_door, 'Ladder': ladder, 'UpperFloor': upper_floor,
+    'WoodWall': wood_wall, 'WoodDoor': wood_door, 'PerimeterWall': perimeter_wall, 'PerimeterGate': perimeter_gate, 'Ladder': ladder, 'UpperFloor': upper_floor,
     'DragonCrystal': dragon_crystal, 'WoodStockpile': wood_stockpile, 'StoneStockpile': stone_stockpile,
     'IronStockpile': iron_stockpile, 'OreStockpile': ore_stockpile,
     'Wheelbarrow': wheelbarrow, 'TamingCage': taming_cage,

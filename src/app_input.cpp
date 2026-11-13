@@ -92,6 +92,11 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && perim.active && e.key.key == SDLK_ESCAPE) {
+        closePerimeter();
+        playSfx(Sfx::UiBack);
+        return;
+    }
     if (screen == Screen::Playing && session.askMaterial) {
         if (e.key.key == SDLK_ESCAPE) session.askMaterial = false;
         return;
@@ -259,8 +264,8 @@ void App::onKeyDown() {
             return;
         }
     }
-    if (screen == Screen::Playing && !editing && session.buildPick.placing() && propInfo(session.buildPick.kind).stairs &&
-        e.key.key == SDLK_R && !e.key.repeat) {
+    if (screen == Screen::Playing && !editing && session.buildPick.placing() &&
+        (propInfo(session.buildPick.kind).stairs || propInfo(session.buildPick.kind).perimeter) && e.key.key == SDLK_R && !e.key.repeat) {
         session.buildDir = (session.buildDir + 1) % 4;
         playSfx(Sfx::UiClick);
         return;
@@ -415,9 +420,9 @@ void App::onMouseWheel() {
         }
     }
     if (screen == Screen::Playing && altar.open) {
-        const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
-        const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
-        for (int c = 0; c < 2; ++c) {
+        const std::array<std::vector<ObjectId>, 3> cols = altarColumns();
+        const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size(), (int)cols[2].size() }, altar.scroll, 3);
+        for (int c = 0; c < 3; ++c) {
             if (!L.lists[(size_t)c].contains(e.wheel.mouse_x, e.wheel.mouse_y)) continue;
             const int step = e.wheel.y > 0.0f ? -3 : e.wheel.y < 0.0f ? 3 : 0;
             altar.scroll[(size_t)c] = std::clamp(L.first[(size_t)c] + step, 0, altarMaxScroll(L, c, (int)cols[(size_t)c].size()));
@@ -721,6 +726,7 @@ void App::onMouseButtonUp() {
         session.disbandHeldAt = 0;
         return;
     }
+    if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && releasePerimeter()) return;
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && adjustRelease()) return;
     if (screen == Screen::Playing && e.button.button == SDL_BUTTON_LEFT && buildRelease()) return;
     if ((squadThumbDrag || factionThumbDrag) && e.button.button == SDL_BUTTON_LEFT) {

@@ -208,6 +208,9 @@ struct PropInfo {
     bool ladder = false;         // climbs to the upper floor
     bool stairs = false;         // a ladder 3 tiles long that is walked up: from its foot to the floor above past its top
     bool upperFloor = false;     // a floor at wall height
+    bool perimeter = false;      // a Perimeter Wall or Gate: stands on open ground, covering tilesW by tilesD tiles, 10 times as strong
+    bool solid = false;          // with perimeter: a wall, closing every tile it covers (a gate is walked through while it lets you)
+    int tilesW = 1, tilesD = 1;  // the tiles it covers, across and deep when it faces east (props.txt's tiles:W:D flag)
     bool rare = false;           // a new level scatters only one
     bool randomYaw = false;      // faces a way of its own, by where it stands, whenever one comes into being
     bool advanced = false;       // an Advanced Crafting prop: it makes the recipe picked for it (src/recipes.h)
@@ -223,6 +226,17 @@ struct PropInfo {
     bool exterior = false;       // goes outside buildings only, never on a foundation          // sells to other factions' units, manned by a shopkeeper
     BuildGroup group = BuildGroup::Nature;   // the Build tab's heading it is listed under
 };
+
+// The tiles a prop that covers several (tilesW by tilesD) takes when it stands at (cx, cz) turned by yaw: its centre is on a
+// tile corner, so an even width or depth is whole tiles to each side
+inline void propTileRect(const PropInfo& i, float cx, float cz, float yaw, int& x0, int& z0, int& x1, int& z1) {
+    int w = i.tilesW, d = i.tilesD;
+    if (std::fabs(std::sin(yaw)) > 0.7f) std::swap(w, d);
+    x0 = (int)std::floor(cx - (float)w * 0.5f + 0.5f);
+    z0 = (int)std::floor(cz - (float)d * 0.5f + 0.5f);
+    x1 = x0 + w - 1;
+    z1 = z0 + d - 1;
+}
 
 // How often what is drawn of a prop changes. A still prop stands where it was put and looks the same until it is built,
 // broken or moved by hand; a door stays on its tile but swings open while someone is in its doorway; a moving prop (a

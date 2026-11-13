@@ -8,7 +8,7 @@ using namespace play;
 
 namespace {
 int columnOf(World& w, ObjectId u) {
-    return w.has<Citizen>(u) ? ALTAR_CITIZEN : ALTAR_MILITARY;
+    return w.has<Fortified>(u) ? ALTAR_FORTIFIED : w.has<Citizen>(u) ? ALTAR_CITIZEN : ALTAR_MILITARY;
 }
 }
 
@@ -25,12 +25,12 @@ void App::openAltar() {
 }
 
 // Each column's units as they will be after Apply: the units moving in come first, shown as ghosts
-std::array<std::vector<ObjectId>, 2> App::altarColumns() {
+std::array<std::vector<ObjectId>, 3> App::altarColumns() {
     for (auto it = altar.moves.begin(); it != altar.moves.end();) {
         if (!world.has<Entity>(it->first) || (!world.has<Commandable>(it->first) && !world.has<Citizen>(it->first))) it = altar.moves.erase(it);
         else ++it;
     }
-    std::array<std::vector<ObjectId>, 2> cols;
+    std::array<std::vector<ObjectId>, 3> cols;
     for (const auto& [u, to] : altar.moves) cols[(size_t)to].push_back(u);
     std::vector<ObjectId> military = militaryUnits(world);
     std::stable_sort(military.begin(), military.end(), [&](ObjectId a, ObjectId b) { return squadOf(world, a) < squadOf(world, b); });
@@ -38,7 +38,7 @@ std::array<std::vector<ObjectId>, 2> App::altarColumns() {
         if (!altar.moves.count(u)) cols[ALTAR_MILITARY].push_back(u);
     }
     for (ObjectId u : citizenUnits(world)) {
-        if (!altar.moves.count(u)) cols[ALTAR_CITIZEN].push_back(u);
+        if (!altar.moves.count(u)) cols[world.has<Fortified>(u) ? ALTAR_FORTIFIED : ALTAR_CITIZEN].push_back(u);
     }
     return cols;
 }
@@ -46,8 +46,8 @@ std::array<std::vector<ObjectId>, 2> App::altarColumns() {
 bool App::pressOnAltar() {
     if (screen != Screen::Playing || !altar.open) return false;
     const float x = e.button.x, y = e.button.y;
-    const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
-    const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
+    const std::array<std::vector<ObjectId>, 3> cols = altarColumns();
+    const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size(), (int)cols[2].size() }, altar.scroll, 3);
     if (altar.menuUnit != NO_OBJECT) {
         const ItemMenuLayout menu = renderer.itemMenuLayout(altar.menuX, altar.menuY, 1, winW, winH);
         const ObjectId u = altar.menuUnit;
@@ -73,7 +73,7 @@ bool App::pressOnAltar() {
         }
     }
     if (e.button.button == SDL_BUTTON_RIGHT) {
-        for (int c = 0; c < 2; ++c) {
+        for (int c = 0; c < 3; ++c) {
             for (const AltarRow& r : L.rows[(size_t)c]) {
                 if (!r.portrait.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
                 altar.menuUnit = cols[(size_t)c][(size_t)r.index];
@@ -99,7 +99,7 @@ bool App::pressOnAltar() {
         altar.pinned = NO_OBJECT;
         return true;
     }
-    for (int c = 0; c < 2; ++c) {
+    for (int c = 0; c < 3; ++c) {
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (!r.row.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
@@ -113,9 +113,10 @@ bool App::pressOnAltar() {
                 playSfx(Sfx::UiClick);
                 return true;
             }
-            const int to = 1 - c;
-            int military = (int)cols[ALTAR_MILITARY].size(), citizens = (int)cols[ALTAR_CITIZEN].size();
-            if (to == ALTAR_CITIZEN && citizens + 1 > settings.citizenHardCap) {
+            const int to = (c + 1) % 3;   // Military, Citizens, Fortified, and round again
+            int military = (int)cols[ALTAR_MILITARY].size();
+            const int citizens = (int)(cols[ALTAR_CITIZEN].size() + cols[ALTAR_FORTIFIED].size());
+            if (to != ALTAR_MILITARY && c == ALTAR_MILITARY && citizens + 1 > settings.citizenHardCap) {
                 refuse(langf("MISC_CITIZENS_HARD_CAP", { std::to_string(settings.citizenHardCap) }));
                 return true;
             }
@@ -136,7 +137,13 @@ void App::applyAltarMoves() {
     int toCitizens = 0, toMilitary = 0, noRoom = 0;
     for (const auto& [u, to] : altar.moves) {
         if (to != ALTAR_CITIZEN || columnOf(world, u) == ALTAR_CITIZEN) continue;
-        makeCitizen(world, u);
+        if (world.has<Fortified>(u)) unmakeFortified(world, u);
+        else makeCitizen(world, u);
+        ++toCitizens;
+    }
+    for (const auto& [u, to] : altar.moves) {
+        if (to != ALTAR_FORTIFIED || columnOf(world, u) == ALTAR_FORTIFIED) continue;
+        makeFortified(world, u);
         ++toCitizens;
     }
     for (const auto& [u, to] : altar.moves) {
@@ -157,12 +164,13 @@ void App::applyAltarMoves() {
 
 void App::drawAltar() {
     if (!altar.open) return;
-    const std::array<std::vector<ObjectId>, 2> cols = altarColumns();
-    const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, altar.scroll);
+    const std::array<std::vector<ObjectId>, 3> cols = altarColumns();
+    const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size(), (int)cols[2].size() }, altar.scroll, 3);
     altar.scroll = L.first;
     AltarTotals totals;
     totals.military = (int)cols[ALTAR_MILITARY].size();
-    totals.citizens = (int)cols[ALTAR_CITIZEN].size();
+    totals.fortified = (int)cols[ALTAR_FORTIFIED].size();
+    totals.citizens = (int)cols[ALTAR_CITIZEN].size() + totals.fortified;
     totals.softCap = citizenSoftLimit(settings);
     totals.hardCap = settings.citizenHardCap;
     renderer.drawAltarRoster(world, L, cols, altar.moves, totals, altar.pinned, mouseX, mouseY);
@@ -170,7 +178,7 @@ void App::drawAltar() {
     // The card of the pinned unit, or else of the unit under the mouse
     ObjectId shown = NO_OBJECT;
     Rect beside{};
-    for (int c = 0; c < 2; ++c) {
+    for (int c = 0; c < 3; ++c) {
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];

@@ -218,7 +218,7 @@ void behaviorGroupSystem(World& w) {
         storeHaulSync(w);
     }
     for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
-        if (w.get<Faction>(u)->id != FACTION_PLAYER) continue;
+        if (w.get<Faction>(u)->id != FACTION_PLAYER || w.has<Fortified>(u)) continue;
         Citizen& c = *w.get<Citizen>(u);
         if (c.group < 0 || c.group >= (int)g.groups.size()) {
             c.group = 0;

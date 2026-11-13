@@ -27,6 +27,11 @@ struct Citizen {
     int applied = -1;
 };
 
+// A citizen of yours that is Fortified: automated military. It stays at the claim like a citizen, but does none of the citizen tasks
+// (its behavior group is not applied): it has its own, eating and resting as any unit does, and guarding the Perimeter of the Altar
+// whose claim it is in (claims.h). Saved.
+struct Fortified {};
+
 // In the World's resources: the squads' names (empty is the default name) and which squad the Squad tab shows
 struct SquadBook {
     std::array<std::string, SQUAD_COUNT> names{};
@@ -48,6 +53,11 @@ bool moveToSquad(World& w, ObjectId u, int squad);
 
 // Hands a unit to the game: it leaves its squad and the selection, drops its orders, and stays near your altar
 void makeCitizen(World& w, ObjectId u);
+
+// A citizen (made one first, if it is military) becomes Fortified, and a Fortified unit a plain citizen again
+void makeFortified(World& w, ObjectId u);
+void unmakeFortified(World& w, ObjectId u);
+std::vector<ObjectId> fortifiedUnits(World& w);
 
 // Gives a citizen back to you, in the preferred squad or the first with room. False if every squad is full.
 bool makeMilitary(World& w, ObjectId u, int preferred);

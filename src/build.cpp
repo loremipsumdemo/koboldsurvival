@@ -52,9 +52,8 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
 }
 
 BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder,
-                          const std::vector<Claim>* given) {
+                          const std::vector<Claim>* given, float yaw) {
     const Footprint& f = propInfo(kind).foot;
-    const float yaw = 0.0f;
 
     // On an upper floor, every bit of it must stand on a finished floor of yours on that level
     const bool ground = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
@@ -71,6 +70,12 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
             return foundationAt(w, (int)std::floor(px), (int)std::floor(pz)) == NO_OBJECT;
         });
         if (!outdoors) return BuildCheck::Indoors;
+    }
+    // A Perimeter Wall or Gate: not on or directly beside a foundation
+    if (propInfo(kind).perimeter) {
+        int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+        propTileRect(propInfo(kind), x, z, yaw, x0, z0, x1, z1);
+        if (touchesFoundation(w, x0, z0, x1, z1)) return BuildCheck::BesideFoundation;
     }
 
     std::vector<Claim> own;
@@ -133,6 +138,7 @@ const char* buildRefusalKey(BuildCheck c) {
     case BuildCheck::NoCamp: return "MISC_BUILD_NEEDS_CAMP";
     case BuildCheck::NoFloor: return "MISC_BUILD_NO_FLOOR";
     case BuildCheck::Indoors: return "MISC_BUILD_OUTDOORS_ONLY";
+    case BuildCheck::BesideFoundation: return "MISC_BUILD_NEAR_FOUNDATION";
     case BuildCheck::Ok: break;
     }
     return "";

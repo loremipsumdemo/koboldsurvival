@@ -222,6 +222,7 @@ struct BuildPreview {
     bool on = false;
     PropKind kind = PropKind::Wagon;
     float x = 0.0f, z = 0.0f;
+    float yaw = 0.0f;   // a Perimeter piece's turn
     bool valid = false;
     float ringR = 0.0f;
     int ringTone = 0;
