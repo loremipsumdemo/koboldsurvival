@@ -128,6 +128,8 @@ StoneStockpile	PROP_STONE_STOCKPILE	stone_stockpile.glb	1.4	storage	none	0	0	0	0
 IronStockpile	PROP_IRON_STOCKPILE	iron_stockpile.glb	1.4	storage	none	0	0	0	0	iron	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	2	10	32	0	storage
 OreStockpile	PROP_ORE_STOCKPILE	ore_stockpile.glb	1.4	storage	none	0	0	0	0	ore	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	2	10	32	0	storage
 Stairs	PROP_STAIRS	stair_step_wood.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,stairs	3	12	12	0	settlement
-PerimeterWall	PROP_PERIMETER_WALL	perimeter_wall_wood.glb	3.6	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_wall,tiles:2:2	4	32	12	0	settlement
-PerimeterGate	PROP_PERIMETER_GATE	perimeter_gate_wood.glb	4.2	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_gate,tiles:4:2	4	40	12	0	settlement
+PerimeterWall	PROP_PERIMETER_WALL	perimeter_wall_wood.glb	3.9	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_wall,tiles:2:2	4	32	12	0	settlement
+PerimeterGate	PROP_PERIMETER_GATE	perimeter_gate_wood.glb	4.8	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_gate,tiles:4:2	4	40	12	0	settlement
+Slope	PROP_SLOPE	slope_wood.glb	3.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,slope,tiles:1:3	3	12	12	0	settlement
+Watchtower	PROP_WATCHTOWER	watchtower_wood.glb	5.0	occupy	none	0	0	1	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,watchtower,tiles:2:2	12	60	12	0	settlement
 TamingCage	PROP_TAMING_CAGE	taming_cage.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	built,cage,taming	8	40	12	0	cages

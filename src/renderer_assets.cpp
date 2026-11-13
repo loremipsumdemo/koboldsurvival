@@ -128,7 +128,7 @@ void Renderer::loadPropModels(LoadStages& stages) {
             SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
                     file.c_str(), lang(info.nameKey).c_str(), standIn);
         }
-        const bool shaped = info.wallRule || info.upperFloor || info.solid;   // walls, floors and Perimeter Walls take a shape from what is beside them
+        const bool shaped = info.wallRule || info.upperFloor;   // walls and floors take a shape from what is beside them
         if (shaped) {
             // Its other shapes sit beside its model: wall_wood.glb has wall_wood_end.glb and so on
             static const char* const SHAPES[5] = { "_end", "_straight", "_corner", "_tee", "_cross" };
@@ -153,6 +153,22 @@ void Renderer::loadPropModels(LoadStages& stages) {
                     if (pakHas(f)) loadDrawableModel(f.c_str(), materialModels_[(size_t)k][(size_t)m][(size_t)sh], false);
                 }
             }
+        }
+        if (info.perimeter && info.solid) {
+            // A Perimeter Wall's facing models: perimeter_wall_wood_f5.glb, perimeter_wall_metal_f5.glb and so on, by BuildMaterial
+            static const char* const NAMES[4] = { "_wood", "_metal", "_crystal", "_stone" };
+            std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            if (stem.size() > 5 && stem.compare(stem.size() - 5, 5, "_wood") == 0) stem.erase(stem.size() - 5);
+            for (int m = 0; m < 4; ++m) {
+                for (int mask = 0; mask < 16; ++mask) {
+                    const std::string f = stem + NAMES[m] + "_f" + std::to_string(mask) + ".glb";
+                    if (pakHas(f)) loadDrawableModel(f.c_str(), perimeterWalls_[(size_t)m][(size_t)mask], false);
+                }
+            }
+        }
+        if (info.tower) {
+            const std::string manned = (file.size() > 4 ? file.substr(0, file.size() - 4) : file) + "_manned.glb";
+            if (pakHas(manned)) loadDrawableModel(manned.c_str(), towerManned_, false);
         }
         if (info.perimeter && !info.solid) {
             // A Gate's open model, beside each of its closed ones: perimeter_gate_wood_open.glb, perimeter_gate_metal_open.glb. The
@@ -209,4 +225,7 @@ void Renderer::loadPropModels(LoadStages& stages) {
         }
     }
     for (size_t m = 0; m < stairSteps_.size(); ++m) stairSteps_[m].surface = surfaces_[m].tex;
+    for (size_t m = 0; m < perimeterWalls_.size(); ++m) {
+        for (Model& model : perimeterWalls_[m]) model.surface = surfaces_[m].tex;
+    }
 }

@@ -163,7 +163,7 @@ struct LevelBuilder {
             const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, rng.unit() * TWO_PI);
             if (info.use != PropUse::Resource) w.add(prop, Owner{ faction });
             if (info.use == PropUse::Storage) w.add(prop, startingStorage(kind, rng));
-            if (info.lockLevel > 0) w.add(prop, Lock{ true, info.lockLevel, faction });
+            if (info.lockLevel > 0) w.add(prop, Lock{ !(info.perimeter && !info.solid), info.lockLevel, faction });
             else if (info.use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
             claimOwnership(w, prop);
             ++placed;

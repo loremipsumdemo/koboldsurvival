@@ -21,6 +21,7 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 
 void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     blocked_.clear();
+    sightBlocks_.clear();
     decks_.clear();
     heightEdits_.clear();
     source_ = std::move(source);
@@ -283,6 +284,12 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
     const long long key = (long long)y * 1000003LL + (long long)x;
     if (blocked) blocked_.insert(key);
     else blocked_.erase(key);
+}
+
+void Terrain::setSightBlock(int x, int y, float top) {
+    const long long key = (long long)y * 1000003LL + (long long)x;
+    if (top > 0.0f) sightBlocks_[key] = top;
+    else sightBlocks_.erase(key);
 }
 
 void Terrain::setDeck(int x, int y, bool on) {

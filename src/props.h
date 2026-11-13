@@ -209,7 +209,9 @@ struct PropInfo {
     bool stairs = false;         // a ladder 3 tiles long that is walked up: from its foot to the floor above past its top
     bool upperFloor = false;     // a floor at wall height
     bool perimeter = false;      // a Perimeter Wall or Gate: stands on open ground, covering tilesW by tilesD tiles, 10 times as strong
-    bool solid = false;          // with perimeter: a wall, closing every tile it covers (a gate is walked through while it lets you)
+    bool solid = false;          // with perimeter: a wall, closing every tile it covers (a gate is walked through while it lets you); a Watchtower too
+    bool slope = false;          // a Slope: stairs with no hop, laid on open ground, three tiles long, its top step beside a Perimeter Wall's walkway
+    bool tower = false;          // a Watchtower: one unit occupies it (as an Airship is), shut in on top and out of melee reach
     int tilesW = 1, tilesD = 1;  // the tiles it covers, across and deep when it faces east (props.txt's tiles:W:D flag)
     bool rare = false;           // a new level scatters only one
     bool randomYaw = false;      // faces a way of its own, by where it stands, whenever one comes into being

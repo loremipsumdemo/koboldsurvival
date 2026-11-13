@@ -7,13 +7,13 @@ using namespace systems_detail;
 
 bool isAirship(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
-    return p && propInfo(p->kind).airship;
+    return p && (propInfo(p->kind).airship || propInfo(p->kind).tower);
 }
 
 int occupyCapacity(World& w, ObjectId prop) {
     const Prop* p = w.get<Prop>(prop);
     if (!p) return 0;
-    return propInfo(p->kind).airship ? std::max(1, propInfo(p->kind).workers) : 1;
+    return propInfo(p->kind).airship || propInfo(p->kind).tower ? std::max(1, propInfo(p->kind).workers) : 1;
 }
 
 int occupantCount(World& w, ObjectId prop) {
@@ -171,6 +171,19 @@ void airshipSystem(World& w, Terrain& t, float dt) {
         AirshipState& st = w.has<AirshipState>(ship) ? *w.get<AirshipState>(ship) : w.add(ship, AirshipState{});
         Transform* tr = w.get<Transform>(ship);
         Prop* prop = w.get<Prop>(ship);
+        if (propInfo(prop->kind).tower) {
+            // A Watchtower stays where it stands, with its occupant on top
+            st.overOpen = true;
+            for (ObjectId u : w.view<Occupying, Transform>()) {
+                if (w.get<Occupying>(u)->prop != ship) continue;
+                Transform* ut = w.get<Transform>(u);
+                ut->x = tr->x;
+                ut->z = tr->z;
+                ut->y = tr->y + TOWER_DECK;
+                w.remove<SoloMove>(u);
+            }
+            continue;
+        }
         if (st.flying) {
             const float dx = st.tx - tr->x, dz = st.tz - tr->z, d = std::sqrt(dx * dx + dz * dz);
             if (d <= AIRSHIP_ARRIVED) {
@@ -233,8 +246,14 @@ void airshipLost(World& w, ObjectId airship) {
     for (ObjectId u : w.view<Occupying>()) {
         if (w.get<Occupying>(u)->prop == airship) aboard.push_back(u);
     }
+    const Prop* lost = w.get<Prop>(airship);
     for (ObjectId u : aboard) {
         w.remove<Occupying>(u);
+        if (lost && propInfo(lost->kind).tower) {
+            // A Watchtower lost: whoever was up it is put down at its foot
+            if (Transform* ut = w.get<Transform>(u)) ut->y -= TOWER_DECK;
+            continue;
+        }
         queueLog(w, langf("MISC_AIRSHIP_FALLS", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
         knockOut(w, u);
         finishDying(w, u);

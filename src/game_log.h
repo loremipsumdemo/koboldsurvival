@@ -6,8 +6,8 @@
 
 constexpr size_t LOG_LIMIT = 500;
 
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked };
-constexpr int LOG_KIND_COUNT = 13;
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked, Claim };
+constexpr int LOG_KIND_COUNT = 14;
 
 enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, ObjectId attacker, ObjectId target);

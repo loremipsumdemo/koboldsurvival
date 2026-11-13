@@ -532,7 +532,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             }
             return;
         }
-        if (info.stairs) {
+        if (info.stairs && !info.slope) {
             // Three steps up toward the way they face, each a third of the way to the floor above
             const int d = stairsDir(w, e), lv = storeyOf(w, e);
             const float rise = storeyBaseHeight(lv + 1) - storeyBaseHeight(lv);
@@ -590,10 +590,10 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (w.has<Blueprint>(e)) {
             const float x = std::floor(tr->x), z = std::floor(tr->z), y = tr->y;
             if (info.upperFloor) box(x, y, z, x + 1.0f, y + 0.14f, z + 1.0f, planned, plannedEdge);
-            else if (info.ladder) box(tr->x - 0.3f, y, tr->z - 0.08f, tr->x + 0.3f, y + FLOOR_HEIGHT + 0.3f, tr->z + 0.08f, planned, plannedEdge);
+            else if (info.ladder && !info.slope) box(tr->x - 0.3f, y, tr->z - 0.08f, tr->x + 0.3f, y + FLOOR_HEIGHT + 0.3f, tr->z + 0.08f, planned, plannedEdge);
             else if (info.door && std::fabs(w.get<Prop>(e)->yaw) > 0.1f) box(tr->x - 0.15f, y, z, tr->x + 0.15f, y + FLOOR_HEIGHT, z + 1.0f, planned, plannedEdge);
             else if (info.door) box(x, y, tr->z - 0.15f, x + 1.0f, y + FLOOR_HEIGHT, tr->z + 0.15f, planned, plannedEdge);
-            else if (info.perimeter) {
+            else if (info.perimeter || info.tower || info.slope) {
                 int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
                 propTileRect(info, tr->x, tr->z, w.get<Prop>(e)->yaw, px0, pz0, px1, pz1);
                 box((float)px0 + 0.05f, y, (float)pz0 + 0.05f, (float)px1 + 0.95f, y + info.size, (float)pz1 + 0.95f, planned, plannedEdge);
@@ -610,29 +610,35 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (info.wheelbarrow) side += info.pulled ? PULLED_BEHIND : WHEELBARROW_AHEAD;
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) return;
         if (info.perimeter && info.solid) {
-            // A Perimeter Wall joins the Walls and Gates that touch its sides, along its whole side
+            // A Perimeter Wall faces the way it was placed (its spikes are on its outer sides, its walkway behind); a side with another
+            // Wall or Gate beside it has no spikes. The models face north, so the sides are turned to its facing.
             int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
-            propTileRect(info, tr->x, tr->z, w.get<Prop>(e)->yaw, x0, z0, x1, z1);
-            auto has = [&](int x, int z) { return bt.perim.count(tileKey(x, z)) > 0; };
+            const float pyaw = w.get<Prop>(e)->yaw;
+            propTileRect(info, tr->x, tr->z, pyaw, x0, z0, x1, z1);
+            const int facing = (((int)std::lround(pyaw / 1.5707963f)) % 4 + 4) % 4;
+            const int open = perimeterOpenSides([&](int x, int z) { return bt.perim.count(tileKey(x, z)) > 0; }, x0, z0, x1, z1);
             int mask = 0;
-            for (int x = x0; x <= x1; ++x) {
-                if (has(x, z0 - 1)) mask |= 1;
-                if (has(x, z1 + 1)) mask |= 4;
+            for (int side = 0; side < 4; ++side) {
+                if (!((open >> side) & 1)) mask |= 1 << ((side - facing + 4) % 4);
             }
-            for (int z = z0; z <= z1; ++z) {
-                if (has(x1 + 1, z)) mask |= 2;
-                if (has(x0 - 1, z)) mask |= 8;
-            }
-            const WallShape shape = wallShapeFor(mask);
-            const Model* m = &propModel(kind);
-            if (shape.shape > 0 && (size_t)idx(kind) < wallShapes_.size() && wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1].vao) {
-                m = &wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1];
-            }
-            if (const Model* made = materialModel(shape.shape)) m = made;
-            if (m->vao) {
-                queueModel(*m, tr->x, tr->y, tr->z, info.size, shape.yaw);
+            const Model& m = perimeterWalls_[(size_t)mat][(size_t)mask];
+            if (m.vao) {
+                queueModel(m, tr->x, tr->y, tr->z, info.size, -pyaw);
                 return;
             }
+        }
+        if (info.slope) {
+            // A Slope rises the way it faces: its model rises north, and is turned to its facing like the Perimeter pieces
+            const Model* m = materialModel(0);
+            if (!m) m = &propModel(kind);
+            if (m->vao) {
+                queueModel(*m, tr->x, baseY, tr->z, info.size, -w.get<Prop>(e)->yaw);
+                return;
+            }
+        }
+        if (info.tower && occupantCount(w, e) > 0 && towerManned_.vao) {
+            queueModel(towerManned_, tr->x, baseY, tr->z, info.size, 0.0f);
+            return;
         }
         if (info.upperFloor) {
             // A Floor runs to the edge toward a floor beside it, or where no wall is under it; where a wall is, it stops at the
@@ -668,6 +674,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             }
         }
         float yaw = w.get<Prop>(e)->yaw;
+        if (info.perimeter && !info.solid) yaw = -yaw;   // a Gate's model faces north; its facing turns the model the other way round
         float px = tr->x, pz = tr->z;
         if (info.door && standing.count(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e)))) {
             // Swung open about its edge: a quarter turn, pushed to the side of the doorway
@@ -727,20 +734,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             fires_.push_back(f);
         }
         if (info.perimeter && !info.solid && !w.has<Blueprint>(e)) {
-            // A Gate stands open while anyone is in it or at it
-            int gx0 = 0, gz0 = 0, gx1 = 0, gz1 = 0;
-            propTileRect(info, tr->x, tr->z, yaw, gx0, gz0, gx1, gz1);
-            bool open = false;
-            for (ObjectId u : w.view<Entity, Transform>()) {
-                if (outCold(w, u) || w.has<Carried>(u) || storeyOf(w, u) != 0) continue;
-                const Transform* ut = w.get<Transform>(u);
-                const int ux = (int)std::floor(ut->x), uz = (int)std::floor(ut->z);
-                if (ux >= gx0 - 1 && ux <= gx1 + 1 && uz >= gz0 - 1 && uz <= gz1 + 1) {
-                    open = true;
-                    break;
-                }
-            }
-            if (open) {
+            // A Gate stands open (as built) until it is shut
+            if (!gateShut(w, e)) {
                 const Model* shown = mat == BuildMaterial::Wood ? &wallShapes_[(size_t)idx(kind)][0]
                                                                 : &materialModels_[(size_t)idx(kind)][(size_t)mat - 1][1];
                 if (shown->vao) {
@@ -983,6 +978,8 @@ void Renderer::drawBuildPreview(const Terrain& t) {
         const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
                         : m.tone == 3 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.42f}
                         : m.tone == 4 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.16f}
+                        : m.tone == 5 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.21f}   // the Perimeter's always-there core: half as strong as the rest
+                        : m.tone == 6 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.08f}
                                                                         : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
         const float a = 0.08f, y = m.y + lift;
         if (m.outline) {

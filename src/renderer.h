@@ -646,6 +646,9 @@ private:
     static constexpr int MATERIAL_MODELS = 3;
     std::vector<std::array<std::array<Model, 6>, MATERIAL_MODELS>> materialModels_;
     std::array<Model, 4> stairSteps_;   // one step of stairs in each material (by BuildMaterial), stretched to each step's height
+    // A Perimeter Wall tile facing north, in each material (by BuildMaterial) for each set of sides that have another piece beside them
+    std::array<std::array<Model, 16>, 4> perimeterWalls_;
+    Model towerManned_;                 // a Watchtower with someone up it: the one without its ladder
     const Model& propModel(PropKind kind) const;
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;

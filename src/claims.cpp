@@ -287,7 +287,7 @@ void breakBuilding(World& w, ObjectId e, bool leaveDebris) {
     }
     if (propInfo(kind).foundation) foundationLost(w, e);
     if (propInfo(kind).wallRule || propInfo(kind).door) buildingTilesChanged(w, (int)std::floor(at.x), (int)std::floor(at.z), (int)std::floor(at.x), (int)std::floor(at.z));
-    if (propInfo(kind).perimeter) {
+    if (propInfo(kind).perimeter || propInfo(kind).tower) {
         int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
         pieceTiles(w, e, x0, z0, x1, z1);
         buildingTilesChanged(w, x0, z0, x1, z1);
@@ -332,9 +332,26 @@ bool inPerimeterCore(World& w, ObjectId altar, int x, int z) {
     return std::abs(x - (int)std::floor(t->x)) <= PERIMETER_CORE_RADIUS && std::abs(z - (int)std::floor(t->z)) <= PERIMETER_CORE_RADIUS;
 }
 
+std::set<std::pair<int, int>> defaultPerimeter(World& w, ObjectId altar) {
+    std::set<std::pair<int, int>> out;
+    for (const Claim& c : cachedClaims(w)) {
+        if (c.altar != altar) continue;
+        const int r = (int)std::ceil(c.radius);
+        const int cx = (int)std::floor(c.x), cz = (int)std::floor(c.z);
+        for (int z = cz - r; z <= cz + r; ++z) {
+            for (int x = cx - r; x <= cx + r; ++x) {
+                const float dx = (float)x + 0.5f - c.x, dz = (float)z + 0.5f - c.z;
+                if (dx * dx + dz * dz <= c.radius * c.radius && !inPerimeterCore(w, altar, x, z)) out.insert({ x, z });
+            }
+        }
+    }
+    return out;
+}
+
 std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar) {
     std::set<std::pair<int, int>> out;
     if (const Perimeter* p = w.get<Perimeter>(altar)) out = p->tiles;
+    else out = defaultPerimeter(w, altar);
     if (const Transform* t = w.get<Transform>(altar)) {
         const int ax = (int)std::floor(t->x), az = (int)std::floor(t->z);
         for (int z = az - PERIMETER_CORE_RADIUS; z <= az + PERIMETER_CORE_RADIUS; ++z) {

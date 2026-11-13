@@ -72,8 +72,11 @@ ObjectId App::menuTargetAt(float mx, float my) {
         const PropKind kind = world.get<Prop>(p)->kind;
         // Props with nothing to do are passed over; blueprints, ladders and doors have their own orders. Finished stairs
         // are walked like floor, so a click on them is a move.
-        if (propInfo(kind).stairs && !world.has<Blueprint>(p)) continue;
-        const bool orders = world.has<Blueprint>(p) || propInfo(kind).ladder || propInfo(kind).door;
+        // The Perimeter pieces, Slopes and Watchtowers are picked with Shift held, for Break (a Gate always: it has a lock)
+        const PropInfo& pk = propInfo(kind);
+        const bool shiftBreak = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 && (pk.perimeter || pk.tower || pk.slope);
+        if (pk.stairs && !world.has<Blueprint>(p) && !shiftBreak) continue;
+        const bool orders = world.has<Blueprint>(p) || pk.ladder || pk.door || shiftBreak || (pk.perimeter && !pk.solid);
         if ((propInfo(kind).use == PropUse::None && !destroyedByHand(kind) && !ownAltar(world, p) && !orders) || (hidden(p) && !world.has<Foundation>(p))) continue;
         const Transform* pt = world.get<Transform>(p);
         const float d2 = (pt->x - ex) * (pt->x - ex) + (pt->y - ey) * (pt->y - ey) + (pt->z - ez) * (pt->z - ez);
@@ -104,6 +107,12 @@ bool App::ownDoor(ObjectId target) {
     const Prop* p = world.get<Prop>(target);
     const Lock* l = world.get<Lock>(target);
     return p && l && propInfo(p->kind).door && !world.has<Blueprint>(target) && l->faction == FACTION_PLAYER;
+}
+
+bool App::ownGate(ObjectId target) {
+    const Prop* p = world.get<Prop>(target);
+    const Lock* l = world.get<Lock>(target);
+    return p && l && propInfo(p->kind).perimeter && !propInfo(p->kind).solid && !world.has<Blueprint>(target) && l->faction == FACTION_PLAYER;
 }
 
 bool App::talkable(ObjectId u) {
@@ -194,7 +203,8 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             for (ObjectId u : sel) shut = shut && lockShutFor(world, target, u);
             if (shut) return out;
         }
-        if (const Lock* lock = world.get<Lock>(target); lock && lock->locked) {
+        const bool isGate = propInfo(p->kind).perimeter && !propInfo(p->kind).solid;
+        if (const Lock* lock = world.get<Lock>(target); lock && lock->locked && !isGate) {
             const std::vector<ObjectId> sel = selectedUnits(world);
             bool shut = sel.empty() ? lockShutFor(world, target, NO_OBJECT) : true;
             for (ObjectId u : sel) shut = shut && lockShutFor(world, target, u);
@@ -241,7 +251,13 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             }
             if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
         }
-        if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
+        // A Gate is opened and shut (it stands open); any other lock is locked and unlocked
+        if (isGate) {
+            if (ownGate(target)) out.push_back(gateShut(world, target) ? MenuAction::OpenGate : MenuAction::CloseGate);
+        } else if (const Lock* lock = world.get<Lock>(target)) out.push_back(lock->locked ? MenuAction::Unlock : MenuAction::Lock);
+        for (BuildMaterial m : upgradesFor(world, target)) {
+            out.push_back(m == BuildMaterial::Stone ? MenuAction::UpgradeStone : m == BuildMaterial::Iron ? MenuAction::UpgradeIron : MenuAction::UpgradeCrystal);
+        }
         // Break is added last, and only with Shift held (openContextMenuOn)
         if (breakableKind(p->kind) && !world.has<Blueprint>(target)) out.push_back(MenuAction::Destroy);
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
@@ -297,6 +313,11 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::Place: labels.push_back(lang("UILABEL_PLACE")); break;
         case MenuAction::Unlock: labels.push_back(lang("UILABEL_UNLOCK")); break;
         case MenuAction::Lock: labels.push_back(lang("UILABEL_LOCK")); break;
+        case MenuAction::UpgradeStone: labels.push_back(langf("UILABEL_UPGRADE_TO", { lang("MISC_BUILD_STONE") })); break;
+        case MenuAction::UpgradeIron: labels.push_back(langf("UILABEL_UPGRADE_TO", { lang("MISC_BUILD_METAL") })); break;
+        case MenuAction::UpgradeCrystal: labels.push_back(langf("UILABEL_UPGRADE_TO", { lang("MISC_BUILD_CRYSTAL") })); break;
+        case MenuAction::OpenGate: labels.push_back(lang("UILABEL_OPEN_GATE")); break;
+        case MenuAction::CloseGate: labels.push_back(lang("UILABEL_CLOSE_GATE")); break;
         case MenuAction::Evacuate: labels.push_back(lang("UILABEL_EVACUATE")); break;
         case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
         case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
@@ -380,7 +401,9 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
         std::vector<MenuAction> alone;
         for (MenuAction a : actions) {
             if (a == MenuAction::CancelBuild || a == MenuAction::CancelAllBuild || a == MenuAction::StoreFilter || a == MenuAction::BedPublic || a == MenuAction::BedPrivate ||
-                a == MenuAction::StockStall || a == MenuAction::Recruit || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target))) {
+                a == MenuAction::StockStall || a == MenuAction::Recruit || a == MenuAction::CraftOrder || a == MenuAction::Research || ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target)) ||
+                ((a == MenuAction::OpenGate || a == MenuAction::CloseGate) && ownGate(target)) ||
+                a == MenuAction::UpgradeStone || a == MenuAction::UpgradeIron || a == MenuAction::UpgradeCrystal) {
                 alone.push_back(a);
             }
         }
@@ -513,6 +536,21 @@ void App::pickMenuAction(MenuAction a) {
             showNotice(lang(l->locked ? "MISC_DOOR_LOCKED" : "MISC_DOOR_UNLOCKED"));
             playSfx(Sfx::UiToggle);
         }
+        return;
+    }
+    // Your own piece is rebuilt in a better material
+    if (a == MenuAction::UpgradeStone || a == MenuAction::UpgradeIron || a == MenuAction::UpgradeCrystal) {
+        const BuildMaterial to = a == MenuAction::UpgradeStone ? BuildMaterial::Stone : a == MenuAction::UpgradeIron ? BuildMaterial::Iron : BuildMaterial::Crystal;
+        upgradePiece(world, target, to);
+        showNotice(langf("MISC_UPGRADE_BEGUN", { lang(to == BuildMaterial::Stone ? "MISC_BUILD_STONE" : to == BuildMaterial::Iron ? "MISC_BUILD_METAL" : "MISC_BUILD_CRYSTAL") }));
+        playSfx(Sfx::UiToggle);
+        return;
+    }
+    // Your own Gate opens and shuts at once, from anywhere
+    if ((a == MenuAction::OpenGate || a == MenuAction::CloseGate) && ownGate(target)) {
+        setGateShut(world, target, a == MenuAction::CloseGate);
+        showNotice(lang(a == MenuAction::CloseGate ? "MISC_GATE_CLOSED" : "MISC_GATE_OPENED"));
+        playSfx(Sfx::UiToggle);
         return;
     }
     if (a == MenuAction::BedPublic || a == MenuAction::BedPrivate) {

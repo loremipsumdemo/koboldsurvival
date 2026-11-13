@@ -127,6 +127,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("motivationSystem", motivationSystem(w, dt, gameSecs));
     npcScheduleSystem(w, dt);
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
+    gateSystem(w, gs.clockSeconds, dt);
     PROFILED("needsSystem", needsSystem(w, hoursPassed, gameSecs));
     ghostSystem(w, gameSecs);
     downedSystem(w);

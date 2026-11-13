@@ -268,7 +268,8 @@ bool App::mouseDownOnPanels() {
                 float bx = 0.0f, bz = 0.0f;
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
-                const float yaw = propInfo(session.buildPick.kind).perimeter ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
+                const float yaw = propInfo(session.buildPick.kind).perimeter || propInfo(session.buildPick.kind).slope
+                                      ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
                 const BuildCheck why = checkBuildSpot(world, terrain, session.buildPick.kind, bx, bz, storey, FACTION_PLAYER, nullptr, yaw);
                 if (why == BuildCheck::Ok) {
                     const ObjectId made = placeCostedProp(world, terrain, session.buildPick.kind, bx, bz, yaw, FACTION_PLAYER, storey);

@@ -54,7 +54,9 @@ public:
     bool isFree(float x, float z) const;
     // Tiles closed by buildings (walls), on top of the ground's own walkability. Opening a map clears them.
     void setBlocked(int x, int y, bool blocked);
-    void clearBlocked() { blocked_.clear(); }
+    void clearBlocked() { blocked_.clear(); sightBlocks_.clear(); }
+    // A building's tile that blocks sight up to this height above the ground (0: none); sightClear looks at them as it looks at the ground
+    void setSightBlock(int x, int y, float top);
     bool blockedByBuilding(int x, int y) const;
     // Tiles under a finished foundation's deck: a unit there stands DECK_HEIGHT above the ground at the tile's middle
     void setDeck(int x, int y, bool on);
@@ -107,6 +109,7 @@ private:
     float heightScale_ = 1.0f;
     float floorY_ = -1.0f;
     std::unordered_set<long long> blocked_;
+    std::unordered_map<long long, float> sightBlocks_;
     std::unordered_set<long long> decks_;
     std::unordered_map<long long, float> heightEdits_;
 };
