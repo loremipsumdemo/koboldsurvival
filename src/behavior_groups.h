@@ -30,6 +30,9 @@ inline constexpr int STORE_SYNC_STEPS = 30;   // simulation steps between looks 
 // The World's groups, set up with their defaults the first time
 BehaviorGroups& behaviorGroups(World& w);
 void resetBehaviorGroups(BehaviorGroups& g);
+// The tasks a citizen starts with: needs, sleeping, building, hauling, crafting, patrolling and the recreation tasks. What your Citizen
+// group starts as, and what an NPC faction's citizens are given.
+std::vector<BehaviorRule> defaultCitizenBehaviors();
 
 // The list a ref names (a group's index, GROUP_REF_MILITARY or GROUP_REF_CITIZEN), or nullptr
 std::vector<BehaviorRule>* groupList(BehaviorGroups& g, int ref);

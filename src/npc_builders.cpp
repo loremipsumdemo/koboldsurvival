@@ -3,6 +3,7 @@
 #include <cmath>
 #include <unordered_set>
 #include "behavior.h"
+#include "behavior_groups.h"
 #include "build.h"
 #include "building.h"
 #include "claims.h"
@@ -76,6 +77,29 @@ void giveBuilders(World& w, int faction) {
         Behaviors* b = w.get<Behaviors>(u);
         const bool has = std::any_of(b->rules.begin(), b->rules.end(), [](const BehaviorRule& r) { return r.kind == BehaviorKind::AutoConstruct; });
         if (!has) addBehavior(b->rules, build);
+    }
+}
+
+// The tasks your citizens start with (sleeping, the recreation tasks and the rest), for the faction's citizens, so they sleep, rest,
+// socialize, sit, play and dance as yours do, on the schedule they keep (schedule.h). What an NPC faction's units were never given
+// is added; the nap level is the same as yours.
+void giveCitizenTasks(World& w, int faction) {
+    static const std::vector<BehaviorRule> wanted = defaultCitizenBehaviors();
+    for (ObjectId u : w.view<Citizen, Behaviors>()) {
+        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Mob>(u)) continue;
+        Behaviors* b = w.get<Behaviors>(u);
+        bool changed = false;
+        for (const BehaviorRule& r : wanted) {
+            if (holdsBehavior(b->rules, r)) continue;
+            if (addBehavior(b->rules, r, BEHAVIOR_TASKS_MAX)) changed = true;
+        }
+        for (BehaviorRule& r : b->rules) {
+            if (r.kind == BehaviorKind::Rest && r.percent != percentRange(BehaviorKind::Rest).lo) {
+                r.percent = percentRange(BehaviorKind::Rest).lo;
+                changed = true;
+            }
+        }
+        if (changed) b->pending = true;
     }
 }
 
@@ -779,6 +803,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         if (!npcAltarClaim(c)) continue;
         giveBuilders(w, c.owner);
         giveHaulers(w, claims, c.owner);
+        giveCitizenTasks(w, c.owner);
         if (building.count(c.owner)) continue;
         if (!mapped) {
             map = buildingMap(w);

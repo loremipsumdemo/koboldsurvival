@@ -38,7 +38,7 @@ inline constexpr int UI_SCALE_STEP = 5;
 
 // The detail distance: how far from the view's centre props, units and the ground's and water's fine detail are drawn
 inline constexpr int DETAIL_RANGE_MIN = 16;
-inline constexpr int DETAIL_RANGE_MAX = 256;
+inline constexpr int DETAIL_RANGE_MAX = 1024;
 inline constexpr int DETAIL_RANGE_STEP = 8;
 // The view distance: how far from the view's centre the ground's terrain chunks are drawn at all
 inline constexpr int VIEW_DISTANCE_MIN = 64;

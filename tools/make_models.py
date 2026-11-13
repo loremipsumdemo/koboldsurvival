@@ -759,7 +759,9 @@ def perimeter_wall(pal=WOOD_PAL, arms=()):
     n, step = 5, 0.4
     for i in range(n):
         for j in range(n):
-            parts.append(cyl((i - 2) * step, 0, (j - 2) * step, 0.38, DECK_BODY, 0.38, main if (i * 3 + j * 5) % 3 else light))
+            # Alternating by (i + j), so every outer face (north, east, south, west) shows the same pattern: the old pick depended on the row
+            # alone, which left the east and west faces in dark stripes and the north and south faces one flat colour at corners
+            parts.append(cyl((i - 2) * step, 0, (j - 2) * step, 0.38, DECK_BODY, 0.38, main if (i + j) % 2 else light))
     parts.append(box(0, DECK_BODY, 0, 2.0, 0.08, 2.0, light))
     for d in spiked:
         for k in range(n):
