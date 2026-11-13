@@ -11,6 +11,7 @@
 #include "build.h"
 #include "hostility.h"
 #include "schedule.h"
+#include "loading.h"
 #include <map>
 #include <sstream>
 #include <unordered_map>
@@ -287,10 +288,12 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const NpcSchedule* ns = w.get<NpcSchedule>(u)) su.npcSchedule = ns->kind;
 }
 
-std::vector<ObjectId> restoreProps(World& world, const SaveData& d) {
+std::vector<ObjectId> restoreProps(World& world, const SaveData& d, LoadStages& stages) {
     std::vector<ObjectId> props;
     props.reserve(d.props.size());
+    const float count = (float)std::max<size_t>(1, d.props.size());
     for (const SaveProp& s : d.props) {
+        stages.step(0.6f + 0.15f * (float)props.size() / count, (int)props.size());
         const ObjectId e = makeProp(world, (PropKind)s.kind, s.at, s.yaw);
         world.get<Prop>(e)->yaw = s.yaw;   // as it was saved, whatever way a new one would face
         if (s.visual) world.add(e, *s.visual);
@@ -492,7 +495,10 @@ void restoreOrders(World& world, Terrain& terrain, const SaveData& d, const std:
 }
 }
 
-void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
+void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, const LoadProgress& progress) {
+    // Named under the loading bar for what a save holds: its props, the items lying about, its units, then their orders
+    LoadStages stages(progress);
+    stages.stage(0.6f, "LOADING_SAVE_PROPS", (int)d.props.size());
     world = World{};
     setPlayerReputation(world, d.reputation);
     setChangedFactionRules(world, d.factionRules);
@@ -508,16 +514,25 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d) {
         world.resource<GroundEdits>().corners = edits;
         terrain.setHeightEdits(edits);
     }
-    const std::vector<ObjectId> props = restoreProps(world, d);
+    const std::vector<ObjectId> props = restoreProps(world, d, stages);
     restoreGroups(world, d, props);
+    stages.stage(0.75f, "LOADING_GROUND_ITEMS", (int)d.ground.size());
+    int groundDone = 0;
     for (const SaveGround& g : d.ground) {
+        stages.step(0.75f + 0.05f * (float)groundDone / (float)d.ground.size(), groundDone);
+        ++groundDone;
         if (!findItem(g.item.item) || g.item.count <= 0) continue;
         const ObjectId lying = spawnGroundItem(world, g.at, g.item.item, g.item.count);
         world.get<GroundItem>(lying)->hours = g.item.hours;
     }
     std::vector<ObjectId> units;
     units.reserve(d.units.size());
-    for (const SaveUnit& u : d.units) units.push_back(restoreUnit(world, u, props));
+    stages.stage(0.8f, "LOADING_SAVE_UNITS", (int)d.units.size());
+    for (const SaveUnit& u : d.units) {
+        stages.step(0.8f + 0.1f * (float)units.size() / (float)d.units.size(), (int)units.size());
+        units.push_back(restoreUnit(world, u, props));
+    }
+    stages.stage(0.9f, "LOADING_SAVE_ORDERS");
     restoreLinks(world, d, units, props);
     settleBuildingsAfterLoad(world, terrain);
     // From before Auto-Haul to Stalls: your units and the Citizen Default get it, switched on

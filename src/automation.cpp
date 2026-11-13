@@ -470,23 +470,14 @@ bool inAltarClaim(const std::vector<Claim>& claims, const Transform& at, int fac
     return false;
 }
 
-// A dancer stops: it moves at once to the open place nearest its Altar (where it stands, if it has none), so it goes back to
-// normal collision without being stuck in anyone
-void leaveDance(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u) {
+// A dancer stops: it moves at once to the open place nearest the Campfire or Altar it danced round (where it stands, if
+// that was never known), so it goes back to normal collision without being stuck in anyone. While the Campfire or Altar
+// still stands the place is beside it; once it is gone, the place may be right where it stood.
+void leaveDance(World& w, Terrain& t, const Dancing& dance, ObjectId u) {
     Transform* ut = w.get<Transform>(u);
     if (!ut) return;
-    const int faction = factionOf(w, u);
-    float ax = ut->x, az = ut->z;
-    float best = -1.0f;
-    for (const Claim& c : claims) {
-        if (c.owner != faction || c.camp) continue;
-        const float d2 = (ut->x - c.x) * (ut->x - c.x) + (ut->z - c.z) * (ut->z - c.z);
-        if (d2 <= c.radius * c.radius && (best < 0.0f || d2 < best)) {
-            best = d2;
-            ax = c.x;
-            az = c.z;
-        }
-    }
+    const float ax = dance.known ? dance.centerX : ut->x, az = dance.known ? dance.centerZ : ut->z;
+    const bool standing = dance.known && w.has<Prop>(dance.center);
     struct Body2 { float x, z, r; };
     std::vector<Body2> others;
     for (ObjectId v : w.view<Entity, Transform>()) {
@@ -495,8 +486,10 @@ void leaveDance(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId
         others.push_back({ vt->x, vt->z, w.get<Entity>(v)->radius });
     }
     const float mine = w.get<Entity>(u)->radius;
+    const float keepOut = standing ? mine + 0.5f : 0.0f;
     for (int ring = 0; ring <= 60; ++ring) {
         const float r = (float)ring * 0.5f;
+        if (r < keepOut) continue;
         const int around = ring == 0 ? 1 : std::max(8, (int)(TWO_PI * r / 0.5f));
         for (int k = 0; k < around; ++k) {
             const float a = TWO_PI * (float)k / (float)around;
@@ -510,9 +503,17 @@ void leaveDance(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId
                 }
             }
             if (!clear) continue;
+            LeavingDance leaving;
+            leaving.fromX = ut->x;
+            leaving.fromY = ut->y;
+            leaving.fromZ = ut->z;
             ut->x = x;
             ut->z = z;
             ut->y = t.standHeight(x, z);
+            leaving.toX = ut->x;
+            leaving.toY = ut->y;
+            leaving.toZ = ut->z;
+            w.add(u, leaving);
             return;
         }
     }
@@ -924,13 +925,37 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
 void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     const std::vector<Claim> claims = cachedClaims(w);
     {
+        // Whoever left a dance a moment ago is held at its new place until it has been shown getting there
+        for (ObjectId u : w.view<LeavingDance, Transform>()) {
+            LeavingDance* leaving = w.get<LeavingDance>(u);
+            Transform* ut = w.get<Transform>(u);
+            if (!w.has<Carried>(u)) {
+                ut->x = leaving->toX;
+                ut->y = leaving->toY;
+                ut->z = leaving->toZ;
+            }
+            leaving->left -= dt;
+            if (leaving->left <= 0.0f || w.has<Carried>(u)) w.remove<LeavingDance>(u);
+        }
         // Whoever stopped dancing, for any reason, goes to an open place; the circles that still have dancers keep turning, and the
         // rest are at rest
         for (ObjectId u : w.view<Dancing, Transform>()) {
-            const Behaviors* db = w.get<Behaviors>(u);
+            Behaviors* db = w.get<Behaviors>(u);
             if (db && db->busy && db->began && db->step.kind == BehaviorKind::Dance && w.has<Prop>(db->stepProp)) continue;
+            const Dancing dance = *w.get<Dancing>(u);
             w.remove<Dancing>(u);
-            leaveDance(w, t, claims, u);
+            // The dance is over here and now, however it ended (its Campfire or Altar broken, destroyed or removed, the
+            // dancer struck down): no hopping on, no place kept on a circle that is gone, and the usual rest before another
+            if (db && db->step.kind == BehaviorKind::Dance) {
+                db->busy = false;
+                db->began = false;
+                db->slot = -1;
+                BehaviorRule* rule = stepRule(*db);
+                if (rule && rule->cooldown <= 0.0f) rule->cooldown = SOCIAL_PAUSE_MIN + rng.unit() * (SOCIAL_PAUSE_MAX - SOCIAL_PAUSE_MIN);
+            }
+            // One struck down or carried off stays where it fell: it is out of the crowd's way as it is
+            if (outOfAction(w, u) || w.has<Carried>(u)) continue;
+            leaveDance(w, t, dance, u);
         }
         DanceRings& rings = w.resource<DanceRings>();
         std::vector<ObjectId> active;
@@ -975,6 +1000,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             if (!current || !current->on) stopAutoStep(w, u, *b);
         }
         if (!any && b->seek == NO_OBJECT && !b->seeking) continue;
+        if (w.has<LeavingDance>(u)) continue;
         const bool yours = w.has<Commandable>(u);
         const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
         const Needs* n = w.get<Needs>(u);
@@ -1279,6 +1305,12 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                     w.add(u, Dancing{});
                     b->social = DANCE_MIN + rng.unit() * (DANCE_MAX - DANCE_MIN);
                     w.remove<SoloMove>(u);
+                }
+                if (Dancing* dance = w.get<Dancing>(u)) {
+                    dance->center = b->stepProp;
+                    dance->centerX = ct->x;
+                    dance->centerZ = ct->z;
+                    dance->known = true;
                 }
                 b->social -= dt;
                 if (b->social > 0.0f) {

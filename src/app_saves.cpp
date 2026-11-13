@@ -187,6 +187,12 @@ bool App::writeSave(const std::string& path, const std::string& name, bool autos
 }
 
 void App::loadSave(std::string path) {
+    // Under the bar: the save file, its map and the map's ground, then what the save holds (see restoreWorld)
+    renderer.pickLoadingArt();
+    LoadingScreen loading(window, renderer);
+    const LoadProgress progress = [&](float p, const std::string& what) { loading.show(p, what); };
+    LoadStages stages(progress);
+    stages.stage(0.0f, "LOADING_SAVE_FILE");
     SaveData d;
     if (!readSaveFile(path, d)) {
         refuse(lang("MISC_READ_FAILED"));
@@ -199,18 +205,21 @@ void App::loadSave(std::string path) {
         return;
     }
     std::string err;
-    if (!loadLevelGround(*found, terrain, renderer, err)) {
+    // The map and its ground come after the save file on the bar: the map at a tenth, its ground at just over a third
+    const LoadProgress groundProgress = [&](float p, const std::string& what) { loading.show(0.1f + p * 0.75f, what); };
+    if (!loadLevelGround(*found, terrain, renderer, err, groundProgress)) {
         refuse(langf("MISC_MAP_LOAD_FAILED", { found->name, err }));
         return;
     }
     audio::stopTracks();
     resetPlayState();
-    restoreWorld(world, terrain, rng, d);
+    restoreWorld(world, terrain, rng, d, progress);
     currentMap = *found;
     gs = d.gs;
     enterLevel();
     applySaveCamera(d.cam, cam);
     primeStreaming(world, terrain, cam);
+    loading.fadeOut();
     lastSaveTicks = SDL_GetTicks();
     showNotice(langf("MISC_LOADED", { d.name }));
     playSfx(Sfx::UiLoaded);

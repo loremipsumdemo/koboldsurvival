@@ -60,6 +60,17 @@ Renderer::UnitPose Renderer::unitPose(World& w, ObjectId e) const {
     return p;
 }
 
+Transform unitShownAt(World& w, ObjectId e) {
+    Transform at = *w.get<Transform>(e);
+    if (const LeavingDance* l = w.get<LeavingDance>(e)) {
+        const float k = l->along();
+        at.x = l->fromX + (l->toX - l->fromX) * k;
+        at.y = l->fromY + (l->toY - l->fromY) * k;
+        at.z = l->fromZ + (l->toZ - l->fromZ) * k;
+    }
+    return at;
+}
+
 float Renderer::bedLift(World& w, ObjectId u) const {
     const Occupying* oc = w.get<Occupying>(u);
     if (!oc || w.has<Carried>(u)) return -1.0f;
@@ -295,7 +306,8 @@ void Renderer::drawModel(const Model& m, float x, float y, float z, float target
 }
 
 Mat4 Renderer::unitWorldMatrix(World& w, ObjectId e, const Model& m, float yaw) const {
-    const Transform* tr = w.get<Transform>(e);
+    const Transform shown = unitShownAt(w, e);
+    const Transform* tr = &shown;
     const UnitPose pose = unitPose(w, e);
     float x = tr->x, z = tr->z;
     if (pose.carried) {

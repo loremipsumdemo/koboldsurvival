@@ -98,5 +98,21 @@ inline float danceHopPhase(double clock, ObjectId dancer) {
     return (float)(t - std::floor(t));
 }
 // On a unit that is dancing on a circle: it ignores the crowd's collision until it stops
-struct Dancing {};
+struct Dancing {
+    // The Campfire or Altar it dances round, and where that stands, kept from step to step: when the dance ends the
+    // dancer goes to open ground by it, even if it is gone by then. Not known until the dancer's first step on the circle.
+    ObjectId center = NO_OBJECT;
+    float centerX = 0.0f, centerZ = 0.0f;
+    bool known = false;
+};
+// On a unit that has just stopped dancing. It is already at its new place, for everything the game works out, but for
+// this long it is drawn going there from where it danced, and does nothing else: it stays put and takes up no task.
+inline constexpr float DANCE_LEAVE_SECONDS = 0.1f;
+struct LeavingDance {
+    float fromX = 0.0f, fromY = 0.0f, fromZ = 0.0f;
+    float toX = 0.0f, toY = 0.0f, toZ = 0.0f;
+    float left = DANCE_LEAVE_SECONDS;
+    // How far along it is drawn, 0 (where it danced) to 1 (its new place)
+    float along() const { return 1.0f - (left < 0.0f ? 0.0f : left) / DANCE_LEAVE_SECONDS; }
+};
 inline constexpr float DANCE_MIN = 40.0f, DANCE_MAX = 90.0f;   // real seconds

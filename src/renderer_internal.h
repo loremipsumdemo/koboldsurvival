@@ -22,6 +22,10 @@
 #include "claims.h"
 #include "textcase.h"
 #include <SDL3_image/SDL_image.h>
+
+// Where a unit is drawn: where it is, but for one that has just left a dance, which is shown on its way from there
+Transform unitShownAt(World& w, ObjectId e);
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
