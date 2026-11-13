@@ -86,6 +86,14 @@ void App::startMapLevel(const MapChoice& choice) {
         for (ObjectId u : squad) {
             if (u != lead && !world.has<Mob>(u)) makeCitizen(world, u);
         }
+        // The one left military keeps just the first three default behaviors: Eat, Heal and Share
+        if (Behaviors* b = lead != NO_OBJECT ? world.get<Behaviors>(lead) : nullptr) {
+            b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [](const BehaviorRule& r) {
+                               return r.kind != BehaviorKind::Eat && r.kind != BehaviorKind::Heal && r.kind != BehaviorKind::Share;
+                           }),
+                           b->rules.end());
+            b->pending = true;
+        }
     }
     if (const ObjectId first = firstSquadUnit(world); first != NO_OBJECT) {
         const Transform* ft = world.get<Transform>(first);

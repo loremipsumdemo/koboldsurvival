@@ -265,7 +265,7 @@ void App::drawFoundationSize() {
     if (session.buildPick.placing() && !session.foundationDrag && !session.floorDrag && !propInfo(session.buildPick.kind).foundation) {
         const float s = uiScaleFor((float)winH);
         std::string text = langf("MISC_BUILD_ON_FLOOR", { std::to_string(session.buildLevel + 1) });
-        if (propInfo(session.buildPick.kind).stairs) text += "  " + lang("MISC_STAIRS_TURN");
+        if (propInfo(session.buildPick.kind).stairs || propInfo(session.buildPick.kind).perimeter) text += "  " + lang("MISC_STAIRS_TURN");
         const float pad = 6.0f * s, th = renderer.listTextHeight("Ag"), tw = renderer.listTextWidth(text);
         // A row of its own just above where a hovered prop's tooltip starts (Renderer::drawPropTooltip), lined up with it,
         // so the two never share a line

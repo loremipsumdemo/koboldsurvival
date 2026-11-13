@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 #include "behavior.h"
@@ -31,6 +32,7 @@ inline constexpr float BLOCKED_RETRY_SECONDS = 4.0f; // a piece with a unit in t
 inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
 inline constexpr double DOOR_HEALTH = 60.0;
 inline constexpr double WALL_HEALTH = 2.0 * DOOR_HEALTH;   // a wall takes twice the breaking a door does
+inline constexpr float SIGHT_BLOCK_PERIMETER = 2.54f;       // a Perimeter Wall or Watchtower base blocks sight up to a floor's height
 inline constexpr double PERIMETER_STRENGTH = 10.0;           // a Perimeter Wall or Gate takes ten times what a wall or door does
 inline constexpr float AT_DOOR_FORGET_SECONDS = 0.5f;
 // A foundation is laid only on ground it can be levelled from: its corners, the rest of its building's and (once one of
@@ -95,6 +97,9 @@ struct Climbing {
     std::vector<Vec2> path;
     std::vector<Hop> hops;
     float startHeight = 0.0f;
+    // A Slope: no hops, the height going from startHeight to endHeight along the whole walk
+    bool smooth = false;
+    float endHeight = 0.0f;
 };
 
 // A unit's building task under way: fetching logs from a store, bringing them to a blueprint, or building it. Not saved.
@@ -172,6 +177,7 @@ struct BuildingMap {
     std::unordered_map<long long, ObjectId> piece;        // levelKey: a wall, door or ladder on that floor
     std::unordered_map<long long, ObjectId> floor;        // levelKey: an upper floor (level 1 and up)
     std::unordered_map<long long, ObjectId> stairTop;     // levelKey: the top step of stairs, a tile of the floor above them
+    std::unordered_map<long long, ObjectId> perimTop;     // levelKey (level 1): the walkway on top of a Perimeter Wall or Gate (not its spike rows)
 };
 BuildingMap buildingMap(World& w);
 // The same map kept until the props, foundations or floors change (their component revisions say so), and the foundation tiles
@@ -207,6 +213,12 @@ enum class PieceCheck {
     NearPerimeter,   // a foundation may not touch a Perimeter Wall or Gate
 };
 const char* pieceRefusalKey(PieceCheck c);
+
+// The sides of a Perimeter piece (a rectangle of tiles) that have no other Perimeter piece beside them: bits 1 north, 2 east, 4 south,
+// 8 west (the same order as a facing: 0 north, 1 east, 2 south, 3 west). has says whether a tile is one of a Perimeter piece's.
+int perimeterOpenSides(const std::function<bool(int, int)>& has, int x0, int z0, int x1, int z1);
+// The open sides that carry spikes: all of them but the one behind the piece (opposite its facing), which is its walkway's inner edge
+inline int perimeterSpikeSides(int open, int facing) { return open & ~(1 << ((facing + 2) % 4)); }
 
 // Whether the tiles of this rectangle are on or directly beside (a side, not a corner) a Perimeter Wall or Gate, blueprints too:
 // no foundation goes there
@@ -310,6 +322,18 @@ struct WallShape {
 WallShape wallShapeOf(World& w, ObjectId wall);
 WallShape wallShapeFor(int mask);
 
+// A Perimeter Gate stands open unless it is shut (its Lock is locked): a shut one is a wall to everyone, of any faction
+bool gateShut(World& w, ObjectId gate);
+// Opens or shuts a finished Gate: the ground under it is closed or freed at once, and walks through it planned again
+void setGateShut(World& w, ObjectId gate, bool shut);
+// Whether a finished piece of yours can be rebuilt in a better material (not a foundation or floor, which hold up what is on them)
+bool canUpgradePiece(World& w, ObjectId piece);
+// The materials above the piece's, weakest first
+std::vector<BuildMaterial> upgradesFor(World& w, ObjectId piece);
+// The piece becomes a blueprint of the better material, to be supplied and built again
+void upgradePiece(World& w, ObjectId piece, BuildMaterial to);
+// Your Fortified units' gates shut at night once everyone of yours is asleep, and open again when anyone wakes
+void gateSystem(World& w, double clockSeconds, float dt);
 // Whether u may walk through this door: it is unlocked, or u is of its faction or an ally of it
 bool doorLets(World& w, ObjectId door, ObjectId u);
 // Strangers held back by a door or wall they are hostile to pick a door's lock if they can, and smash it if not

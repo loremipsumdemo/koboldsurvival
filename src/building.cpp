@@ -11,6 +11,8 @@
 #include "hostility.h"
 #include "inventory.h"
 #include "items.h"
+#include "calendar.h"
+#include "squads.h"
 #include "systems_internal.h"
 #include "world_labels.h"
 
@@ -100,6 +102,7 @@ bool isWallOrDoor(World& w, ObjectId p) {
 bool mapFloorSurface(World& w, const BuildingMap& m, int x, int z, int level, int owner) {
     ObjectId f = level <= 0 ? mapGet(m.foundation, tileKey(x, z)) : mapGet(m.floor, levelKey(x, z, level));
     if (f == NO_OBJECT && level > 0) f = mapGet(m.stairTop, levelKey(x, z, level));
+    if (f == NO_OBJECT && level == 1) f = mapGet(m.perimTop, levelKey(x, z, 1));
     return f != NO_OBJECT && !w.has<Blueprint>(f) && (owner < 0 || ownerOf(w, f) == owner);
 }
 
@@ -140,9 +143,9 @@ void stairsTiles(World& w, ObjectId e, int xs[4], int zs[4]) {
 
 // Whether a unit can stand on this tile of this floor, to step onto stairs from: on the ground, a foundation tile with
 // no finished wall or stairs' step; up a floor, a floor it can walk
-bool stairsFootOpen(World& w, const BuildingMap& m, int x, int z, int level) {
+bool stairsFootOpen(World& w, const BuildingMap& m, int x, int z, int level, bool ground = false) {
     if (level > 0) return floorWalkable(w, m, x, z, level);
-    if (mapGet(m.foundation, tileKey(x, z)) == NO_OBJECT) return false;
+    if (!ground && mapGet(m.foundation, tileKey(x, z)) == NO_OBJECT) return false;
     const ObjectId p = mapGet(m.piece, levelKey(x, z, 0));
     const PropInfo* info = p != NO_OBJECT && !w.has<Blueprint>(p) ? infoOf(w, p) : nullptr;
     return !(info && (info->wallRule || info->stairs));
@@ -156,10 +159,12 @@ std::vector<Vec2> stairsLandings(World& w, const BuildingMap& m, ObjectId e) {
     const int d = dirOfYaw(w.get<Prop>(e) ? w.get<Prop>(e)->yaw : 0.0f), lv = storeyOf(w, e);
     const int dx = STAIRS_DX[d], dz = STAIRS_DZ[d];
     const int side[3][2] = { { -dx, -dz }, { dz, -dx }, { -dz, dx } };
+    const PropInfo* sinfo = infoOf(w, e);
+    const bool onGround = sinfo && sinfo->slope;
     std::vector<Vec2> out;
     for (const auto& s : side) {
         const int x = xs[0] + s[0], z = zs[0] + s[1];
-        if (stairsFootOpen(w, m, x, z, lv)) out.push_back(Vec2{ x + 0.5f, z + 0.5f });
+        if (stairsFootOpen(w, m, x, z, lv, onGround)) out.push_back(Vec2{ x + 0.5f, z + 0.5f });
     }
     return out;
 }
@@ -262,6 +267,7 @@ std::unordered_map<long long, int> floorParts(World& w, const BuildingMap& m, in
     std::vector<long long> seeds;
     for (const auto& [lk, e] : m.floor) seeds.push_back(lk);
     for (const auto& [lk, e] : m.stairTop) seeds.push_back(lk);
+    for (const auto& [lk, e] : m.perimTop) seeds.push_back(lk);
     for (const long long lk : seeds) {
         if ((int)(lk % 16) != level) continue;
         const long long tk = lk / 16;
@@ -547,7 +553,7 @@ void pieceTiles(World& w, ObjectId prop, int& x0, int& z0, int& x1, int& z1) {
     const Transform* tr = w.get<Transform>(prop);
     x0 = x1 = tr ? tileOf(tr->x) : 0;
     z0 = z1 = tr ? tileOf(tr->z) : 0;
-    if (const PropInfo* pi = infoOf(w, prop); tr && pi && pi->perimeter) {
+    if (const PropInfo* pi = infoOf(w, prop); tr && pi && (pi->perimeter || pi->tower)) {
         propTileRect(*pi, tr->x, tr->z, w.get<Prop>(prop)->yaw, x0, z0, x1, z1);
         return;
     }
@@ -566,8 +572,49 @@ int stairsDir(World& w, ObjectId stairs) {
     return p ? dirOfYaw(p->yaw) : 0;
 }
 
+int perimeterOpenSides(const std::function<bool(int, int)>& has, int x0, int z0, int x1, int z1) {
+    int beside = 0;
+    for (int x = x0; x <= x1; ++x) {
+        if (has(x, z0 - 1)) beside |= 1;
+        if (has(x, z1 + 1)) beside |= 4;
+    }
+    for (int z = z0; z <= z1; ++z) {
+        if (has(x1 + 1, z)) beside |= 2;
+        if (has(x0 - 1, z)) beside |= 8;
+    }
+    return 15 & ~beside;
+}
+
 BuildingMap buildingMap(World& w) {
     BuildingMap m;
+    // The Perimeter pieces' walkways: each piece's tiles but its spike rows (the open sides but the one behind it)
+    struct PerimPiece {
+        ObjectId e;
+        int x0, z0, x1, z1, facing;
+    };
+    std::vector<PerimPiece> perim;
+    std::unordered_set<long long> perimTiles;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const PropInfo& pi = propInfo(w.get<Prop>(e)->kind);
+        if (!pi.perimeter) continue;
+        const Transform* tr = w.get<Transform>(e);
+        PerimPiece p{ e, 0, 0, 0, 0, dirOfYaw(w.get<Prop>(e)->yaw) };
+        propTileRect(pi, tr->x, tr->z, w.get<Prop>(e)->yaw, p.x0, p.z0, p.x1, p.z1);
+        for (int z = p.z0; z <= p.z1; ++z) {
+            for (int x = p.x0; x <= p.x1; ++x) perimTiles.insert(tileKey(x, z));
+        }
+        perim.push_back(p);
+    }
+    for (const PerimPiece& p : perim) {
+        const int spikes = perimeterSpikeSides(perimeterOpenSides([&](int x, int z) { return perimTiles.count(tileKey(x, z)) > 0; },
+                                                                  p.x0, p.z0, p.x1, p.z1), p.facing);
+        for (int z = p.z0; z <= p.z1; ++z) {
+            for (int x = p.x0; x <= p.x1; ++x) {
+                if (((spikes & 1) && z == p.z0) || ((spikes & 2) && x == p.x1) || ((spikes & 4) && z == p.z1) || ((spikes & 8) && x == p.x0)) continue;
+                m.perimTop[levelKey(x, z, 1)] = p.e;
+            }
+        }
+    }
     for (ObjectId e : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (const Foundation* f = w.get<Foundation>(e)) {
@@ -576,7 +623,7 @@ BuildingMap buildingMap(World& w) {
             }
             continue;
         }
-        if (!info.onFoundation) continue;
+        if (!info.onFoundation && !info.slope) continue;
         const Transform* tr = w.get<Transform>(e);
         const long long k = levelKey(tileOf(tr->x), tileOf(tr->z), storeyOf(w, e));
         if (info.stairs) {
@@ -763,7 +810,7 @@ PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, i
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (info.airship || info.foundation || storeyOf(w, e) != 0) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (info.perimeter) {
+        if (info.perimeter || info.tower) {
             int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
             pieceTiles(w, e, px0, pz0, px1, pz1);
             for (int z = pz0; z <= pz1; ++z) {
@@ -1246,11 +1293,12 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
         w.add(prop, Health{ WALL_HEALTH * tough, WALL_HEALTH * tough });
     }
     if (info->perimeter) {
-        // Ten times as strong as a wall or door; a gate is shut, unless the plan it was put down from has it unlocked
+        // Ten times as strong as a wall or door; a gate is built open (its Lock is locked when it is shut)
         const double hp = (info->solid ? WALL_HEALTH : DOOR_HEALTH) * tough * PERIMETER_STRENGTH;
         w.add(prop, Health{ hp, hp });
-        if (!info->solid) w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), std::max(1, info->lockLevel), ownerOf(w, prop) });
+        if (!info->solid) w.add(prop, Lock{ false, std::max(1, info->lockLevel), ownerOf(w, prop) });   // a gate is built open
     }
+    if (info->tower) w.add(prop, Health{ WALL_HEALTH * 4.0, WALL_HEALTH * 4.0 });
     if (info->door) {
         // Shut, unless the plan it was put down from has it unlocked
         w.add(prop, Lock{ !w.has<StartsUnlocked>(prop), std::max(1, info->lockLevel), ownerOf(w, prop) });
@@ -1314,19 +1362,23 @@ void rebuildBlocking(World& w, Terrain& t) {
             for (int i = 0; i < 3; ++i) t.setBlocked(xs[i], zs[i], true);
             continue;
         }
-        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter) {
-            // A Perimeter Wall closes every tile it covers; a Gate is walked through while it lets you
-            if (!pi.solid) continue;
+        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter || pi.tower) {
+            // A Perimeter Wall or Watchtower closes every tile it covers; a Gate is walked through while it lets you
+            if (!pi.solid && !gateShut(w, e)) continue;
             int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
             pieceTiles(w, e, x0, z0, x1, z1);
             for (int z = z0; z <= z1; ++z) {
-                for (int x = x0; x <= x1; ++x) t.setBlocked(x, z, true);
+                for (int x = x0; x <= x1; ++x) {
+                    t.setBlocked(x, z, true);
+                    t.setSightBlock(x, z, SIGHT_BLOCK_PERIMETER);
+                }
             }
             continue;
         }
         if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
         const Transform* tr = w.get<Transform>(e);
         t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
+        t.setSightBlock(tileOf(tr->x), tileOf(tr->z), FLOOR_HEIGHT);
     }
     w.resource<BuildingsChanged>().dirty = false;
     w.resource<BuildingsChanged>().tiles.clear();
@@ -1375,6 +1427,7 @@ void refreshBuildingTiles(World& w, Terrain& t) {
     for (const auto& [x, z] : tiles) {
         changed.insert(tileKey(x, z));
         t.setBlocked(x, z, false);
+        t.setSightBlock(x, z, 0.0f);
         t.setDeck(x, z, false);
         x0 = std::min(x0, x); x1 = std::max(x1, x);
         z0 = std::min(z0, z); z1 = std::max(z1, z);
@@ -1399,20 +1452,25 @@ void refreshBuildingTiles(World& w, Terrain& t) {
             }
             continue;
         }
-        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter) {
-            if (!pi.solid) continue;
+        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter || pi.tower) {
+            if (!pi.solid && !gateShut(w, e)) continue;
             int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
             pieceTiles(w, e, px0, pz0, px1, pz1);
             for (int z = pz0; z <= pz1; ++z) {
                 for (int x = px0; x <= px1; ++x) {
-                    if (changed.count(tileKey(x, z))) t.setBlocked(x, z, true);
+                    if (!changed.count(tileKey(x, z))) continue;
+                    t.setBlocked(x, z, true);
+                    t.setSightBlock(x, z, SIGHT_BLOCK_PERIMETER);
                 }
             }
             continue;
         }
         if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (changed.count(tileKey(tileOf(tr->x), tileOf(tr->z)))) t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
+        if (changed.count(tileKey(tileOf(tr->x), tileOf(tr->z)))) {
+            t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
+            t.setSightBlock(tileOf(tr->x), tileOf(tr->z), FLOOR_HEIGHT);
+        }
     }
     // Walks that pass near a changed tile are planned again, around a new wall or through a gap left by a lost one
     for (ObjectId u : w.view<SoloMove, Transform>()) {
@@ -1478,7 +1536,102 @@ WallShape wallShapeOf(World& w, ObjectId wall) {
     return wallShapeFor(mask);
 }
 
+namespace {
+int materialTier(BuildMaterial m) {
+    switch (m) {
+    case BuildMaterial::Stone: return 1;
+    case BuildMaterial::Iron: return 2;
+    case BuildMaterial::Crystal: return 3;
+    default: return 0;
+    }
+}
+}
+
+bool canUpgradePiece(World& w, ObjectId piece) {
+    const Prop* p = w.get<Prop>(piece);
+    if (!p || w.has<Blueprint>(piece) || !takesMaterial(p->kind)) return false;
+    const PropInfo& info = propInfo(p->kind);
+    return !info.foundation && !info.upperFloor && ownerOf(w, piece) == FACTION_PLAYER && materialTier(materialOf(w, piece)) < 3;
+}
+
+std::vector<BuildMaterial> upgradesFor(World& w, ObjectId piece) {
+    std::vector<BuildMaterial> out;
+    if (!canUpgradePiece(w, piece)) return out;
+    const int now = materialTier(materialOf(w, piece));
+    for (BuildMaterial m : { BuildMaterial::Stone, BuildMaterial::Iron, BuildMaterial::Crystal }) {
+        if (materialTier(m) > now) out.push_back(m);
+    }
+    return out;
+}
+
+void upgradePiece(World& w, ObjectId piece, BuildMaterial to) {
+    if (!canUpgradePiece(w, piece) || materialTier(to) <= materialTier(materialOf(w, piece))) return;
+    int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+    pieceTiles(w, piece, x0, z0, x1, z1);
+    w.add(piece, Material{ to });
+    w.remove<Health>(piece);
+    w.remove<Lock>(piece);   // a door or gate is fitted again when it is finished
+    w.add(piece, Blueprint{});
+    buildingTilesChanged(w, x0, z0, x1, z1);
+}
+
+bool gateShut(World& w, ObjectId gate) {
+    const Prop* p = w.get<Prop>(gate);
+    if (!p || w.has<Blueprint>(gate)) return false;
+    const PropInfo& info = propInfo(p->kind);
+    const Lock* l = w.get<Lock>(gate);
+    return info.perimeter && !info.solid && l && l->locked;
+}
+
+void setGateShut(World& w, ObjectId gate, bool shut) {
+    Lock* l = w.get<Lock>(gate);
+    if (!l || gateShut(w, gate) == shut) return;
+    // Taken off and put back, so what reads the walls (steering's tiles) sees it change
+    Lock now = *l;
+    now.locked = shut;
+    w.remove<Lock>(gate);
+    w.add(gate, now);
+    int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+    pieceTiles(w, gate, x0, z0, x1, z1);
+    buildingTilesChanged(w, x0, z0, x1, z1);
+}
+
+void gateSystem(World& w, double clockSeconds, float dt) {
+    struct Watch {
+        float timer = 0.0f;
+        int quiet = -1;   // whether your people were all asleep at night when last looked: -1 not yet known
+    };
+    Watch& watch = w.resource<Watch>();
+    watch.timer += dt;
+    if (watch.timer < 1.0f) return;
+    watch.timer = 0.0f;
+    // Only with Fortified units: they keep the gates
+    if (fortifiedUnits(w).empty()) {
+        watch.quiet = -1;
+        return;
+    }
+    int people = 0, awake = 0;
+    for (ObjectId u : w.view<Entity, Transform>()) {
+        if (factionOf(w, u) != FACTION_PLAYER || w.has<Mob>(u) || (!w.has<Citizen>(u) && !w.has<Commandable>(u))) continue;
+        if (outCold(w, u) || w.has<Carried>(u)) continue;
+        ++people;
+        const Occupying* oc = w.get<Occupying>(u);
+        const Prop* bed = oc ? w.get<Prop>(oc->prop) : nullptr;
+        if (!bed || !propInfo(bed->kind).sleeping) ++awake;
+    }
+    const int quiet = isNightAt(clockSeconds) && people > 0 && awake == 0 ? 1 : 0;
+    const int before = watch.quiet;
+    watch.quiet = quiet;
+    if (before < 0 || before == quiet) return;
+    for (ObjectId g : w.view<Prop, Lock>()) {
+        if (w.has<Blueprint>(g) || ownerOf(w, g) != FACTION_PLAYER) continue;
+        const PropInfo& info = propInfo(w.get<Prop>(g)->kind);
+        if (info.perimeter && !info.solid) setGateShut(w, g, quiet == 1);
+    }
+}
+
 bool doorLets(World& w, ObjectId door, ObjectId u) {
+    if (w.has<Prop>(door) && propInfo(w.get<Prop>(door)->kind).perimeter && !propInfo(w.get<Prop>(door)->kind).solid) return !gateShut(w, door);
     const Lock* l = w.get<Lock>(door);
     if (!l || !l->locked || w.has<Blueprint>(door)) return true;
     const int f = factionOf(w, u);
@@ -1491,7 +1644,7 @@ void doorSystem(World& w, float dt) {
         at.since += dt;
         const Lock* l = w.get<Lock>(at.door);
         const PropInfo* info = infoOf(w, at.door);
-        const bool wall = info && (info->wallRule || info->solid);
+        const bool wall = info && (info->wallRule || info->solid || gateShut(w, at.door));   // a shut gate is smashed like a wall
         const bool barrier = wall ? w.has<Prop>(at.door) : (l && l->locked);
         if (at.since > AT_DOOR_FORGET_SECONDS || !barrier || w.has<Commandable>(u) || outCold(w, u)) {
             if (at.since > AT_DOOR_FORGET_SECONDS || !barrier) w.remove<AtDoor>(u);
@@ -1548,6 +1701,7 @@ Vec2 nearestFloorSpot(World& w, ObjectId, Vec2 target, int level) {
     std::vector<long long> tiles;
     for (const auto& [lk, e] : m.floor) tiles.push_back(lk);
     for (const auto& [lk, e] : m.stairTop) tiles.push_back(lk);
+    for (const auto& [lk, e] : m.perimTop) tiles.push_back(lk);
     for (const long long lk : tiles) {
         if ((int)(lk % 16) != level) continue;
         const long long tk = lk / 16;
@@ -1599,6 +1753,14 @@ bool atClimbSpot(World& w, ObjectId u, ObjectId ladder) {
     int ax = tileOf(lt->x), az = tileOf(lt->z);
     const int ux = tileOf(ut->x), uz = tileOf(ut->z);
     const BuildingMap m = buildingMap(w);
+    if (const PropInfo* li = infoOf(w, ladder); li && li->slope) {
+        // A Slope stands on open ground: from beside its bottom step on the ground, or from its top step (or the walkway beside it) above
+        int xs[4], zs[4];
+        stairsTiles(w, ladder, xs, zs);
+        const int i = us == ls ? 0 : 2;
+        if (std::max(std::abs(ux - xs[i]), std::abs(uz - zs[i])) > 1) return false;
+        return us != ls || stairsFootOpen(w, m, ux, uz, ls, true);
+    }
     if (isStairs(w, ladder)) {
         int xs[4], zs[4];
         stairsTiles(w, ladder, xs, zs);
@@ -1657,6 +1819,12 @@ void planStairsWalk(World& w, const Terrain& t, ObjectId u, ObjectId stairs, boo
             }
         }
         along += seg;
+    }
+    if (const PropInfo* si = infoOf(w, stairs); si && si->slope) {
+        c.hops.clear();
+        c.smooth = true;
+        c.startHeight = down ? low + rise : low;
+        c.endHeight = down ? low : low + rise;
     }
     c.whole = c.left = std::max(0.2f, len / std::max(0.3f, walkSpeedOf(w, u)));
 }
@@ -1739,7 +1907,9 @@ void climbSystem(World& w, Terrain& t, float dt) {
             }
             constexpr float HOP_SPAN = 0.22f, HOP_OVER = 0.25f;
             float y = c.startHeight;
-            for (const Climbing::Hop& h : c.hops) {
+            static const std::vector<Climbing::Hop> NO_HOPS;
+            if (c.smooth) y = c.startHeight + (c.endHeight - c.startHeight) * std::clamp(gone / std::max(len, 1e-4f), 0.0f, 1.0f);
+            for (const Climbing::Hop& h : c.smooth ? NO_HOPS : c.hops) {
                 if (gone >= h.at + HOP_SPAN) {
                     y = h.to;
                     continue;

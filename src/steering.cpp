@@ -124,7 +124,7 @@ std::int64_t cellKey(int cx, int cz) { return (std::int64_t)(((std::uint64_t)(st
 // What the buildings put in the units' way, found again only when a piece is added, finished or removed
 struct SteerTiles {
     bool valid = false;
-    std::uint64_t revisions[4] = { 0, 0, 0, 0 };
+    std::uint64_t revisions[5] = { 0, 0, 0, 0, 0 };
     std::unordered_map<long long, ObjectId> walls;   // finished walls, by tile
     std::unordered_set<long long> floors;            // finished upper floor tiles, by levelKey
     std::unordered_set<long long> upperWalls;        // finished walls on upper floors, by levelKey
@@ -794,20 +794,20 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     // Where the walls, doors and floors are only changes when a piece is added, finished or removed, so the tables are kept and
     // made again then. Whether a door is locked can change any time: that is looked at every step.
     SteerTiles& tiles = w.resource<SteerTiles>();
-    const std::uint64_t seen[4] = { w.revision<Prop>(), w.revision<Storey>(), w.revision<Blueprint>(), w.revision<Transform>() };
-    if (!tiles.valid || !std::equal(seen, seen + 4, tiles.revisions)) {
+    const std::uint64_t seen[5] = { w.revision<Prop>(), w.revision<Storey>(), w.revision<Blueprint>(), w.revision<Transform>(), w.revision<Lock>() };
+    if (!tiles.valid || !std::equal(seen, seen + 5, tiles.revisions)) {
         tiles = SteerTiles{};
-        std::copy(seen, seen + 4, tiles.revisions);
+        std::copy(seen, seen + 5, tiles.revisions);
         tiles.valid = true;
         for (ObjectId p : w.view<Prop, Transform>()) {
             const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-            if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs && !info.perimeter) || w.has<Blueprint>(p)) continue;
-            if (info.perimeter) {
+            if ((!info.door && !info.upperFloor && !info.wallRule && !info.stairs && !info.perimeter && !info.tower) || w.has<Blueprint>(p)) continue;
+            if (info.perimeter || info.tower) {
                 int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
                 pieceTiles(w, p, x0, z0, x1, z1);
                 for (int z = z0; z <= z1; ++z) {
                     for (int x = x0; x <= x1; ++x) {
-                        if (info.solid) tiles.walls[tileKey(x, z)] = p;
+                        if (info.solid || gateShut(w, p)) tiles.walls[tileKey(x, z)] = p;   // a shut gate is a wall
                         else tiles.doors.push_back({ tileKey(x, z), p });
                     }
                 }
@@ -837,6 +837,10 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
             }
             else if (info.wallRule) tiles.walls[key] = p;
             else tiles.doors.push_back({ key, p });
+        }
+        // The walkways on top of Perimeter Walls and Gates are first-floor ground for a unit up there
+        for (const auto& [k, pe] : cachedBuildingMap(w).perimTop) {
+            if (!w.has<Blueprint>(pe)) tiles.floors.insert(k);
         }
     }
     s.tiles = &tiles;

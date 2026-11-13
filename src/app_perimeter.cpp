@@ -24,6 +24,7 @@ void App::openPerimeter(ObjectId altarProp) {
     perim.cz = held->z;
     perim.radius = held->radius;
     if (const Perimeter* p = world.get<Perimeter>(altarProp)) perim.draft = p->tiles;
+    else perim.draft = defaultPerimeter(world, altarProp);
     session.buildPick = {};
     session.contextMenu.open = false;
     itemMenu.open = false;
@@ -73,10 +74,10 @@ bool App::pressOnPerimeter() {
         } else if (L.erase.contains(x, y)) {
             perim.erase = true;
         } else if (L.reset.contains(x, y)) {
-            perim.draft.clear();
+            perim.draft = defaultPerimeter(world, perim.altar);   // back to every tile of the claim
         } else if (L.confirm.contains(x, y)) {
-            if (perim.draft.empty()) {
-                world.remove<Perimeter>(perim.altar);
+            if (perim.draft == defaultPerimeter(world, perim.altar)) {
+                world.remove<Perimeter>(perim.altar);   // the default: every tile, as the claim grows
             } else {
                 Perimeter p;
                 p.tiles = perim.draft;
@@ -132,11 +133,11 @@ bool App::releasePerimeter() {
 // The tiles as marks on the ground, and the rectangle being dragged
 void App::perimeterPreview(BuildPreview& bp, float mx, float my) {
     if (!perim.active) return;
-    std::set<std::pair<int, int>> shown = perim.draft;
-    for (const auto& t : perimeterOf(world, perim.altar)) {
-        if (inPerimeterCore(world, perim.altar, t.first, t.second)) shown.insert(t);
+    // What is drawn, and the core that is always there at half the strength
+    for (const auto& [x, z] : perim.draft) bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.12f, 3 });
+    for (const auto& [x, z] : perimeterOf(world, perim.altar)) {
+        if (inPerimeterCore(world, perim.altar, x, z)) bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.12f, 5 });
     }
-    for (const auto& [x, z] : shown) bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.12f, 3 });
     if (perim.drag) {
         if (const auto hit = buildPickAt(mx, my)) {
             bp.rect = true;

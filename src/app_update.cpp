@@ -568,8 +568,19 @@ void App::updateHover() {
                 snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bp.x, bp.z);
                 const int storey = propInfo(session.buildPick.kind).claimsLand ? 0 : session.buildLevel;
                 bp.lift = storeyBaseHeight(storey);
-                bp.yaw = propInfo(session.buildPick.kind).perimeter ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
+                bp.yaw = propInfo(session.buildPick.kind).perimeter || propInfo(session.buildPick.kind).slope
+                             ? (float)(session.buildDir % 4) * 1.5707963f : 0.0f;
                 bp.valid = buildSpotOk(session.buildPick.kind, bp.x, bp.z, storey, claims, bp.yaw);
+                // The way it faces (a Perimeter piece's outer side) or rises (a Slope), as an arrow ahead of it
+                if (propInfo(session.buildPick.kind).perimeter || propInfo(session.buildPick.kind).slope) {
+                    const int d = session.buildDir % 4;
+                    const float away = propInfo(session.buildPick.kind).slope ? 2.5f : 2.0f;
+                    bp.arrow = true;
+                    bp.arrowX = bp.x + (float)STAIRS_DX[d] * away;
+                    bp.arrowZ = bp.z + (float)STAIRS_DZ[d] * away;
+                    bp.arrowDX = (float)STAIRS_DX[d];
+                    bp.arrowDZ = (float)STAIRS_DZ[d];
+                }
             }
         }
         if (placing) updateBuildPaint();
@@ -626,6 +637,15 @@ void App::updateHover() {
                 campRingsTick = now;
             }
             bp.otherRings.insert(bp.otherRings.end(), campRings.begin(), campRings.end());
+        }
+        // Placing a Perimeter Wall or Gate: the Perimeters you have, faintly
+        if (placing && propInfo(session.buildPick.kind).perimeter) {
+            for (const Claim& c : claims) {
+                if (c.owner != FACTION_PLAYER || c.camp || !world.has<Prop>(c.altar)) continue;
+                for (const auto& [x, z] : perimeterOf(world, c.altar)) {
+                    bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.1f, inPerimeterCore(world, c.altar, x, z) ? 6 : 4 });
+                }
+            }
         }
         updatePerimeter();
         if (perim.active && screen == Screen::Playing) perimeterPreview(bp, bmx, bmy);

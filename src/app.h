@@ -431,6 +431,7 @@ struct App : AppSession {
     void startRename(ObjectId u);
     void openStoreFilter(ObjectId prop);
     bool ownDoor(ObjectId target);
+    bool ownGate(ObjectId target);   // a finished Perimeter Gate of yours
     // A Stall's Stock window: your stores down the left, the one picked's items on the right to order hauled to the Stall
     void openStall(ObjectId stall);
     bool pressOnStall();

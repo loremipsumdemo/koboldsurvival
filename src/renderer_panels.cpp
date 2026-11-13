@@ -28,6 +28,8 @@ const FilterEntry kFilterEntries[] = {
     { "UILABEL_FAILED_PATHFINDING", LogKind::PathFail, false },
     { "UILABEL_FAILED_TASK", LogKind::TaskFail, false },
     { "UILABEL_BLOCKED_ORDERS", LogKind::Blocked, false },
+    { "UILABEL_CLAIM_MESSAGES", LogKind::Other, true },
+    { "UILABEL_CLAIM_UPDATES", LogKind::Claim, false },
 };
 
 constexpr int kFilterRowCount = (int)(sizeof(kFilterEntries) / sizeof(kFilterEntries[0]));

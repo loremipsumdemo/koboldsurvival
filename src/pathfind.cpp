@@ -205,6 +205,10 @@ bool Terrain::sightClear(float ax, float ay, float az, float bx, float by, float
         const float s = (float)i / (float)n;
         const float eye = ay + (by - ay) * s + SIGHT_EYE_HEIGHT;
         if (heightAt(ax + dx * s, az + dz * s) > eye) return false;
+        if (!sightBlocks_.empty()) {
+            const auto it = sightBlocks_.find((long long)(int)std::floor(az + dz * s) * 1000003LL + (long long)(int)std::floor(ax + dx * s));
+            if (it != sightBlocks_.end() && heightAt(ax + dx * s, az + dz * s) + it->second > eye) return false;
+        }
     }
     return true;
 }

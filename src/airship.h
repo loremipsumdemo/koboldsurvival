@@ -11,6 +11,7 @@ inline constexpr float AIRSHIP_LIFT = 2.54f;    // how high it floats above the 
                                                 // built on its tile: about a floor's height (building.h FLOOR_TOP)
 inline constexpr float AIRSHIP_CLIMB = 4.0f;    // how fast it rises or sinks to that height, per second
 inline constexpr float AIRSHIP_DECK = 0.7f;     // where its occupants stand, above its keel
+inline constexpr float TOWER_DECK = 3.2f;       // where a Watchtower's occupant stands, above its base
 inline constexpr float AIRSHIP_ARRIVED = 0.15f;
 inline constexpr int AIRSHIP_LAND_TILES = 64;  // land this big that can't be walked to gets you an Airship at the start
 inline constexpr float AIRSHIP_BOARD_SECONDS = 5.0f;
@@ -30,6 +31,7 @@ struct AirshipState {
     bool settled = false;
 };
 
+// An Airship, or a Watchtower, which is occupied the same way: one unit up top, out of melee reach, able to shoot and be shot
 bool isAirship(World& w, ObjectId prop);
 // How many can occupy this prop at once: an Airship's workers, and one for any other prop
 int occupyCapacity(World& w, ObjectId prop);

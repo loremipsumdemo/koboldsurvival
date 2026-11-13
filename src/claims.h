@@ -44,6 +44,9 @@ struct Perimeter {
 inline constexpr int PERIMETER_CORE_RADIUS = 2;
 // Every tile of the Altar's Perimeter, its core included
 std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar);
+// The Perimeter an Altar has until one is drawn for it (the Set Perimeter tool): every tile of its claim but the core, which grows
+// with the claim. The same for yours and an NPC faction's, and for an Altar that begins a game as for one placed in it.
+std::set<std::pair<int, int>> defaultPerimeter(World& w, ObjectId altar);
 bool inPerimeterCore(World& w, ObjectId altar, int x, int z);
 
 // The same claims, kept: worked out again only when a Prop, Owner, Blueprint or ClaimGrowth is added or removed, when

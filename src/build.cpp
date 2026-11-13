@@ -182,7 +182,8 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
         w.add(e, Output{});
         w.add(e, PropWork{});
     }
-    if (info.lockLevel > 0) w.add(e, Lock{ true, info.lockLevel });
+    // A Perimeter Gate's lock is its shut state: it stands open until shut
+    if (info.lockLevel > 0) w.add(e, Lock{ !(info.perimeter && !info.solid), info.lockLevel });
     if (propInfo(kind).claimsLand) w.add(e, Health{});
     else if (info.health > 0.0) w.add(e, Health{ info.health, info.health });
     onPropSpawned(w, e);
@@ -204,6 +205,7 @@ ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, floa
     }
 
     w.add(e, Owner{ owner });
+    if (Lock* gate = w.get<Lock>(e); gate && info.perimeter && !info.solid) gate->faction = owner;
 
     if (hasStorage(info) && !info.claimsLand && claimAt(claimsOf(w), x, z, owner)) {
         w.add(e, Lock{ true, BUILT_LOCK_LEVEL, owner });
