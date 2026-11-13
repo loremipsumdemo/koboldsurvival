@@ -498,35 +498,6 @@ ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const
     return anchor;
 }
 
-bool planSurroundingsClear(World& w, const std::vector<PlanRect>& rects, int x, int z) {
-    std::unordered_set<long long> ring;
-    for (const PlanRect& r : rects) {
-        for (int tz = z + r.z0 - 1; tz <= z + r.z1 + 1; ++tz) {
-            for (int tx = x + r.x0 - 1; tx <= x + r.x1 + 1; ++tx) ring.insert(tileKey(tx, tz));
-        }
-    }
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (storeyOf(w, e) != 0) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (const Foundation* f = w.get<Foundation>(e)) {
-            for (int tz = f->z0; tz < f->z0 + f->h; ++tz) {
-                for (int tx = f->x0; tx < f->x0 + f->w; ++tx) {
-                    if (ring.count(tileKey(tx, tz))) return false;
-                }
-            }
-            continue;
-        }
-        // A prop is as wide as its size, up to a couple of tiles either way
-        const float r = std::clamp(propInfo(w.get<Prop>(e)->kind).size * 0.5f, 0.3f, 2.0f);
-        for (int tz = (int)std::floor(tr->z - r); tz <= (int)std::floor(tr->z + r); ++tz) {
-            for (int tx = (int)std::floor(tr->x - r); tx <= (int)std::floor(tr->x + r); ++tx) {
-                if (ring.count(tileKey(tx, tz))) return false;
-            }
-        }
-    }
-    return true;
-}
-
 bool planFoundationFits(World& w, const Terrain& t, const BuildPlan& plan, int x, int z, int owner) {
     return planFoundationFits(w, t, planFoundationRects(plan), x, z, owner);
 }

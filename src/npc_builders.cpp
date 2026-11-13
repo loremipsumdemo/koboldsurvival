@@ -302,7 +302,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
             const float cx[2] = { (float)x, (float)(x + turned.w) }, cz[2] = { (float)z, (float)(z + turned.d) };
             bool inside = true;
             for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < 2; ++j) inside = inside && distSq(cx[i], cz[j], c.x, c.z) <= (c.radius - 1.0f) * (c.radius - 1.0f);
+                for (int j = 0; j < 2; ++j) inside = inside && distSq(cx[i], cz[j], c.x, c.z) <= c.radius * c.radius;
             }
             if (!inside) continue;
             // A tile clear all round it of any other foundation, so that it is a building of its own
@@ -310,7 +310,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
             for (int tz = z - 1; tz <= z + turned.d && clear; ++tz) {
                 for (int tx = x - 1; tx <= x + turned.w && clear; ++tx) clear = !map.foundation.count(tileKey(tx, tz));
             }
-            if (!clear || !planFoundationFits(w, t, rectsBy[turns], x, z, c.owner) || !planSurroundingsClear(w, rectsBy[turns], x, z)) continue;
+            if (!clear || !planFoundationFits(w, t, rectsBy[turns], x, z, c.owner)) continue;
             const ObjectId anchor = placePlanAll(w, t, turned, rectsBy[turns], x, z, c.owner, material);
             if (anchor == NO_OBJECT) continue;
             PlanSite site;

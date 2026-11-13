@@ -128,7 +128,8 @@ void Renderer::loadPropModels(LoadStages& stages) {
             SDL_Log("Prop model %s could not be read or has nothing to draw: the %s is drawn %s",
                     file.c_str(), lang(info.nameKey).c_str(), standIn);
         }
-        if (info.wallRule) {
+        const bool shaped = info.wallRule || info.upperFloor || info.solid;   // walls, floors and Perimeter Walls take a shape from what is beside them
+        if (shaped) {
             // Its other shapes sit beside its model: wall_wood.glb has wall_wood_end.glb and so on
             static const char* const SHAPES[5] = { "_end", "_straight", "_corner", "_tee", "_cross" };
             const std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
@@ -147,10 +148,23 @@ void Renderer::loadPropModels(LoadStages& stages) {
             std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
             if (stem.size() > 5 && stem.compare(stem.size() - 5, 5, "_wood") == 0) stem.erase(stem.size() - 5);
             for (int m = 0; m < MATERIAL_MODELS; ++m) {
-                for (int sh = 0; sh < (info.wallRule ? 6 : 1); ++sh) {
+                for (int sh = 0; sh < (shaped ? 6 : 1); ++sh) {
                     const std::string f = stem + MATS[m] + SHAPES[sh] + ".glb";
                     if (pakHas(f)) loadDrawableModel(f.c_str(), materialModels_[(size_t)k][(size_t)m][(size_t)sh], false);
                 }
+            }
+        }
+        if (info.perimeter && !info.solid) {
+            // A Gate's open model, beside each of its closed ones: perimeter_gate_wood_open.glb, perimeter_gate_metal_open.glb. The
+            // wood one waits in wallShapes_'s first place, the others in each material's second.
+            static const char* const MATS[MATERIAL_MODELS] = { "_metal", "_crystal", "_stone" };
+            std::string stem = file.size() > 4 ? file.substr(0, file.size() - 4) : file;
+            if (stem.size() > 5 && stem.compare(stem.size() - 5, 5, "_wood") == 0) stem.erase(stem.size() - 5);
+            const std::string wood = stem + "_wood_open.glb";
+            if (pakHas(wood)) loadDrawableModel(wood.c_str(), wallShapes_[(size_t)k][0], false);
+            for (int m = 0; m < MATERIAL_MODELS; ++m) {
+                const std::string f = stem + MATS[m] + "_open.glb";
+                if (pakHas(f)) loadDrawableModel(f.c_str(), materialModels_[(size_t)k][(size_t)m][1], false);
             }
         }
         stages.step(0.58f + 0.4f * (float)(k + 1) / (float)propKindCount(), k + 1);

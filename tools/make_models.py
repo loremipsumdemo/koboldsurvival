@@ -663,7 +663,7 @@ WALL_SHAPES = {
     '_tee': [(1, 0), (0, 1), (-1, 0)],
     '_cross': [(1, 0), (0, 1), (-1, 0), (0, -1)],
 }
-SHAPED = {'WoodWall'}
+SHAPED = {'WoodWall', 'UpperFloor', 'PerimeterWall'}
 MATERIAL_KEYS = {'Foundation', 'WoodWall', 'WoodDoor', 'UpperFloor', 'Ladder', 'PerimeterWall', 'PerimeterGate'}
 
 
@@ -730,20 +730,45 @@ def crystal_door(pal=CRYSTAL_PAL):
 DOOR_STYLES = {'': wood_door, '_stone': stone_door, '_metal': metal_door, '_crystal': crystal_door}
 
 
-def perimeter_wall(pal=WOOD_PAL):
-    """A Perimeter Wall: a tall, thick rampart over a 2 by 2 footing, with a pier at each end, bands of darker courses and
-    a walkway on top between two rows of merlons. 3.6 high, 2 along (x) and 2 deep (z)."""
+def perimeter_wall(pal=WOOD_PAL, arms=()):
+    """A tile of Perimeter Wall: a post 1.7 across and 3.6 high with a walkway on top, and an arm toward each Perimeter Wall or Gate beside it
+    reaching to the 2 by 2 footprint's edge, so that neighbours join into one rampart and corners and ends take their own shape. A
+    side with no arm has a row of merlons along it, and a corner where both its sides are open a block. No footing. Four specks
+    too small to see keep every shape's bounds the same, so the game centres and scales them alike."""
     main, dark, light, foot = pal
-    H = 3.6
-    parts = [box(0, 0, 0, 2.0, 0.1, 2.0, foot), box(0, 0.1, 0, 1.9, H - 0.7, 1.3, main)]
-    for y in (0.8, 1.6, 2.4):
-        parts.append(box(0, y, 0, 1.94, 0.07, 1.34, dark))
-    for x in (-0.82, 0.82):
-        parts.append(box(x, 0.1, 0, 0.34, H - 0.4, 1.7, dark))
-    parts.append(box(0, H - 0.6, 0, 2.0, 0.16, 1.6, light))
-    for x in (-0.78, -0.26, 0.26, 0.78):
-        for z in (-0.6, 0.6):
-            parts.append(box(x, H - 0.44, z, 0.34, 0.44, 0.26, main))
+    H, T, CAP = 3.6, 1.7, 3.0
+    h = T / 2
+    reach = 1.0 - h
+    parts = []
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            parts.append(box(sx * 0.999, 0, sz * 0.999, 0.002, 0.002, 0.002, dark))
+    parts.append(box(0.999, H - 0.002, 0.999, 0.002, 0.002, 0.002, dark))
+    parts.append(box(0, 0, 0, T, CAP, T, main))
+    for y in (0.9, 1.8, 2.7):
+        parts.append(box(0, y, 0, T + 0.04, 0.07, T + 0.04, dark))
+    parts.append(box(0, CAP, 0, T + 0.1, 0.16, T + 0.1, light))
+    for dx, dz in arms:
+        cx, cz = dx * (h + reach / 2), dz * (h + reach / 2)
+        w, d = (reach + 0.02, T) if dx else (T, reach + 0.02)
+        parts.append(box(cx, 0, cz, w, CAP, d, main))
+        bw, bd = (reach + 0.02, T + 0.04) if dx else (T + 0.04, reach + 0.02)
+        for y in (0.9, 1.8, 2.7):
+            parts.append(box(cx, y, cz, bw, 0.07, bd, dark))
+        tw, td = (reach + 0.02, T + 0.1) if dx else (T + 0.1, reach + 0.02)
+        parts.append(box(cx, CAP, cz, tw, 0.16, td, light))
+    open_sides = [d for d in ((0, -1), (1, 0), (0, 1), (-1, 0)) if d not in arms]
+    top = CAP + 0.16
+    for dx, dz in open_sides:
+        for s in (-0.3, 0.3):
+            if dx:
+                parts.append(box(dx * 0.77, top, s, 0.26, 0.44, 0.4, main))
+            else:
+                parts.append(box(s, top, dz * 0.77, 0.4, 0.44, 0.26, main))
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            if (sx, 0) in open_sides and (0, sz) in open_sides:
+                parts.append(box(sx * 0.77, top, sz * 0.77, 0.26, 0.44, 0.26, main))
     return parts
 
 
@@ -767,6 +792,27 @@ def perimeter_gate(pal=WOOD_PAL):
             parts.append(box(x, y, 0, 1.16, 0.12, 0.24, IRON))
     parts.append(box(-0.1, 1.4, 0.13, 0.08, 0.3, 0.06, IRON))
     parts.append(box(0.1, 1.4, 0.13, 0.08, 0.3, 0.06, IRON))
+    return parts
+
+
+def perimeter_gate_open(pal=WOOD_PAL):
+    """The Perimeter Gate standing open: the same towers and lintel, with each leaf swung back from the tower it hangs on."""
+    main, dark, light, foot = pal
+    H = 4.2
+    parts = [box(0, 0, 0, 4.0, 0.1, 2.0, foot)]
+    for x in (-1.6, 1.6):
+        parts.append(box(x, 0.1, 0, 0.8, H - 0.4, 1.6, main))
+        for y in (0.9, 1.9, 2.9):
+            parts.append(box(x, y, 0, 0.84, 0.07, 1.64, dark))
+        parts.append(box(x, H - 0.3, 0, 1.0, 0.3, 1.8, light))
+    parts.append(box(0, 3.2, 0, 2.36, 0.7, 1.3, dark))
+    for x in (-0.8, 0.0, 0.8):
+        for z in (-0.5, 0.5):
+            parts.append(box(x, 3.9, z, 0.4, 0.3, 0.26, main))
+    for x in (-1.08, 1.08):
+        parts.append(box(x, 0.1, 0.525, 0.2, 3.0, 0.95, main))
+        for y in (0.7, 1.6, 2.5):
+            parts.append(box(x, y, 0.525, 0.24, 0.12, 0.96, IRON))
     return parts
 
 
@@ -855,13 +901,36 @@ def ladder(pal=WOOD_PAL):
     return parts
 
 
-def upper_floor(pal=WOOD_PAL):
-    """One tile of floor over the one below: planks on two joists. The game sets it on the tops of the walls."""
+def floor_trim(pal):
+    """How far a floor's edge reaches from the middle of its tile where it stops at the wall below it (the cap of that material's wall)."""
+    return 0.27 if pal is STONE_PAL or pal is CRYSTAL_PAL else 0.22
+
+
+def floor_tile(arms, pal=WOOD_PAL):
+    """One tile of floor over the one below, built as a foundation is: a base slab with two plank bands on it, but with its base
+    in the main colour. Each side with an arm (a floor beside it, or no wall under it) runs to the tile's edge; a side without
+    one stops at the wall's outer face, so an edge or a corner doesn't stick out past the wall. Four specks too small to see keep
+    every shape's bounds the whole tile."""
     main, dark, light, foot = pal
-    parts = [box(0, 0, -0.3, 1.0, 0.08, 0.1, dark), box(0, 0, 0.3, 1.0, 0.08, 0.1, dark)]
-    for z in (-0.375, -0.125, 0.125, 0.375):
-        parts.append(box(0, 0.08, z, 1.0, 0.06, 0.24, main if z < 0 else light))
+    trim = floor_trim(pal)
+    lo_x = -0.5 if (-1, 0) in arms else -trim
+    hi_x = 0.5 if (1, 0) in arms else trim
+    lo_z = -0.5 if (0, -1) in arms else -trim
+    hi_z = 0.5 if (0, 1) in arms else trim
+    cx, cz, w, d = (lo_x + hi_x) / 2, (lo_z + hi_z) / 2, hi_x - lo_x, hi_z - lo_z
+    parts = []
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            parts.append(box(sx * 0.499, 0, sz * 0.499, 0.002, 0.002, 0.002, main))
+    parts.append(box(cx, 0, cz, w, 0.09, d, main))
+    half = d / 2
+    parts.append(box(cx, 0.09, cz - half / 2, w - 0.03, 0.05, half - 0.03, light))
+    parts.append(box(cx, 0.09, cz + half / 2, w - 0.03, 0.05, half - 0.03, main))
     return parts
+
+
+def upper_floor(pal=WOOD_PAL):
+    return floor_tile([], pal)
 
 
 def stair_step(pal=WOOD_PAL):
@@ -1040,9 +1109,11 @@ def main():
         print(f'{key:16s} {file:14s} {len(parts):3d} parts  {tris:4d} triangles')
         stem = file[:-4] if file.endswith('.glb') else file
         extra = {}
+        shape_builders = {'WoodWall': wall_tile, 'UpperFloor': lambda a, p: floor_tile(a, p),
+                          'PerimeterWall': lambda a, p: perimeter_wall(p, a)}
         if key in SHAPED:
             for suffix, arms in WALL_SHAPES.items():
-                extra[suffix] = (lambda a: lambda: wall_tile(a, WOOD_PAL))(arms)
+                extra[suffix] = (lambda f, a: lambda: f(a, WOOD_PAL))(shape_builders[key], arms)
         if key in MATERIAL_KEYS:
             for mat, pal in MATERIALS.items():
                 if key == 'WoodWall':
@@ -1050,6 +1121,11 @@ def main():
                     extra[mat] = (lambda f, pl: lambda: f([], pl))(style, spal)
                     for suffix, arms in WALL_SHAPES.items():
                         extra[mat + suffix] = (lambda f, a, pl: lambda: f(a, pl))(style, arms, spal)
+                elif key in ('UpperFloor', 'PerimeterWall'):
+                    f = shape_builders[key]
+                    extra[mat] = (lambda f, pl: lambda: f([], pl))(f, pal)
+                    for suffix, arms in WALL_SHAPES.items():
+                        extra[mat + suffix] = (lambda f, a, pl: lambda: f(a, pl))(f, arms, pal)
                 elif key == 'WoodDoor':
                     extra[mat] = (lambda f, pl: lambda: f(pl))(DOOR_STYLES[mat], pal)
                 else:
@@ -1061,6 +1137,13 @@ def main():
             name = (base if suffix.split('_')[1] in ('stone', 'metal', 'crystal') else stem) + suffix + '.glb'
             tris = write_glb(os.path.join(DATA, 'model', name), shaped)
             print(f'{key + suffix:22s} {name:26s} {len(shaped):3d} parts  {tris:4d} triangles')
+    if not only or 'PerimeterGate' in only:
+        # The Perimeter Gate open, beside its closed model in each material
+        for mat, pal in [('_wood', WOOD_PAL)] + list(MATERIALS.items()):
+            parts = perimeter_gate_open(pal)
+            name = 'perimeter_gate' + mat + '_open.glb'
+            tris = write_glb(os.path.join(DATA, 'model', name), parts)
+            print(f'{"Gate open" + mat:22s} {name:26s} {len(parts):3d} parts  {tris:4d} triangles')
     if not only or 'Stairs' in only:
         # Stairs are drawn by the game, a step at a time, each this model stretched to its height: stair_step.glb and
         # one beside it in each material

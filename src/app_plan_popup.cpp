@@ -258,13 +258,12 @@ bool App::planSpotFree(const BuildPlan& turned, int x, int z, const std::vector<
             inside = true;
             const float px[2] = { (float)x, (float)(x + turned.w) }, pz[2] = { (float)z, (float)(z + turned.d) };
             for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < 2; ++j) inside = inside && distSq(px[i], pz[j], held->x, held->z) <= (held->radius - 1.0f) * (held->radius - 1.0f);
+                for (int j = 0; j < 2; ++j) inside = inside && distSq(px[i], pz[j], held->x, held->z) <= held->radius * held->radius;
             }
         }
     }
-    // Props and other buildings may not stand on it or a tile round it (the Building Blueprints editor's own ground is its own)
-    c.ok = inside && planFoundationFits(world, terrain, planPick.rects, x, z, FACTION_PLAYER) &&
-           (bpEdit.active || planSurroundingsClear(world, planPick.rects, x, z));
+    // Props and other buildings may not stand on it
+    c.ok = inside && planFoundationFits(world, terrain, planPick.rects, x, z, FACTION_PLAYER);
     c.filled = true;
     c.x = x;
     c.z = z;

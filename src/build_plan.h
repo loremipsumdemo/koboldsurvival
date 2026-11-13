@@ -89,10 +89,6 @@ BuildPlan capturePlan(World& w, const std::string& name, int boxW, int boxD, int
 // biggest rectangle first. The first tile laid, or NO_OBJECT if the game refuses the biggest rectangle there.
 ObjectId placePlanFoundation(World& w, const Terrain& t, const BuildPlan& plan, int x, int z, int owner, BuildMaterial material);
 ObjectId placePlanFoundation(World& w, const Terrain& t, const std::vector<PlanRect>& rects, int x, int z, int owner, BuildMaterial material);
-// Whether nothing stands on the plan's foundation tiles, or on the ring of tiles all round them (a tile's width, diagonals too): no
-// prop (trees and rocks too), and no other building's foundation. Pieces put down so close together could shut a way, or a unit in.
-// Props above the ground floor are not looked at.
-bool planSurroundingsClear(World& w, const std::vector<PlanRect>& rects, int x, int z);
 // The whole plan (turned already, rects its foundation's rectangles) as a Building Blueprint at the corner (x, z), all at once: the
 // foundation as Auto Placed Blueprints (Blueprint::autoPlaced), everything on it as ghosts of their stage, which become blueprints
 // as the stage before them is built (npcBuilderSystem). Props that cost nothing are put down when their stage comes. The first

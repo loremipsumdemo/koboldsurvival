@@ -431,8 +431,24 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     if (!bt.valid || bt.propRevision != w.revision<Prop>() || bt.storeyRevision != w.revision<Storey>()) {
         bt.walls.clear();
         bt.doors.clear();
+        bt.perim.clear();
+        bt.floors.clear();
         for (ObjectId e : w.view<Prop, Transform>()) {
             const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+            if (info.perimeter) {
+                const Transform* ptr = w.get<Transform>(e);
+                int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+                propTileRect(info, ptr->x, ptr->z, w.get<Prop>(e)->yaw, px0, pz0, px1, pz1);
+                for (int z = pz0; z <= pz1; ++z) {
+                    for (int x = px0; x <= px1; ++x) bt.perim.insert(tileKey(x, z));
+                }
+                continue;
+            }
+            if (info.upperFloor) {
+                const Transform* ftr = w.get<Transform>(e);
+                bt.floors.insert(levelKey((int)std::floor(ftr->x), (int)std::floor(ftr->z), storeyOf(w, e)));
+                continue;
+            }
             if (!info.wallRule && !info.door) continue;
             const Transform* tr = w.get<Transform>(e);
             const long long k = levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), storeyOf(w, e));
@@ -593,6 +609,49 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (info.wallRule || info.door || info.ladder) side = std::max(side, (float)FLOOR_HEIGHT);
         if (info.wheelbarrow) side += info.pulled ? PULLED_BEHIND : WHEELBARROW_AHEAD;
         if (!sphereVisible(frustum, tr->x, baseY + 0.5f * side, tr->z, side)) return;
+        if (info.perimeter && info.solid) {
+            // A Perimeter Wall joins the Walls and Gates that touch its sides, along its whole side
+            int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+            propTileRect(info, tr->x, tr->z, w.get<Prop>(e)->yaw, x0, z0, x1, z1);
+            auto has = [&](int x, int z) { return bt.perim.count(tileKey(x, z)) > 0; };
+            int mask = 0;
+            for (int x = x0; x <= x1; ++x) {
+                if (has(x, z0 - 1)) mask |= 1;
+                if (has(x, z1 + 1)) mask |= 4;
+            }
+            for (int z = z0; z <= z1; ++z) {
+                if (has(x1 + 1, z)) mask |= 2;
+                if (has(x0 - 1, z)) mask |= 8;
+            }
+            const WallShape shape = wallShapeFor(mask);
+            const Model* m = &propModel(kind);
+            if (shape.shape > 0 && (size_t)idx(kind) < wallShapes_.size() && wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1].vao) {
+                m = &wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1];
+            }
+            if (const Model* made = materialModel(shape.shape)) m = made;
+            if (m->vao) {
+                queueModel(*m, tr->x, tr->y, tr->z, info.size, shape.yaw);
+                return;
+            }
+        }
+        if (info.upperFloor) {
+            // A Floor runs to the edge toward a floor beside it, or where no wall is under it; where a wall is, it stops at the
+            // wall's outer face, so an edge or a corner doesn't stick out
+            const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z), lv = storeyOf(w, e);
+            const bool walled = wallTiles.count(levelKey(x, z, lv - 1)) > 0;
+            auto arm = [&](int dx, int dz) { return !walled || bt.floors.count(levelKey(x + dx, z + dz, lv)) > 0; };
+            const int mask = (arm(0, -1) ? 1 : 0) | (arm(1, 0) ? 2 : 0) | (arm(0, 1) ? 4 : 0) | (arm(-1, 0) ? 8 : 0);
+            const WallShape shape = wallShapeFor(mask);
+            const Model* m = &propModel(kind);
+            if (shape.shape > 0 && (size_t)idx(kind) < wallShapes_.size() && wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1].vao) {
+                m = &wallShapes_[(size_t)idx(kind)][(size_t)shape.shape - 1];
+            }
+            if (const Model* made = materialModel(shape.shape)) m = made;
+            if (m->vao) {
+                queueModel(*m, tr->x, baseY, tr->z, info.size, shape.yaw);
+                return;
+            }
+        }
         if (info.wallRule) {
             const int x = (int)std::floor(tr->x), z = (int)std::floor(tr->z), lv = storeyOf(w, e);
             const int mask = (wallTiles.count(levelKey(x, z - 1, lv)) ? 1 : 0) | (wallTiles.count(levelKey(x + 1, z, lv)) ? 2 : 0) |
@@ -666,6 +725,29 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 }
             }
             fires_.push_back(f);
+        }
+        if (info.perimeter && !info.solid && !w.has<Blueprint>(e)) {
+            // A Gate stands open while anyone is in it or at it
+            int gx0 = 0, gz0 = 0, gx1 = 0, gz1 = 0;
+            propTileRect(info, tr->x, tr->z, yaw, gx0, gz0, gx1, gz1);
+            bool open = false;
+            for (ObjectId u : w.view<Entity, Transform>()) {
+                if (outCold(w, u) || w.has<Carried>(u) || storeyOf(w, u) != 0) continue;
+                const Transform* ut = w.get<Transform>(u);
+                const int ux = (int)std::floor(ut->x), uz = (int)std::floor(ut->z);
+                if (ux >= gx0 - 1 && ux <= gx1 + 1 && uz >= gz0 - 1 && uz <= gz1 + 1) {
+                    open = true;
+                    break;
+                }
+            }
+            if (open) {
+                const Model* shown = mat == BuildMaterial::Wood ? &wallShapes_[(size_t)idx(kind)][0]
+                                                                : &materialModels_[(size_t)idx(kind)][(size_t)mat - 1][1];
+                if (shown->vao) {
+                    queueModel(*shown, px, py, pz, info.size, yaw);
+                    return;
+                }
+            }
         }
         if (const Model* made = info.door || info.upperFloor || info.ladder || info.perimeter ? materialModel(0) : nullptr) {
             queueModel(*made, px, py, pz, info.size, yaw);
@@ -900,6 +982,7 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     for (const BuildPreview::Mark& m : buildPreview_.marks) {
         const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
                         : m.tone == 3 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.42f}
+                        : m.tone == 4 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.16f}
                                                                         : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
         const float a = 0.08f, y = m.y + lift;
         if (m.outline) {

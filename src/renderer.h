@@ -560,6 +560,8 @@ private:
         uint64_t propRevision = 0, storeyRevision = 0;
         std::unordered_set<long long> walls;   // by levelKey: walls and doors
         std::unordered_set<long long> doors;   // by levelKey: doors only
+        std::unordered_set<long long> perim;   // by tileKey: every tile of a Perimeter Wall or Gate
+        std::unordered_set<long long> floors;  // by levelKey: upper floors
     };
     BuildingTiles buildingTiles_;
     GLuint sceneFbo_ = 0, sceneTex_ = 0, sceneDepth_ = 0;

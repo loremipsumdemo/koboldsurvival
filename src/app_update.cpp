@@ -627,6 +627,15 @@ void App::updateHover() {
             }
             bp.otherRings.insert(bp.otherRings.end(), campRings.begin(), campRings.end());
         }
+        // Placing a Perimeter Wall or Gate: the Perimeters you have, faintly
+        if (placing && propInfo(session.buildPick.kind).perimeter) {
+            for (const Claim& c : claims) {
+                if (c.owner != FACTION_PLAYER || c.camp || !world.has<Prop>(c.altar)) continue;
+                for (const auto& [x, z] : perimeterOf(world, c.altar)) {
+                    bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.1f, 4 });
+                }
+            }
+        }
         updatePerimeter();
         if (perim.active && screen == Screen::Playing) perimeterPreview(bp, bmx, bmy);
         // Hovering an Altar, or a campfire's claim: its ring, with the others around it
