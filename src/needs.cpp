@@ -16,17 +16,20 @@ void needsSystem(World& w, int hours, double gameSeconds) {
             n->comfort = n->maxComfort = 0;
             n->hurried = false;
         } else {
-            if (const int maxR = maxRestedFor(statsOf(w, e)); maxR != n->maxRested) {
+            if (n->maxRested != RESTED_MAX) {   // a save from when the bar followed Vitality
                 const bool full = n->rested >= n->maxRested;
-                n->maxRested = maxR;
-                n->rested = full ? maxR : std::min(n->rested, maxR);
+                n->maxRested = RESTED_MAX;
+                n->rested = full ? RESTED_MAX : std::min(n->rested, RESTED_MAX);
             }
             int ticks = hours;
             if (hours > 0 && n->hurried) {
                 ticks += 1;
                 n->hurried = false;
             }
-            tickNeeds(*n, ticks);
+            // Lying in a bed or bedroll: asleep, so hunger comes at half the rate
+            const ObjectId bedNow = occupiedProp(w, e);
+            const bool asleep = bedNow != NO_OBJECT && w.has<Prop>(bedNow) && propInfo(w.get<Prop>(bedNow)->kind).sleeping;
+            tickNeeds(*n, ticks, asleep);
             // Other factions' units never get hungrier than this, unless caged
             if (n->maxHunger > 0 && factionOf(w, e) != FACTION_PLAYER && !w.has<Commandable>(e) && !inPrisonerCage(w, e)) {
                 n->hunger = std::max(n->hunger, (n->maxHunger * HUNGER_FLOOR_PERCENT + 99) / 100);

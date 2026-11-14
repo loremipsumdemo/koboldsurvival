@@ -219,10 +219,11 @@ constexpr unsigned NEEDS_HUNGER_CHANGED = 2u;
 struct Needs {
     int hp = 100, maxHp = 100;
     int hunger = 100, maxHunger = 100;
-    int rested = 50, maxRested = 50;
+    int rested = 80, maxRested = 80;   // RESTED_MAX (needs.h)
     int comfort = 50, maxComfort = 50;
     double restedPart = 0.0, comfortPart = 0.0;
     bool hurried = false;
+    bool sleepSkip = false;     // asleep, every other hour's hunger is skipped (not saved)
     double healSeconds = 0.0;
     unsigned changed = NEEDS_HP_CHANGED | NEEDS_HUNGER_CHANGED;
 };

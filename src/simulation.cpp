@@ -104,7 +104,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     wheelbarrowSystem(w);
     PROFILED("pickupSystem", pickupSystem(w, t));
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
-    PROFILED("wildMobSystem", wildMobSystem(w, t, dt));
+    PROFILED("wildMobSystem", wildMobSystem(w, t, rng, dt));
     PROFILED("behaviorGroupSystem", behaviorGroupSystem(w));
     PROFILED("automationSystem", automationSystem(w, t, dt, rng));
     PROFILED("buildingSystem", buildingSystem(w, t, dt));

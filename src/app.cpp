@@ -18,7 +18,8 @@ int App::init() {
         if (!problems.empty()) return fatalError(nullptr, "The game's data has a mistake: " + problems.front());
     }
     settings = loadSettings(settingsFilePath());
-    fonts = openUiFonts(settings.fontScale, settings.fontPath, settings.language);
+    logFilterFromText(logFilter, settings.logFilter);   // the Game tab's filter as it was left
+    fonts =openUiFonts(settings.fontScale, settings.fontPath, settings.language);
     appliedFontScale = settings.fontScale;
     appliedFontPath = settings.fontPath;
     appliedLanguage = settings.language;

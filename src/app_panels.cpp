@@ -277,6 +277,8 @@ bool App::infoPanelClick(int W, int H, float tx, float ty) {
         for (const GameLogLayout::FilterRow& fr : cl.filterRows) {
             if (fr.heading || !fr.r.contains(tx, ty)) continue;
             logFilter.on[(int)fr.kind] = !logFilter.on[(int)fr.kind];
+            settings.logFilter = logFilterText(logFilter);
+            saveSettingsFile();
             return true;
         }
         if (cl.filterMenu.contains(tx, ty)) return true;

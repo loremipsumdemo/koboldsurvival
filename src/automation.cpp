@@ -1082,6 +1082,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         }
         if (!any && b->seek == NO_OBJECT && !b->seeking) continue;
         if (w.has<LeavingDance>(u)) continue;
+        if (const MobAsleep* ms = w.get<MobAsleep>(u); ms && ms->asleep) continue;   // a sleeping mob (wild_ai.cpp) takes up no task
         const bool yours = w.has<Commandable>(u);
         const float resume = yours ? AUTO_RESUME_SECONDS : 0.0f;
         const Needs* n = w.get<Needs>(u);
@@ -1172,9 +1173,12 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
 
         // Whenever what it carries changes, a haul task above the step under way comes first: the step stops and the
         // haul starts, if it has something to take there (harvesting, patrolling and the like; not a bed or a rescue)
+        // (The first look only notes what it carries: b->carried is not saved, so every loaded unit would otherwise seem to have
+        // just picked something up, and drop its dance or other step for a haul.)
         if (const std::uint64_t print = carriedPrint(w, u); print != b->carried) {
+            const bool firstLook = b->carried == 0;
             b->carried = print;
-            if (b->busy && !isHaul(b->step.kind) && !isBedStep(b->step.kind) && b->step.kind != BehaviorKind::Rescue) {
+            if (!firstLook && b->busy && !isHaul(b->step.kind) && !isBedStep(b->step.kind) && b->step.kind != BehaviorKind::Rescue) {
                 bool hauled = false;
                 for (BehaviorRule& r : b->rules) {
                     if (sameBehavior(r, b->step)) break;
@@ -1490,6 +1494,8 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                         r->cooldown = BEHAVIOR_RETRY_SECONDS;
                         noteTaskFailed(w, u, behaviorName(b->step));   // it never got to work there
                     }
+                    // It walked to the bed and could not use it: no new try at once (that was a failed task over and over), but after the hour
+                    if (isBedStep(b->step.kind)) r->cooldown = NO_BED_RETRY_SECONDS;
                     if (b->step.kind == BehaviorKind::Patrol || b->step.kind == BehaviorKind::PatrolSpawn) {
                         r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
                     }

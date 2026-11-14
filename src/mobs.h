@@ -18,6 +18,8 @@ constexpr int CAMP_MOBS = 3;
 
 enum class MobCategory { Regular, Boss };
 enum class MobTemperament { Avoidant, Passive, Neutral, Aggressive };
+// When a mob sleeps: Diurnal at night (the default schedule's sleep hours), Nocturnal by day (those hours twelve hours on), None never
+enum class MobSleepCycle { None, Diurnal, Nocturnal };
 
 struct MobInfo {
     std::string nameKey;
@@ -42,6 +44,7 @@ struct MobInfo {
     int faction = 0;
     MobKind escort = MobKind::None;
     int escortCount = 0;
+    MobSleepCycle sleep = MobSleepCycle::None;
 };
 
 constexpr float BOSS_DAMAGE_FACTOR = 2.0f;

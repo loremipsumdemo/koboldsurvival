@@ -1846,3 +1846,7 @@ UILABEL_BLOCKED_ORDERS	受阻的命令
 MISC_PATH_FAILED	{0} 找不到前往 ({1}, {2}) 的路
 MISC_UNSTUCK	{0} 被困在墙里，已移到 ({1}, {2})
 MISC_TASK_FAILED	{0} 放弃了任务：{1}
+UILABEL_STUCK	卡住
+MISC_STUCK_NOMOVE	{0} 前往 ({1}, {2}) 途中 {3} 秒没有移动
+MISC_STUCK_NOWAY	{0} 到 ({1}, {2}) 没有通路：被困住了
+MISC_STUCK_REPLAN	{0} 到 ({1}, {2}) 有通路但被挡住：正在尝试绕行

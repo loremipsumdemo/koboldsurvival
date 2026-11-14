@@ -6,8 +6,8 @@
 
 constexpr size_t LOG_LIMIT = 500;
 
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked, Claim };
-constexpr int LOG_KIND_COUNT = 14;
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked, Claim, Stuck };
+constexpr int LOG_KIND_COUNT = 15;
 
 enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, ObjectId attacker, ObjectId target);
@@ -43,8 +43,22 @@ struct LogFilter {
         on[(int)LogKind::PathFail] = false;
         on[(int)LogKind::TaskFail] = false;
         on[(int)LogKind::Blocked] = false;
+        on[(int)LogKind::Stuck] = false;
     }
 };
+
+// The filter as one character a message kind, 1 shown and 0 hidden, for the settings file. A text from before a kind was added leaves
+// that kind at its default.
+inline std::string logFilterText(const LogFilter& f) {
+    std::string s;
+    for (bool b : f.on) s += b ? '1' : '0';
+    return s;
+}
+inline void logFilterFromText(LogFilter& f, const std::string& s) {
+    for (size_t i = 0; i < s.size() && i < (size_t)LOG_KIND_COUNT; ++i) {
+        if (s[i] == '1' || s[i] == '0') f.on[i] = s[i] == '1';
+    }
+}
 
 struct GameLog {
     std::vector<LogLine> lines;

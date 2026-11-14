@@ -714,6 +714,17 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
     if (w.has<Climbing>(e)) return;
     Transform* tr = w.get<Transform>(e);
     const bool player = w.has<Commandable>(e);
+    // On open ground but too close to a closed tile (a wall, a stairs' step, a foundation edge built or finished beside it, ground made
+    // steep): a step is only taken onto a free spot, and every step it could take from here is still inside that margin, so it would
+    // never move again. It is put on the nearest free spot, which is a fraction of a tile away. (A unit that is in a closed tile
+    // itself is for the stuck system, which chooses where it goes. Units upstairs and in beds are not on this ground.)
+    if (!w.has<Upstairs>(e) && !w.has<Occupying>(e) && t.walkable((int)std::floor(tr->x), (int)std::floor(tr->z)) && !t.isFree(tr->x, tr->z)) {
+        const Vec2 to = t.snap(Vec2{ tr->x, tr->z });
+        if (t.isFree(to.x, to.z) && std::hypot(to.x - tr->x, to.z - tr->z) <= 1.5f) {
+            tr->x = to.x;
+            tr->z = to.z;
+        }
+    }
     const float x0 = tr->x, z0 = tr->z;
 
     float nx = tr->x + velocity.first * dt;
