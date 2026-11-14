@@ -331,8 +331,51 @@ bool App::buildPressAt(float gx, float gz) {
     return false;
 }
 
+std::vector<std::pair<float, float>> App::wallRow(float mx, float my) {
+    std::vector<std::pair<float, float>> out;
+    const auto hit = buildPickAt(mx, my);
+    if (!hit) return out;
+    float bx = 0.0f, bz = 0.0f;
+    snapBuildSpot(session.buildPick.kind, hit->first, hit->second, bx, bz);
+    const PropInfo& info = propInfo(session.buildPick.kind);
+    const float step = (float)std::max(info.tilesW, info.tilesD);
+    const float dx = bx - session.wallX, dz = bz - session.wallZ;
+    const bool alongX = std::abs(dx) >= std::abs(dz);
+    const int n = std::min(60, (int)std::lround(std::abs(alongX ? dx : dz) / step));
+    const float sign = (alongX ? dx : dz) < 0.0f ? -1.0f : 1.0f;
+    for (int k = 0; k <= n; ++k) {
+        out.push_back({ session.wallX + (alongX ? sign * step * (float)k : 0.0f), session.wallZ + (alongX ? 0.0f : sign * step * (float)k) });
+    }
+    return out;
+}
+
 bool App::buildRelease() {
     session.paintPiece = false;
+    if (session.wallDrag) {
+        session.wallDrag = false;
+        float mx = 0.0f, my = 0.0f;
+        SDL_GetMouseState(&mx, &my);
+        if (!session.buildPick.placing()) return true;
+        const float yaw = (float)(session.buildDir % 4) * 1.5707963f;
+        const int storey = session.buildLevel;
+        int laid = 0;
+        BuildCheck why = BuildCheck::Ok;
+        for (const auto& [x, z] : wallRow(mx, my)) {
+            const BuildCheck c = checkBuildSpot(world, terrain, session.buildPick.kind, x, z, storey, FACTION_PLAYER, nullptr, yaw);
+            if (c != BuildCheck::Ok) {
+                why = c;
+                continue;
+            }
+            const ObjectId made = placeCostedProp(world, terrain, session.buildPick.kind, x, z, yaw, FACTION_PLAYER, storey);
+            if (takesMaterial(session.buildPick.kind) && (BuildMaterial)session.buildMaterial != BuildMaterial::Wood) {
+                world.add(made, Material{ (BuildMaterial)session.buildMaterial });
+            }
+            ++laid;
+        }
+        if (laid > 0) playSfx(Sfx::UiClick);
+        else refuse(lang(buildRefusalKey(why)));
+        return true;
+    }
     if (session.areaDrag) {
         session.areaDrag = false;
         finishAreaTool();

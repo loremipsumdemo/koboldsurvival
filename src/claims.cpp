@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
+#include <unordered_set>
 #include "build.h"
 #include "factions.h"
 #include "hostility.h"
@@ -348,10 +349,75 @@ std::set<std::pair<int, int>> defaultPerimeter(World& w, ObjectId altar) {
     return out;
 }
 
+std::set<std::pair<int, int>> autoPerimeter(World& w, ObjectId altar) {
+    const auto& by = w.resource<AutoPerimeters>().by;
+    if (const auto it = by.find(altar); it != by.end() && !it->second.empty()) return it->second;
+    return defaultPerimeter(w, altar);
+}
+
+bool refreshAutoPerimeter(World& w, const Terrain& t, ObjectId altar) {
+    auto& autos = w.resource<AutoPerimeters>().by;
+    autos.erase(altar);
+    const Claim* held = nullptr;
+    const std::vector<Claim> claims = claimsOf(w);
+    for (const Claim& c : claims) {
+        if (c.altar == altar) held = &c;
+    }
+    if (!held) return false;
+    const Claim& c = *held;
+    const int owner = c.owner;
+    // The finished walls and gates of its owner close tiles
+    std::unordered_set<long long> closed;
+    std::vector<std::pair<int, int>> closedTiles;
+    for (ObjectId p : w.view<Prop, Transform, Owner>()) {
+        const Prop* pp = w.get<Prop>(p);
+        const PropInfo& info = propInfo(pp->kind);
+        if (!info.perimeter || w.has<Blueprint>(p) || w.get<Owner>(p)->faction != owner) continue;
+        const Transform* tr = w.get<Transform>(p);
+        int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+        propTileRect(info, tr->x, tr->z, pp->yaw, x0, z0, x1, z1);
+        for (int z = z0; z <= z1; ++z) {
+            for (int x = x0; x <= x1; ++x) {
+                if (closed.insert(tileKey(x, z)).second) closedTiles.push_back({ x, z });
+            }
+        }
+    }
+    if (closedTiles.empty()) return false;
+    // Whether anything can walk out of the claim from the Altar: walls and gates count as shut, as a gate can be
+    std::unordered_set<long long> seen;
+    std::vector<std::pair<int, int>> reached;
+    size_t next = 0;
+    const int sx = (int)std::floor(c.x), sz = (int)std::floor(c.z);
+    reached.push_back({ sx, sz });
+    seen.insert(tileKey(sx, sz));
+    while (next < reached.size()) {
+        const auto [x, z] = reached[next++];
+        const float dx = x + 0.5f - c.x, dz = z + 0.5f - c.z;
+        if (dx * dx + dz * dz > c.radius * c.radius) return false;   // it got out: no ring
+        const int step[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+        for (const auto& d : step) {
+            const int nx = x + d[0], nz = z + d[1];
+            const long long k = tileKey(nx, nz);
+            if (seen.count(k) || closed.count(k) || !t.walkable(nx, nz) || t.blockedByBuilding(nx, nz)) continue;
+            seen.insert(k);
+            reached.push_back({ nx, nz });
+        }
+    }
+    std::set<std::pair<int, int>> tiles;
+    auto take = [&](const std::pair<int, int>& tile) {
+        const float dx = (float)tile.first + 0.5f - c.x, dz = (float)tile.second + 0.5f - c.z;
+        if (dx * dx + dz * dz <= c.radius * c.radius && !inPerimeterCore(w, altar, tile.first, tile.second)) tiles.insert(tile);
+    };
+    for (const auto& tile : reached) take(tile);
+    for (const auto& tile : closedTiles) take(tile);
+    autos[altar] = std::move(tiles);
+    return true;
+}
+
 std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar) {
     std::set<std::pair<int, int>> out;
     if (const Perimeter* p = w.get<Perimeter>(altar)) out = p->tiles;
-    else out = defaultPerimeter(w, altar);
+    else out = autoPerimeter(w, altar);
     if (const Transform* t = w.get<Transform>(altar)) {
         const int ax = (int)std::floor(t->x), az = (int)std::floor(t->z);
         for (int z = az - PERIMETER_CORE_RADIUS; z <= az + PERIMETER_CORE_RADIUS; ++z) {

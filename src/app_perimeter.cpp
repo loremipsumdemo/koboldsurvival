@@ -23,8 +23,12 @@ void App::openPerimeter(ObjectId altarProp) {
     perim.cx = held->x;
     perim.cz = held->z;
     perim.radius = held->radius;
+    perim.manual = world.has<Perimeter>(altarProp);
     if (const Perimeter* p = world.get<Perimeter>(altarProp)) perim.draft = p->tiles;
-    else perim.draft = defaultPerimeter(world, altarProp);
+    else {
+        refreshAutoPerimeter(world, terrain, altarProp);
+        perim.draft = autoPerimeter(world, altarProp);
+    }
     session.buildPick = {};
     session.contextMenu.open = false;
     itemMenu.open = false;
@@ -38,6 +42,7 @@ void App::closePerimeter() {
 
 // Tiles of the draft inside the claim
 void App::paintPerimeter(int x0, int z0, int x1, int z1, bool erase) {
+    perim.manual = true;   // drawn by hand, so it stays as drawn
     for (int z = std::min(z0, z1); z <= std::max(z0, z1); ++z) {
         for (int x = std::min(x0, x1); x <= std::max(x0, x1); ++x) {
             if (erase) {
@@ -74,10 +79,13 @@ bool App::pressOnPerimeter() {
         } else if (L.erase.contains(x, y)) {
             perim.erase = true;
         } else if (L.reset.contains(x, y)) {
-            perim.draft = defaultPerimeter(world, perim.altar);   // back to every tile of the claim
+            perim.manual = false;   // back to Automatic: looked at now, not at the next hour
+            refreshAutoPerimeter(world, terrain, perim.altar);
+            perim.draft = autoPerimeter(world, perim.altar);
         } else if (L.confirm.contains(x, y)) {
-            if (perim.draft == defaultPerimeter(world, perim.altar)) {
-                world.remove<Perimeter>(perim.altar);   // the default: every tile, as the claim grows
+            if (!perim.manual) {
+                refreshAutoPerimeter(world, terrain, perim.altar);
+                world.remove<Perimeter>(perim.altar);   // Automatic: kept to its walls and gates (or every tile of the claim, until they close a ring)
             } else {
                 Perimeter p;
                 p.tiles = perim.draft;
@@ -163,7 +171,7 @@ void App::drawPerimeterPanel() {
     const float mx = (float)mouseX, my = (float)mouseY;
     renderer.drawButton(L.draw, lang("UILABEL_PERIMETER_DRAW"), true, !perim.erase || L.draw.contains(mx, my));
     renderer.drawButton(L.erase, lang("UILABEL_PERIMETER_ERASE"), true, perim.erase || L.erase.contains(mx, my));
-    renderer.drawButton(L.reset, lang("UILABEL_PERIMETER_RESET"), true, L.reset.contains(mx, my));
+    renderer.drawButton(L.reset, lang("UILABEL_PERIMETER_RESET"), true, !perim.manual || L.reset.contains(mx, my));
     renderer.drawButton(L.confirm, lang("UILABEL_PERIMETER_CONFIRM"), true, L.confirm.contains(mx, my));
     renderer.drawButton(L.cancel, lang("UILABEL_PERIMETER_CANCEL"), true, L.cancel.contains(mx, my));
 }

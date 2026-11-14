@@ -419,6 +419,8 @@ struct App : AppSession {
     // The Build tab's foundations and pieces (app_building.cpp)
     bool buildPressAt(float gx, float gz);
     bool buildRelease();
+    // The spots of a row of Perimeter Walls from where the drag began to the pointer, along the longer way, one wall's width apart
+    std::vector<std::pair<float, float>> wallRow(float mx, float my);
     void updateBuildPaint();
     bool previewBuilding(BuildPreview& bp, float gx, float gz);
     // Picking what a foundation, wall or door is made of
@@ -448,12 +450,15 @@ struct App : AppSession {
     // The lists and schedules the window shows: yours, or what an NPC faction's units follow (worked out each time, view only)
     BehaviorGroups& groupsShown();
     // Set Perimeter (app_perimeter.cpp): the tiles of an Altar's Perimeter drawn on a copy, kept by Confirm
+    ObjectId perimShowAltar = NO_OBJECT;   // See Perimeter: an NPC faction's Perimeter shown on the ground until perimShowUntil
+    Uint64 perimShowUntil = 0;
     struct PerimeterUi {
         bool active = false;
         ObjectId altar = NO_OBJECT;
         float cx = 0.0f, cz = 0.0f, radius = 0.0f;   // its claim
         bool erase = false;                           // the tool: Draw or Erase
         std::set<std::pair<int, int>> draft;
+        bool manual = false;   // drawn by hand (kept as it is): else it is kept automatically
         bool drag = false;
         int dragX = 0, dragZ = 0;
         float x = -1.0f, y = -1.0f;   // where the window is: -1, the top middle

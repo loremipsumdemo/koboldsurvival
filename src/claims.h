@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <string>
 #include <set>
 #include <utility>
@@ -42,6 +43,17 @@ struct Perimeter {
     std::set<std::pair<int, int>> tiles;
 };
 inline constexpr int PERIMETER_CORE_RADIUS = 2;
+// An Altar with no Perimeter drawn for it (no Perimeter component: the Set Perimeter tool's Manual) has its Perimeter kept automatically: once its
+// finished walls and gates close a ring round the Altar, the ground inside the ring and the pieces themselves; until then, the default. Worked
+// out once an hour (npc_builders.cpp) and not saved (it is worked out again after a load).
+struct AutoPerimeters {
+    std::map<ObjectId, std::set<std::pair<int, int>>> by;
+};
+// The Perimeter an Altar has while it is automatic, its core not included
+std::set<std::pair<int, int>> autoPerimeter(World& w, ObjectId altar);
+// Looks at an Altar's finished walls and gates now and keeps its automatic Perimeter to them: where they close a ring the Altar cannot walk out of,
+// the ground inside it and the pieces themselves, else (no ring) the default. True if there is a ring.
+bool refreshAutoPerimeter(World& w, const Terrain& t, ObjectId altar);
 // Every tile of the Altar's Perimeter, its core included
 std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar);
 // The Perimeter an Altar has until one is drawn for it (the Set Perimeter tool): every tile of its claim but the core, which grows

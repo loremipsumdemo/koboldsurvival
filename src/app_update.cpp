@@ -563,7 +563,20 @@ void App::updateHover() {
         const bool placing = session.buildPick.placing() && screen == Screen::Playing && !panelOpen && !mapOpen
                              && session.dialogueUnit == NO_OBJECT && !optimizeAllOpen && session.disbandTarget == NO_OBJECT;
         BuildPreview bp;
-        if (placing && !mouseOverPanels()) {
+        if (placing && session.wallDrag) {
+            // The row of walls being dragged out: each one's four tiles, green where it may go and red where not
+            const PropInfo& wi = propInfo(session.buildPick.kind);
+            const float wyaw = (float)(session.buildDir % 4) * 1.5707963f;
+            for (const auto& [x, z] : wallRow(bmx, bmy)) {
+                const bool ok = checkBuildSpot(world, terrain, session.buildPick.kind, x, z, session.buildLevel, FACTION_PLAYER, &claims, wyaw) == BuildCheck::Ok;
+                const int x0 = (int)std::floor(x - 0.5f * (float)wi.tilesW + 0.01f), z0 = (int)std::floor(z - 0.5f * (float)wi.tilesD + 0.01f);
+                for (int tz = z0; tz < z0 + wi.tilesD; ++tz) {
+                    for (int tx = x0; tx < x0 + wi.tilesW; ++tx) {
+                        bp.marks.push_back({ tx, tz, terrain.heightAt(tx + 0.5f, tz + 0.5f) + storeyBaseHeight(session.buildLevel) + 0.14f, ok ? 1 : 2 });
+                    }
+                }
+            }
+        } else if (placing && !mouseOverPanels()) {
             if (auto hit = buildPickAt(bmx, bmy); hit && !previewBuilding(bp, hit->first, hit->second)) {
                 bp.on = true;
                 bp.kind = session.buildPick.kind;
@@ -586,7 +599,7 @@ void App::updateHover() {
             }
         }
         if (placing) updateBuildPaint();
-        else session.foundationDrag = session.floorDrag = session.paintPiece = false;
+        else session.foundationDrag = session.floorDrag = session.paintPiece = session.wallDrag = false;
         if (!session.buildPick.areaTool()) session.areaDrag = false;
         else if (screen == Screen::Playing && !panelOpen && !mapOpen && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {
             // The area to deconstruct or cancel, in red as it is dragged out
@@ -651,6 +664,22 @@ void App::updateHover() {
         }
         updatePerimeter();
         if (perim.active && screen == Screen::Playing) perimeterPreview(bp, bmx, bmy);
+        if (perimShowAltar != NO_OBJECT) {
+            if (SDL_GetTicks() >= perimShowUntil || !world.has<Prop>(perimShowAltar)) {
+                perimShowAltar = NO_OBJECT;
+            } else {
+                for (const auto& [x, z] : perimeterOf(world, perimShowAltar)) {
+                    bp.marks.push_back({ x, z, terrain.heightAt(x + 0.5f, z + 0.5f) + 0.12f, inPerimeterCore(world, perimShowAltar, x, z) ? 5 : 3 });
+                }
+                for (const Claim& c : claims) {
+                    if (c.altar != perimShowAltar) continue;
+                    bp.ringR = c.radius;
+                    bp.ringTone = 3;
+                    bp.x = c.x;
+                    bp.z = c.z;
+                }
+            }
+        }
         // Hovering an Altar, or a campfire's claim: its ring, with the others around it
         ObjectId hoverAltar = NO_OBJECT;
         if (!placing && !perim.active && screen == Screen::Playing && !panelOpen && !mapOpen && !mouseOverPanels()) {

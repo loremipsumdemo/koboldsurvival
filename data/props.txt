@@ -40,6 +40,7 @@
 #                burns_corpses   a corpse can be carried into it, and is destroyed
 #                destroyed_by_hand  broken with the right-click menu's Break, leaving its item (or bones)
 #                debris          what is left of a destroyed prop: working it clears it
+#                perimeter_part  part of a faction's Perimeter: when one is added, finished or removed its automatic Perimeter is looked at at once
 #                junk            Clear Junk, a citizen task, clears it: Debris is worked clear, any other prop is broken
 #                sleeping        a Sleeping prop, a bed or bedroll: an occupant lies in it and sleeps (needs rested above 0)
 #                resting         a Resting prop, a chair, bench or stool: an occupant sits. A unit in a Sleeping or Resting prop gets up
@@ -129,9 +130,9 @@ StoneStockpile	PROP_STONE_STOCKPILE	stone_stockpile.glb	1.4	storage	none	0	0	0	0
 IronStockpile	PROP_IRON_STOCKPILE	iron_stockpile.glb	1.4	storage	none	0	0	0	0	iron	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	2	10	32	0	storage
 OreStockpile	PROP_ORE_STOCKPILE	ore_stockpile.glb	1.4	storage	none	0	0	0	0	ore	1	0	0	1	0	0	none	ItemMove	none	built,build_anywhere	2	10	32	0	storage
 Stairs	PROP_STAIRS	stair_step_wood.glb	1.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,on_foundation,stairs	3	12	12	0	settlement
-PerimeterWall	PROP_PERIMETER_WALL	perimeter_wall_wood.glb	3.9	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_wall,tiles:2:2	4	32	12	0	settlement
-PerimeterGate	PROP_PERIMETER_GATE	perimeter_gate_wood.glb	4.8	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_gate,tiles:4:2	4	40	12	0	settlement
-Slope	PROP_SLOPE	slope_wood.glb	3.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,slope,tiles:1:3	3	12	12	0	settlement
+PerimeterWall	PROP_PERIMETER_WALL	perimeter_wall_wood.glb	3.9	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_wall,perimeter_part,tiles:2:2	4	32	12	0	settlement
+PerimeterGate	PROP_PERIMETER_GATE	perimeter_gate_wood.glb	4.8	none	none	0	0	0	10	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,perimeter_gate,perimeter_part,tiles:4:2	4	40	12	0	settlement
+Slope	PROP_SLOPE	slope_wood.glb	3.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,slope,perimeter_part,tiles:1:3	3	12	12	0	settlement
 Watchtower	PROP_WATCHTOWER	watchtower_wood.glb	5.0	occupy	none	0	0	1	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior,watchtower,tiles:2:2	12	60	12	0	settlement
 GuardPost	PROP_GUARD_POST	guard_post.glb	1.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,exterior	3	12	12	0	settlement
 TamingCage	PROP_TAMING_CAGE	taming_cage.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	built,cage,taming	8	40	12	0	cages

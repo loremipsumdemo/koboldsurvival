@@ -356,7 +356,33 @@ void slopeUpkeep(World& w, Terrain& t, const std::vector<Claim>& claims, const C
     }
 }
 
+// What each faction's Perimeter pieces were as last looked at, so that a piece added, finished or taken away (any prop with the perimeter_part tag) is
+// seen at once rather than at the next hour
+struct PerimeterWatch {
+    std::uint64_t props = 0, blueprints = 0;
+    std::unordered_map<int, unsigned long long> pieces;   // faction -> a sum over its finished pieces
+};
+
 void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, double hours) {
+    {
+        PerimeterWatch& watch = w.resource<PerimeterWatch>();
+        if (watch.props != w.revision<Prop>() || watch.blueprints != w.revision<Blueprint>()) {
+            watch.props = w.revision<Prop>();
+            watch.blueprints = w.revision<Blueprint>();
+            std::unordered_map<int, unsigned long long> now;
+            for (ObjectId p : w.view<Prop, Owner>()) {
+                if (!propInfo(w.get<Prop>(p)->kind).perimeterPart || w.has<Blueprint>(p)) continue;
+                now[w.get<Owner>(p)->faction] += (unsigned long long)p * 2654435761ULL + 1ULL;
+            }
+            for (const Claim& c : claims) {
+                if (c.camp || !factionCanClaim(c.owner) || isMobFaction(c.owner)) continue;
+                const unsigned long long was = watch.pieces.count(c.owner) ? watch.pieces[c.owner] : 0ULL;
+                const unsigned long long is = now.count(c.owner) ? now[c.owner] : 0ULL;
+                if (was != is || !watch.pieces.count(c.owner)) refreshAutoPerimeter(w, t, c.altar);
+            }
+            watch.pieces = std::move(now);
+        }
+    }
     PerimeterDays& days = w.resource<PerimeterDays>();
     for (const Claim& c : claims) {
         if (c.camp || !factionCanClaim(c.owner) || isMobFaction(c.owner) || c.radius <= PERIMETER_MIN_RADIUS) continue;
@@ -401,7 +427,10 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
             }
             if (!info.solid) ++gates;
         }
-        if (built == 0 && !npc) continue;   // yours with no Perimeter at all: nothing to say
+        if (built == 0 && !npc) {
+            w.resource<AutoPerimeters>().by.erase(c.altar);
+            continue;   // yours with no Perimeter at all: nothing to say
+        }
 
         // Whether anything can walk out of the claim from the Altar: walls and gates count as shut, as a gate can be
         std::unordered_set<long long> seen;
@@ -427,6 +456,9 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                 q.push({ nx, nz });
             }
         }
+
+        // Its Perimeter, kept automatically (unless it was drawn by hand): to its walls and gates where they close a ring, else the default
+        refreshAutoPerimeter(w, t, c.altar);
 
         // An NPC faction keeps its Perimeter to the ring its claim has now (nothing is remembered of how it was laid: the ring is
         // worked out again each look, so a claim that has grown gets its new ring), with a Gate, and clears what is in the way

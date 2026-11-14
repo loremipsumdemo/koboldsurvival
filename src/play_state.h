@@ -11,7 +11,7 @@ constexpr float TALK_COOLDOWN = 1.0f;
 
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
                         Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
-                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, Schedule, FactionInfo, SeeUnits, SeeGroups, SeeSchedule, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
+                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, Schedule, FactionInfo, SeeUnits, SeeGroups, SeeSchedule, SeePerimeter, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
                         BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit, CancelAllBuild, SetPerimeter, OpenGate, CloseGate,
                         UpgradeStone, UpgradeIron, UpgradeCrystal };
 struct ContextMenu {
@@ -50,6 +50,8 @@ struct PlaySession {
     bool floorDrag = false;   // upper floors being dragged out, from dragTileX, dragTileZ
     int dragTileX = 0, dragTileZ = 0;
     bool paintPiece = false;
+    bool wallDrag = false;   // a row of Perimeter Walls being dragged out from wallX, wallZ (the spot of the first)
+    float wallX = 0.0f, wallZ = 0.0f;
     long long lastPaintTile = -1;
     // What a foundation, wall or door is made of (an int of BuildMaterial), and the kind waiting for that choice
     int buildMaterial = 0;

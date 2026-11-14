@@ -974,14 +974,16 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 
     for (const BuildPreview::Mark& m : buildPreview_.marks) {
         const RGBA tone = m.tone == 0 ? RGBA{ 0.3f, 0.6f, 1.0f, 0.30f } : m.tone == 1 ? RGBA{ 0.25f, 1.0f, 0.35f, 0.40f }
-                        : m.tone == 3 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.42f}
-                        : m.tone == 4 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.16f}
-                        : m.tone == 5 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.21f}   // the Perimeter's always-there core: half as strong as the rest
-                        : m.tone == 6 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.08f}
+                        : m.tone == 3 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.17f}
+                        : m.tone == 4 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.07f}
+                        : m.tone == 5 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.09f}   // the Perimeter's always-there core: half as strong as the rest
+                        : m.tone == 6 ? RGBA{ 1.0f, 0.78f, 0.2f, 0.035f}
                                                                         : RGBA{ 1.0f, 0.2f, 0.2f, 0.40f };
         const float a = 0.08f, y = m.y + lift;
-        if (m.outline) {
-            const RGBA edge{ tone.r, tone.g, tone.b, 0.95f };
+        const bool perimeterMark = m.tone >= 3 && m.tone <= 6;   // the Perimeter's tiles: square outlines, so what is under them shows
+        if (m.outline || perimeterMark) {
+            const float edgeAlpha = !perimeterMark ? 0.95f : m.tone == 3 ? 0.9f : m.tone == 5 ? 0.6f : 0.45f;
+            const RGBA edge{ tone.r, tone.g, tone.b, edgeAlpha };
             const float o0 = 0.04f, o1 = 1.0f - o0, w = 0.07f;
             const float x0 = m.x + o0, x1 = m.x + o1, z0 = m.z + o0, z1 = m.z + o1;
             b.quad(V3{ x0, y, z0 }, V3{ x1, y, z0 }, V3{ x1, y, z0 + w }, V3{ x0, y, z0 + w }, edge);
@@ -1059,7 +1061,14 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     }
     if (b.v.empty()) return;
 
+    // Blended (it was drawn with blending off, so every alpha above was ignored and the marks were solid)
+    const GLboolean wasBlending = glIsEnabled(GL_BLEND);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
     drawColorTris(b, viewProj_);
+    glDepthMask(GL_TRUE);
+    if (!wasBlending) glDisable(GL_BLEND);
 }
 
 void Renderer::drawGroundItems(World& w, const Terrain& t, const Camera& cam) {

@@ -408,6 +408,7 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "exterior") p.exterior = true;
         else if (flag == "perimeter_wall") p.perimeter = p.solid = true;
         else if (flag == "perimeter_gate") p.perimeter = true;
+        else if (flag == "perimeter_part") p.perimeterPart = true;
         else if (flag == "slope") p.slope = p.stairs = p.ladder = true;
         else if (flag == "watchtower") p.tower = p.solid = true;
         else if (flag.rfind("tiles:", 0) == 0) {

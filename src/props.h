@@ -212,6 +212,7 @@ struct PropInfo {
     bool upperFloor = false;     // a floor at wall height
     bool perimeter = false;      // a Perimeter Wall or Gate: stands on open ground, covering tilesW by tilesD tiles, 10 times as strong
     bool solid = false;          // with perimeter: a wall, closing every tile it covers (a gate is walked through while it lets you); a Watchtower too
+    bool perimeterPart = false;  // part of a faction's Perimeter (props.txt flag perimeter_part): adding, finishing or removing one makes its automatic Perimeter be looked at at once
     bool slope = false;          // a Slope: stairs with no hop, laid on open ground, three tiles long, its top step beside a Perimeter Wall's walkway
     bool tower = false;          // a Watchtower: one unit occupies it (as an Airship is), shut in on top and out of melee reach
     int tilesW = 1, tilesD = 1;  // the tiles it covers, across and deep when it faces east (props.txt's tiles:W:D flag)

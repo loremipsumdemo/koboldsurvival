@@ -1104,10 +1104,10 @@ MISC_GATE_HOSTILES_SEEN	Hostile units are in sight of the gate: it stays shut
 UILABEL_PERIMETER_TITLE	Perimeter
 UILABEL_PERIMETER_DRAW	Draw Perimeter
 UILABEL_PERIMETER_ERASE	Erase Perimeter
-UILABEL_PERIMETER_RESET	Reset Perimeter
+UILABEL_PERIMETER_RESET	Automatic
 UILABEL_PERIMETER_CONFIRM	Confirm Perimeter
 UILABEL_PERIMETER_CANCEL	Cancel Changes
-UILABEL_PERIMETER_HINT	Drag over the ground to draw or erase the Perimeter. The 5 by 5 round the Altar is always part of it
+UILABEL_PERIMETER_HINT	Drag over the ground to draw or erase the Perimeter, which makes it Manual. Automatic keeps it to your finished walls and gates once they close a ring (looked at each hour). The 5 by 5 round the Altar is always part of it
 UILABEL_NO_UNITS_TITLE	No Units
 UILABEL_NO_UNITS_TEXT	You have no units selected.
 UILABEL_NO_UNITS_ALTAR	Return to Altar
@@ -1718,6 +1718,7 @@ UILABEL_FACTION_INFO_TITLE	Faction Info: {0}
 UILABEL_SEE_MANAGE_UNITS	See Manage Units
 UILABEL_SEE_BEHAVIOR_GROUPS	See Behavior Groups
 UILABEL_SEE_SCHEDULE	See Schedule
+UILABEL_SEE_PERIMETER	See Perimeter
 UILABEL_VIEW_ONLY	view only
 UILABEL_NPC_GROUP_DEFAULT	Default
 UILABEL_NPC_GROUP_IRREGULAR	Irregular {0}
