@@ -1711,6 +1711,24 @@ UILABEL_FACTION_RULES_TIP	How your faction treats those outside it: the Factionl
 UILABEL_FACTION_RULES_TITLE	Faction Rules: {0}
 UILABEL_FACTION_RULES_HELP	Click < or > to change a rule; it takes hold at once. Point at a rule to read what it does.
 UILABEL_FACTION_RULES_RESET	Back to the Start
+UILABEL_FACTION_INFO	Info
+UILABEL_FACTION_INFO_TITLE	Faction Info: {0}
+UILABEL_SEE_MANAGE_UNITS	See Manage Units
+UILABEL_SEE_BEHAVIOR_GROUPS	See Behavior Groups
+UILABEL_SEE_SCHEDULE	See Schedule
+UILABEL_VIEW_ONLY	view only
+UILABEL_INFO_CONTROL	Run by
+UILABEL_INFO_PLAYER	The Player
+UILABEL_INFO_AVATAR	NPC Avatar
+UILABEL_INFO_CLAIM	Altar claim radius
+UILABEL_INFO_UNITS	Units
+UILABEL_INFO_CITIZENS	Citizens
+UILABEL_INFO_FORTIFIED	Fortified
+UILABEL_INFO_MILITARY	Military
+UILABEL_INFO_GATES	Perimeter gates
+UILABEL_INFO_GATE_HOURS	Gates shut
+UILABEL_INFO_RULES	Faction Rules
+UILABEL_INFO_AVATAR_NOTE	The NPC Avatar makes the decisions a player would: how many units are citizens, military or Fortified, what to build first and when the gates are shut.
 UILABEL_RULES_FACTIONLESS	Factionless
 UILABEL_RULES_FACTIONLESS_TIP	How your units take to the Factionless: as friends (allies), as anyone else, or as enemies they attack on sight
 UILABEL_RULES_TRESPASS	Trespassers

@@ -142,6 +142,13 @@ void App::onKeyDown() {
         }
         return;
     }
+    if (screen == Screen::Playing && factionInfoOpen) {
+        if (e.key.key == SDLK_ESCAPE) {
+            factionInfoOpen = false;
+            playSfx(Sfx::UiBack);
+        }
+        return;
+    }
     if (screen == Screen::Playing && factionRulesOpen) {
         if (e.key.key == SDLK_ESCAPE) {
             factionRulesOpen = false;

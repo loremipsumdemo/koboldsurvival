@@ -44,6 +44,14 @@ static bool ownAltar(World& world, ObjectId prop) {
     return false;
 }
 
+// The faction whose Altar this prop is, or -1 if it is no Altar
+static int altarOwnerOf(World& world, ObjectId prop) {
+    for (const Claim& c : claimsOf(world)) {
+        if (c.altar == prop && !c.camp) return c.owner;
+    }
+    return -1;
+}
+
 ObjectId App::menuTargetAt(float mx, float my) {
     float ex = 0.0f, ey = 0.0f, ez = 0.0f;
     cam.eye(ex, ey, ez);
@@ -198,6 +206,10 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             out.push_back(MenuAction::Schedule);
             out.push_back(MenuAction::AppeaseGhosts);
             out.push_back(MenuAction::SetPerimeter);
+            out.push_back(MenuAction::FactionInfo);
+        } else if (const int owner = altarOwnerOf(world, target); owner >= 0 && !isMobFaction(owner)) {
+            // Another faction's Altar: its setup, as yours is, to look at
+            out.insert(out.end(), { MenuAction::FactionInfo, MenuAction::SeeUnits, MenuAction::SeeGroups, MenuAction::SeeSchedule });
         }
         if (propInfo(p->kind).claimsLand) {
             const std::vector<ObjectId> sel = selectedUnits(world);
@@ -342,6 +354,10 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
         case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
         case MenuAction::Schedule: labels.push_back(lang("UILABEL_GROUPS_TAB_SCHEDULE")); break;
+        case MenuAction::FactionInfo: labels.push_back(lang("UILABEL_FACTION_INFO")); break;
+        case MenuAction::SeeUnits: labels.push_back(lang("UILABEL_SEE_MANAGE_UNITS")); break;
+        case MenuAction::SeeGroups: labels.push_back(lang("UILABEL_SEE_BEHAVIOR_GROUPS")); break;
+        case MenuAction::SeeSchedule: labels.push_back(lang("UILABEL_SEE_SCHEDULE")); break;
         case MenuAction::SetPerimeter: labels.push_back(lang("UILABEL_SET_PERIMETER")); break;
         case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
@@ -391,7 +407,13 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     if (canBreak && (SDL_GetModState() & SDL_KMOD_SHIFT) != 0) actions.push_back(MenuAction::Destroy);
     if (actions.empty()) return false;
     if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
-        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::Schedule, MenuAction::AppeaseGhosts, MenuAction::SetPerimeter } };
+        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::Schedule, MenuAction::AppeaseGhosts, MenuAction::SetPerimeter, MenuAction::FactionInfo } };
+        playSfx(Sfx::UiMenuOpen);
+        itemMenu.open = false;
+        return true;
+    }
+    if (menuActors(target).empty() && actions[0] == MenuAction::FactionInfo) {
+        session.contextMenu = ContextMenu{ true, mx, my, target, actions };
         playSfx(Sfx::UiMenuOpen);
         itemMenu.open = false;
         return true;
@@ -535,6 +557,22 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::Schedule) {
         openSchedule(target);
+        return;
+    }
+    if (a == MenuAction::FactionInfo) {
+        openFactionInfo(altarOwnerOf(world, target));
+        return;
+    }
+    if (a == MenuAction::SeeUnits) {
+        openAltar(altarOwnerOf(world, target));
+        return;
+    }
+    if (a == MenuAction::SeeGroups) {
+        openBehaviorGroups(target, altarOwnerOf(world, target));
+        return;
+    }
+    if (a == MenuAction::SeeSchedule) {
+        openSchedule(target, altarOwnerOf(world, target));
         return;
     }
     if (a == MenuAction::SetPerimeter) {
@@ -758,6 +796,10 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::AppeaseGhosts:
     case MenuAction::BehaviorGroups:
     case MenuAction::Schedule:
+    case MenuAction::FactionInfo:
+    case MenuAction::SeeUnits:
+    case MenuAction::SeeGroups:
+    case MenuAction::SeeSchedule:
     case MenuAction::StoreFilter:
         break;
     case MenuAction::CancelBuild:

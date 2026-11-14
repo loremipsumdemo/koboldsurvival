@@ -40,6 +40,7 @@
 #include "settings.h"
 #include "settings_menu.h"
 #include "altar_ui.h"
+#include "behavior_groups.h"
 #include "map_pick.h"
 #include "squads.h"
 #include "airship.h"
@@ -413,7 +414,7 @@ struct App : AppSession {
     void stopSquadRename(bool keep);
     bool squadKeyDown();
     void noteSquadOfSelection();
-    void openAltar();
+    void openAltar(int faction = FACTION_PLAYER);
     std::vector<ObjectId> flyAirshipsTo(const std::vector<ObjectId>& units, float x, float z);
     // The Build tab's foundations and pieces (app_building.cpp)
     bool buildPressAt(float gx, float gz);
@@ -442,8 +443,10 @@ struct App : AppSession {
     void markFloorTiles(BuildPreview& bp, int tx, int tz);
     bool pressOnStoreFilter();
     void drawStoreFilter();
-    void openBehaviorGroups(ObjectId altarProp);
-    void openSchedule(ObjectId altarProp);
+    void openBehaviorGroups(ObjectId altarProp, int faction = FACTION_PLAYER);
+    void openSchedule(ObjectId altarProp, int faction = FACTION_PLAYER);
+    // The lists and schedules the window shows: yours, or what an NPC faction's units follow (worked out each time, view only)
+    BehaviorGroups& groupsShown();
     // Set Perimeter (app_perimeter.cpp): the tiles of an Altar's Perimeter drawn on a copy, kept by Confirm
     struct PerimeterUi {
         bool active = false;
@@ -535,6 +538,10 @@ struct App : AppSession {
     void openFactionRules();
     bool pressOnFactionRules();
     void drawFactionRules();
+    // Faction Info, from any Altar's menu: a faction's settings and setup, view only (app_faction_info.cpp)
+    void openFactionInfo(int faction);
+    bool pressOnFactionInfo();
+    void drawFactionInfo();
     // When the selection changes and the Squad tab shows an emptied squad: the squad of the selected units instead
     void followSelectionSquad();
     bool sidebarUp();
@@ -643,6 +650,8 @@ struct App : AppSession {
     AltarUi altar;
     SquadsUi squadsUi;
     bool factionRulesOpen = false;
+    bool factionInfoOpen = false;
+    int factionInfoFaction = 0;
     // The Research or Crafting Order window, and the prop it is for
     struct CraftUi {
         bool open = false;
@@ -740,6 +749,7 @@ struct App : AppSession {
     int devThemePreset = 0;
     std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;
+    BehaviorGroups groupsMirror;
     StoreFilterUi storeFilterUi;
     StallUi stallUi;
     RenamePrompt rename;

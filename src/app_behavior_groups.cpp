@@ -163,9 +163,11 @@ std::string fitTo(Renderer& renderer, const std::string& text, float maxW) {
 }
 }
 
-void App::openBehaviorGroups(ObjectId altarProp) {
+void App::openBehaviorGroups(ObjectId altarProp, int faction) {
     groupsUi = BehaviorGroupsUi{};
     groupsUi.open = true;
+    groupsUi.faction = faction;
+    groupsUi.readOnly = faction != FACTION_PLAYER;   // another faction's lists are for looking at
     groupsUi.altar = altarProp;
     groupsUi.ref = 0;
     altar = AltarUi{};
@@ -176,17 +178,60 @@ void App::openBehaviorGroups(ObjectId altarProp) {
     playSfx(Sfx::UiMenuOpen);
 }
 
-void App::openSchedule(ObjectId altarProp) {
-    openBehaviorGroups(altarProp);
+void App::openSchedule(ObjectId altarProp, int faction) {
+    openBehaviorGroups(altarProp, faction);
     groupsUi.tab = 1;
     groupsUi.scheduleOnly = true;
+}
+
+namespace {
+// The lists and schedule an NPC faction's units follow, put together as yours are, for the view-only windows: Military is the roaming
+// list, Citizens what its citizens have, and Group 1 stands for its Fortified (shown under that name)
+BehaviorGroups npcGroupsView(World& w, int faction) {
+    BehaviorGroups g;
+    g.military = npcMilitaryBehaviors();
+    g.citizen = defaultCitizenBehaviors();
+    std::vector<BehaviorRule> fortified;
+    bool citizenSeen = false;
+    for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
+        if (w.get<Faction>(u)->id != faction || w.has<Corpse>(u)) continue;
+        const Behaviors* b = w.get<Behaviors>(u);
+        if (w.has<Fortified>(u)) {
+            if (fortified.empty()) fortified = b->rules;
+        } else if (!citizenSeen) {
+            g.citizen = b->rules;
+            citizenSeen = true;
+        }
+    }
+    if (fortified.empty()) {
+        static const BehaviorKind KEEP[] = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Rescue, BehaviorKind::Rest, BehaviorKind::LeaveBed,
+                                             BehaviorKind::DealWithDowned, BehaviorKind::Sleep, BehaviorKind::AutoConstruct };
+        for (BehaviorKind k : KEEP) {
+            BehaviorRule r;
+            r.kind = k;
+            fortified.push_back(r);
+        }
+    }
+    g.groups.assign(1, fortified);
+    g.schedule = npcSchedule(0);
+    g.perimeter.override = true;
+    for (int h = 0; h < SCHEDULE_HOURS; ++h) g.perimeter.hours[(size_t)h] = perimeterClosedAtHour(w, h, faction) ? 1 : 0;
+    g.ready = true;
+    return g;
+}
+}
+
+BehaviorGroups& App::groupsShown() {
+    if (!groupsUi.readOnly) return behaviorGroups(world);
+    groupsMirror = npcGroupsView(world, groupsUi.faction);
+    return groupsMirror;
 }
 
 // What may be added to the list picked: the everyday tasks, Auto-Construct, Auto-Harvest of what grows in your claim,
 // Auto-Haul to your stores, and (for a group) a Group task for each list it may take in
 std::vector<BehaviorOption> App::groupTaskOptions() {
     std::vector<BehaviorOption> out;
-    BehaviorGroups& g = behaviorGroups(world);
+    BehaviorGroups& g = groupsShown();
     const std::vector<BehaviorRule>* list = groupList(g, groupsUi.ref);
     if (!list) return out;
     auto offer = [&](const BehaviorRule& r, std::string label) {
@@ -248,7 +293,7 @@ bool App::pressOnBehaviorGroups() {
     if (screen != Screen::Playing || !groupsUi.open) return false;
     if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
-    BehaviorGroups& g = behaviorGroups(world);
+    BehaviorGroups& g = groupsShown();
     if (!validGroupRef(g, groupsUi.ref)) groupsUi.ref = 0;
     const std::vector<int> refs = groupRefs(g);
     std::vector<BehaviorRule>& list = *groupList(g, groupsUi.ref);
@@ -262,7 +307,7 @@ bool App::pressOnBehaviorGroups() {
         return true;
     }
     if (groupsUi.tab == 1) {
-        scheduleClick(x, y, true);
+        if (!groupsUi.readOnly) scheduleClick(x, y, true);
         return true;
     }
     for (size_t i = 0; i < L.entries.size(); ++i) {
@@ -273,6 +318,7 @@ bool App::pressOnBehaviorGroups() {
         playSfx(Sfx::UiClick);
         return true;
     }
+    if (groupsUi.readOnly) return true;   // another faction's lists are for looking at: only picking one is allowed
     if (L.addGroup.contains(x, y)) {
         const int made = addBehaviorGroup(world);
         if (made < 0) {
@@ -372,7 +418,7 @@ bool App::pressOnBehaviorGroups() {
 }
 
 void App::scrollBehaviorGroups(float mx, float my, float wheel) {
-    BehaviorGroups& g = behaviorGroups(world);
+    BehaviorGroups& g = groupsShown();
     if (!validGroupRef(g, groupsUi.ref)) groupsUi.ref = 0;
     const std::vector<int> refs = groupRefs(g);
     const int rowCount = groupsUi.adding ? (int)addRows(groupTaskOptions()).size() : (int)groupList(g, groupsUi.ref)->size();
@@ -389,7 +435,7 @@ void App::scrollBehaviorGroups(float mx, float my, float wheel) {
 
 void App::drawBehaviorGroups() {
     if (!groupsUi.open) return;
-    BehaviorGroups& g = behaviorGroups(world);
+    BehaviorGroups& g = groupsShown();
     if (!validGroupRef(g, groupsUi.ref)) groupsUi.ref = 0;
     const std::vector<int> refs = groupRefs(g);
     const std::vector<BehaviorRule>& list = *groupList(g, groupsUi.ref);
@@ -406,7 +452,10 @@ void App::drawBehaviorGroups() {
 
     renderer.drawScrim();
     renderer.drawThemedPanel(L.box);
-    renderer.drawListText(lang(groupsUi.scheduleOnly ? "UILABEL_GROUPS_TAB_SCHEDULE" : "UILABEL_GROUPS_TITLE"), L.title.x, mid(L.title), theme::GOLD);
+    std::string windowTitle = lang(groupsUi.scheduleOnly ? "UILABEL_GROUPS_TAB_SCHEDULE" : "UILABEL_GROUPS_TITLE");
+    if (groupsUi.readOnly) windowTitle += ": " + factionName(groupsUi.faction) + " (" + lang("UILABEL_VIEW_ONLY") + ")";
+    renderer.drawListText(fitTo(renderer, windowTitle, L.title.w), L.title.x, mid(L.title), theme::GOLD);
+    auto refName = [&](int ref) { return groupsUi.readOnly && ref == 0 ? std::string(lang("UILABEL_ALTAR_FORTIFIED")) : groupRefName(ref); };
     renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
     if (groupsUi.tab == 1) {
         const int rowTotal = 2 + (int)g.groups.size();   // the global schedule, each group, then the Perimeter Closed hours
@@ -444,7 +493,7 @@ void App::drawBehaviorGroups() {
                 renderer.noteTip(lang("UILABEL_SCHEDULE_PERIMETER_TIP"), Rect{ row.x, row.y, S.labelW, row.h });
                 for (int h = 0; h < SCHEDULE_HOURS; ++h) {
                     const Rect c = schedCell(S, i, h);
-                    const bool shut = perimeterClosedAtHour(world, h);
+                    const bool shut = perimeterClosedAtHour(world, h, groupsUi.faction);
                     RGBA col = shut ? RGBA{ 0.62f, 0.18f, 0.18f, 1.0f } : RGBA{ 0.25f, 0.50f, 0.28f, 1.0f };
                     if (!own) { col.r *= 0.42f; col.g *= 0.42f; col.b *= 0.42f; }
                     renderer.drawRect(c, col);
@@ -457,10 +506,10 @@ void App::drawBehaviorGroups() {
             const bool live = idx == 0 || sch.override;
             const Rect row = schedRow(S, i);
             renderer.drawRect(Rect{ row.x, row.y, S.labelW, row.h }, theme::alpha(theme::WELL, live ? 0.8f : 0.55f));
-            const std::string name = idx == 0 ? lang("UILABEL_SCHEDULE_GLOBAL") : groupRefName(ref);
+            const std::string name = idx == 0 ? lang("UILABEL_SCHEDULE_GLOBAL") : refName(ref);
             renderer.drawListText(fitTo(renderer, name, S.labelW - 66.0f * s), row.x + 8.0f * s, idx == 0 ? mid(row) : row.y + 3.0f * s,
                                   live ? PLAIN : theme::TEXT_DIM);
-            if (idx > 0) {
+            if (idx > 0 && !groupsUi.readOnly) {
                 if (!sch.override) renderer.drawListText(lang("UILABEL_SCHEDULE_USING_GLOBAL"), row.x + 8.0f * s, row.y + 3.0f * s + th, theme::TEXT_QUIET);
                 const Rect tg = schedToggle(S, i, s);
                 renderer.drawRect(tg, sch.override ? RGBA{ 0.30f, 0.70f, 0.32f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.32f, 1.0f });
@@ -485,17 +534,19 @@ void App::drawBehaviorGroups() {
         const int ref = refs[(size_t)L.firstEntry + i];
         const bool hot = r.contains(mouseX, mouseY);
         renderer.drawRect(r, ref == groupsUi.ref ? picked : hot ? rowHot : rowBg);
-        std::string label = groupRefName(ref);
-        if (ref >= 0) label += "  " + langf("UILABEL_GROUP_MEMBERS", { std::to_string(citizensInGroup(world, ref)) });
+        std::string label = refName(ref);
+        if (ref >= 0 && !groupsUi.readOnly) label += "  " + langf("UILABEL_GROUP_MEMBERS", { std::to_string(citizensInGroup(world, ref)) });
         const bool isDefault = ref == GROUP_REF_MILITARY || ref == GROUP_REF_CITIZEN;
         renderer.drawListText(fitTo(renderer, label, r.w - 12.0f * s), r.x + 6.0f * s, mid(r), isDefault ? theme::TEXT_DIM : PLAIN);
         if (isDefault) renderer.noteTip(lang(ref == GROUP_REF_MILITARY ? "UILABEL_GROUP_MILITARY_TIP" : "UILABEL_GROUP_CITIZEN_TIP"), r);
     }
-    renderer.drawButton(L.addGroup, lang("UILABEL_GROUP_ADD"), (int)g.groups.size() < BEHAVIOR_GROUP_MAX, L.addGroup.contains(mouseX, mouseY));
-    renderer.drawButton(L.removeGroup, lang("UILABEL_GROUP_REMOVE"), groupsUi.ref > 0, L.removeGroup.contains(mouseX, mouseY));
+    if (!groupsUi.readOnly) {
+        renderer.drawButton(L.addGroup, lang("UILABEL_GROUP_ADD"), (int)g.groups.size() < BEHAVIOR_GROUP_MAX, L.addGroup.contains(mouseX, mouseY));
+        renderer.drawButton(L.removeGroup, lang("UILABEL_GROUP_REMOVE"), groupsUi.ref > 0, L.removeGroup.contains(mouseX, mouseY));
+    }
 
     // The picked list
-    std::string head = groupRefName(groupsUi.ref);
+    std::string head = refName(groupsUi.ref);
     if (groupsUi.adding) head = langf("UILABEL_GROUP_ADDING", { head });
     renderer.drawListText(fitTo(renderer, head, L.head.w), L.head.x, mid(L.head), theme::GOLD);
     renderer.drawRect(L.rules, theme::alpha(theme::WELL, 0.6f));
@@ -527,22 +578,26 @@ void App::drawBehaviorGroups() {
         const float tx = r.toggle.x + r.toggle.w + 6.0f * s;
         const RGBA tint = !rule.on ? theme::TEXT_DIM : rule.kind == BehaviorKind::Group ? theme::GOLD : PLAIN;
         renderer.drawListText(fitTo(renderer, behaviorName(rule), r.up.x - 6.0f * s - tx), tx, mid(r.row), tint);
-        renderer.drawButton(r.up, "^", row > 0, r.up.contains(mouseX, mouseY));
-        renderer.drawButton(r.down, "v", row + 1 < list.size(), r.down.contains(mouseX, mouseY));
-        renderer.drawButton(r.remove, "x", true, r.remove.contains(mouseX, mouseY));
+        if (!groupsUi.readOnly) {
+            renderer.drawButton(r.up, "^", row > 0, r.up.contains(mouseX, mouseY));
+            renderer.drawButton(r.down, "v", row + 1 < list.size(), r.down.contains(mouseX, mouseY));
+            renderer.drawButton(r.remove, "x", true, r.remove.contains(mouseX, mouseY));
+        }
         renderer.noteTip(describeBehavior(rule), Rect{ tx, r.row.y, r.up.x - tx, r.row.h });
     }
     if (rowCount == 0) {
         const std::string none = lang("UILABEL_GROUP_EMPTY");
         renderer.drawListText(none, L.rules.x + 8.0f * s, L.rules.y + 8.0f * s, theme::TEXT_DIM);
     }
-    renderer.drawButton(L.addTask, lang(groupsUi.adding ? "UILABEL_GROUP_ADD_DONE" : "UILABEL_GROUP_ADD_TASK"), true,
-                        L.addTask.contains(mouseX, mouseY));
+    if (!groupsUi.readOnly) {
+        renderer.drawButton(L.addTask, lang(groupsUi.adding ? "UILABEL_GROUP_ADD_DONE" : "UILABEL_GROUP_ADD_TASK"), true,
+                            L.addTask.contains(mouseX, mouseY));
+    }
 }
 
 bool App::scheduleClick(float x, float y, bool press) {
-    if (!groupsUi.open || groupsUi.tab != 1) return false;
-    BehaviorGroups& g = behaviorGroups(world);
+    if (!groupsUi.open || groupsUi.tab != 1 || groupsUi.readOnly) return false;
+    BehaviorGroups& g = groupsShown();
     const std::vector<int> refs = groupRefs(g);
     const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, 0, 0);
     const float s = uiScaleFor((float)winH);

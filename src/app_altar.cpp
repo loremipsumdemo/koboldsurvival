@@ -12,9 +12,11 @@ int columnOf(World& w, ObjectId u) {
 }
 }
 
-void App::openAltar() {
+void App::openAltar(int faction) {
     altar = AltarUi{};
     altar.open = true;
+    altar.faction = faction;
+    altar.readOnly = faction != FACTION_PLAYER;   // another faction's roster is for looking at
     ghostsUi = GhostsUi{};
     squadsUi = SquadsUi{};
     selectMenuOpen = false;
@@ -31,6 +33,14 @@ std::array<std::vector<ObjectId>, 3> App::altarColumns() {
         else ++it;
     }
     std::array<std::vector<ObjectId>, 3> cols;
+    if (altar.faction != FACTION_PLAYER) {
+        for (ObjectId u : world.view<Entity, Faction>()) {
+            if (factionOf(world, u) != altar.faction || world.has<Mob>(u) || world.has<Corpse>(u) || world.has<Commandable>(u)) continue;
+            cols[(size_t)columnOf(world, u)].push_back(u);
+        }
+        for (auto& c : cols) std::sort(c.begin(), c.end());
+        return cols;
+    }
     for (const auto& [u, to] : altar.moves) cols[(size_t)to].push_back(u);
     std::vector<ObjectId> military = militaryUnits(world);
     std::stable_sort(military.begin(), military.end(), [&](ObjectId a, ObjectId b) { return squadOf(world, a) < squadOf(world, b); });
@@ -48,6 +58,13 @@ bool App::pressOnAltar() {
     const float x = e.button.x, y = e.button.y;
     const std::array<std::vector<ObjectId>, 3> cols = altarColumns();
     const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size(), (int)cols[2].size() }, altar.scroll, 3);
+    if (altar.readOnly) {
+        if (e.button.button == SDL_BUTTON_LEFT && (L.close.contains(x, y) || L.cancel.contains(x, y) || !L.box.contains(x, y))) {
+            altar = AltarUi{};
+            playSfx(Sfx::UiBack);
+        }
+        return true;
+    }
     if (altar.menuUnit != NO_OBJECT) {
         const ItemMenuLayout menu = renderer.itemMenuLayout(altar.menuX, altar.menuY, 1, winW, winH);
         const ObjectId u = altar.menuUnit;

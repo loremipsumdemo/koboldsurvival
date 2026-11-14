@@ -13,6 +13,8 @@ constexpr int ALTAR_MILITARY = 0, ALTAR_CITIZEN = 1, ALTAR_FORTIFIED = 2;
 struct AltarUi {
     bool open = false;
     std::map<ObjectId, int> moves;   // a unit and the column it is moving to
+    int faction = 0;                 // whose roster: yours, or (view only) an NPC faction's
+    bool readOnly = false;
     std::array<int, 3> scroll{};
     ObjectId pinned = NO_OBJECT;     // unused now: a unit's card shows only while the mouse is over its row
     ObjectId menuUnit = NO_OBJECT;   // the unit whose right-click menu is open, over the roster
@@ -81,6 +83,8 @@ struct BehaviorGroupsUi {
     int tab = 0;          // 0 the task lists, 1 the Schedule
     int paint = 1;        // the Schedule's brush: an Activity
     int schedScroll = 0;  // the Schedule's first row shown
+    int faction = 0;             // whose lists and schedule: yours, or (view only) an NPC faction's
+    bool readOnly = false;
     bool scheduleOnly = false;   // the Schedule window (its own, from the Altar's menu), with no task lists
     int perimPaint = 1;   // what a drag over the Perimeter Closed row sets its hours to: 1 closed, 0 open
 };

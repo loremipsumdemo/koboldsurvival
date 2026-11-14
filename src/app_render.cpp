@@ -364,6 +364,29 @@ void App::drawFrameOverlays() {
             char passes[96];
             std::snprintf(passes, sizeof passes, "   ground %.2f  water %.2f  clouds %.2f ms", times.ground, times.water, times.clouds);
             fpsText += passes;
+            // What is loaded and in view range (the view distance round the camera), and how many there are in all
+            const float range = (float)viewDistanceTiles(settings), range2 = range * range;
+            int units = 0, unitsAll = 0, props = 0, propsAll = 0, items = 0, itemsAll = 0;
+            auto near = [&](const Transform* t) {
+                const float dx = t->x - cam.focusX, dz = t->z - cam.focusZ;
+                return dx * dx + dz * dz <= range2;
+            };
+            for (ObjectId o : world.view<Entity, Transform>()) {
+                if (world.has<GroundItem>(o)) continue;
+                ++unitsAll;
+                if (near(world.get<Transform>(o))) ++units;
+            }
+            for (ObjectId o : world.view<Prop, Transform>()) {
+                ++propsAll;
+                if (near(world.get<Transform>(o))) ++props;
+            }
+            for (ObjectId o : world.view<GroundItem, Transform>()) {
+                ++itemsAll;
+                if (near(world.get<Transform>(o))) ++items;
+            }
+            char counts[128];
+            std::snprintf(counts, sizeof counts, "   in range / all: units+mobs %d/%d  props %d/%d  items %d/%d", units, unitsAll, props, propsAll, items, itemsAll);
+            fpsText += counts;
         }
         fpsSince = at;
         fpsFrames = 0;
