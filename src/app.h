@@ -688,10 +688,10 @@ struct App : AppSession {
     struct PatronChat {
         std::deque<ChatLine> queue, history;   // waiting to be shown; the last ten shown
         std::vector<ChatLine> shown;           // on the banner now, two at most
-        Uint64 lastTick = 0;
+        Uint64 lastTick = 0, clock = 0;   // the banner's own clock (ms), which stands still while the game is paused
         float fade = 1.0f;       // the whole banner: fades out when no more is coming
         bool fadeOut = false;
-        std::map<long long, Uint64> last;      // when each thing between two factions was last spoken of
+        std::map<long long, double> last;      // the game clock when each event between two factions was last spoken of
     };
     PatronChat patronChat;
     void openPatrons(int faction, bool pick);

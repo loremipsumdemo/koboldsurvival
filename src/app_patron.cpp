@@ -8,7 +8,7 @@ using namespace play;
 
 namespace {
 constexpr Uint64 CHAT_STEP_MS = 4000;     // a line has been up this long before the next comes, and the banner fades this long after the last
-constexpr Uint64 CHAT_SAME_MS = 45000;    // the same thing between the same two factions is not spoken of again within this
+constexpr double CHAT_SAME_SECONDS = 3600.0;   // game time: the same event between the same two factions (either way round) is spoken of once an hour
 constexpr size_t CHAT_KEEP = 10;          // the lines waiting to be shown (more than that and the oldest are let go)
 constexpr size_t PATRON_KEEP_MESSAGES = 500;   // the messages remembered, for the Patrons tab
 constexpr int CHAT_SHOWN = 2;             // and shown at a time
@@ -183,15 +183,16 @@ void App::updatePatronChat() {
     const Uint64 now = SDL_GetTicks();
     if (screen != Screen::Playing) {
         cues.clear();
+        patronChat.lastTick = 0;
         return;
     }
     for (const PatronCue& c : cues) {
         const int a = patronOf(world, c.caller), b = patronOf(world, c.responder);
         if (a < 0 || b < 0) continue;
-        const long long key = ((long long)c.event * 100 + c.caller) * 100 + c.responder;
+        const long long key = ((long long)c.event * 100 + std::min(c.caller, c.responder)) * 100 + std::max(c.caller, c.responder);
         const auto seen = patronChat.last.find(key);
-        if (seen != patronChat.last.end() && now - seen->second < CHAT_SAME_MS) continue;
-        patronChat.last[key] = now;
+        if (seen != patronChat.last.end() && gs.clockSeconds >= seen->second && gs.clockSeconds - seen->second < CHAT_SAME_SECONDS) continue;
+        patronChat.last[key] = gs.clockSeconds;
         patronSpeak(c.event, c.caller, c.responder, patronEventKey(c.event));
         patronQuietSince = gs.clockSeconds;
         patronQuietStage = 0;
@@ -225,14 +226,18 @@ void App::updatePatronChat() {
     }
     // The banner: two lines at a time. A new line comes up from below and the older one moves up and is darkened; the one before that leaves.
     // The next line comes only when the newest has been up for 4 seconds, and the banner fades out 4 seconds after the last one.
-    const float dt = patronChat.lastTick ? std::min(0.1f, (float)(now - patronChat.lastTick) / 1000.0f) : 0.0f;
+    // The banner keeps its own clock, which stops while the game is paused (so a line stays up as long, and the fade waits)
+    const bool frozen = session.paused || session.autoPaused;
+    if (patronChat.lastTick && !frozen) patronChat.clock += std::min<Uint64>(now - patronChat.lastTick, 100);
+    const float dt = patronChat.lastTick && !frozen ? std::min(0.1f, (float)(now - patronChat.lastTick) / 1000.0f) : 0.0f;
     patronChat.lastTick = now;
+    const Uint64 chatNow = patronChat.clock;
     std::vector<ChatLine>& shown = patronChat.shown;
     ChatLine* newest = nullptr;
     for (ChatLine& ln : shown) {
         if (!ln.exiting) newest = &ln;
     }
-    const bool waited = !newest || now - newest->shownAt >= CHAT_STEP_MS;
+    const bool waited = !newest || chatNow - newest->shownAt >= CHAT_STEP_MS;
     if (!patronChat.queue.empty() && waited) {
         ChatLine ln = patronChat.queue.front();
         patronChat.queue.pop_front();
@@ -248,7 +253,7 @@ void App::updatePatronChat() {
                 --active;
             }
         }
-        ln.shownAt = now;
+        ln.shownAt = chatNow;
         ln.alpha = 0.0f;
         ln.dim = 0.0f;
         shown.push_back(ln);
@@ -264,7 +269,7 @@ void App::updatePatronChat() {
             o.slotTarget = (float)i++;
             if (&o == &shown.back()) o.slot = o.slotTarget + 0.8f;   // it comes up from below
         }
-    } else if (patronChat.queue.empty() && newest && now - newest->shownAt >= CHAT_STEP_MS) {
+    } else if (patronChat.queue.empty() && newest && chatNow - newest->shownAt >= CHAT_STEP_MS) {
         patronChat.fadeOut = true;
     }
     newest = nullptr;   // (the vector may have grown)

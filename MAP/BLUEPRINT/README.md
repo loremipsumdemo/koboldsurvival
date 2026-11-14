@@ -15,5 +15,3 @@ A faction other than yours that has an Altar builds from these plans inside its 
 - The material for the plan has to be in its stores. Its citizens fetch it and build, as yours do with Auto-Construct.
 - A plan is turned any of four ways to fit. Keep it no bigger than about 40 tiles across, so that it fits an Altar's claim.
 - Every complete building adds 2 to the radius of the Altar's claim, if no other Altar's claim is in the way.
-
-`small_house` is the first plan: a 3 by 3 foundation with 7 walls, a door and a locked chest in the middle, and a 3 by 3 floor above.
