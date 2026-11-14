@@ -27,6 +27,8 @@ const FilterEntry kFilterEntries[] = {
     { "UILABEL_TASK_MESSAGES", LogKind::Other, true },
     { "UILABEL_FAILED_PATHFINDING", LogKind::PathFail, false },
     { "UILABEL_FAILED_TASK", LogKind::TaskFail, false },
+    { "UILABEL_NEW_TASKS", LogKind::TaskNew, false },
+    { "UILABEL_TASK_CANCELATIONS", LogKind::TaskCancel, false },
     { "UILABEL_STUCK", LogKind::Stuck, false },
     { "UILABEL_BLOCKED_ORDERS", LogKind::Blocked, false },
     { "UILABEL_CLAIM_MESSAGES", LogKind::Other, true },

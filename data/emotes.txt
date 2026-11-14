@@ -40,3 +40,5 @@ Dead	dead.png	Dead: a unit that has died (not an animal)
 Carried	carried.png	Carried: out cold or taken, in another unit arms
 Sharing	sharing.png	Sharing: walking over to give a unit what it needs
 TaskFailed	task_failed.png	Task failed: a unit failed or gave up a task, for a second
+Patrolling	patrolling.png	Patrolling: a guard marching the perimeter route
+Gatekeeping	gatekeeping.png	Gatekeeping: a Fortified unit keeping a gate

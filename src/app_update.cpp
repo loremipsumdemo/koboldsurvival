@@ -236,9 +236,11 @@ void App::autosaveTick() {
 
 void App::updateCamera() {
     if (screen != Screen::Playing) return;
+    if (!editing && !bpEdit.active) selectReturningMilitary(world, cameraLeash);
+    updateNoUnits();
     if (session.dialogueUnit == NO_OBJECT && !(editing && editor.editingName)) panWithKeys(dt, settings.edgeScroll && !leftDown && !middleDown);
     if (followUnit != NO_OBJECT && !followUnitCamera(world, cam, followUnit)) followUnit = NO_OBJECT;
-    if (!editing && !bpEdit.active) keepCameraNearUnits(world, cam);
+    if (!editing && !bpEdit.active) keepCameraLeashed(world, cam, cameraLeash, dt);
     PROFILED("floorView", updateFloorView());
     cam.updateClearance(terrain);
     if (terrain.streamed()) PROFILED("terrain.stream", terrain.stream(streamFocuses(world, cam), streamRadiusFor(viewDistanceTiles(settings)), STREAM_LOADS_PER_FRAME));

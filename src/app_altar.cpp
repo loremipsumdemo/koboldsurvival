@@ -103,17 +103,16 @@ bool App::pressOnAltar() {
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (!r.row.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
-            if (!r.move.contains(x, y)) {
-                altar.pinned = altar.pinned == u ? NO_OBJECT : u;
-                playSfx(Sfx::UiClick);
-                return true;
-            }
+            const bool ghost = altar.moves.count(u) > 0;
+            const bool onBack = !ghost && r.back.w > 0.0f && r.back.contains(x, y);
+            if (!r.move.contains(x, y) && !onBack) return true;   // the unit's card shows on hover only, a click on the row does nothing
             // Undo a move, or start one if the column it goes to has room
             if (altar.moves.erase(u)) {
                 playSfx(Sfx::UiClick);
                 return true;
             }
-            const int to = (c + 1) % 3;   // Military, Citizens, Fortified, and round again
+            // The columns sit in a row: Military, Citizens, Fortified. A citizen has an arrow each way, the others one toward the citizens.
+            const int to = onBack ? ALTAR_MILITARY : c == ALTAR_CITIZEN ? ALTAR_FORTIFIED : ALTAR_CITIZEN;
             int military = (int)cols[ALTAR_MILITARY].size();
             const int citizens = (int)(cols[ALTAR_CITIZEN].size() + cols[ALTAR_FORTIFIED].size());
             if (to != ALTAR_MILITARY && c == ALTAR_MILITARY && citizens + 1 > settings.citizenHardCap) {
@@ -182,7 +181,8 @@ void App::drawAltar() {
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
-            if (u == altar.pinned || (altar.pinned == NO_OBJECT && r.row.contains(mouseX, mouseY) && !r.move.contains(mouseX, mouseY))) {
+            if (u == altar.pinned || (altar.pinned == NO_OBJECT && r.row.contains(mouseX, mouseY) && !r.move.contains(mouseX, mouseY) &&
+                                                     !(r.back.w > 0.0f && r.back.contains(mouseX, mouseY)))) {
                 shown = u;
                 beside = r.row;
             }
@@ -303,11 +303,7 @@ bool App::pressOnManageSquads() {
         for (const AltarRow& r : L.rows[(size_t)c]) {
             if (!r.row.contains(x, y) || r.index >= (int)cols[(size_t)c].size()) continue;
             const ObjectId u = cols[(size_t)c][(size_t)r.index];
-            if (!r.move.contains(x, y)) {
-                squadsUi.pinned = squadsUi.pinned == u ? NO_OBJECT : u;
-                playSfx(Sfx::UiClick);
-                return true;
-            }
+            if (!r.move.contains(x, y)) return true;   // the unit's card shows on hover only, a click on the row does nothing
             // Across to the other column's squad: back where it was undoes the move. Unsorted takes any number.
             const int to = squadsUi.view[(size_t)(1 - c)];
             if (to != SQUAD_UNSORTED && squadsCount(to) >= SQUAD_SIZE) {

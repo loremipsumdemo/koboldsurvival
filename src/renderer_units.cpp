@@ -1,3 +1,4 @@
+#include "gates.h"
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include "building.h"
@@ -54,6 +55,11 @@ Renderer::UnitPose Renderer::unitPose(World& w, ObjectId e) const {
     // A dancer hops as it goes round
     if (const Behaviors* b = w.get<Behaviors>(e); b && b->busy && b->began && b->step.kind == BehaviorKind::Dance) {
         // On the game's own hop clock, so it stops while the game is paused
+        const float phase = danceHopPhase(w.resource<DanceHops>().clock, e);
+        p.lift += std::sin(phase * 3.14159265f) * DANCE_HOP_HEIGHT;
+    }
+    // A guard hops as it marches the perimeter route
+    if (const Patrolling* pat = w.get<Patrolling>(e); pat && pat->moving && !p.lying) {
         const float phase = danceHopPhase(w.resource<DanceHops>().clock, e);
         p.lift += std::sin(phase * 3.14159265f) * DANCE_HOP_HEIGHT;
     }

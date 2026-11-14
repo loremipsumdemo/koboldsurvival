@@ -388,6 +388,24 @@ def task_failed(c):
     c.line(RED[1], 1.4, (22, 6.5), (10, 19.5))
 
 
+def patrolling(c):
+    # A shield and a spear: a guard on its rounds
+    c.line(WOOD[0], 1.8, (22.5, 6), (22.5, 23))
+    c.poly(IRON[2], (22.5, 2.5), (19.5, 8), (25.5, 8))
+    c.poly(IRON[2], (5, 6), (16, 6), (16, 15), (10.5, 22), (5, 15))
+    c.poly(IRON[0], (6.4, 7.4), (14.6, 7.4), (14.6, 14.5), (10.5, 19.5), (6.4, 14.5))
+    c.line(RED[0], 2.0, (10.5, 8.5), (10.5, 17))
+
+
+def gatekeeping(c):
+    # A key: the keeper of a gate
+    c.circ(GOLD[0], 10.5, 9.5, 5.6)
+    c.circ((252, 250, 244), 10.5, 9.5, 2.3)
+    c.line(GOLD[0], 3.0, (14.5, 13.5), (24.5, 21.5))
+    c.line(GOLD[0], 2.6, (20.5, 18.5), (20.5, 22.5))
+    c.line(GOLD[0], 2.6, (24, 21.5), (24, 23.5))
+
+
 EMOTES = [
     (1, mining, STATUS), (2, woodcutting, STATUS), (3, cooking, STATUS), (4, encumbered, WARN), (5, sleeping, STATUS),
     (6, hungry, WARN), (7, lockpicking, STATUS), (8, locked_in, ALARM), (9, herbalism, STATUS), (10, unconscious, STATUS),
@@ -405,6 +423,8 @@ EMOTES = [
     (37, carried, WARN),
     (38, sharing, STATUS),
     (39, task_failed, ALARM),
+    (40, patrolling, STATUS),
+    (41, gatekeeping, STATUS),
 ]
 
 def main():

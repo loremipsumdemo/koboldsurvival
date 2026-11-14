@@ -168,6 +168,7 @@ void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
         d.groups.push_back(std::move(sg));
     }
     d.schedules.push_back(SaveSchedule{ -1, false, scheduleText(g.schedule) });
+    d.schedules.push_back(SaveSchedule{ -2, g.perimeter.override, scheduleText(g.perimeter) });   // -2: the Perimeter Closed hours
     for (const auto& [faction, value] : w.resource<Motivation>().value) d.motivation.push_back({ faction, value });
     for (int k = 0; k < (int)g.groupSchedules.size(); ++k) {
         d.schedules.push_back(SaveSchedule{ k, g.groupSchedules[(size_t)k].override, scheduleText(g.groupSchedules[(size_t)k]) });
@@ -178,6 +179,14 @@ void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>&
     BehaviorGroups& g = behaviorGroups(world);
     for (const auto& [faction, value] : d.motivation) setMotivation(world, faction, value);
     for (const SaveSchedule& s : d.schedules) {
+        if (s.ref == -2) {
+            Schedule p;
+            if (scheduleFromText(s.hours, p)) {
+                g.perimeter = p;
+                g.perimeter.override = s.override;
+            }
+            continue;
+        }
         if (s.ref < -1 || s.ref >= BEHAVIOR_GROUP_MAX) continue;
         Schedule& to = scheduleOfRef(g, s.ref);
         if (scheduleFromText(s.hours, to)) to.override = s.ref >= 0 && s.override;

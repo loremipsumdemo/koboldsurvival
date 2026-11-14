@@ -86,8 +86,10 @@ set(SIM_SOURCES
     src/faction_rules.cpp
     src/recipes.cpp
     src/building.cpp
+    src/gates.cpp
     src/build_plan.cpp
     src/npc_builders.cpp
+    src/npc_roles.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp
     src/orders.cpp
@@ -158,6 +160,7 @@ add_executable(koboldsurvival
     src/app_squads.cpp
     src/app_altar.cpp
     src/app_perimeter.cpp
+    src/app_no_units.cpp
     src/app_spawn.cpp
     src/app_faction_rules.cpp
     src/app_prop_adjust.cpp

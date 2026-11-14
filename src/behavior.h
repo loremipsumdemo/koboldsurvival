@@ -284,6 +284,15 @@ inline std::vector<BehaviorRule> npcFactionBehaviors() {
     sit.kind = BehaviorKind::SitDown;
     return { rescue, deal, sleep, patrol, social, sit, play, dance };
 }
+// A military unit of a faction that runs itself: its needs, sleeping, and roaming
+inline std::vector<BehaviorRule> npcMilitaryBehaviors() {
+    BehaviorRule rescue, deal, sleep, roam;
+    rescue.kind = BehaviorKind::Rescue;
+    deal.kind = BehaviorKind::DealWithDowned;
+    sleep.kind = BehaviorKind::Sleep;
+    roam.kind = BehaviorKind::Roam;
+    return { rescue, deal, sleep, roam };
+}
 inline std::vector<BehaviorRule> mobBehaviors() {
     return {};
 }

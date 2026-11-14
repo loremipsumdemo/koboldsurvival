@@ -18,6 +18,8 @@ struct BehaviorGroups {
     std::vector<std::vector<BehaviorRule>> groups;   // Group 1 is groups[0]
     Schedule schedule = defaultSchedule();           // the global schedule (schedule.h)
     std::vector<Schedule> groupSchedules;            // each group's own, by index: made when asked for (scheduleOfRef)
+    Schedule perimeter;                              // the hours the Perimeter's gates are kept shut (hours[h] 1), in use when override is set;
+                                                     // else they are shut in the global schedule's Sleep hours (perimeterClosedAtHour)
     int version = 0;                                 // raised on every change, so citizens take their lists again
     bool ready = false;
     // Your stores already given a haul task in the Citizen Default Behavior (sorted), so one you remove stays removed

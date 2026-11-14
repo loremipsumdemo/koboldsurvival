@@ -1,4 +1,5 @@
 #include "building.h"
+#include "gates.h"
 #include <algorithm>
 #include <cmath>
 #include <deque>
@@ -1589,40 +1590,6 @@ void setGateShut(World& w, ObjectId gate, bool shut) {
     buildingTilesChanged(w, x0, z0, x1, z1);
 }
 
-void gateSystem(World& w, double clockSeconds, float dt) {
-    struct Watch {
-        float timer = 0.0f;
-        int quiet = -1;   // whether your people were all asleep at night when last looked: -1 not yet known
-    };
-    Watch& watch = w.resource<Watch>();
-    watch.timer += dt;
-    if (watch.timer < 1.0f) return;
-    watch.timer = 0.0f;
-    // Only with Fortified units: they keep the gates
-    if (fortifiedUnits(w).empty()) {
-        watch.quiet = -1;
-        return;
-    }
-    int people = 0, awake = 0;
-    for (ObjectId u : w.view<Entity, Transform>()) {
-        if (factionOf(w, u) != FACTION_PLAYER || w.has<Mob>(u) || (!w.has<Citizen>(u) && !w.has<Commandable>(u))) continue;
-        if (outCold(w, u) || w.has<Carried>(u)) continue;
-        ++people;
-        const Occupying* oc = w.get<Occupying>(u);
-        const Prop* bed = oc ? w.get<Prop>(oc->prop) : nullptr;
-        if (!bed || !propInfo(bed->kind).sleeping) ++awake;
-    }
-    const int quiet = isNightAt(clockSeconds) && people > 0 && awake == 0 ? 1 : 0;
-    const int before = watch.quiet;
-    watch.quiet = quiet;
-    if (before < 0 || before == quiet) return;
-    for (ObjectId g : w.view<Prop, Lock>()) {
-        if (w.has<Blueprint>(g) || ownerOf(w, g) != FACTION_PLAYER) continue;
-        const PropInfo& info = propInfo(w.get<Prop>(g)->kind);
-        if (info.perimeter && !info.solid) setGateShut(w, g, quiet == 1);
-    }
-}
-
 bool doorLets(World& w, ObjectId door, ObjectId u) {
     if (w.has<Prop>(door) && propInfo(w.get<Prop>(door)->kind).perimeter && !propInfo(w.get<Prop>(door)->kind).solid) return !gateShut(w, door);
     const Lock* l = w.get<Lock>(door);
@@ -1637,7 +1604,7 @@ void doorSystem(World& w, float dt) {
         at.since += dt;
         const Lock* l = w.get<Lock>(at.door);
         const PropInfo* info = infoOf(w, at.door);
-        const bool wall = info && (info->wallRule || info->solid || gateShut(w, at.door));   // a shut gate is smashed like a wall
+        const bool wall = info && (info->wallRule || info->solid);   // a shut gate is picked or smashed like a locked door
         const bool barrier = wall ? w.has<Prop>(at.door) : (l && l->locked);
         if (at.since > AT_DOOR_FORGET_SECONDS || !barrier || w.has<Commandable>(u) || outCold(w, u)) {
             if (at.since > AT_DOOR_FORGET_SECONDS || !barrier) w.remove<AtDoor>(u);
@@ -2285,6 +2252,24 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     Inventory* inv = w.get<Inventory>(u);
     if (!ut || w.has<Mob>(u)) return false;
     const int faction = factionOf(w, u);
+    // A Fortified unit builds only the Perimeter's pieces, and not while it holds a gate or a Guard Post (they come first)
+    const bool fortified = w.has<Fortified>(u);
+    if (fortified && (w.has<GateKeeper>(u) || w.has<GuardPostDuty>(u))) return false;
+    // An NPC faction builds in the order its Build Priority rule says (Faction Rules): its Perimeter before anything else while any piece of it
+    // waits to be built, or the base before the Perimeter
+    bool perimeterOnly = fortified, baseOnly = false;
+    if (faction != FACTION_PLAYER && !fortified && !factionPlayerControlled(faction)) {
+        const BuildOrder order = factionRules(w, faction).buildOrder;
+        if (order != BuildOrder::Balanced) {
+            bool perimeter = false, other = false;
+            for (ObjectId e : w.view<Blueprint, Prop>()) {
+                if (ownerOf(w, e) != faction || w.get<Blueprint>(e)->ghost || w.has<Condemned>(e) || w.has<FreeBuild>(e)) continue;
+                (isPerimeterWork(w, e) ? perimeter : other) = true;
+            }
+            perimeterOnly = order == BuildOrder::PerimeterFirst && perimeter;
+            baseOnly = order == BuildOrder::BaseFirst && other;
+        }
+    }
     // Auto-Construct: build the nearest blueprint of its faction that has everything it needs; failing that, bring the
     // nearest one that still wants materials what it wants, carried or fetched from a store of its faction
     // Corners first: a wall or door with walls or doors (planned or built) beside it both across and along. Finished
@@ -2303,6 +2288,8 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
         // A ghost waits for its stage; nobody builds what is being pulled down
         if (ownerOf(w, e) != faction || w.get<Blueprint>(e)->ghost || w.has<Condemned>(e) || w.has<FreeBuild>(e)) continue;
+        if (perimeterOnly && !isPerimeterWork(w, e)) continue;
+        if (baseOnly && isPerimeterWork(w, e)) continue;
         const Vec2 at = approachOf(w, u, e);
         const float floors = (float)std::abs(workStorey(w, e) - storeyOf(w, u)) * 20.0f;
         const float d2 = (at.x - ut->x) * (at.x - ut->x) + (at.z - ut->z) * (at.z - ut->z) + floors * floors;

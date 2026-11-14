@@ -41,6 +41,12 @@ enum class RecruitRule : int { Never = 0, Rescued, Factionless, Both, Count };
 // Whom its units rescue and share food with: their own faction only, its allies too, or anyone not hostile
 enum class AidRule : int { Own = 0, Allies, Anyone, Count };
 
+// How an NPC faction orders its building: finishing the Perimeter before any other building, the nearest first, or the base before
+// the Perimeter
+enum class BuildOrder : int { PerimeterFirst = 0, Balanced, BaseFirst, Count };
+// When its Perimeter's gates are kept shut: in its units' sleeping hours, always (opened only for those who ask), or never
+enum class GateRule : int { Sleep = 0, AlwaysShut, AlwaysOpen, Count };
+
 struct FactionRules {
     StanceRule factionless = StanceRule::Neutral;
     TrespassRule trespass = TrespassRule::Ignore;
@@ -50,9 +56,16 @@ struct FactionRules {
     int markup = 0;   // percent added to what it asks in trade
     RecruitRule recruit = RecruitRule::Never;
     AidRule aid = AidRule::Allies;
+    // How an NPC faction runs itself (yours are set by you): the share of its units that are Fortified (guard the Perimeter) and the
+    // share that are military (roam); the rest are citizens. Looked at once an hour. And its building order and gate hours.
+    int fortified = 20;
+    int military = 30;
+    BuildOrder buildOrder = BuildOrder::PerimeterFirst;
+    GateRule gates = GateRule::Sleep;
     bool operator==(const FactionRules& o) const {
         return factionless == o.factionless && trespass == o.trespass && downedBody == o.downedBody && downedTake == o.downedTake &&
-               trade == o.trade && markup == o.markup && recruit == o.recruit && aid == o.aid;
+               trade == o.trade && markup == o.markup && recruit == o.recruit && aid == o.aid && fortified == o.fortified &&
+               military == o.military && buildOrder == o.buildOrder && gates == o.gates;
     }
     bool operator!=(const FactionRules& o) const { return !(*this == o); }
 };
@@ -63,7 +76,9 @@ std::string factionRulesText(const FactionRules& r);
 bool parseFactionRules(const std::string& text, FactionRules& r, std::string& err);
 
 // The rows of the Faction Rules window, and the language keys of each one's values
-enum class RuleRow : int { Factionless = 0, Trespass, DownedBody, DownedTake, Trade, Markup, Recruit, Aid, Count };
+enum class RuleRow : int { Factionless = 0, Trespass, DownedBody, DownedTake, Trade, Markup, Recruit, Aid, Fortified, Military, Build, Gates, Count };
+// The rows of the Faction Rules window (yours): those for outsiders. The rest are for the factions that run themselves (data/factions.txt).
+inline constexpr int PLAYER_RULE_ROWS = (int)RuleRow::Fortified;
 const char* ruleRowKey(RuleRow row);
 const char* ruleRowTipKey(RuleRow row);
 // The value of one row of r as text for the window

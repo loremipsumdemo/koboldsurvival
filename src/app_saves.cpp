@@ -218,6 +218,7 @@ void App::loadSave(std::string path) {
     gs = d.gs;
     enterLevel();
     applySaveCamera(d.cam, cam);
+    cameraLeash = CameraLeash{};
     primeStreaming(world, terrain, cam);
     loading.fadeOut();
     lastSaveTicks = SDL_GetTicks();

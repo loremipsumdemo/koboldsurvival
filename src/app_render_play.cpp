@@ -332,6 +332,7 @@ void App::drawPlayingScreen() {
     drawPropAdjust();
     drawAltar();
     drawPerimeterPanel();
+    drawNoUnitsPanel();
     drawManageSquads();
     drawFactionRules();
     drawCraftWindow();

@@ -10,10 +10,10 @@
 namespace {
 const char* const DEFAULT_TEXT =
     "faction\t0\tFACTION_PLAYER\t#c77dff\t0\tcontrol=player\n"
-    "faction\t2\tFACTION_RED\t#ff4d4d\t30\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own\n"
-    "faction\t3\tFACTION_GREEN\t#5ccf5c\t10\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone\n"
-    "faction\t4\tFACTION_BLUE\t#4d7dff\t10\ttrespass=warn downed=carry_out take=food markup=10\n"
-    "faction\t5\tFACTION_YELLOW\t#f5d43a\t10\ttake=weapons trade=not_factionless markup=15 recruit=factionless\n"
+    "faction\t2\tFACTION_RED\t#ff4d4d\t30\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep\n"
+    "faction\t3\tFACTION_GREEN\t#5ccf5c\t10\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep\n"
+    "faction\t4\tFACTION_BLUE\t#4d7dff\t10\ttrespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut\n"
+    "faction\t5\tFACTION_YELLOW\t#f5d43a\t10\ttake=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open\n"
     "faction\t6\tFACTION_FACTIONLESS\t#9a9a9a\t0\ttake=food aid=own\n"
     "\n"
     "relation\t0\t2\t-100\n"
@@ -46,9 +46,17 @@ const RuleWords& wordsOf(RuleRow row) {
         { "recruit", { "never", "rescued", "factionless", "both" },
           { "UILABEL_RULE_NEVER", "UILABEL_RULE_RESCUED", "UILABEL_RULE_FACTIONLESS", "UILABEL_RULE_BOTH" } },
         { "aid", { "own", "allies", "anyone" }, { "UILABEL_RULE_OWN", "UILABEL_RULE_ALLIES", "UILABEL_RULE_ANYONE" } },
+        { "fortified", {}, {} },
+        { "military", {}, {} },
+        { "build", { "perimeter_first", "balanced", "base_first" },
+          { "UILABEL_RULE_PERIMETER_FIRST", "UILABEL_RULE_BALANCED", "UILABEL_RULE_BASE_FIRST" } },
+        { "gates", { "sleep", "shut", "open" }, { "UILABEL_RULE_GATES_SLEEP", "UILABEL_RULE_GATES_SHUT", "UILABEL_RULE_GATES_OPEN" } },
     };
     return table[std::clamp((int)row, 0, (int)RuleRow::Count - 1)];
 }
+
+// A row that is a number (a percent) and not one of a few words
+bool numberRow(RuleRow row) { return row == RuleRow::Markup || row == RuleRow::Fortified || row == RuleRow::Military; }
 
 int ruleValue(const FactionRules& r, RuleRow row) {
     switch (row) {
@@ -60,13 +68,17 @@ int ruleValue(const FactionRules& r, RuleRow row) {
     case RuleRow::Markup: return r.markup;
     case RuleRow::Recruit: return (int)r.recruit;
     case RuleRow::Aid: return (int)r.aid;
+    case RuleRow::Fortified: return r.fortified;
+    case RuleRow::Military: return r.military;
+    case RuleRow::Build: return (int)r.buildOrder;
+    case RuleRow::Gates: return (int)r.gates;
     case RuleRow::Count: break;
     }
     return 0;
 }
 
 void setRuleValue(FactionRules& r, RuleRow row, int v) {
-    const int most = row == RuleRow::Markup ? TRADE_MARKUP_MAX : (int)wordsOf(row).words.size() - 1;
+    const int most = row == RuleRow::Markup ? TRADE_MARKUP_MAX : numberRow(row) ? 100 : (int)wordsOf(row).words.size() - 1;
     v = std::clamp(v, 0, most);
     switch (row) {
     case RuleRow::Factionless: r.factionless = (StanceRule)v; break;
@@ -77,6 +89,10 @@ void setRuleValue(FactionRules& r, RuleRow row, int v) {
     case RuleRow::Markup: r.markup = v; break;
     case RuleRow::Recruit: r.recruit = (RecruitRule)v; break;
     case RuleRow::Aid: r.aid = (AidRule)v; break;
+    case RuleRow::Fortified: r.fortified = v; break;
+    case RuleRow::Military: r.military = v; break;
+    case RuleRow::Build: r.buildOrder = (BuildOrder)v; break;
+    case RuleRow::Gates: r.gates = (GateRule)v; break;
     case RuleRow::Count: break;
     }
 }
@@ -91,7 +107,7 @@ std::string factionRulesText(const FactionRules& r) {
         if (!out.empty()) out += ' ';
         out += rw.key;
         out += '=';
-        out += row == RuleRow::Markup ? std::to_string(v) : std::string(rw.words[(size_t)std::clamp(v, 0, (int)rw.words.size() - 1)]);
+        out += numberRow(row) ? std::to_string(v) : std::string(rw.words[(size_t)std::clamp(v, 0, (int)rw.words.size() - 1)]);
     }
     return out;
 }
@@ -108,7 +124,7 @@ bool parseFactionRules(const std::string& text, FactionRules& r, std::string& er
             const RuleRow row = (RuleRow)i;
             const RuleWords& rw = wordsOf(row);
             if (key != rw.key) continue;
-            if (row == RuleRow::Markup) {
+            if (numberRow(row)) {
                 char* end = nullptr;
                 const long n = std::strtol(value.c_str(), &end, 10);
                 if (value.empty() || *end != 0) break;
@@ -134,27 +150,29 @@ bool parseFactionRules(const std::string& text, FactionRules& r, std::string& er
 const char* ruleRowKey(RuleRow row) {
     static const char* const KEYS[] = { "UILABEL_RULES_FACTIONLESS", "UILABEL_RULES_TRESPASS", "UILABEL_RULES_DOWNED_BODY",
                                         "UILABEL_RULES_DOWNED_TAKE", "UILABEL_RULES_TRADE", "UILABEL_RULES_MARKUP",
-                                        "UILABEL_RULES_RECRUIT", "UILABEL_RULES_AID" };
+                                        "UILABEL_RULES_RECRUIT", "UILABEL_RULES_AID", "UILABEL_RULES_FORTIFIED", "UILABEL_RULES_MILITARY",
+                                        "UILABEL_RULES_BUILD", "UILABEL_RULES_GATES" };
     return KEYS[std::clamp((int)row, 0, (int)RuleRow::Count - 1)];
 }
 
 const char* ruleRowTipKey(RuleRow row) {
     static const char* const KEYS[] = { "UILABEL_RULES_FACTIONLESS_TIP", "UILABEL_RULES_TRESPASS_TIP", "UILABEL_RULES_DOWNED_BODY_TIP",
                                         "UILABEL_RULES_DOWNED_TAKE_TIP", "UILABEL_RULES_TRADE_TIP", "UILABEL_RULES_MARKUP_TIP",
-                                        "UILABEL_RULES_RECRUIT_TIP", "UILABEL_RULES_AID_TIP" };
+                                        "UILABEL_RULES_RECRUIT_TIP", "UILABEL_RULES_AID_TIP", "UILABEL_RULES_FORTIFIED_TIP",
+                                        "UILABEL_RULES_MILITARY_TIP", "UILABEL_RULES_BUILD_TIP", "UILABEL_RULES_GATES_TIP" };
     return KEYS[std::clamp((int)row, 0, (int)RuleRow::Count - 1)];
 }
 
 std::string ruleValueText(const FactionRules& r, RuleRow row) {
     const int v = ruleValue(r, row);
-    if (row == RuleRow::Markup) return langf("UILABEL_RULE_PERCENT", { std::to_string(v) });
+    if (numberRow(row)) return langf("UILABEL_RULE_PERCENT", { std::to_string(v) });
     const RuleWords& rw = wordsOf(row);
     return lang(rw.labels[(size_t)std::clamp(v, 0, (int)rw.labels.size() - 1)]);
 }
 
 void stepRule(FactionRules& r, RuleRow row, int delta) {
     const int v = ruleValue(r, row);
-    if (row == RuleRow::Markup) {
+    if (numberRow(row)) {
         setRuleValue(r, row, v + delta * 5);
         return;
     }

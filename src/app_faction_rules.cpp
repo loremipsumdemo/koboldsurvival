@@ -15,7 +15,7 @@ struct FactionRulesLayout {
 FactionRulesLayout layoutFactionRules(int W, int H) {
     const float s = uiScaleFor((float)H);
     const float pad = 14.0f * s, gap = 6.0f * s, line = 30.0f * s, small = 30.0f * s;
-    const int rows = (int)RuleRow::Count;
+    const int rows = PLAYER_RULE_ROWS;
     const float helpH = 3.0f * 20.0f * s;
     const float w = std::min((float)W - 20.0f * s, 560.0f * s);
     const float h = pad + line + gap + rows * (line + gap) + helpH + gap + line + pad;
@@ -68,7 +68,7 @@ bool App::pressOnFactionRules() {
     }
     // Shift steps the markup by 25 percent
     const int step = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 5 : 1;
-    for (int i = 0; i < (int)RuleRow::Count; ++i) {
+    for (int i = 0; i < PLAYER_RULE_ROWS; ++i) {
         const RuleRow row = (RuleRow)i;
         const bool down = L.down[(size_t)i].contains(x, y), up = L.up[(size_t)i].contains(x, y) || L.value[(size_t)i].contains(x, y);
         if (!down && !up) continue;
@@ -92,7 +92,7 @@ void App::drawFactionRules() {
     renderer.drawCloseButton(L.close);
     const FactionRules& rules = factionRules(world, FACTION_PLAYER);
     std::string tip;
-    for (int i = 0; i < (int)RuleRow::Count; ++i) {
+    for (int i = 0; i < PLAYER_RULE_ROWS; ++i) {
         const RuleRow row = (RuleRow)i;
         const Rect& lr = L.labels[(size_t)i];
         const Rect& vr = L.value[(size_t)i];

@@ -1,3 +1,4 @@
+#include "gates.h"
 #include "recipes.h"
 #include "systems_internal.h"
 
@@ -51,6 +52,13 @@ std::string taskNameOf(World& w, ObjectId u) {
     if (const PropOrder* po = w.get<PropOrder>(u); po && po->action == PropAction::Store) return lang("UILABEL_TASK_STORING");
     if (w.has<DefendOrder>(u)) return lang("UILABEL_TASK_DEFENDING");
     if (w.has<FollowOrder>(u)) return lang("UILABEL_TASK_FOLLOWING");
+    if (const GateWork* gw = w.get<GateWork>(u)) return lang(gw->shut ? "UILABEL_TASK_SHUTTING_GATE" : "UILABEL_TASK_OPENING_GATE");
+    if (w.has<AskingEntry>(u)) return lang("UILABEL_TASK_ASKING_ENTRY");
+    if (w.has<Fortified>(u)) {
+        if (w.has<GateKeeper>(u)) return lang("UILABEL_TASK_GUARDING_GATE");
+        if (w.has<GuardPostDuty>(u)) return lang("UILABEL_TASK_GUARDING_POST");
+        if (w.has<Patrolling>(u)) return lang("UILABEL_TASK_PATROLLING");
+    }
     const SoloMove* so = w.get<SoloMove>(u);
     if (so && so->next < so->waypoints.size()) return lang("UILABEL_TASK_MOVING");
     if (const ActiveSquadMember* sm = w.get<ActiveSquadMember>(u)) {
@@ -64,6 +72,8 @@ std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
     if (w.has<TaskFailedEmote>(u)) return { EmoteId::TaskFailed };   // for the second after it failed or gave up a task
+    if (const Patrolling* pat = w.get<Patrolling>(u); pat && pat->moving) return { EmoteId::Patrolling };   // a guard marching the perimeter
+    if (w.has<GateKeeper>(u) && w.has<Fortified>(u)) return { EmoteId::Gatekeeping };   // keeping a gate
     std::vector<EmoteId> out;
     auto propEmoteOf = [&](ObjectId prop) {
         const Prop* p = w.get<Prop>(prop);

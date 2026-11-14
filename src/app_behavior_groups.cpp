@@ -176,6 +176,12 @@ void App::openBehaviorGroups(ObjectId altarProp) {
     playSfx(Sfx::UiMenuOpen);
 }
 
+void App::openSchedule(ObjectId altarProp) {
+    openBehaviorGroups(altarProp);
+    groupsUi.tab = 1;
+    groupsUi.scheduleOnly = true;
+}
+
 // What may be added to the list picked: the everyday tasks, Auto-Construct, Auto-Harvest of what grows in your claim,
 // Auto-Haul to your stores, and (for a group) a Group task for each list it may take in
 std::vector<BehaviorOption> App::groupTaskOptions() {
@@ -253,12 +259,6 @@ bool App::pressOnBehaviorGroups() {
     if (L.close.contains(x, y) || !L.box.contains(x, y)) {
         groupsUi = BehaviorGroupsUi{};
         playSfx(Sfx::UiBack);
-        return true;
-    }
-    if (L.tabBehavior.contains(x, y) || L.tabSchedule.contains(x, y)) {
-        groupsUi.tab = L.tabSchedule.contains(x, y) ? 1 : 0;
-        groupsUi.adding = false;
-        playSfx(Sfx::UiClick);
         return true;
     }
     if (groupsUi.tab == 1) {
@@ -379,8 +379,8 @@ void App::scrollBehaviorGroups(float mx, float my, float wheel) {
     const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, rowCount, groupsUi.rowScroll);
     const int step = wheel > 0.0f ? -3 : wheel < 0.0f ? 3 : 0;
     if (groupsUi.tab == 1) {
-        const SchedLayout S = layoutSchedule(L, uiScaleFor((float)winH), 1 + (int)g.groups.size(), groupsUi.schedScroll);
-        if (S.area.contains(mx, my)) groupsUi.schedScroll = std::clamp(S.first + step, 0, std::max(0, 1 + (int)g.groups.size() - S.rows));
+        const SchedLayout S = layoutSchedule(L, uiScaleFor((float)winH), 2 + (int)g.groups.size(), groupsUi.schedScroll);
+        if (S.area.contains(mx, my)) groupsUi.schedScroll = std::clamp(S.first + step, 0, std::max(0, 2 + (int)g.groups.size() - S.rows));
         return;
     }
     if (L.list.contains(mx, my)) groupsUi.refScroll = std::clamp(L.firstEntry + step, 0, std::max(0, (int)refs.size() - L.entryRows));
@@ -406,12 +406,10 @@ void App::drawBehaviorGroups() {
 
     renderer.drawScrim();
     renderer.drawThemedPanel(L.box);
-    renderer.drawListText(lang("UILABEL_GROUPS_TITLE"), L.title.x, mid(L.title), theme::GOLD);
+    renderer.drawListText(lang(groupsUi.scheduleOnly ? "UILABEL_GROUPS_TAB_SCHEDULE" : "UILABEL_GROUPS_TITLE"), L.title.x, mid(L.title), theme::GOLD);
     renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
-    renderer.drawButton(L.tabBehavior, lang("UILABEL_GROUPS_TAB_BEHAVIOR"), groupsUi.tab != 0, L.tabBehavior.contains(mouseX, mouseY));
-    renderer.drawButton(L.tabSchedule, lang("UILABEL_GROUPS_TAB_SCHEDULE"), groupsUi.tab != 1, L.tabSchedule.contains(mouseX, mouseY));
     if (groupsUi.tab == 1) {
-        const int rowTotal = 1 + (int)g.groups.size();
+        const int rowTotal = 2 + (int)g.groups.size();   // the global schedule, each group, then the Perimeter Closed hours
         const SchedLayout S = layoutSchedule(L, s, rowTotal, groupsUi.schedScroll);
         groupsUi.schedScroll = S.first;
         for (int a = 0; a < ACTIVITY_COUNT; ++a) {
@@ -431,6 +429,29 @@ void App::drawBehaviorGroups() {
         }
         for (int i = 0; i < S.rows && S.first + i < rowTotal; ++i) {
             const int idx = S.first + i;   // 0 the global schedule, then each group
+            if (idx == rowTotal - 1) {
+                // The Perimeter Closed hours: red shut, green open. Its own switch, or the Sleep hours of the global schedule.
+                const bool own = g.perimeter.override;
+                const Rect row = schedRow(S, i);
+                renderer.drawRect(Rect{ row.x, row.y, S.labelW, row.h }, theme::alpha(theme::WELL, own ? 0.8f : 0.55f));
+                renderer.drawListText(fitTo(renderer, lang("UILABEL_SCHEDULE_PERIMETER"), S.labelW - 66.0f * s), row.x + 8.0f * s, row.y + 3.0f * s,
+                                      own ? PLAIN : theme::TEXT_DIM);
+                if (!own) renderer.drawListText(lang("UILABEL_SCHEDULE_PERIMETER_USING"), row.x + 8.0f * s, row.y + 3.0f * s + th, theme::TEXT_QUIET);
+                const Rect tg = schedToggle(S, i, s);
+                renderer.drawRect(tg, own ? RGBA{ 0.30f, 0.70f, 0.32f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.32f, 1.0f });
+                const float kn = tg.h - 6.0f * s;
+                renderer.drawRect(Rect{ own ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+                renderer.noteTip(lang("UILABEL_SCHEDULE_PERIMETER_TIP"), Rect{ row.x, row.y, S.labelW, row.h });
+                for (int h = 0; h < SCHEDULE_HOURS; ++h) {
+                    const Rect c = schedCell(S, i, h);
+                    const bool shut = perimeterClosedAtHour(world, h);
+                    RGBA col = shut ? RGBA{ 0.62f, 0.18f, 0.18f, 1.0f } : RGBA{ 0.25f, 0.50f, 0.28f, 1.0f };
+                    if (!own) { col.r *= 0.42f; col.g *= 0.42f; col.b *= 0.42f; }
+                    renderer.drawRect(c, col);
+                    if (h == nowHour) renderer.drawRect(Rect{ c.x, c.y, c.w, 3.0f * s }, theme::GOLD);
+                }
+                continue;
+            }
             const int ref = idx - 1;
             const Schedule& sch = scheduleOfRef(g, ref);
             const bool live = idx == 0 || sch.override;
@@ -525,7 +546,7 @@ bool App::scheduleClick(float x, float y, bool press) {
     const std::vector<int> refs = groupRefs(g);
     const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, 0, 0);
     const float s = uiScaleFor((float)winH);
-    const int rowTotal = 1 + (int)g.groups.size();
+    const int rowTotal = 2 + (int)g.groups.size();
     const SchedLayout S = layoutSchedule(L, s, rowTotal, groupsUi.schedScroll);
     if (press) {
         for (int a = 0; a < ACTIVITY_COUNT; ++a) {
@@ -536,6 +557,28 @@ bool App::scheduleClick(float x, float y, bool press) {
         }
     }
     for (int i = 0; i < S.rows && S.first + i < rowTotal; ++i) {
+        if (S.first + i == rowTotal - 1) {
+            // The Perimeter Closed hours: its switch starts them as the Sleep hours; a press on an hour flips it and a drag sets the rest alike
+            if (press && schedToggle(S, i, s).contains(x, y)) {
+                if (!g.perimeter.override) {
+                    for (int h = 0; h < SCHEDULE_HOURS; ++h) g.perimeter.hours[(size_t)h] = perimeterClosedAtHour(world, h) ? 1 : 0;
+                }
+                g.perimeter.override = !g.perimeter.override;
+                playSfx(Sfx::UiClick);
+                return true;
+            }
+            if (!g.perimeter.override) continue;
+            for (int h = 0; h < SCHEDULE_HOURS; ++h) {
+                if (!schedCell(S, i, h).contains(x, y)) continue;
+                if (press) {
+                    groupsUi.perimPaint = g.perimeter.hours[(size_t)h] ? 0 : 1;
+                    playSfx(Sfx::UiClick);
+                }
+                g.perimeter.hours[(size_t)h] = (unsigned char)groupsUi.perimPaint;
+                return true;
+            }
+            continue;
+        }
         const int ref = S.first + i - 1;
         Schedule& sch = scheduleOfRef(g, ref);
         if (press && ref >= 0 && schedToggle(S, i, s).contains(x, y)) {

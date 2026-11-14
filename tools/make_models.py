@@ -394,6 +394,19 @@ def standing_torch():
     return parts + [cyl(0, 1.14, 0, 0.14, 0.05, 0.14, (58, 44, 40))]   # the game draws its fire
 
 
+def guard_post():
+    """A guard's post: a stone footing under a tall timber post with a crossbar, a red pennant and a lantern hung from it. No two parts
+    share a plane: the crossbar and the pennant's edge are clear of the post's faces and of each other."""
+    return [box(0, 0, 0, 0.9, 0.08, 0.9, DARK_STONE),                                  # footing
+            box(0, 0.08, 0, 0.14, 1.5, 0.14, DARK_WOOD),                               # post
+            pyramid(0, 1.58, 0, 0.24, 0.14, 0.24, WOOD),                               # its cap, wider than the post
+            box(0, 1.2, 0, 0.5, 0.07, 0.1, WOOD),                                      # crossbar
+            box(0.17, 0.97, 0, 0.26, 0.23, 0.025, RED),                                # pennant under the crossbar's right end
+            box(-0.2, 1.14, 0, 0.022, 0.06, 0.022, IRON),                              # the lantern's hook
+            box(-0.2, 0.96, 0, 0.1, 0.18, 0.1, BRASS),                                 # lantern
+            box(-0.2, 1.0, 0.055, 0.06, 0.1, 0.02, GLOW)]                             # its light
+
+
 def support_beam():
     return [box(0, 0, 0, 0.48, 0.2, 0.48, DARK_STONE), box(0, 0.2, 0, 0.2, 2.1, 0.2, WOOD), box(0, 2.3, 0, 1.2, 0.2, 0.24, WOOD),
             rod((0.08, 1.65, 0), (0.48, 2.3, 0), 0.09, DARK_WOOD), rod((-0.08, 1.65, 0), (-0.48, 2.3, 0), 0.09, DARK_WOOD),
@@ -1062,7 +1075,7 @@ BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
     'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Stall': stall, 'LockedChest': locked_chest,
     'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'GameTable': game_table, 'EndTable': end_table,
-    'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam,
+    'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam, 'GuardPost': guard_post,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
     'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'WeaponBench': weapon_workbench, 'ArmorBench': armor_workbench, 'AmmoBench': ammunition_workbench, 'Airship': airship, 'Foundation': foundation,

@@ -3,6 +3,7 @@
 #include "build.h"
 #include "camp_kit.h"
 #include "squads.h"
+#include "npc_roles.h"
 
 using namespace systems_detail;
 
@@ -528,27 +529,20 @@ void settleFactionHomes(World& w, Terrain& t) {
         }
         const Transform* home = altar != NO_OBJECT ? w.get<Transform>(altar) : nullptr;
 
-        // The first share are citizens, at home by the Altar; the rest are military, on patrol
-        const int citizens = home && units.size() >= 2 ? std::max(1, (int)std::lround(FACTION_CITIZEN_SHARE * (float)units.size())) : 0;
-        BehaviorRule patrol, stay;
-        patrol.kind = BehaviorKind::Patrol;
-        stay.kind = BehaviorKind::Patrol;
-        for (size_t i = 0; i < units.size(); ++i) {
-            const ObjectId u = units[i];
-            Behaviors* b = w.get<Behaviors>(u);
-            if (!b) continue;
-            if ((int)i < citizens) {
-                w.add(u, Citizen{});
-                w.remove<SquadMember>(u);
-                w.add(u, SpawnHome{ home->x, home->z, false });
-                b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [&](const BehaviorRule& r) { return sameBehavior(r, patrol); }),
-                               b->rules.end());
-                addBehavior(b->rules, stay);
-            } else {
-                w.remove<Citizen>(u);
-                w.add(u, SquadMember{ 0 });
-                addBehavior(b->rules, patrol);
-            }
+        // The faction's own shares (its Faction Rules): the first are Fortified, guarding its Perimeter, then citizens at home by the Altar,
+        // and the rest military, roaming. (Looked at once an hour from then on, npc_roles.h.)
+        const int total = (int)units.size();
+        const FactionRules& shares = factionRules(w, f.id);
+        const bool housed = home && total >= 2;
+        const int fortified = housed ? (int)std::lround((float)shares.fortified * 0.01f * (float)total) : 0;
+        const int military = housed ? std::min((int)std::lround((float)shares.military * 0.01f * (float)total), std::max(0, total - fortified - 1)) : total;
+        const Vec2 homeAt = home ? Vec2{ home->x, home->z } : Vec2{ 0.0f, 0.0f };
+        for (int i = 0; i < total; ++i) {
+            const ObjectId u = units[(size_t)i];
+            if (!w.get<Behaviors>(u)) continue;
+            if (i < fortified) makeNpcFortified(w, u, homeAt);
+            else if (i < total - military) makeNpcCitizen(w, u, homeAt);
+            else makeNpcMilitary(w, u);
         }
     }
 }

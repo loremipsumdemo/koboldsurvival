@@ -26,6 +26,7 @@
 #include "language.h"
 #include "build_info.h"
 #include "camera.h"
+#include "camera_limit.h"
 #include "ui_layout.h"
 #include "components.h"
 #include "ecs.h"
@@ -442,6 +443,7 @@ struct App : AppSession {
     bool pressOnStoreFilter();
     void drawStoreFilter();
     void openBehaviorGroups(ObjectId altarProp);
+    void openSchedule(ObjectId altarProp);
     // Set Perimeter (app_perimeter.cpp): the tiles of an Altar's Perimeter drawn on a copy, kept by Confirm
     struct PerimeterUi {
         bool active = false;
@@ -455,6 +457,18 @@ struct App : AppSession {
         bool moving = false;          // its title bar is held, to move it
         float grabX = 0.0f, grabY = 0.0f;
     };
+    // The window that stays up while no unit of yours is in a squad (app_no_units.cpp), and what keeps the camera leashed (camera_limit.h)
+    struct NoUnitsUi {
+        float x = -1.0f, y = -1.0f;   // where the window is: -1, the top middle
+        bool moving = false;          // its title bar is held, to move it
+        float grabX = 0.0f, grabY = 0.0f;
+    };
+    NoUnitsUi noUnits;
+    CameraLeash cameraLeash;
+    bool noUnitsShown();
+    bool pressOnNoUnits();
+    void updateNoUnits();
+    void drawNoUnitsPanel();
     PerimeterUi perim;
     void openPerimeter(ObjectId altarProp);
     void closePerimeter();

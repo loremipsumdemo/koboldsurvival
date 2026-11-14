@@ -38,6 +38,7 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 3>& counts, const st
             if (c == ALTAR_CITIZEN) {
                 const float gw = 74.0f * s;
                 r.group = Rect{ r.move.x - gw - 6.0f * s, r.move.y, gw, r.move.h };
+                if (columns > 2) r.back = Rect{ r.group.x - mw - 4.0f * s, r.move.y, mw, r.move.h };
             }
             L.rows[(size_t)c].push_back(r);
         }
@@ -75,6 +76,28 @@ PerimeterLayout layoutPerimeter(int W, int H, float px, float py) {
     L.confirm = Rect{ x, y, w, btnH };
     y += btnH + gap;
     L.cancel = Rect{ x, y, w, btnH };
+    return L;
+}
+
+NoUnitsLayout layoutNoUnits(int W, int H, float px, float py) {
+    const float s = uiScaleFor((float)H);
+    const float pad = 10.0f * s, gap = 6.0f * s, line = 26.0f * s, btnH = 30.0f * s, boxW = std::min((float)W - 16.0f * s, 340.0f * s);
+    NoUnitsLayout L;
+    const float boxH = pad + line + gap + line + gap + 3.0f * (btnH + gap) + pad - gap;
+    const float ox = std::clamp(px < 0.0f ? (W - boxW) * 0.5f : px, 0.0f, std::max(0.0f, (float)W - boxW));
+    const float oy = std::clamp(py < 0.0f ? 64.0f * s : py, 0.0f, std::max(0.0f, (float)H - boxH));
+    L.panel = Rect{ std::floor(ox), std::floor(oy), boxW, boxH };
+    const float x = L.panel.x + pad, w = boxW - 2.0f * pad;
+    float y = L.panel.y + pad;
+    L.title = Rect{ x, y, w, line };
+    y += line + gap;
+    L.message = Rect{ x, y, w, line };
+    y += line + gap;
+    L.altar = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.unit = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.claim = Rect{ x, y, w, btnH };
     return L;
 }
 

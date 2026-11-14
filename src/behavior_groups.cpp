@@ -69,6 +69,7 @@ void resetBehaviorGroups(BehaviorGroups& g) {
     g.citizen = defaultCitizenBehaviors();
     g.schedule = defaultSchedule();
     g.groupSchedules.clear();
+    g.perimeter = Schedule{};
     g.listedStores.clear();
     g.storesListed = false;
     g.groups.assign(1, { groupTask(GROUP_REF_CITIZEN) });
@@ -221,6 +222,17 @@ void behaviorGroupSystem(World& w) {
     if (++g.syncTick >= STORE_SYNC_STEPS) {
         g.syncTick = 0;
         storeHaulSync(w);
+    }
+    // A Fortified unit made before they slept or built has no Sleep or Auto-Construct task: it is given them (it keeps no other from its group)
+    for (ObjectId u : w.view<Fortified, Behaviors>()) {
+        Behaviors& b = *w.get<Behaviors>(u);
+        for (BehaviorKind kind : { BehaviorKind::Sleep, BehaviorKind::AutoConstruct }) {
+            const bool has = std::any_of(b.rules.begin(), b.rules.end(), [&](const BehaviorRule& r) { return r.kind == kind; });
+            if (has) continue;
+            BehaviorRule rule;
+            rule.kind = kind;
+            if (addBehavior(b.rules, rule, BEHAVIOR_TASKS_MAX)) b.pending = true;
+        }
     }
     for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
         if (w.get<Faction>(u)->id != FACTION_PLAYER || w.has<Fortified>(u)) continue;

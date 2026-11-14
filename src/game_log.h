@@ -6,8 +6,8 @@
 
 constexpr size_t LOG_LIMIT = 500;
 
-enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked, Claim, Stuck };
-constexpr int LOG_KIND_COUNT = 15;
+enum class LogKind { Other, Seen, Hit, Miss, Damage, Xp, Pickup, Drop, Loot, Npc, PathFail, TaskFail, Blocked, Claim, Stuck, TaskNew, TaskCancel };
+constexpr int LOG_KIND_COUNT = 17;
 
 enum class Tint { Gray, Green, Red };
 Tint tintFor(World& w, ObjectId attacker, ObjectId target);
@@ -44,6 +44,8 @@ struct LogFilter {
         on[(int)LogKind::TaskFail] = false;
         on[(int)LogKind::Blocked] = false;
         on[(int)LogKind::Stuck] = false;
+        on[(int)LogKind::TaskNew] = false;
+        on[(int)LogKind::TaskCancel] = false;
     }
 };
 

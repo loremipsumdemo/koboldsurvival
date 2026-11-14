@@ -9,6 +9,8 @@ void App::enterLevel() {
     closePanel();
     gs.claimDecayDue = 0.0;
     cam = Camera{};
+    cameraLeash = CameraLeash{};
+    noUnits = NoUnitsUi{};
     cam.mapSize = (float)terrain.size();
     focusCameraOnFirstUnit(world, cam);
     gameActive = true;

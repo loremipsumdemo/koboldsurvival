@@ -403,6 +403,12 @@ std::vector<WorkGain> workSystem(World& w, double gameSeconds, Rng& rng) {
                 const int level = levelOf(statsOf(w, picker), StatId::Lockpicking);
                 if ((double)rng.unit() < lockpickChance(level)) {
                     lock->locked = false;
+                    if (info.perimeter && !info.solid) {
+                        // A gate picked open frees the ground under it
+                        int gx0 = 0, gz0 = 0, gx1 = 0, gz1 = 0;
+                        pieceTiles(w, prop, gx0, gz0, gx1, gz1);
+                        buildingTilesChanged(w, gx0, gz0, gx1, gz1);
+                    }
                     addGain(WorkGain{ picker, 0, WorkGain::Kind::Unlocked });
                     queueLog(w, langf("MISC_UNLOCKS", { nameOf(w, picker), lang(info.nameKey) }), LogKind::Other, npcOnly(w, picker));
                     grantXp(w, picker, StatId::Lockpicking, LOCKPICK_XP_SUCCESS, "MISC_REASON_LOCKPICKING");

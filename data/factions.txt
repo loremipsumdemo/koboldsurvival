@@ -25,6 +25,14 @@
 #                  Factionless unit who stays a while in its claim); both [never]
 #     aid          whom its units rescue and share food with: own (their own faction only; for the Factionless, no
 #                  one); allies (allies too); anyone (anyone not hostile) [allies]
+#     fortified    NPC factions only: the percent of its units that are Fortified, guarding its Perimeter (its gates, posts and
+#                  walkways), 0 to 100 [20]. Looked at once an hour.
+#     military     NPC factions only: the percent of its units that are military, roaming, 0 to 100. The rest are citizens, who stay
+#                  at the Altar, work and build [30]
+#     build        NPC factions only: perimeter_first (its Perimeter is finished before anything else is built); balanced (the
+#                  nearest piece of anything first); base_first (the Perimeter waits for the buildings) [perimeter_first]
+#     gates        NPC factions only: when its Perimeter's gates are shut: sleep (in its units' sleeping hours); shut (always, opened
+#                  only for those who ask); open (never shut by it) [sleep]
 #   Your faction's rules can be changed in play, in Faction Rules on the Faction tab, and the save keeps them.
 #
 # relation <id> <id> <reputation>
@@ -34,10 +42,10 @@
 #   Faction's change in play.
 
 faction	0	FACTION_PLAYER	#c77dff	0	control=player
-faction	2	FACTION_RED	#ff4d4d	30	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own
-faction	3	FACTION_GREEN	#5ccf5c	10	factionless=friendly downed=carry_out recruit=rescued aid=anyone
-faction	4	FACTION_BLUE	#4d7dff	10	trespass=warn downed=carry_out take=food markup=10
-faction	5	FACTION_YELLOW	#f5d43a	10	take=weapons trade=not_factionless markup=15 recruit=factionless
+faction	2	FACTION_RED	#ff4d4d	30	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep
+faction	3	FACTION_GREEN	#5ccf5c	10	factionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep
+faction	4	FACTION_BLUE	#4d7dff	10	trespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut
+faction	5	FACTION_YELLOW	#f5d43a	10	take=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open
 # The Factionless: units disbanded from your squad, the Wandering Trader, and units spawned with no faction. No camp,
 # no Altar and no reputation: how each faction takes to them is its factionless rule. Their own rules are what each of
 # them does alone: they are not one another's allies.

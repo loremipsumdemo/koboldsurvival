@@ -12,7 +12,8 @@
 //  - Recreation: Socialize (with others of its faction that are at recreation too) and Sit Down (on a seat)
 // Needs tasks (eating, healing, resting, rescuing, dealing with the downed) are not scheduled: they happen whenever they are due.
 // The Citizen Default is the global schedule. A behavior group follows it unless the group has its own (override) set.
-// Units of other factions follow the global schedule too, and wild mobs none.
+// Your military and Fortified units follow the global schedule too (Fortified ones sleep in its Sleep hours, and guard the Perimeter
+// otherwise). Units of other factions have schedules of their own, and wild mobs none.
 enum class Activity : unsigned char { Sleep = 0, Work = 1, Recreation = 2 };
 inline constexpr int SCHEDULE_HOURS = 24;
 inline constexpr int ACTIVITY_COUNT = 3;
@@ -31,6 +32,11 @@ bool scheduleFromText(const std::string& text, Schedule& out);
 struct BehaviorGroups;
 // The schedule for a ref: -1 the global one, a group's index its own (made when asked for)
 Schedule& scheduleOfRef(BehaviorGroups& g, int ref);
+
+// The Perimeter's gates are kept shut in the hours the Perimeter Closed schedule says: the global schedule's Sleep hours unless you set
+// its own hours (behavior_groups.h, Schedule tab)
+// (An NPC faction's gates follow its Gate Hours rule: its units' sleeping hours, always or never.)
+bool perimeterClosedAtHour(World& w, int hour, int faction = 0);
 
 // What the unit is meant to be doing this hour: its group's own schedule if it follows one of its own, else the global
 Activity activityOf(World& w, ObjectId u);

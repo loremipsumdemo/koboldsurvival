@@ -77,7 +77,7 @@ const std::vector<Numbered> EMOTE_KEYS = {
     { "Lockpicking", 7 }, { "LockedIn", 8 }, { "Herbalism", 9 }, { "Unconscious", 10 }, { "PlayingDead", 12 },
     { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 }, { "Hauling", 17 },
     { "Building", 18 },
-    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 }, { "TaskFailed", 39 },
+    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 }, { "TaskFailed", 39 }, { "Patrolling", 40 }, { "Gatekeeping", 41 },
 };
 
 const std::vector<Numbered> ICON_KEYS = {

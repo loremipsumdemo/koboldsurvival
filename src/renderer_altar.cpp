@@ -65,11 +65,12 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             std::string tag;
             if (ghost) tag = lang(c != ALTAR_MILITARY ? "UILABEL_ALTAR_TO_CITIZENS" : "UILABEL_ALTAR_TO_MILITARY");
             else if (c == ALTAR_MILITARY && squadOf(w, u) >= 0) tag = langf("UILABEL_ALTAR_SQUAD_TAG", { std::to_string(squadOf(w, u) + 1) });
-            // Each unit's arrow moves it to the next column: Military, Citizens, Fortified, and back to Military
+            // The columns sit in a row, Military, Citizens, Fortified: a unit's arrow moves it toward the citizens (or on to the
+            // Fortified, from them), and a citizen has a second one, to the left of its group, back to the Military
             const bool right = c != ALTAR_FORTIFIED;
             drawRosterRow(w, r, u, ghost, tag, right,
                           ghost ? "UILABEL_ALTAR_UNDO_TIP" : c == ALTAR_MILITARY ? "UILABEL_ALTAR_TO_CITIZENS_TIP"
-                          : c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_FORTIFIED_TIP" : "UILABEL_ALTAR_TO_MILITARY_TIP",
+                          : c == ALTAR_CITIZEN ? "UILABEL_ALTAR_TO_FORTIFIED_TIP" : "UILABEL_ALTAR_TO_CITIZENS_TIP",
                           pinned, mx, my);
         }
         if (cols[(size_t)c].empty()) {
@@ -123,7 +124,7 @@ void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost
     levelTotals(w, u, combat, other);
     const float textX = r.portrait.x + r.portrait.w + 8.0f * s;
     const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
-    const float rightEdge = r.group.w > 0.0f && !ghost ? r.group.x : r.move.x;
+    const float rightEdge = r.back.w > 0.0f && !ghost ? r.back.x : r.group.w > 0.0f && !ghost ? r.group.x : r.move.x;
     const float textW = rightEdge - 6.0f * s - tagW - textX;
     const RGBA nameTint = ghost ? RGBA{ 1.0f, 1.0f, 1.0f, 0.6f } : WHITE;
     const RGBA dimTint = ghost ? theme::alpha(theme::TEXT_DIM, 0.6f) : theme::TEXT_DIM;
@@ -152,6 +153,16 @@ void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost
     if (pointRight) drawUiTris({ { cx - hw, cy - hh, ac }, { cx + hw, cy, ac }, { cx - hw, cy + hh, ac } });
     else drawUiTris({ { cx + hw, cy - hh, ac }, { cx - hw, cy, ac }, { cx + hw, cy + hh, ac } });
     noteTip(lang(moveTipKey), r.move);
+
+    // A citizen's way back to the military
+    if (r.back.w > 0.0f && !ghost) {
+        const bool backHot = r.back.contains(mx, my);
+        if (backHot) noteHover(r.back);
+        drawRect(r.back, backHot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+        const float bx = r.back.x + r.back.w * 0.5f, by = r.back.y + r.back.h * 0.5f;
+        drawUiTris({ { bx + hw, by - hh, WHITE }, { bx - hw, by, WHITE }, { bx + hw, by + hh, WHITE } });
+        noteTip(lang("UILABEL_ALTAR_TO_MILITARY_TIP"), r.back);
+    }
 }
 
 void Renderer::drawSquadsRoster(World& w, const SquadsLayout& SL, const std::array<std::vector<ObjectId>, 2>& cols,

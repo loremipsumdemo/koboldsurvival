@@ -11,6 +11,7 @@
 #include "factions.h"
 #include "items.h"
 #include "npc_camps.h"
+#include "npc_roles.h"
 #include "spatial.h"
 #include "systems_internal.h"
 #include <map>
@@ -86,7 +87,7 @@ void giveBuilders(World& w, int faction) {
 void giveCitizenTasks(World& w, int faction) {
     static const std::vector<BehaviorRule> wanted = defaultCitizenBehaviors();
     for (ObjectId u : w.view<Citizen, Behaviors>()) {
-        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Mob>(u)) continue;
+        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Mob>(u) || w.has<Fortified>(u)) continue;   // the Fortified keep their own tasks
         Behaviors* b = w.get<Behaviors>(u);
         bool changed = false;
         for (const BehaviorRule& r : wanted) {
@@ -125,7 +126,7 @@ void giveHaulers(World& w, const std::vector<Claim>& claims, int faction) {
         wanted.push_back(haul);
     }
     for (ObjectId u : w.view<Citizen, Behaviors>()) {
-        if (factionOf(w, u) != faction || w.has<Corpse>(u)) continue;
+        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Fortified>(u)) continue;
         Behaviors* b = w.get<Behaviors>(u);
         bool changed = false;
         const size_t before = b->rules.size();
@@ -683,6 +684,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     clock.hours = 0.0;
     const std::vector<Claim> claims = claimsOf(w);
     perimeterHour(w, t, claims, hours);
+    npcRolesHour(w, hours);   // each NPC faction's share of citizens, military and Fortified (npc_roles.h)
 
     // The buildings under way, NPC factions' and yours (laid from the Build tab's Building Blueprint): when what is laid of one is
     // built, the ghosts of its next stage become blueprints. An NPC building that makes no progress is condemned, then pulled down.
@@ -805,6 +807,11 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         giveHaulers(w, claims, c.owner);
         giveCitizenTasks(w, c.owner);
         if (building.count(c.owner)) continue;
+        // Perimeter first: no new building is begun while its Perimeter is not whole (once it has a home to build it from)
+        if (factionRules(w, c.owner).buildOrder == BuildOrder::PerimeterFirst && c.radius > PERIMETER_MIN_RADIUS &&
+            w.resource<PerimeterDays>().said[c.owner] == 2) {
+            continue;
+        }
         if (!mapped) {
             map = buildingMap(w);
             clusters = buildingClusters(w, map);

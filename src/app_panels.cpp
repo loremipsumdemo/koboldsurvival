@@ -486,6 +486,7 @@ void App::moveSelectedTo(float x, float z) {
 bool App::overPanels(float x, float y, int W, int H) {
     if (planPopup.open) return true;   // the Building Blueprint popout takes the whole screen's clicks
     if (perim.active && layoutPerimeter(W, H, perim.x, perim.y).panel.contains(x, y)) return true;
+    if (noUnitsShown() && layoutNoUnits(W, H, noUnits.x, noUnits.y).panel.contains(x, y)) return true;
     if (planPick.active && sidebarFor(W, H, sidebarScroll).panel.contains(x, y)) return true;
     if (bpEdit.active) {
         const BlueprintLayout bl = layoutBlueprint(W, H, bpEdit);

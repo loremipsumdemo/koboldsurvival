@@ -6,6 +6,7 @@
 #include "recipes.h"
 #include "commerce.h"
 #include "schedule.h"
+#include "gates.h"
 #include "formation.h"
 
 using namespace systems_detail;
@@ -315,6 +316,92 @@ bool guardSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, Obj
     to = edge[(size_t)rng.range(0, (int)edge.size() - 1)];
     return true;
 }
+
+constexpr float NIGHT_HOME_SECONDS = 4.0f;   // how often an idle citizen looks for the way into the perimeter
+
+// At night a citizen outside its Altar's walls goes back in: if one of the Altar's gates is shut it goes to just outside it, where it asks to
+// be let in (gates.h), and otherwise to the inside of the claim. False if it is already in, or there is nowhere to go.
+// Returns 0 if there is nothing to do, 1 to go to `to`, 2 to stay where it is (it is at the gate, asking); gate is the gate it asks at.
+int nightHomeSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, bool night, Vec2& to, ObjectId& gate) {
+    gate = NO_OBJECT;
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return 0;
+    const int faction = factionOf(w, u);
+    const Claim* home = nullptr;
+    float best = 0.0f;
+    for (const Claim& c : claims) {
+        if (c.owner != faction || c.camp || !w.has<Prop>(c.altar)) continue;
+        const float d2 = distSq(c.x, c.z, ut->x, ut->z);
+        if (!home || d2 < best) {
+            home = &c;
+            best = d2;
+        }
+    }
+    if (!home) return 0;
+    const bool beyondClaim = std::sqrt(best) > home->radius * 0.85f;
+    {
+        // The nearest shut gate of the claim it is outside of (outside it by the gate's facing, whatever its distance from the Altar)
+        float bestGate = 0.0f;
+        for (ObjectId g : ownGates(w, faction)) {
+            if (!gateShut(w, g)) continue;
+            const Vec2 c = gateCenter(w, g);
+            if (distSq(c.x, c.z, home->x, home->z) > home->radius * home->radius) continue;
+            if (!beyondClaim && (gateSideOf(w, g, ut->x, ut->z) <= 2.0f || distSq(c.x, c.z, ut->x, ut->z) > 30.0f * 30.0f)) continue;
+            const float d2 = distSq(c.x, c.z, ut->x, ut->z);
+            if (gate == NO_OBJECT || d2 < bestGate) {
+                gate = g;
+                bestGate = d2;
+            }
+        }
+        if (gate != NO_OBJECT) {
+            const Vec2 spot = gateSpot(w, gate, 1.5f);
+            if (std::hypot(ut->x - spot.x, ut->z - spot.z) <= 1.0f) return 2;   // already asking at it
+            to = spot;
+            return 1;
+        }
+    }
+    return night && beyondClaim && claimInnerSpot(w, t, u, home->x, home->z, to) ? 1 : 0;
+}
+
+// An idle citizen outside the perimeter: shut out by a gate (at any hour), it goes to the front of it to ask to be let in, where a gate's
+// keeper opens it; at night, outside everything, it goes back in. True while it has that to do (so it does not drift off).
+bool homewardMove(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, bool night, float dt) {
+    HomewardLook* look = w.get<HomewardLook>(u);
+    if (!look) look = &w.add(u, HomewardLook{});
+    if ((look->left -= dt) > 0.0f) return w.has<AskingEntry>(u);
+    look->left = NIGHT_HOME_SECONDS;
+    Vec2 to;
+    ObjectId gate = NO_OBJECT;
+    const int go = nightHomeSpot(w, t, claims, u, night, to, gate);
+    if (go != 0 && gate != NO_OBJECT) w.add(u, AskingEntry{ gate });
+    else w.remove<AskingEntry>(u);
+    if (go == 1) autoWalk(w, t, u, to, 0);
+    return go != 0;
+}
+
+// A Fortified unit's walks on its idle duties are paced: after one it waits this long, and much longer if no way was found, so a goal
+// it cannot reach (a gate's inside from outside, a walkway with no Slope) is not planned again every step. Not saved.
+struct FortPause {
+    float left = 0.0f;
+};
+constexpr float FORT_FAIL_PAUSE = 12.0f;
+
+void fortWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int storey) {
+    FortPause* fp = w.get<FortPause>(u);
+    if (!fp) fp = &w.add(u, FortPause{});
+    if (fp->left > 0.0f) return;
+    autoWalk(w, t, u, to, storey);
+    const PathPace* pp = w.get<PathPace>(u);
+    fp->left = (pp && pp->quiet > 0.0f) ? FORT_FAIL_PAUSE : (walkingNow(w, u) ? 0.5f : FORT_FAIL_PAUSE / 3.0f);
+}
+
+// What a unit was last seen doing, for the Game tab's New Tasks and Task Cancelations lines. Not saved.
+struct TaskMemo {
+    bool busy = false;
+    BehaviorKind kind = BehaviorKind::Eat;
+    ObjectId prop = NO_OBJECT;
+    std::string name;
+};
 
 // The middle of the faction's nearest claim, an Altar's or a camp's
 bool claimMiddle(const std::vector<Claim>& claims, int faction, float x, float z, Vec2& out) {
@@ -705,7 +792,8 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
     }
     if (r.kind == BehaviorKind::Sleep) {
         r.why = BehaviorWait::None;
-        if (activityOf(w, u) != Activity::Sleep || !w.has<Needs>(u) || w.has<Mob>(u) || w.has<OccupyBan>(u)) return false;
+        // A gate's keeper stays at its post through the night (it still rests when it needs to)
+        if (activityOf(w, u) != Activity::Sleep || !w.has<Needs>(u) || w.has<Mob>(u) || w.has<OccupyBan>(u) || w.has<GateKeeper>(u)) return false;
         const ObjectId bed = restTarget(w, claims, u);
         if (bed == NO_OBJECT) {
             r.why = BehaviorWait::NoBed;
@@ -1069,6 +1157,23 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
     }
     for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
+        // A task begun, or one dropped for another, goes to the Game tab (both filters start off)
+        TaskMemo* memo = nullptr;
+        if (!w.has<Mob>(u)) {
+            memo = w.get<TaskMemo>(u);
+            if (!memo) memo = &w.add(u, TaskMemo{});
+            const bool same = b->busy && memo->busy && b->step.kind == memo->kind && b->stepProp == memo->prop;
+            if (memo->busy && b->busy && !same) {
+                queueLog(w, langf("MISC_TASK_CANCELLED", { nameOf(w, u), memo->name }), LogKind::TaskCancel, npcOnly(w, u));
+            }
+            if (b->busy && !same) {
+                memo->name = behaviorName(b->step);
+                queueLog(w, langf("MISC_TASK_STARTED", { nameOf(w, u), memo->name }), LogKind::TaskNew, npcOnly(w, u));
+            }
+            memo->busy = b->busy;
+            memo->kind = b->step.kind;
+            memo->prop = b->stepProp;
+        }
         bool any = false;
         for (BehaviorRule& r : b->rules) {
             if (!isAutoStep(r.kind)) continue;
@@ -1078,7 +1183,11 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         }
         if (b->busy) {
             const BehaviorRule* current = stepRule(*b);
-            if (!current || !current->on) stopAutoStep(w, u, *b);
+            if (!current || !current->on) {
+                if (memo && memo->busy) queueLog(w, langf("MISC_TASK_CANCELLED", { nameOf(w, u), memo->name }), LogKind::TaskCancel, npcOnly(w, u));
+                if (memo) memo->busy = false;
+                stopAutoStep(w, u, *b);
+            }
         }
         if (!any && b->seek == NO_OBJECT && !b->seeking) continue;
         if (w.has<LeavingDance>(u)) continue;
@@ -1118,6 +1227,14 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             b->seeking = false;
             b->wait = resume;
             continue;
+        }
+        // Sent to open or shut a gate: it walks there and works it, whatever else it was doing
+        if (w.has<GateWork>(u)) {
+            if (b->busy) stopAutoStep(w, u, *b);
+            if (gateWorkStep(w, t, u, dt)) {
+                b->wait = resume;
+                continue;
+            }
         }
         // The Work hours are over: what is under way stops, and the unit goes on to sleeping or recreation
         if (b->busy && isWorkTask(b->step.kind) && !scheduleAllows(w, u, b->step.kind)) {
@@ -1529,16 +1646,72 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                 break;
             }
         }
+        if (FortPause* fp = w.get<FortPause>(u)) fp->left -= dt;
         // Nothing to do: after a while idle, a unit near the edge of its claim goes back in, to the middle half of it
         if (started) {
             b->idleFor = 0.0f;
-        } else if (w.has<Fortified>(u)) {
-            // Fortified: guards the Perimeter, a spot at a time
-            if ((b->idleFor += dt) >= GUARD_SECONDS) {
-                b->idleFor = 0.0f;
-                Vec2 to;
-                if (storeyOf(w, u) == 0 && guardSpot(w, t, claims, u, rng, to)) autoWalk(w, t, u, to, 0);
+            w.remove<Patrolling>(u);
+            w.remove<AskingEntry>(u);
+        } else if (w.has<Fortified>(u) && storeyOf(w, u) == 0 && homewardMove(w, t, claims, u, true, dt)) {
+            // A Fortified unit outside the Perimeter or shut out by its gate: it goes in (or asks to be let in) before any duty
+            b->idleFor = 0.0f;
+            w.remove<Patrolling>(u);
+        } else if (const GateKeeper* keeper = w.get<GateKeeper>(u); keeper && w.has<Fortified>(u)) {
+            // Holds a gate, the first duty of the Fortified: it stands just inside it
+            b->idleFor = 0.0f;
+            w.remove<Patrolling>(u);
+            const Transform* ut = w.get<Transform>(u);
+            const PerimeterRoute& route = perimeterRoute(w, factionOf(w, u));
+            const auto top = route.gateTops.find(keeper->gate);
+            if (top != route.gateTops.end()) {
+                // Guards it from on top of it, where a Slope leads up
+                if (ut && !(storeyOf(w, u) == 1 && std::hypot(ut->x - top->second.x, ut->z - top->second.z) < GATE_KEEP_REACH)) {
+                    fortWalk(w, t, u, top->second, 1);
+                }
+            } else {
+                // No way up: it stands just inside the gate
+                const Vec2 post = gateSpot(w, keeper->gate, -1.0f);
+                if (onPerimeterTop(w, u)) climbDownPerimeter(w, t, u);
+                else if (ut && storeyOf(w, u) == 0 && std::hypot(ut->x - post.x, ut->z - post.z) > GATE_KEEP_REACH) fortWalk(w, t, u, post, 0);
             }
+        } else if (const GuardPostDuty* duty = w.get<GuardPostDuty>(u); duty && w.has<Fortified>(u)) {
+            // Holds a Guard Post: it stands by it (below a gate's keeper, above the route)
+            b->idleFor = 0.0f;
+            w.remove<Patrolling>(u);
+            const Transform* ut = w.get<Transform>(u);
+            const Transform* pt = w.get<Transform>(duty->post);
+            if (onPerimeterTop(w, u)) climbDownPerimeter(w, t, u);
+            else if (ut && pt && storeyOf(w, u) == 0 && std::hypot(ut->x - pt->x, ut->z - pt->z) > GATE_KEEP_REACH) fortWalk(w, t, u, Vec2{ pt->x, pt->z }, 0);
+        } else if (w.has<Fortified>(u)) {
+            const PerimeterRoute& route = perimeterRoute(w, factionOf(w, u));
+            if (route.available && !route.points.empty()) {
+                // The perimeter route: marches the walkways from point to point, hopping, round a loop or back and forth along them
+                b->idleFor = 0.0f;
+                const int n = (int)route.points.size();
+                Patrolling* pat = w.get<Patrolling>(u);
+                if (!pat) pat = &w.add(u, Patrolling{ (int)(u % (ObjectId)n), false });
+                pat->at = ((pat->at % n) + n) % n;
+                const Transform* ut = w.get<Transform>(u);
+                const Vec2 at = route.points[(size_t)pat->at];
+                if (ut && storeyOf(w, u) == 1 && std::hypot(ut->x - at.x, ut->z - at.z) < 1.6f) pat->at = (pat->at + 1) % n;   // there: on to the next
+                pat->moving = true;
+                fortWalk(w, t, u, route.points[(size_t)pat->at], 1);
+            } else if (onPerimeterTop(w, u)) {
+                // Up on a walkway with no route to walk (a Slope has gone): down to the inside of the wall
+                w.remove<Patrolling>(u);
+                climbDownPerimeter(w, t, u);
+            } else {
+                // No route: guards the Perimeter, a spot at a time
+                w.remove<Patrolling>(u);
+                if ((b->idleFor += dt) >= GUARD_SECONDS) {
+                    b->idleFor = 0.0f;
+                    Vec2 to;
+                    if (storeyOf(w, u) == 0 && guardSpot(w, t, claims, u, rng, to)) fortWalk(w, t, u, to, 0);
+                }
+            }
+        } else if (w.has<Citizen>(u) && storeyOf(w, u) == 0 && homewardMove(w, t, claims, u, night, dt)) {
+            // Shut out by a gate (or out at night): asking to be let in, or on its way back
+            b->idleFor = 0.0f;
         } else if ((b->idleFor += dt) >= EDGE_IDLE_SECONDS) {
             b->idleFor = 0.0f;
             const Transform* ut = w.get<Transform>(u);

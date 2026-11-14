@@ -1,4 +1,5 @@
 #include "building.h"
+#include "gates.h"
 #include "app.h"
 #include "commerce.h"
 #include "systems_internal.h"
@@ -194,6 +195,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         if (ownAltar(world, target)) {
             out.push_back(MenuAction::ManageUnits);
             out.push_back(MenuAction::BehaviorGroups);
+            out.push_back(MenuAction::Schedule);
             out.push_back(MenuAction::AppeaseGhosts);
             out.push_back(MenuAction::SetPerimeter);
         }
@@ -288,6 +290,15 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             if (ground && canClimbUp(world, target)) out.push_back(MenuAction::Climb);
             if (up) out.push_back(MenuAction::ClimbDown);
         }
+        // A unit up on the walkway of a Perimeter Wall or Gate (it may have no Slope down any more) can climb down, on the inside
+        if (propInfo(p->kind).perimeter && !world.has<Blueprint>(target)) {
+            for (ObjectId u : selectedUnits(world)) {
+                if (onPerimeterTop(world, u)) {
+                    out.push_back(MenuAction::ClimbDown);
+                    break;
+                }
+            }
+        }
     }
     return out;
 }
@@ -330,6 +341,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
         case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
+        case MenuAction::Schedule: labels.push_back(lang("UILABEL_GROUPS_TAB_SCHEDULE")); break;
         case MenuAction::SetPerimeter: labels.push_back(lang("UILABEL_SET_PERIMETER")); break;
         case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
@@ -379,7 +391,7 @@ bool App::openContextMenuOn(ObjectId target, float mx, float my, bool squadPanel
     if (canBreak && (SDL_GetModState() & SDL_KMOD_SHIFT) != 0) actions.push_back(MenuAction::Destroy);
     if (actions.empty()) return false;
     if (menuActors(target).empty() && actions[0] == MenuAction::ManageUnits) {
-        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::AppeaseGhosts, MenuAction::SetPerimeter } };
+        session.contextMenu = ContextMenu{ true, mx, my, target, { MenuAction::ManageUnits, MenuAction::BehaviorGroups, MenuAction::Schedule, MenuAction::AppeaseGhosts, MenuAction::SetPerimeter } };
         playSfx(Sfx::UiMenuOpen);
         itemMenu.open = false;
         return true;
@@ -521,6 +533,10 @@ void App::pickMenuAction(MenuAction a) {
         openBehaviorGroups(target);
         return;
     }
+    if (a == MenuAction::Schedule) {
+        openSchedule(target);
+        return;
+    }
     if (a == MenuAction::SetPerimeter) {
         openPerimeter(target);
         return;
@@ -546,10 +562,22 @@ void App::pickMenuAction(MenuAction a) {
         playSfx(Sfx::UiToggle);
         return;
     }
-    // Your own Gate opens and shuts at once, from anywhere
+    // Your own Gate opens and shuts at once, but only while a unit of yours is inside it or on top of it to work it (never from outside)
     if ((a == MenuAction::OpenGate || a == MenuAction::CloseGate) && ownGate(target)) {
-        setGateShut(world, target, a == MenuAction::CloseGate);
-        showNotice(lang(a == MenuAction::CloseGate ? "MISC_GATE_CLOSED" : "MISC_GATE_OPENED"));
+        if (gateOperator(world, target) == NO_OBJECT) {
+            refuse(lang("MISC_GATE_NO_OPERATOR"));
+            return;
+        }
+        if (a == MenuAction::OpenGate && hostileNearGate(world, target)) {
+            refuse(lang("MISC_GATE_HOSTILES_SEEN"));
+            return;
+        }
+        // A unit has to do it: it is sent, walks to the gate and works it
+        if (!assignGateWork(world, target, a == MenuAction::CloseGate, GateJob::Manual)) {
+            refuse(lang("MISC_GATE_NO_OPERATOR"));
+            return;
+        }
+        showNotice(lang(a == MenuAction::CloseGate ? "MISC_GATE_CLOSING" : "MISC_GATE_OPENING"));
         playSfx(Sfx::UiToggle);
         return;
     }
@@ -729,6 +757,7 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::Rename:
     case MenuAction::AppeaseGhosts:
     case MenuAction::BehaviorGroups:
+    case MenuAction::Schedule:
     case MenuAction::StoreFilter:
         break;
     case MenuAction::CancelBuild:
@@ -777,6 +806,15 @@ void App::pickMenuAction(MenuAction a) {
     }
     case MenuAction::Climb:
     case MenuAction::ClimbDown: {
+        if (const Prop* tp = world.get<Prop>(target); tp && propInfo(tp->kind).perimeter) {
+            // Down from a Perimeter Wall or Gate's walkway: to the nearest open ground on its inside
+            int down = 0;
+            for (ObjectId u : actors) {
+                if (onPerimeterTop(world, u) && climbDownPerimeter(world, terrain, u)) ++down;
+            }
+            if (down > 0) playSfx(Sfx::UiOrder);
+            break;
+        }
         std::vector<ObjectId> climbers;
         for (ObjectId u : actors) {
             const bool above = storeyOf(world, u) == storeyOf(world, target) + 1;

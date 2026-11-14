@@ -14,7 +14,7 @@ struct AltarUi {
     bool open = false;
     std::map<ObjectId, int> moves;   // a unit and the column it is moving to
     std::array<int, 3> scroll{};
-    ObjectId pinned = NO_OBJECT;     // a unit whose card stays open after a click on its row
+    ObjectId pinned = NO_OBJECT;     // unused now: a unit's card shows only while the mouse is over its row
     ObjectId menuUnit = NO_OBJECT;   // the unit whose right-click menu is open, over the roster
     float menuX = 0.0f, menuY = 0.0f;
 };
@@ -46,6 +46,13 @@ struct PerimeterLayout {
 // x, y: where the window is (-1: the top middle until it is moved)
 PerimeterLayout layoutPerimeter(int W, int H, float x, float y);
 
+// The "You have no units selected." window, shown while no unit of yours is in a squad: a title bar to drag it by, a line of text and the
+// three ways back to something of yours. x, y: where the window is (-1: the top middle until it is moved)
+struct NoUnitsLayout {
+    Rect panel, title, message, altar, unit, claim;
+};
+NoUnitsLayout layoutNoUnits(int W, int H, float x, float y);
+
 // A general store's Allowed Items window
 struct StoreFilterUi {
     bool open = false;
@@ -74,6 +81,8 @@ struct BehaviorGroupsUi {
     int tab = 0;          // 0 the task lists, 1 the Schedule
     int paint = 1;        // the Schedule's brush: an Activity
     int schedScroll = 0;  // the Schedule's first row shown
+    bool scheduleOnly = false;   // the Schedule window (its own, from the Altar's menu), with no task lists
+    int perimPaint = 1;   // what a drag over the Perimeter Closed row sets its hours to: 1 closed, 0 open
 };
 
 // Renaming one of your units, from the Squad Panel or the roster
@@ -98,6 +107,7 @@ struct AltarRow {
     int index = 0;   // into its column's list
     Rect row, portrait, move;
     Rect group;      // a citizen's behavior group: click for the next, right-click for the one before
+    Rect back;       // a citizen's other arrow, left of its group: back to the military (only in the Altar's three columns)
 };
 
 struct AltarLayout {

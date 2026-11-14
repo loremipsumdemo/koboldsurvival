@@ -758,6 +758,12 @@ MISC_AUTO_HAUL_STORES	{0} stores {1} {2} in the {3}
 MISC_GATHER_NO_ROOM	{0} has no room for {1} and stops working
 UILABEL_TASK	Task: {0}
 UILABEL_TASK_IDLE	Idle
+UILABEL_TASK_GUARDING_GATE	Gatekeeping
+UILABEL_TASK_GUARDING_POST	Guarding a Post
+UILABEL_TASK_PATROLLING	Patrolling the Perimeter
+UILABEL_TASK_OPENING_GATE	Opening the Gate
+UILABEL_TASK_SHUTTING_GATE	Shutting the Gate
+UILABEL_TASK_ASKING_ENTRY	Waiting to be let in
 UILABEL_TASK_AUTO_GOING	{0} (on the way)
 UILABEL_TASK_SHARE_WALK	Going to {0} to share
 UILABEL_TASK_MOVING	Moving
@@ -1089,6 +1095,10 @@ UILABEL_OPEN_GATE	Open Gate
 UILABEL_CLOSE_GATE	Close Gate
 MISC_GATE_OPENED	Gate opened
 MISC_GATE_CLOSED	Gate closed
+MISC_GATE_OPENING	A unit goes to open the gate
+MISC_GATE_CLOSING	A unit goes to close the gate
+MISC_GATE_NO_OPERATOR	No unit of yours is inside the gate or on top of it to work it. A gate is never worked from outside
+MISC_GATE_HOSTILES_SEEN	Hostile units are in sight of the gate: it stays shut
 UILABEL_PERIMETER_TITLE	Perimeter
 UILABEL_PERIMETER_DRAW	Draw Perimeter
 UILABEL_PERIMETER_ERASE	Erase Perimeter
@@ -1096,6 +1106,11 @@ UILABEL_PERIMETER_RESET	Reset Perimeter
 UILABEL_PERIMETER_CONFIRM	Confirm Perimeter
 UILABEL_PERIMETER_CANCEL	Cancel Changes
 UILABEL_PERIMETER_HINT	Drag over the ground to draw or erase the Perimeter. The 5 by 5 round the Altar is always part of it
+UILABEL_NO_UNITS_TITLE	No Units
+UILABEL_NO_UNITS_TEXT	You have no units selected.
+UILABEL_NO_UNITS_ALTAR	Return to Altar
+UILABEL_NO_UNITS_UNIT	Return to nearest faction unit
+UILABEL_NO_UNITS_CLAIM	Return to nearest claim
 MISC_PERIMETER_SET	Perimeter set
 UILABEL_MANAGE_UNITS	Manage Units
 UILABEL_ALTAR_TOTALS	Military {0} / {1}    Citizens {2}  (soft cap {3}, hard cap {4}), {5} of them Fortified
@@ -1295,6 +1310,7 @@ PROP_PERIMETER_WALL	Perimeter Wall
 PROP_PERIMETER_GATE	Perimeter Gate
 PROP_SLOPE	Slope
 PROP_WATCHTOWER	Watchtower
+PROP_GUARD_POST	Guard Post
 PROP_LADDER	Ladder
 PROP_UPPER_FLOOR	Floor
 PROP_DRAGON_CRYSTAL	Dragon Crystal
@@ -1711,6 +1727,20 @@ UILABEL_RULES_RECRUIT	Recruits
 UILABEL_RULES_RECRUIT_TIP	Whom your faction takes in: outsiders rescued into one of your beds who wake there (not another player faction's), Factionless units who stay a minute in your claim, or both
 UILABEL_RULES_AID	Aid
 UILABEL_RULES_AID_TIP	Whom your units rescue and share food with: your own faction only, your allies too, or anyone not hostile
+UILABEL_RULES_FORTIFIED	Fortified Share
+UILABEL_RULES_FORTIFIED_TIP	The percent of its units that are Fortified: they guard the Perimeter, keep its gates and posts, march its walkways and build only its Perimeter pieces.
+UILABEL_RULES_MILITARY	Military Share
+UILABEL_RULES_MILITARY_TIP	The percent of its units that are military: they roam. The rest are citizens, who stay at the Altar, work and build.
+UILABEL_RULES_BUILD	Build Priority
+UILABEL_RULES_BUILD_TIP	What it builds first: its Perimeter before any other building, the nearest piece of anything, or its base before its Perimeter.
+UILABEL_RULES_GATES	Gate Hours
+UILABEL_RULES_GATES_TIP	When its Perimeter's gates are kept shut: in its units' sleeping hours, always, or never. A shut gate is opened for friendly units who ask, unless a hostile unit is in sight.
+UILABEL_RULE_PERIMETER_FIRST	Perimeter first
+UILABEL_RULE_BALANCED	Balanced
+UILABEL_RULE_BASE_FIRST	Base first
+UILABEL_RULE_GATES_SLEEP	Shut when asleep
+UILABEL_RULE_GATES_SHUT	Always shut
+UILABEL_RULE_GATES_OPEN	Always open
 UILABEL_RULE_FRIENDLY	Friendly
 UILABEL_RULE_NEUTRAL	Neutral
 UILABEL_RULE_HOSTILE	Hostile
@@ -1827,6 +1857,9 @@ UILABEL_SCHEDULE_GLOBAL	Citizens (Global Schedule)
 UILABEL_SCHEDULE_OVERRIDE	OVERRIDE
 UILABEL_SCHEDULE_USING_GLOBAL	(Using Global)
 UILABEL_SCHEDULE_HELP	Pick Sleep, Work or Recreation, then click or drag over the hours to paint them. A group that does not override uses the global schedule. Needs tasks (eating, healing, resting) happen at any hour.
+UILABEL_SCHEDULE_PERIMETER	Perimeter Closed
+UILABEL_SCHEDULE_PERIMETER_USING	(Same as Sleep)
+UILABEL_SCHEDULE_PERIMETER_TIP	The hours the Perimeter's gates are kept shut (red); in the green hours they are opened. Turn on the switch, then click or drag over the hours to set them. Without it, the gates are shut in the Sleep hours of the global schedule. Gates are shut and opened by your units (a Fortified gate keeper first), and anyone outside can still ask to be let in.
 PROP_GAME_TABLE	Game Table
 UILABEL_BEHAVIOR_PLAY	Playing
 UILABEL_BEHAVIOR_PLAY_TIP	In its Recreation hours, goes to a Game Table of its faction and plays at one of its four sides (up to 4 players). Gains Comfort while it plays
@@ -1846,6 +1879,10 @@ UILABEL_BLOCKED_ORDERS	Blocked orders
 MISC_PATH_FAILED	{0} can't find a way to ({1}, {2})
 MISC_UNSTUCK	{0} was freed from a wall and moved to ({1}, {2})
 MISC_TASK_FAILED	{0} gave up a task: {1}
+UILABEL_NEW_TASKS	New tasks assigned
+UILABEL_TASK_CANCELATIONS	Task cancelations
+MISC_TASK_STARTED	{0} started a task: {1}
+MISC_TASK_CANCELLED	{0} dropped a task: {1}
 UILABEL_STUCK	Stuck
 MISC_STUCK_NOMOVE	{0} has not moved in {3} seconds on the way to ({1}, {2})
 MISC_STUCK_NOWAY	{0} has no open way to ({1}, {2}): shut in

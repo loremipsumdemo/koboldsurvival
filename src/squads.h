@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "ecs.h"
+#include "factions.h"
 
 // Your faction's units are of two kinds:
 //  - military: the units you command (Commandable), each in one of nine numbered squads of at most 16
@@ -28,8 +29,8 @@ struct Citizen {
 };
 
 // A citizen of yours that is Fortified: automated military. It stays at the claim like a citizen, but does none of the citizen tasks
-// (its behavior group is not applied): it has its own, eating and resting as any unit does, and guarding the Perimeter of the Altar
-// whose claim it is in (claims.h). Saved.
+// (its behavior group is not applied): it has its own, eating and resting as any unit does, sleeping in the Sleep hours of the global
+// schedule (not its old group's own), building the Perimeter's pieces (walls, gates, slopes, towers, posts), and guarding the Perimeter of the Altar whose claim it is in (claims.h). Saved.
 struct Fortified {};
 
 // In the World's resources: the squads' names (empty is the default name) and which squad the Squad tab shows
@@ -57,7 +58,7 @@ void makeCitizen(World& w, ObjectId u);
 // A citizen (made one first, if it is military) becomes Fortified, and a Fortified unit a plain citizen again
 void makeFortified(World& w, ObjectId u);
 void unmakeFortified(World& w, ObjectId u);
-std::vector<ObjectId> fortifiedUnits(World& w);
+std::vector<ObjectId> fortifiedUnits(World& w, int faction = FACTION_PLAYER);
 
 // Gives a citizen back to you, in the preferred squad or the first with room. False if every squad is full.
 bool makeMilitary(World& w, ObjectId u, int preferred);

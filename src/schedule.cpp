@@ -7,6 +7,7 @@
 #include "calendar.h"
 #include "components.h"
 #include "squads.h"
+#include "factions.h"
 
 Schedule defaultSchedule() {
     Schedule s;
@@ -108,11 +109,24 @@ Activity activityAtHour(World& w, ObjectId u, int hour) {
     }
     BehaviorGroups& g = behaviorGroups(w);
     const Schedule* s = &g.schedule;
-    if (const Citizen* c = w.get<Citizen>(u); c && c->group >= 0 && c->group < (int)g.groupSchedules.size()) {
+    // A Fortified unit follows the global schedule: its old behavior group is not applied to it, so neither is that group's own
+    if (const Citizen* c = w.get<Citizen>(u); c && !w.has<Fortified>(u) && c->group >= 0 && c->group < (int)g.groupSchedules.size()) {
         const Faction* f = w.get<Faction>(u);
         if (f && f->id == FACTION_PLAYER && g.groupSchedules[(size_t)c->group].override) s = &g.groupSchedules[(size_t)c->group];
     }
     return (Activity)std::min<int>(s->hours[(size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1)], ACTIVITY_COUNT - 1);
+}
+
+bool perimeterClosedAtHour(World& w, int hour, int faction) {
+    if (faction != FACTION_PLAYER) {
+        const GateRule rule = factionRules(w, faction).gates;
+        if (rule == GateRule::AlwaysShut) return true;
+        if (rule == GateRule::AlwaysOpen) return false;
+        return npcSchedule(0).hours[(size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1)] == (unsigned char)Activity::Sleep;
+    }
+    const BehaviorGroups& g = behaviorGroups(w);
+    const size_t h = (size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1);
+    return g.perimeter.override ? g.perimeter.hours[h] != 0 : g.schedule.hours[h] == (unsigned char)Activity::Sleep;
 }
 
 Activity activityOf(World& w, ObjectId u) {

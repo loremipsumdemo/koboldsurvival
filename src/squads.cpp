@@ -72,7 +72,7 @@ Vec2 citizenHome(World& w, ObjectId u) {
     Vec2 home = tr ? Vec2{ tr->x, tr->z } : Vec2{ 0.0f, 0.0f };
     float best = -1.0f;
     for (const Claim& c : claimsOf(w)) {
-        if (c.owner != FACTION_PLAYER) continue;
+        if (c.owner != factionOf(w, u) || (c.camp && c.owner != FACTION_PLAYER)) continue;
         const float d2 = distSq(c.x, c.z, home.x, home.z);
         if (best < 0.0f || d2 < best) {
             best = d2;
@@ -120,10 +120,10 @@ void makeCitizen(World& w, ObjectId u) {
     addBehavior(b.rules, stayNearHome());
 }
 
-std::vector<ObjectId> fortifiedUnits(World& w) {
+std::vector<ObjectId> fortifiedUnits(World& w, int faction) {
     std::vector<ObjectId> out;
     for (ObjectId u : w.view<Entity, Citizen, Fortified>()) {
-        if (factionOf(w, u) == FACTION_PLAYER) out.push_back(u);
+        if (factionOf(w, u) == faction) out.push_back(u);
     }
     std::sort(out.begin(), out.end());
     return out;
@@ -143,6 +143,15 @@ void makeFortified(World& w, ObjectId u) {
     for (const BehaviorRule& r : defaultBehaviors()) {
         if (std::find(std::begin(KEEP), std::end(KEEP), r.kind) != std::end(KEEP)) next.push_back(r);
     }
+    // And Sleep, which goes to a bed in the Sleep hours of the global schedule. Without it they never sleep, and the gates (shut once
+    // all of yours are asleep) would never shut.
+    BehaviorRule sleep;
+    sleep.kind = BehaviorKind::Sleep;
+    addBehavior(next, sleep, BEHAVIOR_TASKS_MAX);
+    // And building, only of the Perimeter's pieces (startBuildStep keeps them to those, and keeps a gate's keeper and a post's guard at theirs)
+    BehaviorRule build;
+    build.kind = BehaviorKind::AutoConstruct;
+    addBehavior(next, build, BEHAVIOR_TASKS_MAX);
     if (b->busy) b->busy = false;
     w.remove<SoloMove>(u);
     b->rules = std::move(next);
