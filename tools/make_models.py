@@ -113,13 +113,13 @@ def legs(x, z, height, width, color):
 def wheel(x, z, radius):
     """A wheel with its axle along z, starting at z."""
     return [cyl(x, radius, z, radius * 2, 0.05, radius * 2, DARK_WOOD, 90, 90),
-            cyl(x, radius, z + 0.01, radius * 0.6, 0.05, radius * 0.6, IRON, 90, 90)]
+            cyl(x, radius, z + 0.01, radius * 0.6, 0.06, radius * 0.6, IRON, 90, 90)]
 
 
 def barrel_parts(x, y, z, width, height, color=WOOD):
     return [cyl(x, y, z, width, height, width, color),
-            cyl(x, y + height * 0.15, z, width * 1.04, height * 0.07, width * 1.04, IRON),
-            cyl(x, y + height * 0.78, z, width * 1.04, height * 0.07, width * 1.04, IRON)]
+            cyl(x, y + height * 0.15, z, width * 1.08, height * 0.07, width * 1.08, IRON),
+            cyl(x, y + height * 0.78, z, width * 1.08, height * 0.07, width * 1.08, IRON)]
 
 
 def flame(x, y, z, width, height):
@@ -131,7 +131,7 @@ def wagon():
     for z in (-0.3, 0.3):
         parts.append(box(-0.1, 0.38, z, 1.1, 0.22, 0.05, PALE_WOOD))
     for x in (-0.65, 0.45):
-        parts.append(box(x, 0.38, 0, 0.05, 0.22, 0.66, PALE_WOOD))
+        parts.append(box(x, 0.38, 0, 0.05, 0.23, 0.68, PALE_WOOD))   # a hair taller than the side rails, so their tops don't share a plane
     for x in (-0.42, 0.22):
         parts.append(rod((x, 0.24, -0.42), (x, 0.24, 0.42), 0.04, IRON))
         parts += wheel(x, 0.36, 0.24) + wheel(x, -0.41, 0.24)
@@ -157,13 +157,13 @@ def bedroll():
 
 
 def bed():
-    return legs(0.65, 0.36, 0.2, 0.08, DARK_WOOD) + [
-        box(0, 0.12, 0, 1.3, 0.08, 0.78, DARK_WOOD), box(0, 0.2, 0, 1.26, 0.09, 0.72, LINEN), box(0.17, 0.26, 0, 0.92, 0.05, 0.76, BLUE),
-        ball(-0.45, 0.28, 0, 0.24, 0.06, 0.5, LINEN), box(-0.67, 0, 0, 0.06, 0.6, 0.8, DARK_WOOD), box(0.67, 0, 0, 0.06, 0.38, 0.8, DARK_WOOD)]
+    return legs(0.65, 0.36, 0.19, 0.08, DARK_WOOD) + [
+        box(0, 0.12, 0, 1.3, 0.08, 0.78, DARK_WOOD), box(0, 0.2, 0, 1.26, 0.09, 0.72, LINEN), box(0.17, 0.26, 0, 0.9, 0.05, 0.76, BLUE),
+        ball(-0.45, 0.28, 0, 0.24, 0.06, 0.5, LINEN), box(-0.67, 0, 0, 0.06, 0.6, 0.82, DARK_WOOD), box(0.67, 0, 0, 0.06, 0.38, 0.82, DARK_WOOD)]
 
 
 def barrel():
-    return barrel_parts(0, 0, 0, 0.55, 0.7) + [cyl(0, 0.7, 0, 0.47, 0.005, 0.47, DARK_WOOD)]
+    return barrel_parts(0, 0, 0, 0.55, 0.7) + [cyl(0, 0.7, 0, 0.47, 0.012, 0.47, DARK_WOOD)]
 
 
 def ore():
@@ -217,28 +217,30 @@ def locked_chest():
     parts = [box(0, 0, 0, 0.94, 0.06, 0.6, DARK_WOOD),                                   # plinth
              box(0, 0.06, 0, 0.9, 0.3, 0.56, WOOD)]                                       # body
     for y in (0.15, 0.24):                                                                # plank seams, front and back
-        parts += [box(0, y, 0.282, 0.9, 0.012, 0.01, DARK_WOOD), box(0, y, -0.282, 0.9, 0.012, 0.01, DARK_WOOD)]
-    # The lid is a half cylinder lying along x, resting on the body
-    parts.append(cyl(0.45, 0.36, 0, 0.56, 0.9, 0.56, DARK_WOOD, 0, 90))
+        parts += [box(0, y, 0.295, 0.9, 0.012, 0.02, DARK_WOOD), box(0, y, -0.295, 0.9, 0.012, 0.02, DARK_WOOD)]
+    # The lid is a half cylinder lying along x, resting on the body. It runs a little past the body's ends (0.48 against 0.45), so its end
+    # caps are not flush with the body's sides. The straps and corner plates stop just under the body's top, and each ring over the lid
+    # is a little wider than the strap beneath it, so no cap, side or top shares a plane.
+    parts.append(cyl(0.49, 0.36, 0, 0.56, 0.98, 0.56, DARK_WOOD, 0, 90))
     for x in (-0.3, 0.3):
-        parts.append(box(x, 0.06, 0, 0.07, 0.3, 0.585, IRON))                           # strap down the body
-        parts.append(cyl(x + 0.035, 0.36, 0, 0.6, 0.07, 0.6, IRON, 0, 90))             # and over the lid
+        parts.append(box(x, 0.06, 0, 0.07, 0.29, 0.585, IRON))                          # strap down the body
+        parts.append(cyl(x + 0.045, 0.36, 0, 0.6, 0.09, 0.6, IRON, 0, 90))             # and over the lid
     for sx in (-1, 1):
         for sz in (-1, 1):
-            parts.append(box(sx * 0.435, 0.06, sz * 0.27, 0.075, 0.3, 0.075, IRON))     # corner plates
-    parts += [box(0, 0.2, 0.287, 0.15, 0.2, 0.03, IRON),                                 # hasp plate on the front
-              box(0, 0.12, 0.315, 0.11, 0.1, 0.045, BRASS),                              # padlock body
-              box(0, 0.22, 0.315, 0.05, 0.05, 0.03, BRASS),                              # its shackle
-              box(0, 0.145, 0.34, 0.02, 0.035, 0.01, DARK_STONE)]                        # keyhole
+            parts.append(box(sx * 0.435, 0.06, sz * 0.27, 0.075, 0.29, 0.075, IRON))    # corner plates
+    parts += [box(0, 0.2, 0.3, 0.15, 0.2, 0.04, IRON),                                 # hasp plate on the front
+              box(0, 0.12, 0.325, 0.11, 0.1, 0.05, BRASS),                              # padlock body
+              box(0, 0.22, 0.33, 0.05, 0.05, 0.04, BRASS),                               # its shackle
+              box(0, 0.145, 0.35, 0.02, 0.035, 0.02, DARK_STONE)]                        # keyhole
     return parts
 
 
 def prisoner_cage():
     s = 0.6
-    parts = legs(s, s, 1.8, 0.08, IRON) + [box(0, 0, 0, s * 2 + 0.08, 0.1, s * 2 + 0.08, DARK_WOOD), cyl(0, 0.1, 0, 0.9, 0.01, 0.9, STRAW)]
+    parts = legs(s, s, 1.8, 0.08, IRON) + [box(0, 0, 0, s * 2 + 0.12, 0.1, s * 2 + 0.12, DARK_WOOD), cyl(0, 0.1, 0, 0.9, 0.01, 0.9, STRAW)]
     for sz in (-1, 1):
         parts.append(box(0, 1.72, sz * s, s * 2, 0.06, 0.06, IRON))
-        parts.append(box(sz * s, 1.72, 0, 0.06, 0.06, s * 2, IRON))
+        parts.append(box(sz * s, 1.72, 0, 0.06, 0.07, s * 2, IRON))   # a hair taller, so the rails' tops don't share a plane at the corners
     for t in (-0.36, -0.12, 0.12, 0.36):
         for sz in (-1, 1):
             parts.append(box(t, 0.1, sz * s, 0.03, 1.62, 0.03, IRON))
@@ -249,17 +251,17 @@ def prisoner_cage():
 def taming_cage():
     """A wide wooden pen with a pitched roof, a straw floor and a feeding trough at the front, for an animal being tamed."""
     s = 0.7
-    parts = legs(s, s, 1.5, 0.1, DARK_WOOD) + [box(0, 0, 0, s * 2 + 0.1, 0.1, s * 2 + 0.1, DARK_WOOD),
+    parts = legs(s, s, 1.5, 0.1, DARK_WOOD) + [box(0, 0, 0, s * 2 + 0.14, 0.1, s * 2 + 0.14, DARK_WOOD),
                                                  cyl(0, 0.1, 0, 1.2, 0.01, 1.2, STRAW)]
     # Rails round the sides, and slats between them
     for y in (0.45, 1.1, 1.45):
         for sz in (-1, 1):
             parts.append(box(0, y, sz * s, s * 2, 0.07, 0.06, WOOD))
-            parts.append(box(sz * s, y, 0, 0.06, 0.07, s * 2, WOOD))
+            parts.append(box(sz * s, y, 0, 0.06, 0.08, s * 2, WOOD))
     for t in (-0.45, -0.15, 0.15, 0.45):
         for sz in (-1, 1):
-            parts.append(box(t, 0.1, sz * s, 0.05, 1.4, 0.05, WOOD))
-            parts.append(box(sz * s, 0.1, t, 0.05, 1.4, 0.05, WOOD))
+            parts.append(box(t, 0.1, sz * s, 0.04, 1.4, 0.04, WOOD))
+            parts.append(box(sz * s, 0.1, t, 0.04, 1.4, 0.04, WOOD))
     # A low pitched roof
     parts.append(box(0, 1.52, 0, s * 2 + 0.2, 0.06, s * 2 + 0.2, DARK_WOOD))
     parts.append(pyramid(0, 1.58, 0, s * 2 + 0.1, 0.22, s * 2 + 0.1, BARK))
@@ -271,8 +273,8 @@ def taming_cage():
 def chair():
     parts = legs(0.18, 0.18, 0.43, 0.04, DARK_WOOD) + [box(0, 0.43, 0, 0.44, 0.04, 0.44, WOOD), box(0, 0.47, 0, 0.36, 0.025, 0.36, RED)]
     for s in (-1, 1):
-        parts.append(box(s * 0.18, 0.47, -0.18, 0.04, 0.43, 0.04, DARK_WOOD))
-    return parts + [box(0, 0.62, -0.18, 0.36, 0.05, 0.03, WOOD), box(0, 0.78, -0.18, 0.4, 0.12, 0.035, WOOD)]
+        parts.append(box(s * 0.18, 0.47, -0.18, 0.04, 0.42, 0.04, DARK_WOOD))
+    return parts + [box(0, 0.62, -0.18, 0.36, 0.05, 0.03, WOOD), box(0, 0.78, -0.18, 0.44, 0.12, 0.06, WOOD)]
 
 
 def bench():
@@ -299,35 +301,43 @@ def table():
 def game_table():
     """A square table with a map, dice and cards on it, a seat on each side."""
     return legs(0.6, 0.6, 0.72, 0.08, DARK_WOOD) + [
-        box(0, 0.72, 0, 1.4, 0.06, 1.4, WOOD), box(0, 0.78, 0, 0.9, 0.012, 0.7, CANVAS, 8), box(0.1, 0.792, -0.05, 0.3, 0.008, 0.02, RED, 30),
-        box(-0.25, 0.792, 0.05, 0.02, 0.008, 0.3, BLUE, 20), box(0.5, 0.78, 0.4, 0.14, 0.012, 0.2, LINEN, 20), box(0.52, 0.792, 0.42, 0.14, 0.012, 0.2, LINEN, -10),
+        box(0, 0.72, 0, 1.4, 0.06, 1.4, WOOD), box(0, 0.78, 0, 0.9, 0.012, 0.7, CANVAS, 8), box(0.1, 0.792, -0.05, 0.3, 0.012, 0.02, RED, 30),
+        box(-0.25, 0.792, 0.05, 0.02, 0.012, 0.3, BLUE, 20), box(0.5, 0.78, 0.4, 0.14, 0.012, 0.2, LINEN, 20), box(0.52, 0.792, 0.42, 0.14, 0.012, 0.2, LINEN, -10),
         box(-0.5, 0.78, -0.4, 0.07, 0.07, 0.07, LINEN, 25), box(-0.38, 0.78, -0.32, 0.07, 0.07, 0.07, RED, 50)]
 
 
 def end_table():
     return legs(0.19, 0.19, 0.42, 0.045, DARK_WOOD) + [
-        box(0, 0.42, 0, 0.42, 0.17, 0.42, DARK_WOOD), box(0, 0.45, 0.205, 0.32, 0.11, 0.02, WOOD), box(0, 0.49, 0.22, 0.04, 0.03, 0.03, BRASS),
+        box(0, 0.42, 0, 0.42, 0.17, 0.42, DARK_WOOD), box(0, 0.45, 0.215, 0.32, 0.11, 0.02, WOOD), box(0, 0.49, 0.23, 0.04, 0.03, 0.03, BRASS),
         box(0, 0.59, 0, 0.47, 0.035, 0.47, WOOD), cyl(0.05, 0.625, -0.04, 0.05, 0.05, 0.05, LINEN), cone(0.05, 0.675, -0.04, 0.03, 0.025, 0.03, FLAME)]
 
 
 def round_table():
-    return [box(0, 0, 0, 0.75, 0.05, 0.12, DARK_WOOD), box(0, 0, 0, 0.12, 0.05, 0.75, DARK_WOOD), cyl(0, 0.05, 0, 0.14, 0.65, 0.14, DARK_WOOD),
+    return [box(0, 0, 0, 0.75, 0.05, 0.12, DARK_WOOD), box(0, 0, 0, 0.12, 0.06, 0.75, DARK_WOOD), cyl(0, 0.05, 0, 0.14, 0.65, 0.14, DARK_WOOD),
             cyl(0, 0.7, 0, 1.2, 0.05, 1.2, WOOD), cyl(0.2, 0.75, 0.15, 0.2, 0.03, 0.2, IRON), cyl(-0.22, 0.75, -0.1, 0.08, 0.1, 0.08, PALE_WOOD)]
 
 
 def research_table():
     """A wooden drafting table: a tilted board with a blueprint, loose paper and a pencil on it, and a stool tucked under."""
     paper, blue, ink = (236, 230, 212), (74, 112, 176), (220, 232, 250)
+    # Parts tilt about their own origins, so a sheet laid on the board has to be raised by how far the board's slope carries it at its
+    # x: lay() puts a sheet's base `base` above the board's top, measured straight out from the board, so a sheet never ends up in
+    # the board's own plane (or under it)
+    nx, ny = math.sin(math.radians(14)), math.cos(math.radians(14))
+    plane = ny * 0.75 + 0.04   # the board's top, along its normal, for a board whose origin is at x = 0
+
+    def lay(x, z, w, d, color, base, thick):
+        return box(x, (plane + base - nx * x) / ny, z, w, thick, d, color, 0, -14)
     parts = legs(0.6, 0.3, 0.7, 0.07, DARK_WOOD) + [
         box(0, 0.32, 0, 1.2, 0.05, 0.56, DARK_WOOD), box(0, 0.7, 0, 1.4, 0.05, 0.74, WOOD),
         # The board, tilted up at the back
         box(0, 0.75, -0.06, 1.26, 0.04, 0.6, PALE_WOOD, 0, -14),
-        box(-0.1, 0.8, -0.05, 0.78, 0.012, 0.46, blue, 0, -14),
-        box(-0.32, 0.815, -0.1, 0.24, 0.006, 0.02, ink, 0, -14), box(-0.1, 0.815, 0.02, 0.4, 0.006, 0.02, ink, 0, -14),
-        box(0.08, 0.815, -0.14, 0.02, 0.006, 0.26, ink, 0, -14), box(-0.24, 0.815, 0.1, 0.02, 0.006, 0.14, ink, 0, -14),
+        lay(-0.1, -0.05, 0.78, 0.46, blue, -0.004, 0.014),   # its top 0.01 over the board's
+        lay(-0.32, -0.1, 0.24, 0.02, ink, 0.006, 0.016), lay(-0.1, 0.02, 0.4, 0.02, ink, 0.006, 0.016),   # the lines, 0.012 over the blueprint
+        lay(0.08, -0.14, 0.02, 0.26, ink, 0.006, 0.016), lay(-0.24, 0.1, 0.02, 0.14, ink, 0.006, 0.016),
         # Loose paper, a pencil and a ruler
         box(0.46, 0.79, 0.02, 0.26, 0.012, 0.34, paper, 12, -14), box(0.5, 0.8, 0.08, 0.22, 0.01, 0.3, paper, -8, -14),
-        box(0.3, 0.79, 0.3, 0.3, 0.02, 0.025, (222, 178, 60), 20, 0), box(0.44, 0.79, 0.26, 0.04, 0.02, 0.025, (60, 50, 50), 20, 0),
+        box(0.3, 0.79, 0.3, 0.3, 0.02, 0.025, (222, 178, 60), 20, 0), box(0.44, 0.79, 0.26, 0.04, 0.03, 0.025, (60, 50, 50), 20, 0),
         box(-0.2, 0.78, 0.31, 0.5, 0.012, 0.05, BRASS), cyl(0.56, 0.75, -0.26, 0.09, 0.1, 0.09, IRON)]
     return parts
 
@@ -336,7 +346,7 @@ def workbench(top_color):
     """A stout bench with a shelf under it, shared by the three workbenches."""
     return legs(0.62, 0.3, 0.68, 0.09, DARK_WOOD) + [
         box(0, 0.68, 0, 1.45, 0.08, 0.74, top_color), box(0, 0.22, 0, 1.3, 0.04, 0.6, WOOD),
-        box(0, 0.5, -0.36, 1.45, 0.4, 0.03, DARK_WOOD)]
+        box(0, 0.5, -0.365, 1.41, 0.4, 0.03, DARK_WOOD)]
 
 
 def weapon_workbench():
@@ -364,15 +374,15 @@ def armor_workbench():
 def ammunition_workbench():
     """A bench with a sheaf of arrow shafts, a bowl of arrowheads, feathers, and a quiver standing on it."""
     parts = workbench(WOOD) + [
-        cyl(0.48, 0.76, -0.1, 0.2, 0.42, 0.2, (120, 84, 56)), box(0.48, 0.76, 0.0, 0.03, 0.42, 0.02, DARK_WOOD),
+        cyl(0.48, 0.76, -0.1, 0.2, 0.42, 0.2, (120, 84, 56)), box(0.48, 0.76, 0.0, 0.03, 0.4, 0.02, DARK_WOOD),
         cyl(-0.45, 0.76, 0.12, 0.26, 0.06, 0.26, DARK_STONE), cone(-0.45, 0.82, 0.12, 0.2, 0.08, 0.2, STEEL)]
     for i in range(5):
         parts.append(box(-0.05, 0.765, -0.16 + 0.07 * i, 0.62, 0.02, 0.02, PALE_WOOD, 4 * (i - 2)))
-        parts.append(box(-0.32, 0.765, -0.16 + 0.07 * i, 0.08, 0.03, 0.035, STEEL, 4 * (i - 2)))
+        parts.append(box(-0.33, 0.765, -0.16 + 0.07 * i, 0.08, 0.03, 0.035, STEEL, 4 * (i - 2)))
         parts.append(box(0.2, 0.775, -0.16 + 0.07 * i, 0.1, 0.03, 0.035, (228, 228, 236), 4 * (i - 2)))
     for dx in (-0.05, 0.0, 0.05):
         parts.append(box(0.48 + dx, 1.18, -0.1, 0.02, 0.16, 0.02, PALE_WOOD))
-        parts.append(box(0.48 + dx, 1.3, -0.1, 0.05, 0.08, 0.02, RED))
+        parts.append(box(0.48 + dx, 1.3, -0.1, 0.05, 0.08, 0.03, RED))
     return parts
 
 
@@ -391,7 +401,7 @@ def support_beam():
 
 
 def training_dummy():
-    return [box(0, 0, 0, 0.55, 0.08, 0.14, DARK_WOOD), box(0, 0, 0, 0.14, 0.08, 0.55, DARK_WOOD), cyl(0, 0.08, 0, 0.08, 1.2, 0.08, WOOD),
+    return [box(0, 0, 0, 0.55, 0.08, 0.14, DARK_WOOD), box(0, 0, 0, 0.14, 0.09, 0.55, DARK_WOOD), cyl(0, 0.08, 0, 0.08, 1.2, 0.08, WOOD),
             cyl(0, 0.65, 0, 0.42, 0.5, 0.42, BURLAP), ball(0, 1.2, 0, 0.28, 0.3, 0.28, BURLAP), box(0, 1.0, 0, 1.2, 0.06, 0.06, WOOD),
             cyl(0, 0.8, 0.2, 0.2, 0.02, 0.2, RED, 90, 90), cyl(-0.45, 0.85, 0.04, 0.36, 0.03, 0.36, WOOD, 90, 90)]
 
@@ -409,9 +419,11 @@ def raw_food_storage():
 
 
 def food_storage():
-    parts = [box(-0.4, 0, 0, 0.05, 1.0, 0.38, WOOD), box(0.4, 0, 0, 0.05, 1.0, 0.38, WOOD), box(0, 0, -0.18, 0.8, 1.0, 0.02, DARK_WOOD)]
-    for y in (0.02, 0.35, 0.67, 0.97):
-        parts.append(box(0, y, 0, 0.8, 0.03, 0.38, WOOD))
+    # The shelves stand 0.01 back from the posts' faces and end inside them, the back panel runs out past the posts' backs, and
+    # the top shelf and panel stop under the posts' tops, so nothing is flush
+    parts = [box(-0.4, 0, 0, 0.05, 1.0, 0.38, WOOD), box(0.4, 0, 0, 0.05, 1.0, 0.38, WOOD), box(0, 0, -0.185, 0.82, 0.98, 0.03, DARK_WOOD)]
+    for y in (0.02, 0.35, 0.67, 0.96):
+        parts.append(box(0, y, 0, 0.8, 0.03, 0.36, WOOD))
     return parts + [ball(-0.17, 0.05, 0, 0.3, 0.28, 0.26, BURLAP), cyl(0.18, 0.05, 0, 0.18, 0.25, 0.18, (172, 118, 76)),
                     cyl(-0.18, 0.38, 0, 0.26, 0.12, 0.26, (240, 205, 95)), ball(0.17, 0.38, 0.02, 0.24, 0.11, 0.14, STRAW),
                     cyl(-0.2, 0.7, 0, 0.14, 0.2, 0.14, (92, 134, 170)), ball(0.1, 0.7, 0.05, 0.1, 0.1, 0.1, RED), ball(0.24, 0.7, -0.03, 0.1, 0.1, 0.1, RED)]
@@ -419,15 +431,15 @@ def food_storage():
 
 def weapon_rack():
     parts = [box(-0.66, 0, 0, 0.08, 1.0, 0.08, DARK_WOOD), box(0.66, 0, 0, 0.08, 1.0, 0.08, DARK_WOOD), box(-0.66, 0, 0, 0.1, 0.08, 0.5, DARK_WOOD),
-             box(0.66, 0, 0, 0.1, 0.08, 0.5, DARK_WOOD), box(0, 0.92, 0, 1.4, 0.06, 0.08, WOOD), box(0, 0.12, 0.08, 1.3, 0.04, 0.06, WOOD)]
+             box(0.66, 0, 0, 0.1, 0.08, 0.5, DARK_WOOD), box(0, 0.92, 0, 1.44, 0.06, 0.1, WOOD), box(0, 0.12, 0.08, 1.3, 0.04, 0.06, WOOD)]
     parts += [box(-0.44, 0.16, 0.05, 0.045, 0.62, 0.012, STEEL), box(-0.44, 0.78, 0.05, 0.15, 0.025, 0.03, BRASS), box(-0.44, 0.8, 0.05, 0.03, 0.12, 0.03, DARK_WOOD)]
-    parts += [box(-0.1, 0.16, 0.05, 0.03, 0.76, 0.03, WOOD), box(-0.03, 0.72, 0.05, 0.2, 0.16, 0.016, STEEL)]
+    parts += [box(-0.1, 0.16, 0.05, 0.03, 0.76, 0.03, WOOD), box(-0.03, 0.72, 0.05, 0.2, 0.16, 0.01, STEEL)]
     parts += [box(0.42, 0.16, 0.05, 0.025, 0.72, 0.025, PALE_WOOD), pyramid(0.42, 0.88, 0.05, 0.07, 0.1, 0.02, STEEL)]
     return parts
 
 
 def armor_stand():
-    return [box(0, 0, 0, 0.56, 0.08, 0.14, DARK_WOOD), box(0, 0, 0, 0.14, 0.08, 0.56, DARK_WOOD), cyl(0, 0.08, 0, 0.06, 1.35, 0.06, WOOD),
+    return [box(0, 0, 0, 0.56, 0.08, 0.14, DARK_WOOD), box(0, 0, 0, 0.14, 0.09, 0.56, DARK_WOOD), cyl(0, 0.08, 0, 0.06, 1.35, 0.06, WOOD),
             box(0, 1.22, 0, 0.62, 0.05, 0.05, WOOD), cyl(0, 0.7, 0, 0.44, 0.6, 0.34, STEEL), cone(0, 0.45, 0, 0.42, 0.26, 0.3, IRON, 0, 0),
             ball(-0.3, 1.2, 0, 0.24, 0.17, 0.26, STEEL), ball(0.3, 1.2, 0, 0.24, 0.17, 0.26, STEEL), ball(0, 1.4, 0, 0.28, 0.3, 0.3, STEEL),
             box(0, 1.5, 0.14, 0.2, 0.025, 0.02, IRON)]
@@ -447,20 +459,20 @@ def water_tank():
 def water_pump():
     return [box(0, 0, 0, 0.6, 0.2, 0.6, DARK_STONE), cyl(0, 0.2, 0, 0.16, 0.95, 0.16, IRON), cyl(0, 1.15, 0, 0.2, 0.06, 0.2, STEEL),
             rod((0, 0.85, 0.05), (0, 0.8, 0.38), 0.07, IRON, 'cylinder'), rod((0, 0.8, 0.37), (0, 0.14, 0.37), 0.03, WATER, 'cylinder'),
-            box(0, 1.21, -0.04, 0.05, 0.19, 0.05, IRON), rod((0, 1.4, 0.14), (0, 1.25, -0.5), 0.04, WOOD),
-            box(0, 0, 0.48, 0.56, 0.22, 0.42, WOOD), box(0, 0.22, 0.48, 0.48, 0.005, 0.34, WATER)]
+            box(0, 1.21, -0.04, 0.06, 0.19, 0.06, IRON), rod((0, 1.4, 0.14), (0, 1.25, -0.5), 0.04, WOOD),
+            box(0, 0, 0.48, 0.56, 0.22, 0.42, WOOD), box(0, 0.22, 0.48, 0.48, 0.012, 0.34, WATER)]
 
 
 def forge():
     return [box(-0.2, 0, 0, 1.15, 0.9, 0.86, DARK_STONE), box(-0.2, 0.9, 0, 1.2, 0.07, 0.92, STONE), box(-0.2, 0.97, -0.1, 0.42, 0.63, 0.38, DARK_STONE),
-            box(-0.2, 0.15, 0.43, 0.6, 0.6, 0.03, (48, 44, 44)), box(-0.2, 0.2, 0.45, 0.46, 0.2, 0.02, GLOW),
+            box(-0.2, 0.15, 0.43, 0.6, 0.6, 0.03, (48, 44, 44)), box(-0.2, 0.2, 0.455, 0.46, 0.2, 0.03, GLOW),
             cyl(0.6, 0, 0.2, 0.28, 0.3, 0.28, BARK), box(0.6, 0.3, 0.2, 0.2, 0.05, 0.12, IRON), box(0.6, 0.35, 0.2, 0.09, 0.07, 0.08, IRON), box(0.6, 0.42, 0.2, 0.3, 0.05, 0.1, IRON)]
 
 
 def altar():
     parts = [box(0, 0, 0, 1.2, 0.14, 0.95, DARK_STONE), box(0, 0.14, 0, 0.95, 0.12, 0.75, STONE), box(0, 0.26, 0, 0.66, 0.36, 0.5, (150, 140, 170)),
              box(0, 0.62, 0, 0.8, 0.07, 0.6, STONE), cyl(0, 0.69, 0, 0.1, 0.1, 0.1, IRON), cyl(0, 0.79, 0, 0.42, 0.09, 0.42, IRON)]
-    parts += [rod((-0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255)), rod((0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255))]
+    parts += [rod((-0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255)), rod((0.09, 0.3, 0.267), (0, 0.52, 0.267), 0.022, (150, 225, 255))]
     parts += [rod((-0.5, 0.06, 0.32), (-0.2, 0.06, 0.32), 0.1, BARK, 'cylinder'), rod((-0.48, 0.06, 0.42), (-0.2, 0.06, 0.42), 0.1, BARK, 'cylinder')]
     return parts + [cyl(0, 0.88, 0, 0.3, 0.03, 0.3, (58, 44, 40))]   # the game draws its fire
 
@@ -483,31 +495,32 @@ def farm():
             parts.append(pyramid(x, 0.12, z, 0.16, 0.14, 0.16, LEAF))
     for sx in (-1, 1):
         for z in (-0.74, 0, 0.74):
-            parts.append(box(sx * 0.98, 0, z, 0.04, 0.33, 0.04, DARK_WOOD))
-        parts.append(box(sx * 0.98, 0.24, 0, 0.02, 0.03, 1.5, WOOD))
+            parts.append(box(sx * 0.97, 0, z, 0.04, 0.33, 0.04, DARK_WOOD))
+        parts.append(box(sx * 0.97, 0.24, 0, 0.02, 0.03, 1.48, WOOD))
     for sz in (-1, 1):
         for x in (-0.49, 0.49):
             parts.append(box(x, 0, sz * 0.74, 0.04, 0.33, 0.04, DARK_WOOD))
-        parts.append(box(0, 0.24, sz * 0.74, 2.0, 0.03, 0.02, WOOD))
-    return parts + [box(0.7, 0.08, 0.12, 0.04, 0.9, 0.04, WOOD), box(0.7, 0.72, 0.12, 0.62, 0.03, 0.03, WOOD), cyl(0.7, 0.45, 0.12, 0.26, 0.32, 0.18, RED),
+        parts.append(box(0, 0.25, sz * 0.74, 1.94, 0.03, 0.02, WOOD))
+    return parts + [box(0.7, 0.08, 0.12, 0.04, 0.9, 0.04, WOOD), box(0.7, 0.72, 0.12, 0.62, 0.03, 0.02, WOOD), cyl(0.7, 0.45, 0.12, 0.26, 0.32, 0.18, RED),
                     ball(0.7, 0.78, 0.12, 0.17, 0.18, 0.17, BURLAP), cone(0.7, 0.92, 0.12, 0.3, 0.14, 0.3, STRAW)]
 
 
 def turbine():
     top = 1.45
     parts = [box(0, 0, 0, 0.8, 0.1, 0.8, DARK_STONE), box(0, top, 0, 0.3, 0.18, 0.36, WOOD), rod((0, top + 0.09, -0.2), (0, top + 0.09, 0.26), 0.05, IRON, 'cylinder'),
-             cyl(0, top + 0.09, 0.24, 0.12, 0.05, 0.12, DARK_WOOD, 90, 90)]
+             cyl(0, top + 0.09, 0.24, 0.12, 0.09, 0.12, DARK_WOOD, 90, 90)]
     for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
         parts.append(rod((sx * 0.32, 0.1, sz * 0.32), (sx * 0.1, top, sz * 0.1), 0.05, DARK_WOOD))
     for y, k in ((0.5, 0.25), (1.0, 0.17)):
         for s in (-1, 1):
             parts.append(box(0, y, s * k, k * 2 + 0.05, 0.03, 0.03, WOOD))
-            parts.append(box(s * k, y, 0, 0.03, 0.03, k * 2 + 0.05, WOOD))
+            parts.append(box(s * k, y, 0, 0.03, 0.04, k * 2 + 0.05, WOOD))
     for i in range(4):
         t = 2 * math.pi * i / 4 + 0.4
         c, s = math.cos(t), math.sin(t)
         cy = top + 0.09
-        parts.append(rod((0, cy, 0.28), (0.45 * c, cy + 0.45 * s, 0.28), 0.03, DARK_WOOD))
+        zr = 0.28 + 0.012 * (i % 2)   # the blades' arms start at one point: every other one stands a hair further out
+        parts.append(rod((0, cy, zr), (0.45 * c, cy + 0.45 * s, zr), 0.03, DARK_WOOD))
         parts.append(rod((0.13 * c - 0.05 * s, cy + 0.13 * s + 0.05 * c, 0.27), (0.45 * c - 0.05 * s, cy + 0.45 * s + 0.05 * c, 0.27), 0.1, CANVAS))
     return parts
 
@@ -515,15 +528,15 @@ def turbine():
 def stove():
     return legs(0.28, 0.2, 0.17, 0.05, IRON) + [
         box(0, 0.17, 0, 0.75, 0.52, 0.55, (64, 68, 78)), box(0, 0.69, 0, 0.8, 0.05, 0.6, IRON), box(-0.17, 0.27, 0.28, 0.3, 0.3, 0.02, IRON),
-        box(-0.17, 0.32, 0.292, 0.22, 0.18, 0.006, GLOW), box(0.2, 0.27, 0.28, 0.26, 0.3, 0.02, IRON), box(0.2, 0.52, 0.295, 0.18, 0.02, 0.015, BRASS),
-        cyl(-0.17, 0.74, 0.05, 0.24, 0.14, 0.24, IRON), cyl(-0.17, 0.88, 0.05, 0.2, 0.004, 0.2, MEAT),
+        box(-0.17, 0.32, 0.296, 0.22, 0.18, 0.012, GLOW), box(0.2, 0.27, 0.28, 0.26, 0.3, 0.02, IRON), box(0.2, 0.52, 0.295, 0.18, 0.02, 0.015, BRASS),
+        cyl(-0.17, 0.74, 0.05, 0.24, 0.14, 0.24, IRON), cyl(-0.17, 0.88, 0.05, 0.2, 0.012, 0.2, MEAT),
         cyl(0.2, 0.74, -0.14, 0.12, 0.4, 0.12, IRON), cone(0.2, 1.14, -0.14, 0.2, 0.06, 0.2, IRON)]
 
 
 def airship():
     """A wooden boat hung under a canvas balloon. The game floats it above the ground; y = 0 here is the bottom of its keel."""
     parts = [box(0, 0, 0, 2.0, 0.18, 0.55, DARK_WOOD), box(0, 0.18, 0, 2.5, 0.42, 1.0, WOOD), box(0, 0.6, 0, 2.5, 0.05, 1.0, PALE_WOOD),
-             pyramid(1.45, 0.18, 0, 0.5, 0.42, 1.0, WOOD, 0, 0), box(-1.3, 0.6, 0, 0.3, 0.35, 1.0, DARK_WOOD)]
+             pyramid(1.45, 0.18, 0, 0.5, 0.42, 1.0, WOOD, 0, 0), box(-1.3, 0.6, 0, 0.3, 0.35, 0.96, DARK_WOOD)]
     for z in (-0.5, 0.5):
         parts.append(box(0, 0.65, z, 2.5, 0.14, 0.05, DARK_WOOD))
     parts.append(ball(0, 1.45, 0, 3.6, 1.35, 1.7, CANVAS))
@@ -532,7 +545,7 @@ def airship():
         for z in (-0.45, 0.45):
             parts.append(rod((x, 0.65, z), (x * 1.05, 1.5, z * 1.35), 0.03, BURLAP))
     parts += [rod((-1.45, 0.45, 0), (-1.75, 0.45, 0), 0.06, IRON, 'cylinder'),
-              box(-1.8, 0.2, 0, 0.04, 0.5, 0.12, DARK_WOOD), box(-1.8, 0.4, 0, 0.04, 0.12, 0.55, DARK_WOOD)]
+              box(-1.8, 0.2, 0, 0.04, 0.5, 0.12, DARK_WOOD), box(-1.8, 0.4, 0, 0.06, 0.12, 0.55, DARK_WOOD)]
     return parts
 
 
@@ -563,26 +576,51 @@ CRYSTAL_PAL = ((150, 92, 212), (98, 54, 152), (206, 166, 252), (72, 52, 92))
 MATERIALS = {'_stone': STONE_PAL, '_metal': IRON_PAL, '_crystal': CRYSTAL_PAL}
 
 
+def wall_specks(color):
+    """Four specks too small to see, which keep a wall's bounds the whole tile now that it has no footing (the game centres a model on its
+    bounds, so every shape has to be centred on its tile the same way)."""
+    return [box(sx * 0.499, 0, sz * 0.499, 0.002, 0.002, 0.002, color) for sx in (-1, 1) for sz in (-1, 1)]
+
+
+def deck_planks(y, h, main, light, lo_x=-0.5, hi_x=0.5, lo_z=-0.5, hi_z=0.5):
+    """The top pattern a foundation tile and an upper floor tile share: four planks laid round a small square in the middle, the way a
+    parquet pinwheel is, with a 0.01 seam between them. The game turns a floor tile to fit what is beside it, so the pattern has to look
+    the same turned by any quarter turn, which a pair of long bands does not; planks run to the tile's edge with no seam there, so
+    neighbouring tiles carry on into each other. lo/hi clip it to a floor that stops short of an edge. Planks stand at the same y, with
+    no plane of one in the plane of another."""
+    g = 0.005
+    rects = [(-0.5, 0.1 - g, -0.5, -0.1 - g, main), (0.1 + g, 0.5, -0.5, 0.1 - g, main),
+             (-0.1 + g, 0.5, 0.1 + g, 0.5, main), (-0.5, -0.1 - g, -0.1 + g, 0.5, main),
+             (-0.1 + g, 0.1 - g, -0.1 + g, 0.1 - g, light)]
+    parts = []
+    for x0, x1, z0, z1, color in rects:
+        x0, x1, z0, z1 = max(x0, lo_x), min(x1, hi_x), max(z0, lo_z), min(z1, hi_z)
+        if x1 - x0 > 0.01 and z1 - z0 > 0.01:
+            parts.append(box((x0 + x1) / 2, y, (z0 + z1) / 2, x1 - x0, h, z1 - z0, color))
+    return parts
+
+
 def foundation(pal=WOOD_PAL):
-    """One tile of a finished foundation, a low deck. The game lays one for each tile the foundation covers."""
+    """One tile of a finished foundation, a low deck. The game lays one for each tile the foundation covers. Its top is the same pattern as an
+    upper floor's (see deck_planks), so neighbouring tiles read as one deck."""
     main, dark, light, foot = pal
-    return [box(0, 0, 0, 1.0, 0.14, 1.0, dark), box(0, 0.14, -0.25, 0.97, 0.06, 0.46, main), box(0, 0.14, 0.25, 0.97, 0.06, 0.46, light)]
+    return [box(0, 0, 0, 0.99, 0.14, 0.99, dark)] + deck_planks(0.14, 0.06, main, light)
 
 
 def wall_tile(arms, pal=WOOD_PAL):
-    """One tile of wall: a post in the middle and an arm toward each wall beside it. The footing spans the whole tile, so
-    that every shape is centred on its tile the same way (the game centres a model on its bounds)."""
+    """One tile of wall: a post in the middle and an arm toward each wall beside it. It has no footing (a dark strip stuck out past
+    the edge of an upper floor), and stands straight on what is under it; four specks keep the bounds the whole tile."""
     main, dark, light, foot = pal
-    # No two faces share a plane, so none flicker: the post stops under the cap, an arm runs from inside the post to the
-    # tile's edge (meeting the next wall's arm there, not overlapping it) and stops just under the cap's height, and each
-    # band is a hair shorter than its arm
+    # No two faces share a plane, so none flicker: the post runs up into the cap, an arm runs from inside the post to the tile's edge
+    # (meeting the next wall's arm there, not overlapping it) and up to 0.01 under the floor above, so no gap is left between them, and
+    # each band stops 0.01 short of its arm's end
     cap = WALL_HEIGHT - 0.1
-    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.38, cap - 0.06, 0.38, dark)]
+    parts = wall_specks(dark) + [box(0, 0, 0, 0.38, cap + 0.05, 0.38, dark)]
     for dx, dz in arms:
         cx, cz = dx * 0.335, dz * 0.335
         w, d = (0.33, 0.3) if dx else (0.3, 0.33)
-        parts.append(box(cx, 0.05, cz, w, cap - 0.07, d, main))
-        bw, bd = (w - 0.004, d + 0.02) if dx else (w + 0.02, d - 0.004)
+        parts.append(box(cx, 0, cz, w, WALL_HEIGHT - 0.01, d, main))
+        bw, bd = (w - 0.02, d + 0.02) if dx else (w + 0.02, d - 0.02)
         for y in (0.6, 1.3, 2.0):
             parts.append(box(cx, y, cz, bw, 0.05, bd, dark))
     parts.append(box(0, cap, 0, 0.42, 0.1, 0.42, light))
@@ -600,18 +638,19 @@ def stone_wall_tile(arms, pal=STONE_PAL):
     darker core, the joints between the courses showing as sunk mortar."""
     main, dark, light, foot = pal
     cap = WALL_HEIGHT - 0.12
-    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.5, 0.22, 0.5, dark),
-             box(0, 0.27, 0, 0.44, cap - 0.27, 0.44, dark), box(0, cap, 0, 0.52, 0.12, 0.52, light)]
-    courses = 7
-    ch = (cap - 0.06 - 0.05) / courses
+    parts = wall_specks(dark) + [box(0, 0, 0, 0.5, 0.27, 0.5, dark),
+                                 box(0, 0.27, 0, 0.44, cap - 0.27, 0.44, dark), box(0, cap, 0, 0.52, 0.12, 0.52, light)]
+    courses = 8
+    top = WALL_HEIGHT - 0.01   # the coping's top, 0.01 under the floor above
+    ch = (top - 0.05) / courses
     for dx, dz in arms:
-        # The mortar core stops a hair under the coping's top (cap - 0.01), or the two tops share a plane and flicker
-        parts.append(arm_box(dx, dz, 0.33, 0.30, 0.05, cap - 0.07, dark))   # the mortar core
+        # The mortar core runs up into the coping (a hair under its top), or the two tops share a plane and flicker
+        parts.append(arm_box(dx, dz, 0.33, 0.30, 0, top - 0.04, dark))   # the mortar core
         for i in range(courses):
             # Alternate courses stand a hair further out, so no two block faces share a plane
             proud = 0.34 if i % 2 else 0.335
-            parts.append(arm_box(dx, dz, 0.326, proud, 0.05 + i * ch + 0.008, ch - 0.016, main if i % 2 else light))
-        parts.append(arm_box(dx, dz, 0.33, 0.36, cap - 0.06, 0.05, light))   # coping along the top
+            parts.append(arm_box(dx, dz, 0.326, proud, i * ch + 0.008, ch - 0.016, main if i % 2 else light))
+        parts.append(arm_box(dx, dz, 0.33, 0.36, top - 0.05, 0.05, light))   # coping along the top
     return parts
 
 
@@ -620,16 +659,17 @@ def metal_wall_tile(arms, pal=IRON_PAL):
     bottom and top, with an upright rib and rivets along each rail."""
     main, dark, light, foot = pal
     cap = WALL_HEIGHT - 0.1
-    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.42, 0.14, 0.42, dark),
-             box(0, 0.19, 0, 0.3, cap - 0.19, 0.3, dark), box(0, cap, 0, 0.42, 0.1, 0.42, light)]
+    top = WALL_HEIGHT - 0.01   # the top rail's top, 0.01 under the floor above
+    parts = wall_specks(dark) + [box(0, 0, 0, 0.42, 0.19, 0.42, dark),
+                                 box(0, 0.19, 0, 0.3, cap - 0.19, 0.3, dark), box(0, cap, 0, 0.42, 0.1, 0.42, light)]
     for dx, dz in arms:
-        parts.append(arm_box(dx, dz, 0.33, 0.14, 0.05, cap - 0.04, main))          # the plate
-        parts.append(arm_box(dx, dz, 0.326, 0.22, 0.05, 0.12, dark))              # bottom rail
-        parts.append(arm_box(dx, dz, 0.326, 0.22, cap - 0.16, 0.12, dark))        # top rail
+        parts.append(arm_box(dx, dz, 0.33, 0.14, 0, top - 0.03, main))             # the plate, running up behind the top rail
+        parts.append(arm_box(dx, dz, 0.326, 0.22, 0, 0.17, dark))                  # bottom rail
+        parts.append(arm_box(dx, dz, 0.326, 0.22, top - 0.12, 0.12, dark))         # top rail
         parts.append(arm_box(dx, dz, 0.05, 0.19, 0.17, cap - 0.33, light, 0.36))  # upright rib
         for along in (0.24, 0.44):
-            for y in (0.09, cap - 0.12):
-                parts.append(arm_box(dx, dz, 0.035, 0.235, y, 0.04, light, along))  # rivets
+            for y in (0.07, top - 0.08):
+                parts.append(arm_box(dx, dz, 0.035, 0.26, y, 0.04, light, along))  # rivets, standing out a little from the rails
     return parts
 
 
@@ -638,17 +678,17 @@ def crystal_wall_tile(arms, pal=CRYSTAL_PAL):
     darker band at the foot, small points along the top and shards leaning at the foot."""
     main, dark, light, foot = pal
     point = 0.34
-    parts = [box(0, 0, 0, 1.0, 0.05, 1.0, foot), box(0, 0.05, 0, 0.34, WALL_HEIGHT - point - 0.05, 0.34, dark, 45),
-             pyramid(0, WALL_HEIGHT - point, 0, 0.34, point, 0.34, light, 45)]
+    parts = wall_specks(dark) + [box(0, 0, 0, 0.34, WALL_HEIGHT - point, 0.34, dark, 45),
+                                 pyramid(0, WALL_HEIGHT - point, 0, 0.34, point, 0.34, light, 45)]
     top = WALL_HEIGHT - 0.3
     for dx, dz in arms:
-        parts.append(arm_box(dx, dz, 0.33, 0.18, 0.05, top - 0.05, main))
-        parts.append(arm_box(dx, dz, 0.326, 0.2, 0.05, 0.3, dark))
+        parts.append(arm_box(dx, dz, 0.33, 0.18, 0, top, main))
+        parts.append(arm_box(dx, dz, 0.326, 0.2, 0, 0.35, dark))
         for along in (0.24, 0.4):
             parts.append(pyramid(dx * along, top, dz * along, 0.12, 0.2, 0.12, light, 45))
             sx, sz = (0, 0.13) if dx else (0.13, 0)
             for sgn in (-1, 1):
-                parts.append(pyramid(dx * along + sgn * sx, 0.05, dz * along + sgn * sz, 0.08, 0.32, 0.08, light, 45))
+                parts.append(pyramid(dx * along + sgn * sx, 0, dz * along + sgn * sz, 0.08, 0.32, 0.08, light, 45))
     return parts
 
 
@@ -676,13 +716,15 @@ MATERIAL_KEYS = {'Foundation', 'WoodWall', 'WoodDoor', 'UpperFloor', 'Ladder', '
 def wood_door(pal=WOOD_PAL):
     """A plank door in a frame, across the x axis. The game turns it to lie along the foundation's edge."""
     main, dark, light, foot = pal
-    parts = [box(0, 0, 0, 1.0, 0.05, 0.4, foot)]
+    # No footing (it stuck out past an upper floor's edge). The jambs stop a hair under the lintel's top, which runs 0.01 past their sides
+    # and a little deeper, so nothing is flush; the cross rails reach 0.02 past the planks and end inside the jambs
+    parts = []
     for x in (-0.44, 0.44):
-        parts.append(box(x, 0.05, 0, 0.12, WALL_HEIGHT - 0.05, 0.36, dark))
-    parts.append(box(0, WALL_HEIGHT - 0.22, 0, 1.0, 0.22, 0.36, dark))
+        parts.append(box(x, 0, 0, 0.12, WALL_HEIGHT - 0.01, 0.36, dark))
+    parts.append(box(0, WALL_HEIGHT - 0.22, 0, 1.02, 0.22, 0.38, dark))
     for x in (-0.28, -0.09, 0.09, 0.28):
-        parts.append(box(x, 0.05, 0, 0.18, WALL_HEIGHT - 0.3, 0.08, main if x < 0 or x > 0.1 else light))
-    parts += [box(0, 0.6, 0.05, 0.74, 0.08, 0.04, dark), box(0, 1.6, 0.05, 0.74, 0.08, 0.04, dark),
+        parts.append(box(x, 0, 0, 0.18, WALL_HEIGHT - 0.25, 0.08, main if x < 0 or x > 0.1 else light))
+    parts += [box(0, 0.6, 0.05, 0.78, 0.08, 0.04, dark), box(0, 1.6, 0.05, 0.78, 0.08, 0.04, dark),
               box(0.26, 1.05, 0.08, 0.08, 0.08, 0.06, IRON)]
     return parts
 
@@ -690,13 +732,13 @@ def wood_door(pal=WOOD_PAL):
 def stone_door(pal=STONE_PAL):
     """A heavy slab door between thick stone jambs under a lintel, bound with two iron straps."""
     main, dark, light, foot = pal
-    parts = [box(0, 0, 0, 1.0, 0.05, 0.4, foot)]
+    parts = []
     for x in (-0.42, 0.42):
-        parts.append(box(x, 0.05, 0, 0.16, WALL_HEIGHT - 0.05, 0.38, dark))
-    parts.append(box(0, WALL_HEIGHT - 0.32, 0, 0.67, 0.32, 0.36, light))   # the lintel, between the jambs
-    parts.append(box(0, 0.05, 0, 0.66, WALL_HEIGHT - 0.38, 0.12, main))    # the slab
+        parts.append(box(x, 0, 0, 0.16, WALL_HEIGHT, 0.38, dark))
+    parts.append(box(0, WALL_HEIGHT - 0.32, 0, 0.7, 0.31, 0.36, light))    # the lintel, ending inside the jambs, a hair under their top
+    parts.append(box(0, 0, 0, 0.66, WALL_HEIGHT - 0.38, 0.12, main))       # the slab
     for y in (0.55, 1.55):
-        parts.append(box(0, y, 0, 0.664, 0.08, 0.15, IRON))
+        parts.append(box(0, y, 0, 0.7, 0.08, 0.15, IRON))
     parts.append(box(0.22, 1.05, 0.07, 0.07, 0.12, 0.05, IRON))           # a pull
     return parts
 
@@ -704,11 +746,11 @@ def stone_door(pal=STONE_PAL):
 def metal_door(pal=IRON_PAL):
     """A riveted plate door in a slim metal frame, with level ribs and a long bar handle."""
     main, dark, light, foot = pal
-    parts = [box(0, 0, 0, 1.0, 0.05, 0.4, foot)]
+    parts = []
     for x in (-0.45, 0.45):
-        parts.append(box(x, 0.05, 0, 0.1, WALL_HEIGHT - 0.05, 0.34, dark))
+        parts.append(box(x, 0, 0, 0.1, WALL_HEIGHT, 0.34, dark))
     parts.append(box(0, WALL_HEIGHT - 0.16, 0, 0.8, 0.16, 0.32, dark))
-    parts.append(box(0, 0.05, 0, 0.78, WALL_HEIGHT - 0.22, 0.07, main))
+    parts.append(box(0, 0, 0, 0.78, WALL_HEIGHT - 0.22, 0.07, main))
     for y in (0.35, 0.95, 1.55, 2.0):
         parts.append(box(0, y, 0, 0.72, 0.06, 0.1, light))
         for x in (-0.33, 0.33):
@@ -721,12 +763,12 @@ def crystal_door(pal=CRYSTAL_PAL):
     """A door of crystal panes set with diamonds, between two pointed crystal pillars."""
     main, dark, light, foot = pal
     point = 0.3
-    parts = [box(0, 0, 0, 1.0, 0.05, 0.4, foot)]
+    parts = []
     for x in (-0.4, 0.4):
-        parts.append(box(x, 0.05, 0, 0.16, WALL_HEIGHT - point - 0.05, 0.16, dark, 45))
+        parts.append(box(x, 0, 0, 0.16, WALL_HEIGHT - point, 0.16, dark, 45))
         parts.append(pyramid(x, WALL_HEIGHT - point, 0, 0.16, point, 0.16, light, 45))
     parts.append(box(0, WALL_HEIGHT - 0.6, 0, 0.62, 0.14, 0.18, light))   # the head between the pillars
-    parts.append(box(0, 0.05, 0, 0.6, WALL_HEIGHT - 0.66, 0.1, main))
+    parts.append(box(0, 0, 0, 0.6, WALL_HEIGHT - 0.66, 0.1, main))
     for y in (0.35, 0.85, 1.35):
         parts.append(box(0, y, 0, 0.2, 0.2, 0.13, light, 0, 45))           # diamonds, a little proud of the pane
     return parts
@@ -752,6 +794,7 @@ def perimeter_wall(pal=WOOD_PAL, arms=()):
     back = (0, 1) if (0, 1) in exposed else None
     spiked = [d for d in exposed if d != back]
     parts = []
+    spiked_at = set()   # where a spiked log already stands: two ranks meeting at a corner share its log
     for sx in (-1, 1):
         for sz in (-1, 1):
             parts.append(box(sx * 0.999, 0, sz * 0.999, 0.002, 0.002, 0.002, dark))
@@ -767,13 +810,17 @@ def perimeter_wall(pal=WOOD_PAL, arms=()):
         for k in range(n):
             u = (k - 2) * step
             x, z = (d[0] * 0.8 + (u if d[1] else 0), d[1] * 0.8 + (u if d[0] else 0))
+            if (round(x, 3), round(z, 3)) in spiked_at:
+                continue
+            spiked_at.add((round(x, 3), round(z, 3)))
             h = 3.45 + 0.12 * ((k * 5 + (d[0] + 2 * d[1])) % 4)
-            parts.append(cyl(x, DECK_BODY, z, 0.38, h - 0.5 - DECK_BODY, 0.38, main if k % 2 else light))
-            parts.append(cone(x, h - 0.5, z, 0.38, 0.5, 0.38, dark))
+            # 0.4 across, a little wider than the 0.38 body log under it, so their sides never share a surface
+            parts.append(cyl(x, DECK_BODY, z, 0.4, h - 0.5 - DECK_BODY, 0.4, main if k % 2 else light))
+            parts.append(cone(x, h - 0.5, z, 0.4, 0.5, 0.4, dark))
         if d[0]:
             parts.append(box(d[0] * 0.99, 3.0, 0, 0.05, 0.12, 2.0, ROPE))
         else:
-            parts.append(box(0, 3.0, d[1] * 0.99, 2.0, 0.12, 0.05, ROPE))
+            parts.append(box(0, 3.0, d[1] * 0.99, 2.0, 0.13, 0.05, ROPE))   # a hair taller than the ropes along z, so their tops don't share a plane at the corners
     if back:
         for k in (-2, 0, 2):
             parts.append(cyl(k * step, DECK_TOP, 0.85, 0.2, 0.55, 0.2, main))
@@ -795,12 +842,12 @@ def perimeter_gate(pal=WOOD_PAL, open_=False):
         parts.append(box(x, 0, 0, 0.8, DECK_BODY, 1.6, main))
         for px in (-0.3, 0.3):
             for pz in (-0.7, 0.7):
-                parts.append(box(x + px, 0, pz, 0.24, DECK_BODY - 0.02, 0.24, dark))   # a little proud of the tower's sides, a little short of its top
+                parts.append(box(x + px, 0, pz, 0.24, DECK_BODY + 0.02, 0.24, dark))   # a little proud of the tower's sides, and up into the deck (past the tower's top and the arch's)
         for y in (0.04, 1.2, 2.2):
             parts.append(box(x, y, 0, 0.86, 0.16, 1.66, dark))
         for zf in (-0.84, 0.84):
             parts.append(rod((x - 0.42, 0.2, zf), (x + 0.42, 2.1, zf), 0.08, light))
-            parts.append(rod((x + 0.42, 0.2, zf), (x - 0.42, 2.1, zf), 0.08, light))
+            parts.append(rod((x + 0.42, 0.2, zf + 0.012 * (1 if zf > 0 else -1)), (x - 0.42, 2.1, zf + 0.012 * (1 if zf > 0 else -1)), 0.08, light))   # the crossing brace 0.012 further out
     parts.append(box(0, 2.14, 0, 2.6, 0.30, 1.5, dark))   # its ends buried in the towers, its top under the deck
     parts.append(box(0, DECK_BODY - 0.02, 0, 4.02, 0.10, 2.02, light))   # sunk into the towers' tops and a little wider than them
     if open_:
@@ -810,7 +857,7 @@ def perimeter_gate(pal=WOOD_PAL, open_=False):
         for sx in (-1, 1):
             parts.append(box(sx * 0.6, 0.05, 0, 1.10, 2.05, 0.14, main))
             parts.append(rod((sx * 0.6 - 0.5, 0.2, -0.09), (sx * 0.6 + 0.5, 1.95, -0.09), 0.1, dark))
-            parts.append(rod((sx * 0.6 + 0.5, 0.2, -0.09), (sx * 0.6 - 0.5, 1.95, -0.09), 0.1, dark))
+            parts.append(rod((sx * 0.6 + 0.5, 0.2, -0.105), (sx * 0.6 - 0.5, 1.95, -0.105), 0.1, dark))   # the crossing brace 0.015 further out
     for k in range(10):
         x = -1.8 + k * 0.4
         h = 3.45 + 0.12 * ((k * 5) % 4)
@@ -841,13 +888,13 @@ def slope(pal=WOOD_PAL):
     parts = []
     for i in range(steps):
         z = 1.5 - (i + 0.5) * 3.0 / steps
-        parts.append(box(0, 0, z, 0.92, rise * (i + 1) / steps, 3.0 / steps + 0.002, main if i % 2 else light))
+        parts.append(box(0, 0, z, 0.94 if i % 2 else 0.92, rise * (i + 1) / steps, 3.0 / steps + 0.002, main if i % 2 else light))   # neighbours' sides differ by 0.01
     for sx in (-1, 1):
-        parts.append(box(sx * 0.48, 0, 0, 0.08, 0.2, 3.0, dark))
+        parts.append(box(sx * 0.48, 0, 0, 0.08, 0.2, 3.04, dark))
         parts.append(rod((sx * 0.48, 0.45, 1.5), (sx * 0.48, rise + 0.45, -1.5), 0.08, dark))
         for z in (1.4, 0.2, -1.0):
             h = (1.5 - z) / 3.0 * rise
-            parts.append(box(sx * 0.48, h, z, 0.07, 0.5, 0.07, dark))
+            parts.append(box(sx * 0.48, h, z, 0.06, 0.5, 0.06, dark))
     return parts
 
 
@@ -864,17 +911,17 @@ def watchtower(pal=WOOD_PAL, manned=False):
     for y in (0.5, 1.7):
         for sx in (-1, 1):
             parts.append(box(sx * 0.82, y, 0, 0.12, 0.14, 1.6, main))
-            parts.append(box(0, y, sx * 0.82, 1.6, 0.14, 0.12, main))
+            parts.append(box(0, y, sx * 0.82, 1.6, 0.15, 0.12, main))
     for sx in (-1, 1):
         parts.append(rod((sx * 0.82, 0.3, 0.82), (sx * 0.82, 3.2, -0.82), 0.1, light))
-        parts.append(rod((sx * 0.82, 0.3, -0.82), (sx * 0.82, 3.2, 0.82), 0.1, light))
+        parts.append(rod((sx * 0.82, 0.3, -0.82), (sx * 0.82, 3.2, 0.82), 0.08, light))   # the crossing brace is slimmer, so its sides stand clear of the first's
     for x in (-0.8, -0.27, 0.27, 0.8):
         for z in (-0.92, 0.92):
             parts.append(box(x, 3.4, z, 0.1, 0.6, 0.08, main))
             parts.append(box(z, 3.4, x, 0.08, 0.6, 0.1, main))
     for z in (-0.95, 0.95):
         parts.append(box(0, 3.95, z, 1.9, 0.08, 0.1, dark))
-        parts.append(box(z, 3.95, 0, 0.1, 0.08, 1.9, dark))
+        parts.append(box(z, 3.95, 0, 0.1, 0.09, 1.9, dark))
     for sx in (-1, 1):
         for sz in (-1, 1):
             parts.append(box(sx * 0.9, 3.4, sz * 0.9, 0.14, 1.3, 0.14, dark))
@@ -885,7 +932,7 @@ def watchtower(pal=WOOD_PAL, manned=False):
         for sx in (-1, 1):
             parts.append(box(sx * 0.3, 0, 1.07, 0.08, 3.4, 0.08, light))
         for k in range(10):
-            parts.append(box(0, 0.25 + k * 0.33, 1.07, 0.6, 0.06, 0.08, light))
+            parts.append(box(0, 0.25 + k * 0.33, 1.07, 0.6, 0.06, 0.1, light))
     return parts
 
 
@@ -980,8 +1027,10 @@ def floor_trim(pal):
 
 
 def floor_tile(arms, pal=WOOD_PAL):
-    """One tile of floor over the one below, built as a foundation is: a base slab with two plank bands on it, but with its base
-    in the main colour. Each side with an arm (a floor beside it, or no wall under it) runs to the tile's edge; a side without
+    """One tile of floor over the one below, built as a foundation is: a base slab with planks on it, but with its base
+    in the main colour. The planks are laid exactly as the foundation's are (see deck_planks, a pinwheel that looks the same however the
+    game turns the tile, running to every edge the floor reaches), so floors and foundations carry the same pattern from tile to tile.
+    Each side with an arm (a floor beside it, or no wall under it) runs to the tile's edge; a side without
     one stops at the wall's outer face, so an edge or a corner doesn't stick out past the wall. Four specks too small to see keep
     every shape's bounds the whole tile."""
     main, dark, light, foot = pal
@@ -995,11 +1044,9 @@ def floor_tile(arms, pal=WOOD_PAL):
     for sx in (-1, 1):
         for sz in (-1, 1):
             parts.append(box(sx * 0.499, 0, sz * 0.499, 0.002, 0.002, 0.002, main))
-    parts.append(box(cx, 0, cz, w, 0.09, d, main))
-    half = d / 2
-    parts.append(box(cx, 0.09, cz - half / 2, w - 0.03, 0.05, half - 0.03, light))
-    parts.append(box(cx, 0.09, cz + half / 2, w - 0.03, 0.05, half - 0.03, main))
-    return parts
+    parts.append(box(cx, 0, cz, w - 0.01, 0.09, d - 0.01, main))   # the slab stops 0.005 inside the planks' edges
+    # The planks are laid about the tile's middle, not the slab's, so the pattern lines up from tile to tile
+    return parts + deck_planks(0.09, 0.05, main, light, lo_x, hi_x, lo_z, hi_z)
 
 
 def upper_floor(pal=WOOD_PAL):
