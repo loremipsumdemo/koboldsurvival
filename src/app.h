@@ -749,7 +749,6 @@ struct App : AppSession {
     int devThemePreset = 0;
     std::vector<ObjectId> lastSelection;   // the selection as followSelectionSquad last saw it
     BehaviorGroupsUi groupsUi;
-    BehaviorGroups groupsMirror;
     StoreFilterUi storeFilterUi;
     StallUi stallUi;
     RenamePrompt rename;

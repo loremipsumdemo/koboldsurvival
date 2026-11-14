@@ -77,7 +77,31 @@ void resetBehaviorGroups(BehaviorGroups& g) {
     ++g.version;
 }
 
-BehaviorGroups& behaviorGroups(World& w) {
+void resetNpcBehaviorGroups(BehaviorGroups& g) {
+    g.military = npcMilitaryBehaviors();
+    g.citizen = defaultCitizenBehaviors();
+    g.schedule = defaultSchedule();
+    g.groupSchedules.clear();
+    // Group 1 is the default; Groups 2 and 3 keep the Irregular schedules (the default with Sleep swapped with Recreation, or Work)
+    for (int k = 0; k < NPC_SCHEDULE_KINDS; ++k) {
+        Schedule s = npcSchedule(k);
+        s.override = k > 0;
+        g.groupSchedules.push_back(s);
+    }
+    g.perimeter = Schedule{};   // its gates are shut in its Sleep hours until its Avatar says otherwise
+    g.listedStores.clear();
+    g.storesListed = false;
+    g.groups.assign((size_t)NPC_SCHEDULE_KINDS, { groupTask(GROUP_REF_CITIZEN) });
+    g.ready = true;
+    ++g.version;
+}
+
+BehaviorGroups& behaviorGroups(World& w, int faction) {
+    if (faction != FACTION_PLAYER) {
+        BehaviorGroups& n = w.resource<NpcBehaviorGroups>().by[faction];
+        if (!n.ready) resetNpcBehaviorGroups(n);
+        return n;
+    }
     BehaviorGroups& g = w.resource<BehaviorGroups>();
     if (!g.ready) resetBehaviorGroups(g);
     if (g.groups.empty()) g.groups.push_back({ groupTask(GROUP_REF_CITIZEN) });
@@ -161,21 +185,21 @@ int citizensInGroup(World& w, int group) {
     return n;
 }
 
-bool isGroupStore(World& w, ObjectId p) {
+bool isGroupStore(World& w, ObjectId p, int faction) {
     const Prop* pp = w.get<Prop>(p);
     if (!pp || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
     const PropInfo& info = propInfo(pp->kind);
     if ((info.use != PropUse::Storage && !info.claimsLand) || info.stall) return false;   // a Stall is stocked by its orders
     const Owner* own = w.get<Owner>(p);
-    if (own && own->faction != FACTION_PLAYER) return false;
+    if (own && own->faction != faction) return false;
     const Transform* t = w.get<Transform>(p);
-    return t && claimAt(claimsOf(w), t->x, t->z, FACTION_PLAYER) != nullptr;
+    return t && claimAt(claimsOf(w), t->x, t->z, faction) != nullptr;
 }
 
-std::vector<ObjectId> groupStores(World& w) {
+std::vector<ObjectId> groupStores(World& w, int faction) {
     std::vector<ObjectId> out;
     for (ObjectId p : w.view<Prop, Storage>()) {
-        if (isGroupStore(w, p)) out.push_back(p);
+        if (isGroupStore(w, p, faction)) out.push_back(p);
     }
     return out;
 }
@@ -187,8 +211,8 @@ void markStoresListed(World& w) {
     g.storesListed = true;
 }
 
-bool storeHaulSync(World& w) {
-    BehaviorGroups& g = behaviorGroups(w);
+bool storeHaulSync(World& w, int faction) {
+    BehaviorGroups& g = behaviorGroups(w, faction);
     bool changed = false;
     // Haul tasks to a store that is gone leave every list
     auto gone = [&](const BehaviorRule& r) { return ruleNamesProp(r.kind) && !w.has<Storage>(r.prop); };
@@ -203,7 +227,7 @@ bool storeHaulSync(World& w) {
     g.listedStores.erase(std::remove_if(g.listedStores.begin(), g.listedStores.end(), [&](ObjectId p) { return !w.has<Storage>(p); }),
                          g.listedStores.end());
     // A store of yours new to the list gets a haul task in the Citizen Default Behavior (bones, for the Altar), once
-    for (ObjectId p : groupStores(w)) {
+    for (ObjectId p : groupStores(w, faction)) {
         if (std::binary_search(g.listedStores.begin(), g.listedStores.end(), p)) continue;
         g.listedStores.insert(std::upper_bound(g.listedStores.begin(), g.listedStores.end(), p), p);
         BehaviorRule r;
@@ -218,10 +242,15 @@ bool storeHaulSync(World& w) {
 }
 
 void behaviorGroupSystem(World& w) {
-    BehaviorGroups& g = behaviorGroups(w);
-    if (++g.syncTick >= STORE_SYNC_STEPS) {
-        g.syncTick = 0;
-        storeHaulSync(w);
+    BehaviorGroups& pg = behaviorGroups(w);
+    const bool syncNow = ++pg.syncTick >= STORE_SYNC_STEPS;
+    if (syncNow) {
+        pg.syncTick = 0;
+        storeHaulSync(w, FACTION_PLAYER);
+        // An NPC faction's citizens haul to its stores as yours do to yours
+        for (const Claim& c : claimsOf(w)) {
+            if (!c.camp && factionRunsItself(c.owner)) storeHaulSync(w, c.owner);
+        }
     }
     // A Fortified unit made before they slept or built has no Sleep or Auto-Construct task: it is given them (it keeps no other from its group)
     for (ObjectId u : w.view<Fortified, Behaviors>()) {
@@ -234,8 +263,17 @@ void behaviorGroupSystem(World& w) {
             if (addBehavior(b.rules, rule, BEHAVIOR_TASKS_MAX)) b.pending = true;
         }
     }
+    // Each citizen, yours or an NPC faction's, follows its group's list
+    int cachedFaction = -1;
+    BehaviorGroups* gp = nullptr;
     for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
-        if (w.get<Faction>(u)->id != FACTION_PLAYER || w.has<Fortified>(u)) continue;
+        const int faction = w.get<Faction>(u)->id;
+        if ((faction != FACTION_PLAYER && !factionRunsItself(faction)) || w.has<Fortified>(u)) continue;
+        if (faction != cachedFaction) {
+            gp = &behaviorGroups(w, faction);
+            cachedFaction = faction;
+        }
+        BehaviorGroups& g = *gp;
         Citizen& c = *w.get<Citizen>(u);
         if (c.group < 0 || c.group >= (int)g.groups.size()) {
             c.group = 0;
@@ -257,5 +295,31 @@ void behaviorGroupSystem(World& w) {
         if (b.busy && !holdsBehavior(next, b.step)) b.busy = false;
         b.rules = std::move(next);
         b.pending = true;
+    }
+    // An NPC faction's military follow its Military list (roaming), as yours follow theirs
+    if (syncNow) {
+        for (ObjectId u : w.view<Behaviors, Faction>()) {
+            const int faction = w.get<Faction>(u)->id;
+            if (faction == FACTION_PLAYER || !factionRunsItself(faction)) continue;
+            if (w.has<Citizen>(u) || w.has<Commandable>(u) || w.has<Mob>(u) || w.has<Corpse>(u) || w.has<Raider>(u) || w.has<Shopper>(u)) continue;
+            BehaviorGroups& g = behaviorGroups(w, faction);
+            GroupApplied* applied = w.get<GroupApplied>(u);
+            if (!applied) applied = &w.add(u, GroupApplied{});
+            if (applied->version == g.version) continue;
+            applied->version = g.version;
+            Behaviors& b = *w.get<Behaviors>(u);
+            std::vector<BehaviorRule> next = expandGroup(g, GROUP_REF_MILITARY);
+            for (BehaviorRule& r : next) {
+                for (const BehaviorRule& old : b.rules) {
+                    if (!sameBehavior(old, r) || old.on != r.on) continue;
+                    r.cooldown = old.cooldown;
+                    r.why = old.why;
+                    break;
+                }
+            }
+            if (b.busy && !holdsBehavior(next, b.step)) b.busy = false;
+            b.rules = std::move(next);
+            b.pending = true;
+        }
     }
 }

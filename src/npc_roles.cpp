@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cmath>
 #include "behavior.h"
+#include "behavior_groups.h"
+#include "schedule.h"
 #include "claims.h"
 #include "components.h"
 #include "factions.h"
@@ -50,7 +52,12 @@ void makeNpcCitizen(World& w, ObjectId u, Vec2 home) {
     w.remove<SquadMember>(u);
     if (!w.has<Citizen>(u)) w.add(u, Citizen{});
     w.add(u, SpawnHome{ home.x, home.z, false });
-    takeRules(w, u, npcFactionBehaviors());
+    // It follows its group's list, as a citizen of yours does (its group is its schedule: behavior_groups.h)
+    BehaviorGroups& g = behaviorGroups(w, factionOf(w, u));
+    Citizen* c = w.get<Citizen>(u);
+    c->group = w.has<NpcSchedule>(u) ? std::clamp(w.get<NpcSchedule>(u)->kind, 0, (int)g.groups.size() - 1) : 0;
+    c->applied = g.version;
+    takeRules(w, u, expandGroup(g, c->group));
 }
 
 void makeNpcFortified(World& w, ObjectId u, Vec2 home) {
@@ -66,7 +73,10 @@ void makeNpcMilitary(World& w, ObjectId u) {
     w.remove<Citizen>(u);
     w.remove<SpawnHome>(u);
     w.add(u, SquadMember{ 0 });
-    takeRules(w, u, npcMilitaryBehaviors());
+    // It follows its faction's Military list (roaming), as yours follow theirs
+    BehaviorGroups& g = behaviorGroups(w, factionOf(w, u));
+    w.add(u, GroupApplied{ g.version });
+    takeRules(w, u, expandGroup(g, GROUP_REF_MILITARY));
 }
 
 void npcRolesHour(World& w, double gameHours) {
@@ -79,6 +89,13 @@ void npcRolesHour(World& w, double gameHours) {
         if (c.camp || c.owner == FACTION_PLAYER || !factionCanClaim(c.owner) || isMobFaction(c.owner) || factionPlayerControlled(c.owner) ||
             !w.has<Prop>(c.altar)) {
             continue;
+        }
+        // The Avatar's gate decision is set where yours is: the Perimeter Closed hours (its Gate Hours rule: shut when asleep, always, never)
+        {
+            Schedule& closed = behaviorGroups(w, c.owner).perimeter;
+            const GateRule gateRule = factionRules(w, c.owner).gates;
+            closed.override = gateRule != GateRule::Sleep;
+            for (auto& h : closed.hours) h = gateRule == GateRule::AlwaysShut ? 1 : 0;
         }
         // The faction's units by role (those away on a raid, a shopping trip or the like are not counted)
         std::vector<ObjectId> citizens, fortified, military;

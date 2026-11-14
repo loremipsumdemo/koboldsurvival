@@ -69,78 +69,6 @@ struct SiteBox {
     int faction, x, z, w, d;
 };
 
-// Auto-Construct for the faction's citizens, so they build what is laid
-void giveBuilders(World& w, int faction) {
-    BehaviorRule build;
-    build.kind = BehaviorKind::AutoConstruct;
-    for (ObjectId u : w.view<Citizen, Behaviors>()) {
-        if (factionOf(w, u) != faction) continue;
-        Behaviors* b = w.get<Behaviors>(u);
-        const bool has = std::any_of(b->rules.begin(), b->rules.end(), [](const BehaviorRule& r) { return r.kind == BehaviorKind::AutoConstruct; });
-        if (!has) addBehavior(b->rules, build);
-    }
-}
-
-// The tasks your citizens start with (sleeping, the recreation tasks and the rest), for the faction's citizens, so they sleep, rest,
-// socialize, sit, play and dance as yours do, on the schedule they keep (schedule.h). What an NPC faction's units were never given
-// is added; the nap level is the same as yours.
-void giveCitizenTasks(World& w, int faction) {
-    static const std::vector<BehaviorRule> wanted = defaultCitizenBehaviors();
-    for (ObjectId u : w.view<Citizen, Behaviors>()) {
-        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Mob>(u) || w.has<Fortified>(u)) continue;   // the Fortified keep their own tasks
-        Behaviors* b = w.get<Behaviors>(u);
-        bool changed = false;
-        for (const BehaviorRule& r : wanted) {
-            if (holdsBehavior(b->rules, r)) continue;
-            if (addBehavior(b->rules, r, BEHAVIOR_TASKS_MAX)) changed = true;
-        }
-        for (BehaviorRule& r : b->rules) {
-            if (r.kind == BehaviorKind::Rest && r.percent != percentRange(BehaviorKind::Rest).lo) {
-                r.percent = percentRange(BehaviorKind::Rest).lo;
-                changed = true;
-            }
-        }
-        if (changed) b->pending = true;
-    }
-}
-
-// Auto-Haul Ground Items and an Auto-Haul to each of the faction's stores in its claim, for its citizens, so what lies on the
-// ground in its claim is put away, as it is for yours (behavior_groups.cpp). Stores that are gone leave their lists.
-void giveHaulers(World& w, const std::vector<Claim>& claims, int faction) {
-    std::vector<BehaviorRule> wanted;
-    BehaviorRule ground;
-    ground.kind = BehaviorKind::AutoHaulGround;
-    wanted.push_back(ground);
-    for (ObjectId p : w.view<Prop, Storage, Transform>()) {
-        if (w.has<Blueprint>(p)) continue;
-        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
-        if (info.use != PropUse::Storage || info.claimsLand || info.stall) continue;
-        const Owner* own = w.get<Owner>(p);
-        if (own && own->faction != faction) continue;
-        const Transform* t = w.get<Transform>(p);
-        if (!claimAt(claims, t->x, t->z, faction)) continue;
-        BehaviorRule haul;
-        haul.kind = BehaviorKind::AutoHaul;
-        haul.prop = p;
-        haul.propKind = idx(w.get<Prop>(p)->kind);
-        wanted.push_back(haul);
-    }
-    for (ObjectId u : w.view<Citizen, Behaviors>()) {
-        if (factionOf(w, u) != faction || w.has<Corpse>(u) || w.has<Fortified>(u)) continue;
-        Behaviors* b = w.get<Behaviors>(u);
-        bool changed = false;
-        const size_t before = b->rules.size();
-        b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(),
-                                      [&](const BehaviorRule& r) { return r.kind == BehaviorKind::AutoHaul && !w.has<Storage>(r.prop); }),
-                       b->rules.end());
-        changed = b->rules.size() != before;
-        for (const BehaviorRule& r : wanted) {
-            if (!holdsBehavior(b->rules, r) && addBehavior(b->rules, r)) changed = true;
-        }
-        if (changed) b->pending = true;
-    }
-}
-
 // ---- The Perimeter, looked at once a game day --------------------------------------------------------------------------------
 struct PerimeterDays {
     std::unordered_map<int, double> since;   // faction -> game hours since it last looked
@@ -803,9 +731,6 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     std::vector<BuildingCluster> clusters;
     for (const Claim& c : claims) {
         if (!npcAltarClaim(c)) continue;
-        giveBuilders(w, c.owner);
-        giveHaulers(w, claims, c.owner);
-        giveCitizenTasks(w, c.owner);
         if (building.count(c.owner)) continue;
         // Perimeter first: no new building is begun while its Perimeter is not whole (once it has a home to build it from)
         if (factionRules(w, c.owner).buildOrder == BuildOrder::PerimeterFirst && c.radius > PERIMETER_MIN_RADIUS &&

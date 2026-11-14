@@ -454,3 +454,5 @@ int changePlayerReputation(World& w, int faction, int delta) {
     standings(w)[faction] = next;
     return next;
 }
+
+bool factionRunsItself(int faction) { return faction != FACTION_PLAYER && factionCanClaim(faction) && !factionPlayerControlled(faction); }

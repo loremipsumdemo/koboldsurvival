@@ -4,6 +4,8 @@
 #include "behavior.h"
 #include "ecs.h"
 #include "schedule.h"
+#include "factions.h"
+#include <map>
 
 // Behavior groups, kept by your Altar. Each of your citizens follows one group (Group 1 unless moved). A group is a task
 // list like a unit's, which may also hold Group tasks: one stands for the whole list of another group or of a Default
@@ -29,9 +31,20 @@ struct BehaviorGroups {
 };
 inline constexpr int STORE_SYNC_STEPS = 30;   // simulation steps between looks for new or lost stores
 
-// The World's groups, set up with their defaults the first time
-BehaviorGroups& behaviorGroups(World& w);
+// A faction's groups, set up with their defaults the first time: yours (the default), or an NPC faction's, which is set up as yours is,
+// with the lists and schedules its NPC Avatar chooses: Military (roaming), the Citizen default, three groups (Group 1 the default,
+// Groups 2 and 3 the Irregular schedules, so some are awake when the rest sleep), and the Perimeter Closed hours. Not saved for an NPC
+// faction: it is set up again when a game is loaded.
+BehaviorGroups& behaviorGroups(World& w, int faction = FACTION_PLAYER);
+struct NpcBehaviorGroups {
+    std::map<int, BehaviorGroups> by;
+};
 void resetBehaviorGroups(BehaviorGroups& g);
+void resetNpcBehaviorGroups(BehaviorGroups& g);
+// On an NPC faction's military unit: the version of its faction's groups its task list was last made from. Not saved.
+struct GroupApplied {
+    int version = -1;
+};
 // The tasks a citizen starts with: needs, sleeping, building, hauling, crafting, patrolling and the recreation tasks. What your Citizen
 // group starts as, and what an NPC faction's citizens are given.
 std::vector<BehaviorRule> defaultCitizenBehaviors();
@@ -65,9 +78,9 @@ int citizensInGroup(World& w, int group);
 void behaviorGroupSystem(World& w);
 
 // Your stores (storage, and the Altar) in your claim
-std::vector<ObjectId> groupStores(World& w);
+std::vector<ObjectId> groupStores(World& w, int faction = FACTION_PLAYER);
 // Each store of yours not yet listed gets a haul task in the Citizen Default Behavior, and haul tasks to stores that
 // are gone leave every list. True if anything changed.
-bool storeHaulSync(World& w);
+bool storeHaulSync(World& w, int faction = FACTION_PLAYER);
 // Counts every store there is now as listed (a loaded game whose lists already say what they haul)
 void markStoresListed(World& w);

@@ -122,6 +122,9 @@ bool factionsTrade(World& w, int a, int b);
 int tradeMarkup(World& w, int faction);
 // Whether a faction may hold an Altar and the claim around it: all but the Factionless and the mobs (boss and wild alike)
 bool factionCanClaim(int faction);
+// Whether a faction's units are run by an NPC Avatar: it holds an Altar's claim and is not yours. An NPC faction is a faction like yours,
+// with the same lists, schedules and rules (behavior_groups.h), and the Avatar makes the decisions a player would (npc_roles.h).
+bool factionRunsItself(int faction);
 
 std::map<int, int> playerReputation(World& w);
 const std::vector<FactionDef>& reputationFactions();

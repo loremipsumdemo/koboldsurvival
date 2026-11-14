@@ -86,6 +86,14 @@ void npcScheduleSystem(World& w, float dt) {
             ++kinds[ns->kind];
             ++irregular;
         }
+        // A citizen's group is its schedule (Group 1 the default, Groups 2 and 3 the Irregular ones)
+        for (ObjectId u : units) {
+            const NpcSchedule* ns = w.get<NpcSchedule>(u);
+            Citizen* c = w.get<Citizen>(u);
+            if (!ns || !c || w.has<Fortified>(u) || c->group == ns->kind) continue;
+            c->group = ns->kind;
+            c->applied = -1;
+        }
     }
 }
 
@@ -101,30 +109,27 @@ Schedule& scheduleOfRef(BehaviorGroups& g, int ref) {
 
 Activity activityAtHour(World& w, ObjectId u, int hour) {
     const Faction* fac = w.get<Faction>(u);
-    if (fac && fac->id != FACTION_PLAYER) {
-        // Another faction's unit: the default schedule, or one of the Irregular ones
+    const int factionId = fac ? fac->id : FACTION_PLAYER;
+    if (factionId != FACTION_PLAYER && !factionRunsItself(factionId)) {
+        // The Factionless and the mobs: the default schedule, or one of the Irregular ones
         const NpcSchedule* ns = w.get<NpcSchedule>(u);
         static const std::array<Schedule, NPC_SCHEDULE_KINDS> kinds = { npcSchedule(0), npcSchedule(1), npcSchedule(2) };
         return (Activity)std::min<int>(kinds[(size_t)std::clamp(ns ? ns->kind : 0, 0, NPC_SCHEDULE_KINDS - 1)].hours[(size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1)], ACTIVITY_COUNT - 1);
     }
-    BehaviorGroups& g = behaviorGroups(w);
+    // Yours and an NPC faction's alike: a citizen follows its group's own schedule if the group has one, else the faction's global one. A
+    // Fortified unit of yours follows the global schedule (its old behavior group is not applied to it, so neither is that group's own); an
+    // NPC faction's other units are on the schedule its Avatar gave them (the Irregular ones, so that some are awake when the rest sleep).
+    BehaviorGroups& g = behaviorGroups(w, factionId);
     const Schedule* s = &g.schedule;
-    // A Fortified unit follows the global schedule: its old behavior group is not applied to it, so neither is that group's own
-    if (const Citizen* c = w.get<Citizen>(u); c && !w.has<Fortified>(u) && c->group >= 0 && c->group < (int)g.groupSchedules.size()) {
-        const Faction* f = w.get<Faction>(u);
-        if (f && f->id == FACTION_PLAYER && g.groupSchedules[(size_t)c->group].override) s = &g.groupSchedules[(size_t)c->group];
-    }
+    int group = -1;
+    if (const Citizen* c = w.get<Citizen>(u); c && !w.has<Fortified>(u)) group = c->group;
+    else if (factionId != FACTION_PLAYER) group = w.has<NpcSchedule>(u) ? w.get<NpcSchedule>(u)->kind : 0;
+    if (group >= 0 && group < (int)g.groupSchedules.size() && g.groupSchedules[(size_t)group].override) s = &g.groupSchedules[(size_t)group];
     return (Activity)std::min<int>(s->hours[(size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1)], ACTIVITY_COUNT - 1);
 }
 
 bool perimeterClosedAtHour(World& w, int hour, int faction) {
-    if (faction != FACTION_PLAYER) {
-        const GateRule rule = factionRules(w, faction).gates;
-        if (rule == GateRule::AlwaysShut) return true;
-        if (rule == GateRule::AlwaysOpen) return false;
-        return npcSchedule(0).hours[(size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1)] == (unsigned char)Activity::Sleep;
-    }
-    const BehaviorGroups& g = behaviorGroups(w);
+    const BehaviorGroups& g = behaviorGroups(w, faction);
     const size_t h = (size_t)std::clamp(hour, 0, SCHEDULE_HOURS - 1);
     return g.perimeter.override ? g.perimeter.hours[h] != 0 : g.schedule.hours[h] == (unsigned char)Activity::Sleep;
 }

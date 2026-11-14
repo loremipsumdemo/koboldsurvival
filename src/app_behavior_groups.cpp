@@ -184,47 +184,9 @@ void App::openSchedule(ObjectId altarProp, int faction) {
     groupsUi.scheduleOnly = true;
 }
 
-namespace {
-// The lists and schedule an NPC faction's units follow, put together as yours are, for the view-only windows: Military is the roaming
-// list, Citizens what its citizens have, and Group 1 stands for its Fortified (shown under that name)
-BehaviorGroups npcGroupsView(World& w, int faction) {
-    BehaviorGroups g;
-    g.military = npcMilitaryBehaviors();
-    g.citizen = defaultCitizenBehaviors();
-    std::vector<BehaviorRule> fortified;
-    bool citizenSeen = false;
-    for (ObjectId u : w.view<Citizen, Behaviors, Faction>()) {
-        if (w.get<Faction>(u)->id != faction || w.has<Corpse>(u)) continue;
-        const Behaviors* b = w.get<Behaviors>(u);
-        if (w.has<Fortified>(u)) {
-            if (fortified.empty()) fortified = b->rules;
-        } else if (!citizenSeen) {
-            g.citizen = b->rules;
-            citizenSeen = true;
-        }
-    }
-    if (fortified.empty()) {
-        static const BehaviorKind KEEP[] = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Rescue, BehaviorKind::Rest, BehaviorKind::LeaveBed,
-                                             BehaviorKind::DealWithDowned, BehaviorKind::Sleep, BehaviorKind::AutoConstruct };
-        for (BehaviorKind k : KEEP) {
-            BehaviorRule r;
-            r.kind = k;
-            fortified.push_back(r);
-        }
-    }
-    g.groups.assign(1, fortified);
-    g.schedule = npcSchedule(0);
-    g.perimeter.override = true;
-    for (int h = 0; h < SCHEDULE_HOURS; ++h) g.perimeter.hours[(size_t)h] = perimeterClosedAtHour(w, h, faction) ? 1 : 0;
-    g.ready = true;
-    return g;
-}
-}
-
 BehaviorGroups& App::groupsShown() {
     if (!groupsUi.readOnly) return behaviorGroups(world);
-    groupsMirror = npcGroupsView(world, groupsUi.faction);
-    return groupsMirror;
+    return behaviorGroups(world, groupsUi.faction);
 }
 
 // What may be added to the list picked: the everyday tasks, Auto-Construct, Auto-Harvest of what grows in your claim,
@@ -455,7 +417,10 @@ void App::drawBehaviorGroups() {
     std::string windowTitle = lang(groupsUi.scheduleOnly ? "UILABEL_GROUPS_TAB_SCHEDULE" : "UILABEL_GROUPS_TITLE");
     if (groupsUi.readOnly) windowTitle += ": " + factionName(groupsUi.faction) + " (" + lang("UILABEL_VIEW_ONLY") + ")";
     renderer.drawListText(fitTo(renderer, windowTitle, L.title.w), L.title.x, mid(L.title), theme::GOLD);
-    auto refName = [&](int ref) { return groupsUi.readOnly && ref == 0 ? std::string(lang("UILABEL_ALTAR_FORTIFIED")) : groupRefName(ref); };
+    auto refName = [&](int ref) {
+        if (!groupsUi.readOnly || ref < 0) return groupRefName(ref);
+        return ref == 0 ? std::string(lang("UILABEL_NPC_GROUP_DEFAULT")) : langf("UILABEL_NPC_GROUP_IRREGULAR", { std::to_string(ref) });
+    };
     renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
     if (groupsUi.tab == 1) {
         const int rowTotal = 2 + (int)g.groups.size();   // the global schedule, each group, then the Perimeter Closed hours
