@@ -98,6 +98,8 @@ struct GameSettings {
     bool craftGatherSounds = false;
 
     std::array<std::array<float, 4>, 3> panels{};
+
+    std::string logFilter;   // the Information Panel's Game tab filter, one 1 or 0 a message kind (game_log.h); empty: the defaults
 };
 // How many tiles the view distance setting reaches
 inline int viewDistanceTiles(const GameSettings& s) { return FULL_DETAIL_TILES * s.viewDistance / 100; }
@@ -180,6 +182,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "interfaceVolume") s.interfaceVolume = parseInt(val, s.interfaceVolume);
         else if (key == "interfaceOn")     s.interfaceOn = (val == "1");
         else if (key == "craftGatherSounds") s.craftGatherSounds = (val == "1");
+        else if (key == "logFilter")       s.logFilter = val;
     }
 
     s.displayMode = std::clamp(s.displayMode, 0, DISPLAY_MODE_COUNT - 1);
@@ -253,6 +256,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "interfaceVolume=" << s.interfaceVolume << "\n";
     out << "interfaceOn=" << (s.interfaceOn ? 1 : 0) << "\n";
     out << "craftGatherSounds=" << (s.craftGatherSounds ? 1 : 0) << "\n";
+    if (!s.logFilter.empty()) out << "logFilter=" << s.logFilter << "\n";
     for (int i = 0; i < 3; ++i) {
         const std::array<float, 4>& p = s.panels[(size_t)i];
         char buf[128];

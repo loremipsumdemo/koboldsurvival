@@ -65,6 +65,7 @@ enum class Sfx : int {
     Recovers,
     DanceStep,
     MotivationChime,
+    TaskFailed,
     Count
 };
 

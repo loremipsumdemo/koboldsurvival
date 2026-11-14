@@ -524,6 +524,12 @@ def motivation_chime():
                (0.24, bell(1318.5, 0.9, 0.3), 0.7))
 
 
+def task_failed():
+    # Two dull knocks, the second lower: a try that did not come off
+    return mix((0.0, wood(230.0, 0.1, 0.025), 0.8), (0.0, thud(150.0, 0.08, 90.0, 0.02), 0.3), (0.11, wood(172.0, 0.14, 0.03), 0.9),
+               (0.11, thud(110.0, 0.1, 70.0, 0.025), 0.35))
+
+
 # Key: (function, peak level in dB).
 SOUNDS = {
     'UiHover': (ui_hover, -26),
@@ -589,6 +595,7 @@ SOUNDS = {
     'PutDown': (put_down, -10),
     'DanceStep': (dance_step, -24),
     'MotivationChime': (motivation_chime, -8),
+    'TaskFailed': (task_failed, -12),
 }
 
 # Key: (longest it may be in seconds, highest peak it may have in dB), for the sounds with a job that demands it.
@@ -607,6 +614,7 @@ LIMITS = {
     'WorkLockpick': (1.5, MAX_PEAK),
     'ForgeBurning': (2.9, MAX_PEAK),
     'DanceStep': (0.25, MAX_PEAK),
+    'TaskFailed': (0.5, MAX_PEAK),
 }
 
 

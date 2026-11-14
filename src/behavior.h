@@ -69,7 +69,9 @@ constexpr int BEHAVIOR_LIMIT = 16;
 constexpr int BEHAVIOR_TASKS_MAX = 256;   // the longest task list: a behavior group's, and so a citizen's that follows one
 constexpr int BEHAVIOR_NEED_PERCENT = 50;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;
-constexpr float NO_BED_RETRY_SECONDS = 10.0f;
+// With no bed to be had (none free, or the one chosen could not be reached), the Sleep and Rest tasks are not looked at again for an
+// in-game hour: a day is 30 real minutes (calendar.h), so an hour is 75 seconds
+constexpr float NO_BED_RETRY_SECONDS = 75.0f;
 
 struct BehaviorRule {
     bool on = true;

@@ -1343,9 +1343,43 @@ void freeBuildSystem(World& w, Terrain& t, double gameHours) {
     }
 }
 
+bool floorTileOpen(World& w, const BuildingMap& m, int x, int z, int level) { return floorWalkable(w, m, x, z, level); }
+
+bool blockFootprint(World& w, ObjectId e, BlockFootprint& out, bool blueprints) {
+    out.tiles.clear();
+    out.sight = 0.0f;
+    const Prop* p = w.get<Prop>(e);
+    const Transform* tr = w.get<Transform>(e);
+    if (!p || !tr || w.has<Foundation>(e) || (!blueprints && w.has<Blueprint>(e)) || storeyOf(w, e) != 0) return false;
+    const PropInfo& pi = propInfo(p->kind);
+    if (isStairs(w, e)) {
+        // Stairs' steps are walked up from their foot, not across
+        int xs[4], zs[4];
+        stairsTiles(w, e, xs, zs);
+        for (int i = 0; i < 3; ++i) out.tiles.push_back({ xs[i], zs[i] });
+        return true;
+    }
+    if (pi.perimeter || pi.tower) {
+        // A Perimeter Wall or Watchtower closes every tile it covers; a Gate is walked through while it lets you
+        if (!pi.solid && !gateShut(w, e)) return false;
+        int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+        pieceTiles(w, e, x0, z0, x1, z1);
+        for (int z = z0; z <= z1; ++z) {
+            for (int x = x0; x <= x1; ++x) out.tiles.push_back({ x, z });
+        }
+        out.sight = SIGHT_BLOCK_PERIMETER;
+        return true;
+    }
+    if (!pi.wallRule) return false;
+    out.tiles.push_back({ tileOf(tr->x), tileOf(tr->z) });
+    out.sight = FLOOR_HEIGHT;
+    return true;
+}
+
 void rebuildBlocking(World& w, Terrain& t) {
     t.clearBlocked();
     t.clearDecks();
+    BlockFootprint fp;
     for (ObjectId e : w.view<Prop, Transform>()) {
         if (w.has<Blueprint>(e)) continue;
         if (const Foundation* f = w.get<Foundation>(e)) {
@@ -1354,31 +1388,11 @@ void rebuildBlocking(World& w, Terrain& t) {
             }
             continue;
         }
-        if (storeyOf(w, e) != 0) continue;
-        if (isStairs(w, e)) {
-            // Stairs' steps are walked up from their foot, not across
-            int xs[4], zs[4];
-            stairsTiles(w, e, xs, zs);
-            for (int i = 0; i < 3; ++i) t.setBlocked(xs[i], zs[i], true);
-            continue;
+        if (!blockFootprint(w, e, fp)) continue;
+        for (const auto& [x, z] : fp.tiles) {
+            t.setBlocked(x, z, true);
+            if (fp.sight > 0.0f) t.setSightBlock(x, z, fp.sight);
         }
-        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter || pi.tower) {
-            // A Perimeter Wall or Watchtower closes every tile it covers; a Gate is walked through while it lets you
-            if (!pi.solid && !gateShut(w, e)) continue;
-            int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
-            pieceTiles(w, e, x0, z0, x1, z1);
-            for (int z = z0; z <= z1; ++z) {
-                for (int x = x0; x <= x1; ++x) {
-                    t.setBlocked(x, z, true);
-                    t.setSightBlock(x, z, SIGHT_BLOCK_PERIMETER);
-                }
-            }
-            continue;
-        }
-        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
-        const Transform* tr = w.get<Transform>(e);
-        t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
-        t.setSightBlock(tileOf(tr->x), tileOf(tr->z), FLOOR_HEIGHT);
     }
     w.resource<BuildingsChanged>().dirty = false;
     w.resource<BuildingsChanged>().tiles.clear();
@@ -1434,6 +1448,7 @@ void refreshBuildingTiles(World& w, Terrain& t) {
     }
     // Only the changed tiles are worked out again: a finished ground-floor wall closes its tile, a finished foundation
     // tile decks its own
+    BlockFootprint fp;
     for (ObjectId e : w.view<Prop, Transform>()) {
         if (w.has<Blueprint>(e)) continue;
         if (const Foundation* f = w.get<Foundation>(e)) {
@@ -1443,33 +1458,11 @@ void refreshBuildingTiles(World& w, Terrain& t) {
             }
             continue;
         }
-        if (storeyOf(w, e) != 0) continue;
-        if (isStairs(w, e)) {
-            int xs[4], zs[4];
-            stairsTiles(w, e, xs, zs);
-            for (int i = 0; i < 3; ++i) {
-                if (changed.count(tileKey(xs[i], zs[i]))) t.setBlocked(xs[i], zs[i], true);
-            }
-            continue;
-        }
-        if (const PropInfo& pi = propInfo(w.get<Prop>(e)->kind); pi.perimeter || pi.tower) {
-            if (!pi.solid && !gateShut(w, e)) continue;
-            int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
-            pieceTiles(w, e, px0, pz0, px1, pz1);
-            for (int z = pz0; z <= pz1; ++z) {
-                for (int x = px0; x <= px1; ++x) {
-                    if (!changed.count(tileKey(x, z))) continue;
-                    t.setBlocked(x, z, true);
-                    t.setSightBlock(x, z, SIGHT_BLOCK_PERIMETER);
-                }
-            }
-            continue;
-        }
-        if (!propInfo(w.get<Prop>(e)->kind).wallRule) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (changed.count(tileKey(tileOf(tr->x), tileOf(tr->z)))) {
-            t.setBlocked(tileOf(tr->x), tileOf(tr->z), true);
-            t.setSightBlock(tileOf(tr->x), tileOf(tr->z), FLOOR_HEIGHT);
+        if (!blockFootprint(w, e, fp)) continue;
+        for (const auto& [x, z] : fp.tiles) {
+            if (!changed.count(tileKey(x, z))) continue;
+            t.setBlocked(x, z, true);
+            if (fp.sight > 0.0f) t.setSightBlock(x, z, fp.sight);
         }
     }
     // Walks that pass near a changed tile are planned again, around a new wall or through a gap left by a lost one

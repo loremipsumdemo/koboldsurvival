@@ -10,9 +10,10 @@
 //  - Where a unit last set out for is kept (PathGoal). A unit that has stopped short of it, with no way there, stands idle.
 //  - Idle for STUCK_IDLE_SECONDS, it moves about at random for a few seconds, and then tries for the goal again.
 //  - Having done that STUCK_ROUNDS_BEFORE_BREAKING times with no way found, it breaks what is in its way: on the way that costs
-//    least, walls and doors (cost 20) before ladders (40) and stairs (60), one swing a second, the health of what it breaks running
-//    out. (Props that stand about do not shut a way, so they never are what is in it.) Health mends by itself inside an Altar's
-//    claim (claims.h).
+//    least. What a piece costs is its health (a wall or door 20, Perimeter pieces, towers and anything tougher in proportion), with
+//    ladders (40) and stairs (60) at least that; one swing a second, the health of what it breaks running out. Any piece that closes
+//    ground counts (BlockFootprint, building.h), of any size; it is reached from beside any tile it covers. (Props that stand about do
+//    not shut a way, so they never are what is in it.) Health mends by itself inside an Altar's claim (claims.h).
 //  - Still shut in a day (STUCK_FAINT_HOURS) after it began, it loses consciousness, and the day starts again.
 //  - A unit that is walking but not getting anywhere (it keeps its place for STUCK_STILL_SECONDS) is helped along before any of that: it
 //    plans its way again with the tile in its way shut for that one plan, then steps aside at random for a moment and plans again, and
@@ -29,6 +30,22 @@ inline constexpr float STUCK_STILL_SECONDS = 2.5f;   // walking, but this long w
 inline constexpr float STUCK_STILL_DISTANCE = 0.3f;   // a tile's share it must go to count as getting somewhere
 inline constexpr float STUCK_SIDESTEP_SECONDS = 1.5f;
 inline constexpr float STUCK_LOOK_SECONDS = 0.5f;   // how often a unit with a goal is looked at
+
+// A forced check on any unit that is walking: every STUCK_FORCE_SECONDS it is looked at, and one that has the same walk (the same goal,
+// the same task) and has not moved STUCK_STILL_DISTANCE from where it was last looked at is checked for being stuck, whatever planned
+// its walk (the PathGoal look above only knows walks planned with walkSoloTo and your own orders). A unit that is only at its work
+// where it stands is not walking, so is not looked at. The check:
+//  - says so in the Game tab (the Stuck filter, off to start with)
+//  - asks whether the goal can be walked to over open ground (stuckReachable): if not, the walk is dropped, and the unit is shut in
+//    as above; if so, it is helped along at once (its way planned again with the tile in its way shut, a step aside, and the rest)
+inline constexpr float STUCK_FORCE_SECONDS = 5.0f;
+// Not saved.
+struct MoveWatch {
+    Vec2 at{ 0.0f, 0.0f };     // where it stood when last looked at
+    Vec2 goal{ 0.0f, 0.0f };   // the end of the walk it had then
+    unsigned long long task = 0;   // which task it was on: its step and what that is about
+    float elapsed = 0.0f;
+};
 
 // Where a unit last set out for. Not saved.
 struct PathGoal {
@@ -50,19 +67,41 @@ struct Stuck {
     float swing = 0.0f;
 };
 
+// On a unit that has just failed or given up a task (noteTaskFailed): an X emote over its head for this long (not saved)
+inline constexpr float TASK_FAILED_EMOTE_SECONDS = 1.0f;
+struct TaskFailedEmote {
+    float left = TASK_FAILED_EMOTE_SECONDS;
+};
+
 // Notes where a unit set out for
 void setPathGoal(World& w, ObjectId u, Vec2 goal);
 // Whether the goal can be walked to from here over open ground (and doors), looking no further than a large area: more open ground
 // than that counts as a yes
 bool stuckReachable(World& w, const Terrain& t, Vec2 from, Vec2 goal);
-// What is in the way: the wall, door, ladder or stairs on the cheapest way from here to the goal (walls and doors cost 20, ladders
-// 40, stairs 60), or NO_OBJECT if no way is shut by one
+// What is in the way: the piece (wall, door, gate, Perimeter Wall, ladder, stairs ...) on the cheapest way from here to the goal,
+// cheapest by health (see above), or NO_OBJECT if no way is shut by one
 ObjectId stuckBlocker(World& w, const Terrain& t, Vec2 from, Vec2 goal);
 
-// A unit found standing in a closed tile (inside a wall, say), seen once; found there again a second later it is moved to the
-// nearest open spot and the Game tab says so. Not saved.
+// A unit found standing in a closed tile (inside a wall, a gate that shut, ground made steep), seen once; found there again a second
+// later it is moved to an open spot and the Game tab says so. Which spot is worked out from the ground alone (Terrain::walkable, which
+// every closed tile of every kind of piece ends up in), so a new kind of piece, of any size, needs nothing here:
+//  - candidates are the open tiles within TRAPPED_SEARCH_TILES, scored by how far they are, and how far from where the unit was last
+//    standing in the open (so it comes out on the side it came from, not across the wall)
+//  - a candidate in a small walled pocket (TRAPPED_POCKET_TILES or fewer tiles reach from it) costs extra, unless the unit came from
+//    that pocket, so it is not put into the gap between two pieces or the inside of a tower
+//  - a candidate in the claim of a faction hostile to the unit's, which it was not already in, costs extra: not into an enemy's camp
+//  - a candidate that a blueprint would close costs extra, so it is not put where it would be trapped again
+// Not saved.
 inline constexpr float FREE_TRAPPED_SECONDS = 1.0f;
+inline constexpr int TRAPPED_SEARCH_TILES = 16;
+inline constexpr int TRAPPED_POCKET_TILES = 48;
+inline constexpr int TRAPPED_CANDIDATES = 16;   // the nearest this many are looked at closely
+inline constexpr float TRAPPED_LAST_WEIGHT = 0.35f, TRAPPED_POCKET_COST = 12.0f, TRAPPED_ENEMY_COST = 10.0f, TRAPPED_BLUEPRINT_COST = 8.0f;
 struct Trapped {};
+// Where a unit last stood on open, free ground of the first floor, kept up once a second
+struct LastOpenSpot {
+    float x = 0.0f, z = 0.0f;
+};
 
 void stuckSystem(World& w, Terrain& t, Rng& rng, float dt);
 
@@ -97,5 +136,4 @@ bool deferPath(World& w, ObjectId u, Vec2 target, int storey, bool whole);
 // Notes the failure if the way found does not get to the goal
 void notePathResult(World& w, const Terrain& t, ObjectId u, Vec2 from, Vec2 target, const std::vector<Vec2>& path);
 void notePathFailed(World& w, ObjectId u, Vec2 target);
-void noteTaskFailed(World& w, ObjectId u, const std::string& task);
-void pathPaceSystem(World& w, Terrain& t, float dt);
+void noteTaskFailed(World& w, ObjectId u, const std::string& task);void pathPaceSystem(World& w, Terrain& t, float dt);

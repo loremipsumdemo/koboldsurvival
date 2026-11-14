@@ -192,6 +192,9 @@ struct BuildingStamp {
     bool operator!=(const BuildingStamp& o) const { return !(*this == o); }
 };
 BuildingStamp buildingStamp(World& w);
+// Whether a unit on this floor (1 the first upper floor, and so on) can stand on this tile: a finished floor with no finished wall or
+// stairs' step on it. The stuck system uses it to find units standing where they cannot.
+bool floorTileOpen(World& w, const BuildingMap& m, int x, int z, int level);
 // A finished floor of owner's (any owner for -1) on this tile and level: the foundation for level 0, else an upper floor
 // or the top step of stairs from the floor below
 bool floorSurfaceOn(World& w, const BuildingMap& m, int x, int z, int level, int owner = -1);
@@ -312,6 +315,17 @@ void finishAllBlueprints(World& w, Terrain& t);
 bool finishBlueprint(World& w, Terrain& t, ObjectId prop);
 // The terrain's closed tiles, from the finished walls
 void rebuildBlocking(World& w, Terrain& t);
+
+// The one place that says which ground tiles a piece closes (and so what the stuck system must break to get through it): a finished
+// wall closes its tile, stairs their steps, a Perimeter Wall or Watchtower every tile it covers, a Gate only while shut. A piece of
+// any new kind that closes ground is added here, and everything that reads the closed tiles (rebuildBlocking, refreshBuildingTiles,
+// stuck.cpp) follows. False if the piece closes none (a foundation, an upper floor, an open gate, a prop that stands about). With
+// `blueprints`, a piece not yet built is asked as if it were finished: where a blueprint will close the ground.
+struct BlockFootprint {
+    std::vector<std::pair<int, int>> tiles;
+    float sight = 0.0f;   // the height it blocks sight to, 0 for none
+};
+bool blockFootprint(World& w, ObjectId piece, BlockFootprint& out, bool blueprints = false);
 
 // A wall's shape and turn, from the walls and doors around it on its floor: 0 none around (a post), 1 end, 2 straight,
 // 3 corner, 4 tee, 5 cross. Each shape is modelled for its arms east, south, west and north, and turned by yaw.

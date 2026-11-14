@@ -61,3 +61,4 @@ Dies	dies.mp3	effects	Units: an Unconscious unit died (its Dying reached 100)
 Recovers	recovers.mp3	effects	Units: an Unconscious unit woke up in a bed or bedroll
 DanceStep	dance_step.mp3	effects	Units: a dancer's foot lands at the bottom of a hop (very light)
 MotivationChime	motivation_chime.mp3	effects	Faction: Motivation rose up to its threshold
+TaskFailed	task_failed.mp3	effects	Units: one of your units failed or gave up a task

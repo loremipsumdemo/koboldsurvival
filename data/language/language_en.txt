@@ -1846,3 +1846,7 @@ UILABEL_BLOCKED_ORDERS	Blocked orders
 MISC_PATH_FAILED	{0} can't find a way to ({1}, {2})
 MISC_UNSTUCK	{0} was freed from a wall and moved to ({1}, {2})
 MISC_TASK_FAILED	{0} gave up a task: {1}
+UILABEL_STUCK	Stuck
+MISC_STUCK_NOMOVE	{0} has not moved in {3} seconds on the way to ({1}, {2})
+MISC_STUCK_NOWAY	{0} has no open way to ({1}, {2}): shut in
+MISC_STUCK_REPLAN	{0} has an open way to ({1}, {2}) but is held up: trying to get round

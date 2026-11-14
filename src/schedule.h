@@ -116,3 +116,13 @@ struct LeavingDance {
     float along() const { return 1.0f - (left < 0.0f ? 0.0f : left) / DANCE_LEAVE_SECONDS; }
 };
 inline constexpr float DANCE_MIN = 40.0f, DANCE_MAX = 90.0f;   // real seconds
+
+// A wild mob's sleep (wild_ai.cpp). In its sleep hours it checks once an hour that no hostile is within MOB_SLEEP_DANGER_RANGE: if
+// none is, it sleeps (it stays put until its sleep hours end, it is hurt or it is disturbed); if one is, it moves away from the nearest
+// by MOB_SLEEP_MOVE_MIN to MOB_SLEEP_MOVE_MAX tiles and stays awake till the next check. Not saved: a loaded mob looks again.
+inline constexpr float MOB_SLEEP_DANGER_RANGE = 10.0f, MOB_SLEEP_MOVE_MIN = 1.0f, MOB_SLEEP_MOVE_MAX = 10.0f;
+struct MobAsleep {
+    long long checked = -1;   // the in-game hour (counted from the start) it last looked
+    bool asleep = false;
+    int hp = 0;               // its health when it last slept; hurt below this wakes it
+};

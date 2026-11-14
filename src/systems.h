@@ -101,7 +101,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng);
 // With an Auto-Harvest task of this prop kind, the unit also gets Auto-Haul to the nearest store of its faction that takes
 // what it yields: the Wood Stockpile for logs, the Stone Stockpile for stone, any storage otherwise. The store, or NO_OBJECT
 ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind);
-void wildMobSystem(World& w, Terrain& t, float dt);
+void wildMobSystem(World& w, Terrain& t, Rng& rng, float dt);
 struct WorkGain {
     enum class Kind { Item, Unlocked, LockpickFailed, Trained };
     ObjectId unit = NO_OBJECT;

@@ -63,6 +63,7 @@ std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
     if (w.has<Corpse>(u)) return w.has<Mob>(u) ? std::vector<EmoteId>{} : std::vector<EmoteId>{ EmoteId::Dead };
     if (outCold(w, u)) return { EmoteId::Unconscious };
     if (w.has<PlayingDead>(u)) return { EmoteId::PlayingDead };
+    if (w.has<TaskFailedEmote>(u)) return { EmoteId::TaskFailed };   // for the second after it failed or gave up a task
     std::vector<EmoteId> out;
     auto propEmoteOf = [&](ObjectId prop) {
         const Prop* p = w.get<Prop>(prop);

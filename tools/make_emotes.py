@@ -380,6 +380,14 @@ def sharing(c):
     c.poly(DARK, (8, 18.5), (4, 21.5), (8, 24.5))
 
 
+def task_failed(c):
+    # A red cross: the task did not work out
+    c.line(RED[0], 3.4, (9, 6), (23, 20))
+    c.line(RED[0], 3.4, (23, 6), (9, 20))
+    c.line(RED[1], 1.4, (10, 6.5), (22, 19.5))
+    c.line(RED[1], 1.4, (22, 6.5), (10, 19.5))
+
+
 EMOTES = [
     (1, mining, STATUS), (2, woodcutting, STATUS), (3, cooking, STATUS), (4, encumbered, WARN), (5, sleeping, STATUS),
     (6, hungry, WARN), (7, lockpicking, STATUS), (8, locked_in, ALARM), (9, herbalism, STATUS), (10, unconscious, STATUS),
@@ -396,6 +404,7 @@ EMOTES = [
     (36, dead, ALARM),
     (37, carried, WARN),
     (38, sharing, STATUS),
+    (39, task_failed, ALARM),
 ]
 
 def main():

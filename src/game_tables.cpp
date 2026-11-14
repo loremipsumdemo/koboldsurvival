@@ -41,7 +41,7 @@ const char* const SFX_KEYS[] = {
     "WorkLockpick", "ForgeBurning", "DoneOre", "DoneTree", "DoneMushroom", "DoneCooking", "DoneWater", "DoneTraining",
     "DoneForge", "Unlocked", "LockpickFailed", "TradeDone", "TradeFailed", "Store", "Take", "TurnHostile", "LockedIn",
     "Occupy", "GearChanged", "Downed", "LevelUp", "TalkOpen", "CarryUp", "PutDown", "Dies", "Recovers", "DanceStep",
-    "MotivationChime",
+    "MotivationChime", "TaskFailed",
 };
 static_assert(std::size(SFX_KEYS) == (size_t)Sfx::Count);
 
@@ -77,7 +77,7 @@ const std::vector<Numbered> EMOTE_KEYS = {
     { "Lockpicking", 7 }, { "LockedIn", 8 }, { "Herbalism", 9 }, { "Unconscious", 10 }, { "PlayingDead", 12 },
     { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 }, { "Hauling", 17 },
     { "Building", 18 },
-    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 },
+    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 }, { "TaskFailed", 39 },
 };
 
 const std::vector<Numbered> ICON_KEYS = {
@@ -248,6 +248,14 @@ bool readTemperament(const std::string& s, MobTemperament& out) {
     return true;
 }
 
+bool readSleepCycle(const std::string& s, MobSleepCycle& out) {
+    if (s == "none") out = MobSleepCycle::None;
+    else if (s == "diurnal") out = MobSleepCycle::Diurnal;
+    else if (s == "nocturnal") out = MobSleepCycle::Nocturnal;
+    else return false;
+    return true;
+}
+
 bool readCategory(const std::string& s, MobCategory& out) {
     if (s == "regular") out = MobCategory::Regular;
     else if (s == "boss") out = MobCategory::Boss;
@@ -283,7 +291,7 @@ bool numberKeys(const char* file, const std::vector<Row>& rows, const char* cons
 
 bool loadMobs(std::string& err) {
     const char* file = "data/mobs.txt";
-    constexpr size_t COLUMNS = 25;
+    constexpr size_t COLUMNS = 26;
     std::vector<Row> rows;
     if (!readTable(file, COLUMNS, rows, err)) return false;
     std::map<std::string, int> numbers;
@@ -304,7 +312,7 @@ bool loadMobs(std::string& err) {
                         readInt(c[13], m.hp) && readFloat(c[14], m.modelHeight) && readYesNo(c[17], m.patrolSpawn) &&
                         readCategory(c[18], m.category) && readTemperament(c[19], m.temperament) &&
                         readFloat(c[20], m.spriteScale) && readFloat(c[21], m.hover) && readInt(c[22], m.faction) &&
-                        readInt(c[24], m.escortCount);
+                        readInt(c[24], m.escortCount) && readSleepCycle(c[25], m.sleep);
         if (!ok) {
             err = at(file, r, "a value for " + r.key + " is not valid");
             return false;

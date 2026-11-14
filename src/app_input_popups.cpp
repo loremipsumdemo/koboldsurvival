@@ -373,6 +373,8 @@ bool App::pressOnLogFilter() {
         for (const GameLogLayout::FilterRow& fr : cl.filterRows) {
             if (!fr.heading && fr.r.contains(x, y)) {
                 logFilter.on[(int)fr.kind] = !logFilter.on[(int)fr.kind];
+                settings.logFilter = logFilterText(logFilter);
+                saveSettingsFile();
                 playSfx(Sfx::UiClick);
                 break;
             }

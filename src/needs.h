@@ -5,8 +5,11 @@
 #include "props.h"
 #include "stats.h"
 
-// Awake, rested runs from full to 0 over the daylight hours less one, so a unit up at dawn is spent an hour before dusk
-constexpr double RESTED_EMPTY_HOURS = DAYLIGHT_HOURS - 1;
+// Rested: every unit has the same bar, whatever its stats, so a schedule works the same for all of them. Awake, it runs from full to
+// 0 over the 16 hours between the default schedule's wake and bed times (5 an hour). A bed (data/props.txt) gives 10 an hour, so a
+// full night's sleep (8 hours) fills it from empty, and a bedroll gives 5, half as fast.
+constexpr int RESTED_MAX = 80;
+constexpr double RESTED_EMPTY_HOURS = 16.0;
 inline double restedLossPerHour(int maxRested) { return std::max(1, maxRested) / RESTED_EMPTY_HOURS; }
 // Harvesting and crafting at 0 rested go at this share of the usual speed
 constexpr double EXHAUSTED_WORK_FACTOR = 0.2;
@@ -20,9 +23,6 @@ inline double comfortGainPerHour(PropKind propKind) { return propInfo(propKind).
 constexpr double CONSCIOUS_TICKS_PER_HOUR = 100.0;
 constexpr float RESTED_HOSTILE_RANGE = 12.0f;
 
-inline int maxRestedFor(const Stats& s) {
-    return 50 + std::max(1, std::min(MAX_LEVEL, levelOf(s, StatId::Vitality)));
-}
 constexpr float LEAVE_BED_SECONDS = 30.0f;
 constexpr float RESCUE_RANGE = 40.0f;
 constexpr float REST_SEARCH_RANGE = 50.0f;
@@ -40,9 +40,14 @@ inline bool driftNeed(int& value, int maximum, double& part, double perHour, dou
     return value != before;
 }
 
-inline void tickNeeds(Needs& n, int hours) {
+// Asleep, hunger comes at half the rate: every other hour it would have dropped, it does not
+inline void tickNeeds(Needs& n, int hours, bool asleep = false) {
     for (int i = 0; i < hours; ++i) {
         if (n.hunger > 0) {
+            if (asleep) {
+                n.sleepSkip = !n.sleepSkip;
+                if (n.sleepSkip) continue;
+            }
             --n.hunger;
             n.changed |= NEEDS_HUNGER_CHANGED;
         } else if (n.hp > 0) {
