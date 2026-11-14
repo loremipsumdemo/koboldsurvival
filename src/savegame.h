@@ -168,6 +168,7 @@ struct SaveData {
     int currentSquad = 0;
     std::vector<Ghost> ghosts;
     std::vector<SaveGroup> groups;   // empty in a file from before behavior groups: the defaults are used
+    std::vector<std::pair<int, int>> patrons;   // each faction's patron (patrons.h)
     std::vector<std::pair<int, double>> motivation;   // each faction's Motivation (motivation.h)
     std::vector<SaveSchedule> schedules;   // none in a file from before schedules: the default one
     std::vector<SaveProp> props;

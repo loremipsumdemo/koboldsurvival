@@ -21,6 +21,7 @@ struct LogLine {
     bool located = false;
     float x = 0.0f, y = 0.0f, z = 0.0f;
     int storey = 0;   // the floor it happened on
+    int replay = -1;  // a line of the Patrons tab: which dialogue its * plays again (App::patronMemory), else -1
 };
 
 // Who a message is about: whether it is only about other factions' business (shown only with the NPC messages), and whose place
@@ -65,6 +66,7 @@ inline void logFilterFromText(LogFilter& f, const std::string& s) {
 struct GameLog {
     std::vector<LogLine> lines;
     std::vector<LogLine> spoken;
+    std::vector<LogLine> patrons;   // the Patrons tab: what the patrons said, and what made them say it
     size_t kindCount[LOG_KIND_COUNT] = {};
     void say(const std::string& text);
     void add(const std::string& text, Tint tint = Tint::Gray, LogKind kind = LogKind::Other, bool npc = false);

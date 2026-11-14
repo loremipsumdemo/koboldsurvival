@@ -561,3 +561,8 @@ void Renderer::drawNotice(const std::string& text, int winW, int winH) {
 void Renderer::drawUnitPicture(int sprite, const Rect& r) {
     drawFitted(unitPicture(sprite), r, WHITE);
 }
+
+void Renderer::drawPatronPicture(int patron, const Rect& r, RGBA tint) {
+    if (patron < 0 || (size_t)patron >= patronPics_.size()) return;
+    drawFitted(patronPics_[(size_t)patron], r, tint);
+}

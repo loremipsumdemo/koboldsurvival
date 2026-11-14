@@ -581,6 +581,7 @@ void App::onMouseButtonDown() {
     }
 
     if (screen == Screen::PartySetup) {
+        if (patronOpen && pressOnPatrons()) return;
         const PartyListBar bar = partyListBar(winW, winH, (int)party.size(), partyUi.listScroll);
         const Rect barGrab{ bar.track.x - 4.0f, bar.track.y, bar.track.w + 8.0f, bar.track.h };
         if (e.button.button == SDL_BUTTON_LEFT && partyUi.dropKind == DropKind::None && bar.track.h > 0.0f
@@ -598,7 +599,7 @@ void App::onMouseButtonDown() {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const float mx = e.button.x, my = e.button.y;
             const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
-            const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop);
+            const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText());
             const Button* hit = nullptr;
             for (auto it = buttons.rbegin(); it != buttons.rend(); ++it) {
                 if (it->enabled && it->rect.contains(mx, my)) {

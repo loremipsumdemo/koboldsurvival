@@ -269,6 +269,11 @@ bool App::infoPanelClick(int W, int H, float tx, float ty) {
         logFilterOpen = false;
         return true;
     }
+    if (cl.tabPatrons.contains(tx, ty)) {
+        if (infoTab != 3) { infoTab = 3; logOffset = 0; }
+        logFilterOpen = false;
+        return true;
+    }
     if (infoTab == 1 && cl.filterBtn.contains(tx, ty)) {
         logFilterOpen = !logFilterOpen;
         return true;
@@ -283,6 +288,20 @@ bool App::infoPanelClick(int W, int H, float tx, float ty) {
         }
         if (cl.filterMenu.contains(tx, ty)) return true;
         logFilterOpen = false;
+    }
+    // The * at the start of a line of the Patrons tab: that dialogue is played again
+    if (infoTab == 3) {
+        const std::vector<const LogLine*> rows = infoLines(gameLog, infoTab, logFilter);
+        for (int k = 0; k < cl.shown && cl.first + k < (int)rows.size(); ++k) {
+            const int row = cl.linesVisible - cl.shown + k;
+            if (!Rect{ cl.textX, cl.rowsTop + row * cl.lineH, cl.starW, cl.lineH }.contains(tx, ty)) continue;
+            const LogLine& line = *rows[(size_t)(cl.first + k)];
+            if (line.replay >= 0) {
+                replayPatronEvent(line.replay);
+                playSfx(Sfx::UiClick);
+            }
+            return true;
+        }
     }
     // The * at the start of a line of the Game tab: the camera goes to where the message happened
     if (infoTab == 1) {

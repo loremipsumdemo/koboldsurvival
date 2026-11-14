@@ -336,6 +336,8 @@ void App::drawPlayingScreen() {
     drawManageSquads();
     drawFactionRules();
     drawFactionInfo();
+    drawPatronChat();
+    drawPatrons();
     drawCraftWindow();
     drawDeveloper();
     drawBlueprintPanel();

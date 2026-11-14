@@ -502,7 +502,7 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     L.lineCount = lineCount;
     L.lineH = lineH;
     L.offset = std::clamp(offset, 0, L.maxOffset());
-    L.tab = std::clamp(tab, 0, 2);
+    L.tab = std::clamp(tab, 0, 3);
     L.filterOpen = filterOpen && L.tab == 1 && !collapsed;
 
     const float w = open.w;
@@ -540,8 +540,9 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     L.tabMessage = Rect{ x + pad * 0.5f, tabY + 2.0f * s, tabW("UILABEL_MESSAGE"), tabH - 2.0f * s };
     L.tabGame = Rect{ L.tabMessage.x + L.tabMessage.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_GAME"), tabH - 2.0f * s };
     L.tabTime = Rect{ L.tabGame.x + L.tabGame.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_TIME"), tabH - 2.0f * s };
+    L.tabPatrons = Rect{ L.tabTime.x + L.tabTime.w + 4.0f * s, tabY + 2.0f * s, tabW("UILABEL_PATRONS_TITLE"), tabH - 2.0f * s };
     {
-        const float tabsEnd = L.tabTime.x + L.tabTime.w + 4.0f * s;
+        const float tabsEnd = L.tabPatrons.x + L.tabPatrons.w + 4.0f * s;
         const float fw = listTextWidth(lang("UILABEL_FILTER")) + 14.0f * s;
         const float fx = std::max(tabsEnd, x + w - pad - scrollW - fw);
         L.filterBtn = Rect{ fx, tabY + 2.0f * s, std::max(0.0f, std::min(fw, x + w - 2.0f * s - fx)), tabH - 2.0f * s };
@@ -568,7 +569,7 @@ GameLogLayout Renderer::gameLogLayout(int winW, int winH, int tab, bool filterOp
     }
     if (collapsed) {
         L.track = L.thumb = Rect{};
-        L.tabMessage = L.tabGame = L.tabTime = L.filterBtn = Rect{};
+        L.tabMessage = L.tabGame = L.tabTime = L.tabPatrons = L.filterBtn = Rect{};
     }
     return L;
 }
@@ -594,6 +595,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     tab(L.tabMessage, lang("UILABEL_MESSAGE"), L.tab == 0);
     tab(L.tabGame, lang("UILABEL_GAME"), L.tab == 1);
     tab(L.tabTime, lang("UILABEL_TIME"), L.tab == 2);
+    tab(L.tabPatrons, lang("UILABEL_PATRONS_TITLE"), L.tab == 3);
     if (L.tab == 1) drawButton(L.filterBtn, lang("UILABEL_FILTER"), true, L.filterBtn.contains(mx, my) || L.filterOpen);
 
     const float tabH = 20.0f * s;
@@ -618,7 +620,7 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
     const float top = L.rowsTop;
     const int count = (int)rows.size();
     // The Game tab's lines each start with a * that goes to where the message happened: gold when it has a place
-    const bool stars = L.tab == 1;
+    const bool stars = L.tab == 1 || L.tab == 3;   // the Patrons tab's go to play the dialogue again
     const float startX = L.textX + (stars ? L.starW : 0.0f), startW = L.textW - (stars ? L.starW : 0.0f);
     for (int k = 0; k < L.shown && L.first + k < count; ++k) {
         const LogLine& ln = *rows[(size_t)(L.first + k)];
@@ -626,12 +628,13 @@ void Renderer::drawGameLog(const GameLogLayout& L, const std::vector<const LogLi
         const float y = top + row * L.lineH;
         if (stars) {
             const Rect star{ L.textX, y, L.starW, L.lineH };
-            if (ln.located && star.contains(mx, my)) {
+            const bool live = L.tab == 3 ? ln.replay >= 0 : ln.located;
+            if (live && star.contains(mx, my)) {
                 noteHover(star);
-                noteTip(lang("UILABEL_LOG_GO_TO"), star);
+                noteTip(lang(L.tab == 3 ? "UILABEL_PATRON_REPLAY_TIP" : "UILABEL_LOG_GO_TO"), star);
                 drawRect(star, RGBA{ 1.0f, 1.0f, 1.0f, 0.12f });
             }
-            drawListText("*", star.x + (star.w - listTextWidth("*")) * 0.5f, y, ln.located ? theme::GOLD : theme::alpha(gray, 0.45f));
+            drawListText("*", star.x + (star.w - listTextWidth("*")) * 0.5f, y, live ? theme::GOLD : theme::alpha(gray, 0.45f));
         }
         drawListText(fitText(ln.text, startW, false), startX, y, logTint(ln.tint));
     }

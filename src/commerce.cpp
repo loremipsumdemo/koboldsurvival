@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "commerce.h"
 #include <algorithm>
 #include <cmath>
@@ -478,6 +479,13 @@ void raiderSystem(World& w, Terrain& t, Rng& rng, CommerceClock& clock, float dt
                     goTo(w, t, u, target);
                     queueLog(w, langf(breakIn ? "MISC_RAIDER_BREAKING_IN" : "MISC_RAIDER_COMING", { nameOf(w, u), propDisplayName(w, target) }),
                              LogKind::Seen, LogWho(false, u), Tint::Red);
+                    // The patrons speak of it: the raiders' faction's, then the one raided
+                    int victim = -1;
+                    if (const Owner* ow = w.get<Owner>(target)) victim = ow->faction;
+                    else if (const Transform* tt = w.get<Transform>(target)) {
+                        if (const Claim* in = claimAt(claims, tt->x, tt->z)) victim = in->owner;
+                    }
+                    if (victim >= 0) patronEvent(w, PatronEvent::Raid, factionOf(w, u), victim);
                 }
             }
         }

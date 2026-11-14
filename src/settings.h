@@ -73,6 +73,7 @@ struct GameSettings {
     int citizenHardCap = 512;
     bool showUnitNames = true;
     bool showNpcNames = true;
+    bool patronDialogue = true;   // the banner of patron lines at the top of the screen (patrons.h)
     int fontScale = 100;
     std::string fontPath;
     std::string language = LANGUAGE_DEFAULT_ID;
@@ -153,6 +154,7 @@ inline GameSettings loadSettings(const std::string& path) {
         else if (key == "citizenHardCap")  s.citizenHardCap = parseInt(val, s.citizenHardCap);
         else if (key == "unitNames")       s.showUnitNames = (val == "1");
         else if (key == "npcNames")        s.showNpcNames = (val == "1");
+        else if (key == "patronDialogue")  s.patronDialogue = (val == "1");
         else if (key == "fontScale")       s.fontScale = parseInt(val, s.fontScale);
         else if (key == "fontPath")        s.fontPath = val;
         else if (key == "language")        s.language = val;
@@ -236,6 +238,7 @@ inline bool saveSettings(const GameSettings& s, const std::string& path) {
     out << "autosaveMinutes=" << s.autosaveMinutes << "\n";
     out << "unitNames=" << (s.showUnitNames ? 1 : 0) << "\n";
     out << "npcNames=" << (s.showNpcNames ? 1 : 0) << "\n";
+    out << "patronDialogue=" << (s.patronDialogue ? 1 : 0) << "\n";
     out << "fontScale=" << s.fontScale << "\n";
     out << "fontPath=" << s.fontPath << "\n";
     out << "language=" << s.language << "\n";

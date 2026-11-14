@@ -158,6 +158,7 @@ struct GameLogLayout {
     Rect tabMessage;
     Rect tabGame;
     Rect tabTime;
+    Rect tabPatrons;
     Rect filterBtn;
     bool filterOpen = false;
     Rect filterMenu;

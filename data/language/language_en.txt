@@ -1910,3 +1910,118 @@ UILABEL_STUCK	Stuck
 MISC_STUCK_NOMOVE	{0} has not moved in {3} seconds on the way to ({1}, {2})
 MISC_STUCK_NOWAY	{0} has no open way to ({1}, {2}): shut in
 MISC_STUCK_REPLAN	{0} has an open way to ({1}, {2}) but is held up: trying to get round
+PATRON_01_NAME	Maelis Briar
+PATRON_01_DESC	A perceptive spellweaver who hides a fiercely protective heart.
+PATRON_02_NAME	Vexa Thorn
+PATRON_02_DESC	A witty hexwright who loves challenging rules.
+PATRON_03_NAME	Thistle Fen
+PATRON_03_DESC	A gentle herbalist who remembers every kindness.
+PATRON_04_NAME	Nox Vale
+PATRON_04_DESC	A quiet dusk mage who solves problems through ingenuity.
+PATRON_05_NAME	Kiri Ember
+PATRON_05_DESC	A fearless performer who turns rituals into celebrations.
+PATRON_06_NAME	Orin Quill
+PATRON_06_DESC	A curious scholar obsessed with magical mysteries.
+PATRON_07_NAME	Suri Skydrift
+PATRON_07_DESC	An energetic apprentice overflowing with wild ideas.
+PATRON_08_NAME	Rook Ashfang
+PATRON_08_DESC	A thrill-seeking duelist who lives for danger.
+PATRON_09_NAME	Garrik Stone
+PATRON_09_DESC	A disciplined captain devoted to protecting the coven.
+PATRON_10_NAME	Fenn Willow
+PATRON_10_DESC	A sensitive dream mage who enchants through imagination.
+PATRON_11_NAME	Onyx Moth
+PATRON_11_DESC	A calculating archivist who anticipates hidden threats.
+PATRON_12_NAME	Elian Tide
+PATRON_12_DESC	A dependable recordkeeper who never breaks a promise.
+PATRON_13_NAME	Cassian Velour
+PATRON_13_DESC	A charismatic mentor who inspires others to shine.
+PATRON_14_NAME	Slate Wyrm
+PATRON_14_DESC	A commanding strategist who refuses to accept defeat.
+PATRON_15_NAME	Aster Glen
+PATRON_15_DESC	A welcoming guardian who makes everyone feel at home.
+PATRON_16_NAME	Nyra Vesper
+PATRON_16_DESC	A mysterious artist who expresses emotions through magic.
+UILABEL_PATRONS_TITLE	Patrons
+UILABEL_PATRON_RANDOM	Random
+UILABEL_PATRON_BUTTON	Patron: {0}
+UILABEL_PATRON_OF	Patron of {0}
+UILABEL_SEE_PATRON	See Patron
+UILABEL_PATRON_DIALOGUE	Patron Dialogue
+PATRON_RAID_CALL	We raid {0} tonight. Evacuate or don't, it changes nothing.
+PATRON_RAID_RESPONSE	Bring it on, {0}. We've been waiting for you to muster the courage.
+PATRON_HOSTILE_CALL	{0}, you have crossed us for the last time. We will not ask politely again.
+PATRON_HOSTILE_RESPONSE	Then meet us in the field, {0}. We will not be the ones to flinch.
+PATRON_ALLIED_CALL	{0}, our banners stand beside yours from this day.
+PATRON_ALLIED_RESPONSE	And ours beside yours, {0}. May this alliance outlast every war.
+PATRON_TRADE_CALL	{0}, a fair trade fills both our granaries.
+PATRON_TRADE_RESPONSE	Fair dealing is the root of peace, {0}. Come again.
+PATRON_RESCUE_CALL	Your wounded rest safe in our beds, {0}. Consider it a courtesy.
+PATRON_RESCUE_RESPONSE	We will remember this kindness, {0}.
+UILABEL_PATRON_REPLAY	(Replay)
+UILABEL_PATRON_REPLAY_TIP	Play this dialogue again
+PATRON_RAID_TRIGGER	Raid: {0} is raiding {1}
+PATRON_HOSTILE_TRIGGER	Hostile: {0} has turned against {1}
+PATRON_ALLIED_TRIGGER	Allied: {0} has allied with {1}
+PATRON_TRADE_TRIGGER	Trade: {0} traded with {1}
+PATRON_RESCUE_TRIGGER	Rescue: {0} took in a unit of {1}
+PATRON_ATTACK_CALL	{0}, you struck first. Remember that when the dust settles.
+PATRON_ATTACK_RESPONSE	We strike only what threatens us, {0}. Look to your own.
+PATRON_ATTACK_TRIGGER	Attack: {0} attacked {1}
+PATRON_KILL_CALL	One of yours has fallen, {0}. Let it be a lesson.
+PATRON_KILL_RESPONSE	You will answer for that, {0}. Blood for blood.
+PATRON_KILL_TRIGGER	Kill: {0} killed a unit of {1}
+PATRON_TRESPASS_CALL	Your people wander our land, {0}. Turn them back, or we will.
+PATRON_TRESPASS_RESPONSE	We go where we please, {0}. Your borders do not bind us.
+PATRON_TRESPASS_TRIGGER	Trespass: {1} is on {0}'s land
+PATRON_DAMAGE_CALL	Your walls will not hold, {0}. Every door has a breaking point.
+PATRON_DAMAGE_RESPONSE	Break all you like, {0}. We will rebuild them stronger.
+PATRON_DAMAGE_TRIGGER	Damage: {0} is breaking {1}'s buildings
+PATRON_CAGED_CALL	Your fighter sits in our cage, {0}. Decide what they are worth.
+PATRON_CAGED_RESPONSE	Harm them and we will burn every cage you own, {0}. Name your price.
+PATRON_CAGED_TRIGGER	Caged: {0} caged a unit of {1}
+PATRON_IDLE1_CALL	It's quiet, {0}. Too quiet for my taste.
+PATRON_IDLE1_RESPONSE	Enjoy it while it lasts, {0}. Quiet never keeps.
+PATRON_IDLE1_TRIGGER	Quiet for 1 hour: {0} and {1} pass the time
+PATRON_IDLE2_CALL	{0}, a lull like this gives me time to wonder what you're plotting.
+PATRON_IDLE2_RESPONSE	Only the harvest, {0}. And perhaps a little mischief.
+PATRON_IDLE2_TRIGGER	Quiet for 2 hours: {0} and {1} pass the time
+PATRON_IDLE3_CALL	Do you suppose the war has forgotten us, {0}?
+PATRON_IDLE3_RESPONSE	War forgets no one, {0}. It only takes its time.
+PATRON_IDLE3_TRIGGER	Quiet for 4 hours: {0} and {1} pass the time
+PATRON_IDLE4_CALL	{0}, the longer the silence, the sharper the knives.
+PATRON_IDLE4_RESPONSE	Then let the whetstones sing, {0}. We are ready.
+PATRON_IDLE4_TRIGGER	Quiet for 8 hours: {0} and {1} pass the time
+PATRON_IDLE5_CALL	Sixteen hours of peace, {0}. Whatever shall we do with it?
+PATRON_IDLE5_RESPONSE	Rest, {0}, and keep one eye open.
+PATRON_IDLE5_TRIGGER	Quiet for 16 hours or more: {0} and {1} pass the time
+PATRON_RAID_CALL_2	{0}, we have come for your stores. Hand over what you can and run.
+PATRON_RAID_RESPONSE_2	You will find the cupboards bare and the dogs hungry, {0}. Come closer.
+PATRON_HOSTILE_CALL_2	Our patience with you is spent, {0}. Consider this the end of courtesy.
+PATRON_HOSTILE_RESPONSE_2	Courtesy was always optional, {0}. We prefer steel.
+PATRON_ALLIED_CALL_2	A friend's banner is worth ten armies, {0}. Let us fly them together.
+PATRON_ALLIED_RESPONSE_2	Gladly, {0}. May our fires never go out.
+PATRON_TRADE_CALL_2	Coin and goods change hands, {0}, and neither of us bleeds for it.
+PATRON_TRADE_RESPONSE_2	The best bargain of the season, {0}. Don't be a stranger.
+PATRON_RESCUE_CALL_2	We found your fallen one and gave them a bed, {0}. No strings attached.
+PATRON_RESCUE_RESPONSE_2	Then we owe you, {0}. We keep our debts.
+PATRON_ATTACK_CALL_2	Your blade has spoken, {0}. Ours will answer.
+PATRON_ATTACK_RESPONSE_2	Let it speak, {0}. It will say nothing you like.
+PATRON_KILL_CALL_2	Another of yours is gone, {0}. The field takes what it will.
+PATRON_KILL_RESPONSE_2	The field will take more from you before this is done, {0}.
+PATRON_TRESPASS_CALL_2	This is our ground, {0}. Your people are not welcome on it.
+PATRON_TRESPASS_RESPONSE_2	Ground belongs to whoever stands on it, {0}.
+PATRON_DAMAGE_CALL_2	Doors and walls are only wood and stone, {0}, and we are fond of breaking both.
+PATRON_DAMAGE_RESPONSE_2	Then we will build with iron next time, {0}.
+PATRON_CAGED_CALL_2	Your soldier is safe in our care, {0}, for as long as you behave.
+PATRON_CAGED_RESPONSE_2	Safe is a strong word for a cage, {0}. Let them go.
+PATRON_IDLE1_CALL_2	Not a sound out there, {0}. I almost miss the shouting.
+PATRON_IDLE1_RESPONSE_2	Give it time, {0}. The shouting always returns.
+PATRON_IDLE2_CALL_2	Two hours of calm, {0}. I counted.
+PATRON_IDLE2_RESPONSE_2	Of course you did, {0}. You count everything.
+PATRON_IDLE3_CALL_2	{0}, do you ever wonder who we would be without the quarrel?
+PATRON_IDLE3_RESPONSE_2	Quieter, {0}. And a good deal poorer for it.
+PATRON_IDLE4_CALL_2	Eight hours without a single clash, {0}. The scouts must be asleep.
+PATRON_IDLE4_RESPONSE_2	Or plotting, {0}. Never rule out plotting.
+PATRON_IDLE5_CALL_2	{0}, this peace has gone on so long I have started to trust it.
+PATRON_IDLE5_RESPONSE_2	Don't, {0}. Trust is how every good war begins.

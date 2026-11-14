@@ -1,5 +1,6 @@
 #include "renderer_internal.h"
 #include "building.h"
+#include "patrons.h"
 
 using namespace render_detail;
 
@@ -13,6 +14,12 @@ void Renderer::loadPictures(LoadStages& stages) {
         const std::string path = "data/profile/" + unitModelKey(i) + ".png";
         profilePics_[(size_t)i - 1] = loadOptionalImage(path.c_str());
         stages.step(0.03f + 0.02f * (float)i / (float)UNIT_SPRITE_COUNT, 1 + i);
+    }
+    patronPics_.clear();
+    for (const PatronInfo& p : patrons()) {
+        const std::string path = "data/profile/patron/" + p.picture;
+        patronPics_.push_back(loadOptionalImage(path.c_str()));
+        addMipmaps(patronPics_.back());
     }
 }
 

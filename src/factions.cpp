@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "factions.h"
 #include "ecs.h"
 #include "mobs.h"
@@ -450,8 +451,12 @@ void setPlayerReputation(World& w, const std::map<int, int>& s) {
 int changePlayerReputation(World& w, int faction, int delta) {
     if (faction == FACTION_PLAYER || !findFaction(faction)) return REP_MAX;
     if (isMobFaction(faction) || faction == FACTION_FACTIONLESS) return reputation(w, FACTION_PLAYER, faction);
-    const int next = std::clamp(reputation(w, FACTION_PLAYER, faction) + delta, REP_MIN, REP_MAX);
+    const int before = reputation(w, FACTION_PLAYER, faction);
+    const int next = std::clamp(before + delta, REP_MIN, REP_MAX);
     standings(w)[faction] = next;
+    // Its patron speaks when it turns hostile to you, or allied to you
+    if (before > REP_HOSTILE && next <= REP_HOSTILE) patronEvent(w, PatronEvent::Hostile, faction, FACTION_PLAYER);
+    else if (before < REP_ALLIED && next >= REP_ALLIED) patronEvent(w, PatronEvent::Allied, faction, FACTION_PLAYER);
     return next;
 }
 

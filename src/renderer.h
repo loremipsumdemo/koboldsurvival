@@ -259,6 +259,8 @@ public:
     void drawPartySetup(const std::vector<Button>& buttons, const std::vector<PartyMember>& p, const PartyUi& ui,
                         const PartyPanels& P, float mx, float my);
     void drawUnitPicture(int sprite, const Rect& r);
+    // A patron's picture (an index into patrons())
+    void drawPatronPicture(int patron, const Rect& r, RGBA tint = RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
     void drawUnitModelPreview(int sprite, const Rect& r, float yaw);
     void drawMobPreview(MobKind kind, const Rect& r, float yaw);
     void drawModelPreview(const Model* m, const Rect& r, float yaw);
@@ -614,6 +616,7 @@ private:
     std::vector<TextTex> mobSprites_;
     std::vector<TextTex> mobProfiles_;   // data/profile/<its model, or its picture>.png, by kind
     std::array<TextTex, UNIT_SPRITE_COUNT> profilePics_{};
+    std::vector<TextTex> patronPics_;   // data/profile/patron/<picture>, by patron
     const TextTex& unitPortrait(World& w, ObjectId e) const;
     const TextTex& unitPicture(int n) const;
     std::array<Model, UNIT_SPRITE_COUNT> unitModels_{};

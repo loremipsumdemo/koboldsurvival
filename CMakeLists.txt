@@ -90,6 +90,7 @@ set(SIM_SOURCES
     src/build_plan.cpp
     src/npc_builders.cpp
     src/npc_roles.cpp
+    src/patrons.cpp
     src/world_setup.cpp
     src/unit_spawn.cpp
     src/orders.cpp
@@ -164,6 +165,7 @@ add_executable(koboldsurvival
     src/app_spawn.cpp
     src/app_faction_rules.cpp
     src/app_faction_info.cpp
+    src/app_patron.cpp
     src/app_prop_adjust.cpp
     src/app_crafting.cpp
     src/app_behavior_groups.cpp

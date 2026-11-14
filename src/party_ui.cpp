@@ -137,7 +137,7 @@ std::string partyMessage(const Party& p) {
 }
 
 std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi& ui,
-                                     const std::vector<DropEntry>& drop) {
+                                     const std::vector<DropEntry>& drop, const std::string& patronName) {
     const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(W, H);
     const PartyMember& m = pickedMember(p, ui);
@@ -315,6 +315,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                               !p.empty(), 0 });
         addMobAnchor = Rect{ unitsX + 2.0f * (unitW + bGap), bY, unitW, bH };
         out.push_back(Button{ lang("UILABEL_ADD_MOB"), addMobAnchor, Action::PartyAddMob, (int)p.size() < PARTY_MAX_UNITS, 0 });
+    }
+    if (!patronName.empty()) {
+        out.push_back(Button{ patronName, Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW - bGap - 260.0f * s, bY, 260.0f * s, bH }, Action::PartyPatron, true, 0 });
     }
     out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
                           Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });

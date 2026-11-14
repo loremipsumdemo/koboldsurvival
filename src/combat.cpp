@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "ghosts.h"
 #include "airship.h"
 #include "wheelbarrow.h"
@@ -132,6 +133,7 @@ void onAttacked(World& w, ObjectId a, ObjectId d) {
     // Attacked in a bed or on a seat, by anyone, hit or missed: it will not sleep through it
     if (onRestingProp(w, d)) w.add(d, RousedByAttack{});
     if (fa == fd) return;
+    patronEvent(w, PatronEvent::Attack, fa, fd);
     fleeFromAirship(w, a, d);
     const bool atWar = factionsHostile(w, fa, fd) || unitsHostile(w, a, d);
     const Transform* td = w.get<Transform>(d);

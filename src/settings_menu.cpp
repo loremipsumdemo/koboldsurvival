@@ -219,6 +219,7 @@ std::vector<RowSpec> interfaceRows(const GameSettings& s) {
     rows.push_back(makeDropdown(RowId::CitizenHardCap, lang("UILABEL_CITIZEN_HARD_CAP"), hard, indexOfValue(hard, s.citizenHardCap), true));
     rows.push_back(makeToggle(RowId::UnitNames, lang("UILABEL_UNIT_NAMES"), s.showUnitNames));
     rows.push_back(makeToggle(RowId::NpcNames, lang("UILABEL_NPC_NAMES"), s.showNpcNames));
+    rows.push_back(makeToggle(RowId::PatronDialogue, lang("UILABEL_PATRON_DIALOGUE"), s.patronDialogue));
     rows.push_back(makeToggle(RowId::ConversationPause, lang("UILABEL_CONVERSATION_PAUSE"), s.conversationPause));
     rows.push_back(makeScale(RowId::FontScale, lang("UILABEL_UI_SCALE"), s.fontScale));
     rows.push_back(makeAction(RowId::ResetPanels, lang("UILABEL_RESET_PANELS"), lang("UILABEL_RESET")));
@@ -514,6 +515,9 @@ SettingsChange setRowOn(RowId id, bool on, GameSettings& s) {
         break;
     case RowId::NpcNames:
         s.showNpcNames = on;
+        break;
+    case RowId::PatronDialogue:
+        s.patronDialogue = on;
         break;
     case RowId::EdgeScroll:
         s.edgeScroll = on;

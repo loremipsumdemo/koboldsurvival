@@ -185,6 +185,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
         }
     }
     for (const auto& [faction, value] : d.motivation) w.line("motivation", faction, value);
+    for (const auto& [faction, patron] : d.patrons) w.line("patron", faction, patron);
     for (const SaveSchedule& s : d.schedules) w.line("schedule", s.ref, s.override ? 1 : 0, s.hours);
     for (const auto& g : d.groundEdits) w.line("groundedit", (int)g[0], (int)g[1], g[2]);
     for (size_t i = 0; i < d.props.size(); ++i) writeProp(w, i, d.props[i]);
@@ -458,6 +459,12 @@ const std::unordered_map<std::string, Handler>& handlers() {
             SaveGroup g;
             if (!l.read(g.ref)) return false;
             l.d.groups.push_back(std::move(g));
+            return true;
+        } },
+        { "patron", [](Line& l) {
+            int faction = 0, patron = 0;
+            if (!l.read(faction, patron)) return false;
+            l.d.patrons.push_back({ faction, patron });
             return true;
         } },
         { "motivation", [](Line& l) {

@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "app.h"
 
 using namespace play;
@@ -71,6 +72,7 @@ void App::startMapLevel(const MapChoice& choice) {
         buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
     }
     settleFactionHomes(world, terrain);
+    newPatrons(world, rng, patronPick);   // the one you picked, a random one if none, and a different one for each other faction
     // The party from the menu replaces the units that the seed made: its people, then its mobs after them
     std::vector<MobKind> mobKinds;
     for (const PartyMember& m : party) {

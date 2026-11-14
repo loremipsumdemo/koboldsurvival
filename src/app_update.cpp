@@ -663,6 +663,7 @@ void App::updateHover() {
             }
         }
         updatePerimeter();
+        updatePatronChat();
         if (perim.active && screen == Screen::Playing) perimeterPreview(bp, bmx, bmy);
         if (perimShowAltar != NO_OBJECT) {
             if (SDL_GetTicks() >= perimShowUntil || !world.has<Prop>(perimShowAltar)) {

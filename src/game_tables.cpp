@@ -7,6 +7,7 @@
 #include <map>
 #include <sstream>
 #include "factions.h"
+#include "patrons.h"
 #include "items.h"
 #include "mobs.h"
 #include "stats.h"
@@ -622,7 +623,7 @@ static bool loadWholeFile(const char* file, bool (*load)(const std::string&, std
 }
 
 bool loadGameTables(std::string& err) {
-    return loadWholeFile("data/itemdb.txt", loadItemDbText, err) && loadWholeFile("data/factions.txt", loadFactions, err) && loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
+    return loadWholeFile("data/itemdb.txt", loadItemDbText, err) && loadWholeFile("data/factions.txt", loadFactions, err) && loadWholeFile("data/patrons.txt", loadPatrons, err) && loadSfx(err) && loadBgm(err) && loadNumberedFiles("data/emotes.txt", EMOTE_KEYS, emoteFiles, err) &&
            loadNumberedFiles("data/icons.txt", ICON_KEYS, iconFiles, err) && loadModels(err) && loadPropsFile(err) && loadWholeFile("data/recipes.txt", loadRecipes, err) && loadMobs(err) && loadFonts(err);
 }
 

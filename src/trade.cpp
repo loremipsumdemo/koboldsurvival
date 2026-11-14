@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "trade.h"
 #include "hostility.h"
 #include "commerce.h"
@@ -182,6 +183,7 @@ void completeTrade(World& w, ObjectId npc, ObjectId player) {
         queueUnitLabel(w, player, itemLossLabelFor(count, item), true);
     }
     if (fee > 0) grantXp(w, player, StatId::Charisma, fee, "MISC_REASON_FEES");
+    patronEvent(w, PatronEvent::Trade, factionOf(w, player), factionOf(w, npc));
     session.tradeOpen = false;
     clearTradeTable();
 }

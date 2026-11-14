@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "stuck.h"
 #include <algorithm>
 #include <cmath>
@@ -329,6 +330,7 @@ bool breakStep(World& w, Terrain& t, ObjectId u, Stuck& st, float d, bool moving
     double hit = 2.0;
     if (w.has<Combat>(u)) hit = std::max(1.0, (double)numbersOf(w, u).attack);
     h->value -= hit;
+    if (const Owner* ow = w.get<Owner>(target)) patronEvent(w, PatronEvent::Damage, factionOf(w, u), ow->faction);
     queueSoundFrom(w, Sfx::Hit, target);
     if (h->value > 0.0) return false;
     const PropInfo& info = propInfo(w.get<Prop>(target)->kind);

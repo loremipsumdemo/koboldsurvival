@@ -1,4 +1,5 @@
 #include "motivation.h"
+#include "patrons.h"
 #include "behavior_groups.h"
 #include "game_tables.h"
 #include "level.h"
@@ -170,6 +171,7 @@ void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
     d.schedules.push_back(SaveSchedule{ -1, false, scheduleText(g.schedule) });
     d.schedules.push_back(SaveSchedule{ -2, g.perimeter.override, scheduleText(g.perimeter) });   // -2: the Perimeter Closed hours
     for (const auto& [faction, value] : w.resource<Motivation>().value) d.motivation.push_back({ faction, value });
+    for (const auto& [faction, patron] : w.resource<Patrons>().byFaction) d.patrons.push_back({ faction, patron });
     for (int k = 0; k < (int)g.groupSchedules.size(); ++k) {
         d.schedules.push_back(SaveSchedule{ k, g.groupSchedules[(size_t)k].override, scheduleText(g.groupSchedules[(size_t)k]) });
     }
@@ -178,6 +180,7 @@ void captureGroups(World& w, SaveData& d, const IdMap& propIds) {
 void restoreGroups(World& world, const SaveData& d, const std::vector<ObjectId>& props) {
     BehaviorGroups& g = behaviorGroups(world);
     for (const auto& [faction, value] : d.motivation) setMotivation(world, faction, value);
+    for (const auto& [faction, patron] : d.patrons) world.resource<Patrons>().byFaction[faction] = patron;
     for (const SaveSchedule& s : d.schedules) {
         if (s.ref == -2) {
             Schedule p;
@@ -535,6 +538,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, c
     }
     const std::vector<ObjectId> props = restoreProps(world, d, stages);
     restoreGroups(world, d, props);
+    ensurePatrons(world, rng);   // a save from before patrons: they are drawn now
     stages.stage(0.75f, "LOADING_GROUND_ITEMS", (int)d.ground.size());
     int groundDone = 0;
     for (const SaveGround& g : d.ground) {

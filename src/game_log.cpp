@@ -32,6 +32,10 @@ std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilt
         for (const LogLine& ln : log.spoken) out.push_back(&ln);
         return out;
     }
+    if (tab == 3) {
+        for (const LogLine& ln : log.patrons) out.push_back(&ln);
+        return out;
+    }
     for (const LogLine& ln : log.lines) {
         if (ln.npc && !f.on[(int)LogKind::Npc]) continue;
         if (ln.kind == LogKind::Other || f.on[(int)ln.kind]) out.push_back(&ln);
@@ -43,6 +47,7 @@ std::vector<const LogLine*> infoLines(const GameLog& log, int tab, const LogFilt
 size_t infoLineCount(const GameLog& log, int tab, const LogFilter& f) {
     if (tab == 2) return 0;
     if (tab == 0) return log.spoken.size();
+    if (tab == 3) return log.patrons.size();
     size_t n = 0;
     for (const LogLine& ln : log.lines) {
         if (ln.npc && !f.on[(int)LogKind::Npc]) continue;

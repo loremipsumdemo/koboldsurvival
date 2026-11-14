@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "app.h"
 #include "profile.h"
 
@@ -232,8 +233,9 @@ void App::drawPartyScreen() {
     const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
     renderer.beginUi(winW, winH);
     drawMenuBackdrop();
-    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop), party, partyUi,
+    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText()), party, partyUi,
                             partyPanels(winW, winH), mouseX, mouseY);
+    drawPatrons();
     renderer.endUi();
 }
 

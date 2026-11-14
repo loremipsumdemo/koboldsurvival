@@ -24,7 +24,7 @@ inline std::string settingsTabName(SettingsTab tab) {
 
 enum class RowId : int {
     Display, Monitor, Resolution, Refresh, VSync, FpsLimit, DetailRange, ViewDistance, ShowFps,
-    Autosave, CitizenSoftCap, CitizenHardCap, UnitNames, NpcNames, FontScale, ResetPanels,
+    Autosave, CitizenSoftCap, CitizenHardCap, UnitNames, NpcNames, PatronDialogue, FontScale, ResetPanels,
     Language, Font,
     EdgeScroll, Reference, ConversationPause,
     GlobalLevel, MusicLevel, AmbientLevel, EffectsLevel, InterfaceLevel, CraftGatherSounds,

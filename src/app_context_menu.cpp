@@ -207,9 +207,10 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             out.push_back(MenuAction::AppeaseGhosts);
             out.push_back(MenuAction::SetPerimeter);
             out.push_back(MenuAction::FactionInfo);
+            out.push_back(MenuAction::SeePatron);
         } else if (const int owner = altarOwnerOf(world, target); owner >= 0 && !isMobFaction(owner)) {
             // Another faction's Altar: its setup, as yours is, to look at
-            out.insert(out.end(), { MenuAction::FactionInfo, MenuAction::SeeUnits, MenuAction::SeeGroups, MenuAction::SeeSchedule, MenuAction::SeePerimeter });
+            out.insert(out.end(), { MenuAction::FactionInfo, MenuAction::SeeUnits, MenuAction::SeeGroups, MenuAction::SeeSchedule, MenuAction::SeePerimeter, MenuAction::SeePatron });
         }
         if (propInfo(p->kind).claimsLand) {
             const std::vector<ObjectId> sel = selectedUnits(world);
@@ -359,6 +360,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::SeeGroups: labels.push_back(lang("UILABEL_SEE_BEHAVIOR_GROUPS")); break;
         case MenuAction::SeeSchedule: labels.push_back(lang("UILABEL_SEE_SCHEDULE")); break;
         case MenuAction::SeePerimeter: labels.push_back(lang("UILABEL_SEE_PERIMETER")); break;
+        case MenuAction::SeePatron: labels.push_back(lang("UILABEL_SEE_PATRON")); break;
         case MenuAction::SetPerimeter: labels.push_back(lang("UILABEL_SET_PERIMETER")); break;
         case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
@@ -574,6 +576,10 @@ void App::pickMenuAction(MenuAction a) {
     }
     if (a == MenuAction::SeeSchedule) {
         openSchedule(target, altarOwnerOf(world, target));
+        return;
+    }
+    if (a == MenuAction::SeePatron) {
+        openPatrons(altarOwnerOf(world, target), false);
         return;
     }
     if (a == MenuAction::SeePerimeter) {
@@ -809,6 +815,7 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::SeeGroups:
     case MenuAction::SeeSchedule:
     case MenuAction::SeePerimeter:
+    case MenuAction::SeePatron:
     case MenuAction::StoreFilter:
         break;
     case MenuAction::CancelBuild:

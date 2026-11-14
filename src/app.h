@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <deque>
+#include "patrons.h"
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -656,6 +658,48 @@ struct App : AppSession {
     SquadsUi squadsUi;
     bool factionRulesOpen = false;
     bool factionInfoOpen = false;
+    // Patrons (app_patron.cpp): the window of them all, and the banner of what they say
+    bool patronOpen = false, patronPicking = false;
+    int patronFaction = 0;   // the Altar's faction whose patron is lit
+    int patronPick = -1;     // the one you pick for a new game (an index into patrons()): -1, a random one
+    struct ChatLine {
+        int patron = -1;
+        bool right = false;
+        std::string text;
+        bool replay = false;   // played again from the Patrons tab: shown with (Replay) by the name
+        // On the banner: where it is (0 the top place, 1 the one below), how seen it is, how darkened, and when it came
+        float slot = 0.0f, slotTarget = 0.0f, alpha = 0.0f, dim = 0.0f;
+        bool exiting = false;
+        Uint64 shownAt = 0;
+    };
+    // What the patrons said and what made them say it, kept for the Patrons tab's * to play again
+    struct PatronMemory {
+        PatronEvent event = PatronEvent::Raid;
+        int caller = 0, responder = 0, callerPatron = -1, responderPatron = -1;
+        std::string call, response;
+    };
+    std::vector<PatronMemory> patronMemory;
+    void queuePatronChat(const PatronMemory& m, bool replay);
+    // Remembers and queues one call and response, given the language key they begin with (PATRON_RAID: _CALL, _RESPONSE, _TRIGGER)
+    void patronSpeak(PatronEvent event, int caller, int responder, const std::string& base);
+    double patronQuietSince = -1.0;   // the game clock when something last happened between factions (-1: not yet)
+    int patronQuietStage = 0;          // how many times it has been quiet long enough for the patrons to talk of it
+    void replayPatronEvent(int index);
+    struct PatronChat {
+        std::deque<ChatLine> queue, history;   // waiting to be shown; the last ten shown
+        std::vector<ChatLine> shown;           // on the banner now, two at most
+        Uint64 lastTick = 0;
+        float fade = 1.0f;       // the whole banner: fades out when no more is coming
+        bool fadeOut = false;
+        std::map<long long, Uint64> last;      // when each thing between two factions was last spoken of
+    };
+    PatronChat patronChat;
+    void openPatrons(int faction, bool pick);
+    std::string patronButtonText();   // the party screen's button: the patron picked
+    bool pressOnPatrons();
+    void drawPatrons();
+    void updatePatronChat();
+    void drawPatronChat();
     int factionInfoFaction = 0;
     // The Research or Crafting Order window, and the prop it is for
     struct CraftUi {

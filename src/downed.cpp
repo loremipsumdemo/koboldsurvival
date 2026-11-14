@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "systems_internal.h"
 #include "build.h"
 #include "npc_camps.h"
@@ -181,6 +182,7 @@ void finishDying(World& w, ObjectId u) {
     queueLog(w, langf("MISC_DIES", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
     recordGhost(w, u);
     const int victim = factionOf(w, u);
+    if (koFaction >= 0 && koFaction != victim) patronEvent(w, PatronEvent::Kill, koFaction, victim);
     if (koFaction == FACTION_PLAYER && victim != FACTION_PLAYER && !isMobFaction(victim)) {
         const int now = changePlayerReputation(w, victim, -REP_DEATH_PENALTY);
         queueLog(w, langf("MISC_REPUTATION_DROPS", { factionName(victim), std::to_string(REP_DEATH_PENALTY), std::to_string(now) }),

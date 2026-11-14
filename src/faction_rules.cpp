@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "faction_rules.h"
 #include <algorithm>
 #include <cmath>
@@ -162,6 +163,7 @@ bool lockInCage(World& w, ObjectId u, ObjectId cage) {
         lk->faction = factionOf(w, u);
         queueLog(w, langf("MISC_LOCKED_IN", { nameOf(w, carried), lang(info.nameKey) }), LogKind::Other, npcOnly(w, carried));
     }
+    patronEvent(w, PatronEvent::Caged, factionOf(w, u), factionOf(w, carried));
     return true;
 }
 
@@ -439,6 +441,7 @@ void recruitOnWaking(World& w, ObjectId u) {
     const RecruitRule rule = factionRules(w, owner).recruit;
     if (rule != RecruitRule::Rescued && rule != RecruitRule::Both) return;
     joinFaction(w, u, owner);
+    patronEvent(w, PatronEvent::Rescue, owner, mine);   // the one that took it in speaks to the one it came from
 }
 
 namespace {
@@ -500,12 +503,14 @@ void factionRulesSystem(World& w, float frameDt) {
             if (rule == TrespassRule::Warn) {
                 queueLog(w, langf("MISC_TRESPASS_WARNED", { nameOf(w, u), factionName(owner) }), LogKind::Other, LogWho(!yoursInvolved, u),
                          yoursInvolved ? Tint::Red : Tint::Gray);
+                patronEvent(w, PatronEvent::Trespass, owner, mine);
             }
         }
         if (tp.attacked || (rule == TrespassRule::Warn && tp.seconds < TRESPASS_WARN_SECONDS)) continue;
         tp.attacked = true;
         queueLog(w, langf("MISC_TRESPASS_ATTACKED", { nameOf(w, u), factionName(owner) }), LogKind::Other, LogWho(!yoursInvolved, u),
                  yoursInvolved ? Tint::Red : Tint::Gray);
+        patronEvent(w, PatronEvent::Trespass, owner, mine);
         // The owner's units who see it turn on it; a trespasser on your land turns on yours, so they fight it
         if (factionPlayerControlled(owner)) {
             provoke(w, u, owner);

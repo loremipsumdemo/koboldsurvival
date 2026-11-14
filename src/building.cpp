@@ -1,3 +1,4 @@
+#include "patrons.h"
 #include "building.h"
 #include "gates.h"
 #include <algorithm>
@@ -1625,6 +1626,7 @@ void doorSystem(World& w, float dt) {
         const CombatNumbers n = numbersOf(w, u);
         c->swingLeft = n.swingTime;
         h->value -= std::max(1.0, (double)n.attack);
+        patronEvent(w, PatronEvent::Damage, factionOf(w, u), owner);
         queueSoundFrom(w, Sfx::Hit, at.door);
         if (h->value <= 0.0) {
             queueLog(w, langf("MISC_DOOR_SMASHED", { nameOf(w, u), info ? lang(info->nameKey) : std::string() }), LogKind::Seen, LogWho(false, u));

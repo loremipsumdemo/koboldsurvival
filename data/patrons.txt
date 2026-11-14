@@ -1,0 +1,18 @@
+# Patrons: historical figures, one for each faction that claims land (src/patrons.h). Tab-separated: id, picture (in data/profile/patron), MBTI.
+# Their name and description are PATRON_<id>_NAME and PATRON_<id>_DESC in the language files (two digits).
+1	1.png	INFJ
+2	2.png	ENTP
+3	3.png	ISFJ
+4	4.png	ISTP
+5	5.png	ESFP
+6	6.png	INTP
+7	7.png	ENFP
+8	8.png	ESTP
+9	9.png	ESTJ
+10	10.png	INFP
+11	11.png	INTJ
+12	12.png	ISTJ
+13	13.png	ENFJ
+14	14.png	ENTJ
+15	15.png	ESFJ
+16	16.png	ISFP
