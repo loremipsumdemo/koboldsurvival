@@ -50,7 +50,8 @@ std::vector<BehaviorRule> defaultCitizenBehaviors() {
         if (r.kind == BehaviorKind::Rest) r.percent = percentRange(BehaviorKind::Rest).lo;
     }
     // Each sorts into its place by its category (Auto-Haul to Stalls is in the defaults already)
-    BehaviorRule sleep, build, ground, patrol, craft, social, sit, play, dance;
+    BehaviorRule sleep, build, ground, patrol, craft, social, sit, play, dance, junk;
+    junk.kind = BehaviorKind::ClearJunk;   // on by default: clears the Debris and Boneheaps in the claim
     play.kind = BehaviorKind::Play;
     dance.kind = BehaviorKind::Dance;
     social.kind = BehaviorKind::Socialize;
@@ -60,7 +61,7 @@ std::vector<BehaviorRule> defaultCitizenBehaviors() {
     build.kind = BehaviorKind::AutoConstruct;
     ground.kind = BehaviorKind::AutoHaulGround;
     patrol.kind = BehaviorKind::Patrol;
-    for (const BehaviorRule& r : { sleep, build, ground, craft, patrol, social, sit, play, dance }) addBehavior(citizen, r, BEHAVIOR_TASKS_MAX);
+    for (const BehaviorRule& r : { sleep, build, junk, ground, craft, patrol, social, sit, play, dance }) addBehavior(citizen, r, BEHAVIOR_TASKS_MAX);
     return citizen;
 }
 

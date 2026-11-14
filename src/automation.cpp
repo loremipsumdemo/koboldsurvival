@@ -264,12 +264,17 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
         if (restedGainPerHour(kind) <= 0.0) continue;
         const bool ownBed = lyingIn && lyingIn->prop == p;
         if ((countIn(occupied, p) > 0 && !ownBed) || lockShutFor(w, claims, p, u)) continue;
-        if (!bedOpenTo(w, p, u)) continue;   // a bed in another faction's building, not set Public
-        if (std::binary_search(wanted.begin(), wanted.end(), p)) continue;
         const Transform* pt = w.get<Transform>(p);
+        const Owner* own = w.get<Owner>(p);
+        if (!bedOpenTo(w, p, u)) continue;   // a bed in another faction's building, not set Public
+        // Nor a bed, bedroll or the like in the claim of a faction hostile to it, whoever may use it: that is no way to rest, only a way to be killed
+        if (!(own && own->faction == faction)) {
+            const Claim* in = claimAt(claims, pt->x, pt->z);
+            if (in && in->owner != faction && factionsHostile(w, faction, in->owner)) continue;
+        }
+        if (std::binary_search(wanted.begin(), wanted.end(), p)) continue;
         const float d2 = (pt->x - ut->x) * (pt->x - ut->x) + (pt->z - ut->z) * (pt->z - ut->z);
         if (d2 > REST_SEARCH_RANGE * REST_SEARCH_RANGE) continue;
-        const Owner* own = w.get<Owner>(p);
         const bool owned = own && own->faction == faction;
         if (best == NO_OBJECT || (owned && !bestOwned) || (owned == bestOwned && d2 < bestD2)) {
             best = p;
@@ -278,6 +283,22 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
         }
     }
     return best;
+}
+
+// The nearest piece of junk (Debris, a Boneheap: props.txt's junk flag) in the unit's own claim that nobody is already clearing
+ObjectId junkTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NO_OBJECT;
+    const int faction = factionOf(w, u);
+    std::vector<ObjectId> taken = workedProps(w);
+    for (ObjectId o : w.view<Behaviors>()) {
+        const Behaviors* ob = w.get<Behaviors>(o);
+        if (o != u && ob->busy && ob->step.kind == BehaviorKind::ClearJunk) taken.push_back(ob->stepProp);
+    }
+    return nearestProp(w, *ut, [&](ObjectId p) {
+        const PropInfo& info = propInfo(w.get<Prop>(p)->kind);
+        return info.junk && !w.has<Blueprint>(p) && inOwnClaim(w, claims, p, faction) && !lockShutFor(w, claims, p, u) && countIn(taken, p) == 0;
+    });
 }
 
 // How near the middle of its claim a rescued unit is put down when there is no bed for it
@@ -753,6 +774,21 @@ bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId 
         return true;
     }
     if (isBuildTask(r.kind)) return startBuildStep(w, t, u, b, r);
+    if (r.kind == BehaviorKind::ClearJunk) {
+        r.why = BehaviorWait::None;
+        if (w.has<Mob>(u) || w.has<Carrying>(u) || w.has<Occupying>(u) || w.has<Fortified>(u)) return false;
+        const ObjectId junk = junkTarget(w, claims, u);
+        if (junk == NO_OBJECT) {
+            r.why = BehaviorWait::NoProp;
+            return false;
+        }
+        b.busy = true;
+        b.step = r;
+        b.stepProp = junk;
+        // Debris is worked clear; anything else that is junk is broken
+        autoGo(w, t, u, junk, propInfo(w.get<Prop>(junk)->kind).debris ? PropAction::Use : PropAction::Destroy);
+        return true;
+    }
     if (r.kind == BehaviorKind::AutoHaulStall) return startStallHaulStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::ManStall) return startManStallStep(w, t, u, b, r);
     if (r.kind == BehaviorKind::DealWithDowned) return startDealStep(w, t, u, b, r);
@@ -1596,6 +1632,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
         }
         if (b->busy) {
             if (going) continue;
+            if (working && b->step.kind == BehaviorKind::ClearJunk) continue;   // until the junk is cleared
             if (working) {
                 if (!harvestLoaded(w, claims, u, *b, propInfo((PropKind)b->step.propKind).item)) continue;
                 w.remove<Working>(u);
@@ -1616,6 +1653,7 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
                     if (b->step.kind == BehaviorKind::Patrol || b->step.kind == BehaviorKind::PatrolSpawn) {
                         r->cooldown = PATROL_PAUSE_MIN + rng.unit() * (PATROL_PAUSE_MAX - PATROL_PAUSE_MIN);
                     }
+                    if (b->step.kind == BehaviorKind::ClearJunk && w.has<Prop>(b->stepProp)) r->cooldown = BEHAVIOR_RETRY_SECONDS;   // it could not clear it
                     if (b->step.kind == BehaviorKind::Roam) r->cooldown = ROAM_PAUSE_MIN + rng.unit() * (ROAM_PAUSE_MAX - ROAM_PAUSE_MIN);
                 }
                 w.remove<SoloMove>(u);

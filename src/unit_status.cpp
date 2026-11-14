@@ -74,6 +74,7 @@ std::vector<EmoteId> emotesOf(World& w, ObjectId u) {
     if (w.has<TaskFailedEmote>(u)) return { EmoteId::TaskFailed };   // for the second after it failed or gave up a task
     if (const Patrolling* pat = w.get<Patrolling>(u); pat && pat->moving) return { EmoteId::Patrolling };   // a guard marching the perimeter
     if (w.has<GateKeeper>(u) && w.has<Fortified>(u)) return { EmoteId::Gatekeeping };   // keeping a gate
+    if (const Behaviors* clearing = w.get<Behaviors>(u); clearing && clearing->busy && clearing->step.kind == BehaviorKind::ClearJunk) return { EmoteId::Cleaning };   // clearing junk
     std::vector<EmoteId> out;
     auto propEmoteOf = [&](ObjectId prop) {
         const Prop* p = w.get<Prop>(prop);

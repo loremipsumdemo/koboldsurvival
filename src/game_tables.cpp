@@ -52,7 +52,7 @@ const char* const MOB_KEYS[] = {
 static_assert(std::size(MOB_KEYS) == MOB_NAMED_KIND_COUNT);
 
 const char* const PROP_KEYS[] = {
-    "Wagon", "Campfire", "Bedroll", "Bed", "Barrel", "Ore", "Tree", "Boulder", "Mushroom", "Bones", "Stall",
+    "Wagon", "Campfire", "Bedroll", "Bed", "Barrel", "Ore", "Tree", "Boulder", "Mushroom", "Boneheap", "Stall",
     "LockedChest", "PrisonerCage", "Chair", "Bench", "Stool", "Table", "EndTable", "RoundTable", "ResearchTable",
     "StandingTorch", "SupportBeam", "TrainingDummy", "RawFoodStorage", "FoodStorage", "WeaponRack", "ArmorStand",
     "WaterTank", "WaterPump", "Forge", "Altar", "Debris", "Farm", "Turbine", "Stove", "Airship",
@@ -77,7 +77,7 @@ const std::vector<Numbered> EMOTE_KEYS = {
     { "Lockpicking", 7 }, { "LockedIn", 8 }, { "Herbalism", 9 }, { "Unconscious", 10 }, { "PlayingDead", 12 },
     { "CuePutDown", 13 }, { "CueTalk", 14 }, { "NoUpkeep", 15 }, { "Decaying", 16 }, { "Hauling", 17 },
     { "Building", 18 },
-    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 }, { "TaskFailed", 39 }, { "Patrolling", 40 }, { "Gatekeeping", 41 },
+    { "Socializing", 19 }, { "Sitting", 20 }, { "Playing", 21 }, { "Dancing", 22 }, { "Carrying", 23 }, { "Crafting", 24 }, { "Smelting", 25 }, { "Training", 26 }, { "Strength", 27 }, { "Clearing", 28 }, { "Fighting", 29 }, { "Fleeing", 30 }, { "Defending", 31 }, { "Following", 32 }, { "Talking", 33 }, { "Looting", 34 }, { "Stall", 35 }, { "Dead", 36 }, { "Carried", 37 }, { "Sharing", 38 }, { "TaskFailed", 39 }, { "Patrolling", 40 }, { "Gatekeeping", 41 }, { "Cleaning", 42 },
 };
 
 const std::vector<Numbered> ICON_KEYS = {
@@ -376,6 +376,7 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
         else if (flag == "burns_corpses") p.burnsCorpses = true;
         else if (flag == "destroyed_by_hand") p.byHand = true;
         else if (flag == "debris") p.debris = true;
+        else if (flag == "junk") p.junk = true;
         else if (flag == "sleeping") p.sleeping = true;
         else if (flag == "resting") p.resting = true;
         else if (flag == "cage") p.cage = true;

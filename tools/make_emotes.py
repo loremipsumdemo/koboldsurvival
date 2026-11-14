@@ -406,6 +406,17 @@ def gatekeeping(c):
     c.line(GOLD[0], 2.6, (24, 21.5), (24, 23.5))
 
 
+def cleaning(c):
+    # A broom and a little dust: clearing junk
+    c.line(WOOD[0], 2.2, (25, 3.5), (14, 16.5))
+    c.poly(GOLD[1], (8, 17.5), (14.5, 13), (21.5, 19.5), (12, 25.5))
+    c.poly(GOLD[0], (9.5, 18), (14.5, 14.5), (19.5, 19.5), (12.5, 23.5))
+    c.line(WOOD[1], 1.6, (12.5, 14.5), (19, 21))
+    c.circ((170, 160, 148), 5, 6, 1.6)
+    c.circ((170, 160, 148), 9, 9.5, 1.1)
+    c.circ((170, 160, 148), 4, 11, 0.9)
+
+
 EMOTES = [
     (1, mining, STATUS), (2, woodcutting, STATUS), (3, cooking, STATUS), (4, encumbered, WARN), (5, sleeping, STATUS),
     (6, hungry, WARN), (7, lockpicking, STATUS), (8, locked_in, ALARM), (9, herbalism, STATUS), (10, unconscious, STATUS),
@@ -425,6 +436,7 @@ EMOTES = [
     (39, task_failed, ALARM),
     (40, patrolling, STATUS),
     (41, gatekeeping, STATUS),
+    (42, cleaning, STATUS),
 ]
 
 def main():

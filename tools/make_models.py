@@ -1073,7 +1073,7 @@ def stair_step(pal=WOOD_PAL):
 
 BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
-    'Boulder': boulder, 'Mushroom': mushroom, 'Bones': bones, 'Stall': stall, 'LockedChest': locked_chest,
+    'Boulder': boulder, 'Mushroom': mushroom, 'Boneheap': bones, 'Stall': stall, 'LockedChest': locked_chest,
     'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'GameTable': game_table, 'EndTable': end_table,
     'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam, 'GuardPost': guard_post,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,

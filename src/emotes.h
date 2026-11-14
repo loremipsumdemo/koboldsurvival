@@ -42,6 +42,7 @@ enum class EmoteId : int {
     TaskFailed = 39,
     Patrolling = 40,
     Gatekeeping = 41,
+    Cleaning = 42,
 };
 
 constexpr unsigned EMOTE_CYCLE_MS = 1000;

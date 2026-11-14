@@ -11,10 +11,10 @@
 
 // Saves name a behavior by its key, so one can be added or moved
 enum class BehaviorKind : int { Eat = 0, Heal, Share, AutoHarvest, AutoHaul, Patrol, Roam, Rest, LeaveBed, Rescue, PatrolSpawn, AutoHaulBones,
-                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, DealWithDowned, AutoCraft, Socialize, SitDown, Play, Dance, Count };
+                                AutoSupply, AutoConstruct, Group, Sleep, AutoHaulGround, AutoHaulStall, ManStall, DealWithDowned, AutoCraft, Socialize, SitDown, Play, Dance, ClearJunk, Count };
 inline constexpr const char* BEHAVIOR_KEYS[] = { "Eat", "Heal", "Share", "AutoHarvest", "AutoHaul", "Patrol", "Roam", "Rest", "LeaveBed", "Rescue", "PatrolSpawn",
                                                  "AutoHaulBones", "AutoSupply", "AutoConstruct", "Group", "Sleep", "AutoHaulGround",
-                                                 "AutoHaulStall", "ManStall", "DealWithDowned", "AutoCraft", "Socialize", "SitDown", "Play", "Dance" };
+                                                 "AutoHaulStall", "ManStall", "DealWithDowned", "AutoCraft", "Socialize", "SitDown", "Play", "Dance", "ClearJunk" };
 // Behavior groups (behavior_groups.h): a Group task stands for the whole task list of another group or of a Default
 // Behavior, at its place in the list. Its propKind names which: a group's index, or one of the two refs below.
 inline constexpr int GROUP_REF_MILITARY = 1000, GROUP_REF_CITIZEN = 1001;
@@ -153,7 +153,7 @@ inline bool isAutomated(BehaviorKind k) {
            k == BehaviorKind::PatrolSpawn || isBuildTask(k) || k == BehaviorKind::AutoHaulGround ||
            k == BehaviorKind::AutoHaulStall || k == BehaviorKind::ManStall ||
            k == BehaviorKind::DealWithDowned || k == BehaviorKind::AutoCraft || k == BehaviorKind::Socialize || k == BehaviorKind::SitDown ||
-           k == BehaviorKind::Play || k == BehaviorKind::Dance;
+           k == BehaviorKind::Play || k == BehaviorKind::Dance || k == BehaviorKind::ClearJunk;
 }
 // Lying in a bed: Rest until rested, Sleep until morning
 inline bool isBedStep(BehaviorKind k) { return k == BehaviorKind::Rest || k == BehaviorKind::Sleep; }
@@ -210,6 +210,7 @@ inline std::string behaviorName(const BehaviorRule& r) {
     case BehaviorKind::SitDown: return lang("UILABEL_BEHAVIOR_SIT_DOWN");
     case BehaviorKind::Play: return lang("UILABEL_BEHAVIOR_PLAY");
     case BehaviorKind::Dance: return lang("UILABEL_BEHAVIOR_DANCE");
+    case BehaviorKind::ClearJunk: return lang("UILABEL_BEHAVIOR_CLEAR_JUNK");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -244,6 +245,7 @@ inline std::string describeBehavior(const BehaviorRule& r) {
     case BehaviorKind::SitDown: return lang("UILABEL_BEHAVIOR_SIT_DOWN_TIP");
     case BehaviorKind::Play: return lang("UILABEL_BEHAVIOR_PLAY_TIP");
     case BehaviorKind::Dance: return lang("UILABEL_BEHAVIOR_DANCE_TIP");
+    case BehaviorKind::ClearJunk: return lang("UILABEL_BEHAVIOR_CLEAR_JUNK_TIP");
     case BehaviorKind::Count: break;
     }
     return "?";
@@ -308,7 +310,7 @@ inline TaskCategory taskCategory(BehaviorKind k) {
     switch (k) {
     case BehaviorKind::Group: return TaskCategory::Groups;
     case BehaviorKind::Patrol: case BehaviorKind::Roam: case BehaviorKind::PatrolSpawn: return TaskCategory::Movement;
-    case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: return TaskCategory::Building;
+    case BehaviorKind::AutoSupply: case BehaviorKind::AutoConstruct: case BehaviorKind::ClearJunk: return TaskCategory::Building;
     case BehaviorKind::AutoHarvest: case BehaviorKind::AutoCraft: return TaskCategory::Harvesting;
     case BehaviorKind::AutoHaul: case BehaviorKind::AutoHaulBones: case BehaviorKind::AutoHaulGround: case BehaviorKind::AutoHaulStall:
         return TaskCategory::Hauling;
@@ -367,7 +369,7 @@ inline std::vector<BehaviorKind> addableKinds(bool mob) {
         out = { BehaviorKind::Eat, BehaviorKind::Heal, BehaviorKind::Share, BehaviorKind::Rest, BehaviorKind::LeaveBed,
                 BehaviorKind::Rescue, BehaviorKind::Sleep, BehaviorKind::AutoHaulGround, BehaviorKind::AutoHaulStall,
                 BehaviorKind::DealWithDowned, BehaviorKind::AutoCraft, BehaviorKind::Patrol, BehaviorKind::Roam,
-                BehaviorKind::Socialize, BehaviorKind::SitDown, BehaviorKind::Play, BehaviorKind::Dance };
+                BehaviorKind::Socialize, BehaviorKind::SitDown, BehaviorKind::Play, BehaviorKind::Dance, BehaviorKind::ClearJunk };
         return out;
     }
     // Patrol Spawn (keeping near where it appeared) is for wild mobs

@@ -23,7 +23,7 @@ enum class PropKind : int {
     Tree,
     Boulder,
     Mushroom,
-    Bones,
+    Boneheap,
     Stall,
     LockedChest,
     PrisonerCage,
@@ -72,6 +72,7 @@ inline std::string currentPropKey(const std::string& key) {
     if (key == "Shop") return "Stall";
     if (key == "MetalTable") return "ResearchTable";
     if (key == "Wall") return "Debris";
+    if (key == "Bones") return "Boneheap";   // the Bones prop was renamed (the bones items are still Bones)
     return key;
 }
 // How many kinds data/props.txt has
@@ -193,6 +194,7 @@ struct PropInfo {
     bool burnsCorpses = false;
     bool byHand = false;
     bool debris = false;
+    bool junk = false;   // Clear Junk (a citizen task) clears it: a Debris is worked clear, any other is broken (props.txt flag junk)
     bool sleeping = false;       // a Sleeping prop (a bed or bedroll): an occupant lies in it and sleeps
     bool resting = false;        // a Resting prop (a chair, bench or stool): an occupant sits
     bool cage = false;

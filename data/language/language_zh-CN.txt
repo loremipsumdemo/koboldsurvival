@@ -862,6 +862,8 @@ UILABEL_BEHAVIOR_AUTO_HAUL_GROUND	自动搬运地上物品
 UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP	捡起领地内地上的、能由它的某个自动搬运任务收好的物品，让它们被存放起来
 UILABEL_BEHAVIOR_SLEEP_TIP	从黄昏（18:00）到黎明（06:00），去最近的空床睡到早上
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	自动建造：在最远 5 格的距离建造你的蓝图。缺少材料（木头、铁锭或龙晶）的蓝图会先得到材料：带在身上的，或从你的堆放区和仓库取来的。材料由蓝图保管，开始建造时才消耗。木工技能让建造更快。如果某个部件的位置上站着单位，会先请那个单位让开，建造者则继续去建下一个。
+UILABEL_BEHAVIOR_CLEAR_JUNK	清理杂物
+UILABEL_BEHAVIOR_CLEAR_JUNK_TIP	清理杂物：清理领地内的杂物，由近到远：碎石瓦砾要花时间清除，骸骨堆会被立刻打碎，留下的骨头和它装的东西散在地上，交给搬运任务处理。其他标为杂物的物体也会被打碎。
 UILABEL_WAIT_NO_BLUEPRINT	没有蓝图需要它
 UILABEL_WAIT_NO_LOGS	身上和仓库里都没有建材
 MISC_AUTO_CONSTRUCT_SET	{0} 将建造你的蓝图
@@ -1246,7 +1248,7 @@ PROP_ORE	矿石
 PROP_TREE	树
 PROP_BOULDER	巨石
 PROP_MUSHROOM	蘑菇
-PROP_BONES	骸骨
+PROP_BONEHEAP	骸骨堆
 PROP_STALL	摊位
 MISC_PROP_TAKEN	已被占用
 MISC_PROP_WORKERS_FULL	最多 {0} 个单位可同时作业

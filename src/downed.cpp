@@ -115,7 +115,7 @@ void corpseDecaySystem(World& w, double gameSeconds) {
         std::vector<ItemStack> belongings = unitBelongings(w, u);
         w.destroy(u);
         const float yaw = TWO_PI * (float)(u % 16u) / 16.0f;
-        const ObjectId bones = makeProp(w, PropKind::Bones, at, yaw);
+        const ObjectId bones = makeProp(w, PropKind::Boneheap, at, yaw);
         w.add(bones, BonesPile{ 0.0, std::move(belongings) });
     }
 }

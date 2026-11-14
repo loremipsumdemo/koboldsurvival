@@ -12,6 +12,8 @@
 //    falls, dawn comes, the way is clear again), and sends a unit of yours, who walks to the gate and works it, which takes a moment.
 //  - A gate is worked (opened or shut) only from the inside, from the walkway on top of it, never from the outside, where it has to be
 //    picked like any lock (or smashed).
+//  - A unit of any faction that is inside a shut gate and means to go out opens it itself and leaves, so that friends are free to go and a
+//    hostile unit that is left inside, with no unit of the gate's faction there to answer it, is never shut in for good.
 //  - A friendly unit that stands just outside a shut gate asks to be let in. A unit of yours inside or on top opens it for a few seconds
 //    for them, unless it can see a hostile unit, and it shuts again once they are through.
 //  - At night your gates shut (a unit inside or on top has to be there to do it), and open again at dawn.
@@ -19,7 +21,7 @@
 // The gate's Lock says whether it is shut (building.h gateShut).
 
 // Why a unit is working a gate
-enum class GateJob { Manual, Request, Night, Dawn, Reshut };
+enum class GateJob { Manual, Request, Night, Dawn, Reshut, Leave };
 inline constexpr float GATE_WORK_SECONDS = 1.5f;   // how long it takes to open or shut a gate, standing at it
 // On a unit sent to open or shut a gate (it walks there, then works it). Not saved.
 struct GateWork {

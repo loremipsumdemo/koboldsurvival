@@ -862,6 +862,8 @@ UILABEL_BEHAVIOR_AUTO_HAUL_GROUND	Auto-Haul Ground Items
 UILABEL_BEHAVIOR_AUTO_HAUL_GROUND_TIP	Picks up items lying in your claim that one of its Auto-Haul tasks can put away, so they get stored
 UILABEL_BEHAVIOR_SLEEP_TIP	From dusk (18:00) until dawn (06:00), goes to the nearest free bed and sleeps there until morning
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT_TIP	Auto-Construct: builds your blueprints, from up to 5 tiles away. A blueprint still missing its material (Wood Logs, Iron Ingots or Dragon Crystals) gets it first: carried, or fetched from your stockpiles and stores. The material is held by the blueprint until building starts, and spent then. Carpentry makes it faster. A piece with a unit standing where it goes waits while the unit is asked to move, and the builder goes on to the next one.
+UILABEL_BEHAVIOR_CLEAR_JUNK	Clear Junk
+UILABEL_BEHAVIOR_CLEAR_JUNK_TIP	Clear Junk: clears the junk in your claim, the nearest first: Debris is worked clear, and a Boneheap is broken at once, leaving its bones and what it held on the ground for the haul tasks. Other props marked junk are broken too.
 UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
 UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
 MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
@@ -1246,7 +1248,7 @@ PROP_ORE	Ore
 PROP_TREE	Tree
 PROP_BOULDER	Boulder
 PROP_MUSHROOM	Mushroom
-PROP_BONES	Bones
+PROP_BONEHEAP	Boneheap
 PROP_STALL	Stall
 MISC_PROP_TAKEN	Already in use
 MISC_PROP_WORKERS_FULL	Up to {0} units can work it at once

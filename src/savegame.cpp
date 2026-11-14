@@ -488,7 +488,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
                 r.prop = -1;
             } else if (propKey != "-") {
                 PropKind named = PropKind::Wagon;
-                if (!propKindNamed(propKey, named)) return false;
+                if (!propKindNamed(currentPropKey(propKey), named)) return false;
                 propKind = idx(named);
             }
             r.rule = behaviorFromFields(on, kind, propKind, percent);
@@ -670,7 +670,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
             if (kind < 0) return false;
             if (propKey != "-") {
                 PropKind named = PropKind::Wagon;
-                if (!propKindNamed(propKey, named)) return false;
+                if (!propKindNamed(currentPropKey(propKey), named)) return false;
                 propKind = idx(named);
             }
             r.rule = behaviorFromFields(on, kind, propKind, percent);

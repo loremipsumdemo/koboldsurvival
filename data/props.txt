@@ -40,6 +40,7 @@
 #                burns_corpses   a corpse can be carried into it, and is destroyed
 #                destroyed_by_hand  broken with the right-click menu's Break, leaving its item (or bones)
 #                debris          what is left of a destroyed prop: working it clears it
+#                junk            Clear Junk, a citizen task, clears it: Debris is worked clear, any other prop is broken
 #                sleeping        a Sleeping prop, a bed or bedroll: an occupant lies in it and sleeps (needs rested above 0)
 #                resting         a Resting prop, a chair, bench or stool: an occupant sits. A unit in a Sleeping or Resting prop gets up
 #                                to fight when allies in its sight are attacked, unless it is set Passive or Block
@@ -86,7 +87,7 @@ Ore	PROP_ORE	ore.glb	1.0	resource	Mining	1	0	3	0	any	1	0	0	4	0	0	WorkMining	Done
 Tree	PROP_TREE	tree.glb	3.0	resource	Woodcutting	88	0	3	0	any	1	0	0	4	0	0	WorkWoodcutting	DoneTree	Woodcutting	scatter,random_yaw	0	0	12	0	nature
 Boulder	PROP_BOULDER	boulder.glb	1.2	resource	Mining	161	0	3	0	any	1	0	0	4	0	0	WorkMining	DoneOre	Mining	scatter,random_yaw	0	0	12	0	nature
 Mushroom	PROP_MUSHROOM	mushroom.glb	0.6	resource	Herbalism	125	0	3	0	any	1	126	10	8	0	0	WorkHerbalism	DoneMushroom	Herbalism	scatter,random_yaw	0	0	12	0	nature
-Bones	PROP_BONES	bones.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,random_yaw	0	0	12	0	nature
+Boneheap	PROP_BONEHEAP	boneheap.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,destroyed_by_hand,random_yaw,junk	0	0	12	0	nature
 Stall	PROP_STALL	stall.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built,stall	6	30	1000	1000	storage
 LockedChest	PROP_LOCKED_CHEST	locked_chest.glb	0.9	storage	none	0	0	0	5	any	1	0	0	1	0	0	none	ItemMove	none	scatter	5	25	32	0	storage
 PrisonerCage	PROP_PRISONER_CAGE	prisoner_cage.glb	1.8	occupy	none	0	0	0	15	any	1	0	0	1	0	0	none	ItemMove	none	scatter,cage	8	40	12	0	cages
@@ -108,7 +109,7 @@ ArmorStand	PROP_ARMOR_STAND	armor_stand.glb	1.7	storage	none	0	0	0	0	armor	1	0	0
 WaterTank	PROP_WATER_TANK	water_tank.glb	1.4	storage	none	0	0	0	0	water	1	0	0	1	0	0	none	ItemMove	none	scatter	6	30	32	0	storage
 WaterPump	PROP_WATER_PUMP	water_pump.glb	1.4	crafting	Strength	91	0	1	0	any	1	0	0	1	0	0	WorkPump	DoneWater	Strength	scatter	5	25	12	0	crafting
 Forge	PROP_FORGE	forge.glb	1.6	passive	Smelting	92	1	0	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	Smelting	scatter,fire:-0.24:0.24:0.45:0.26	8	40	12	0	crafting
-Debris	PROP_DEBRIS	debris.glb	1.0	resource	Strength	0	0	3	0	any	1	0	0	4	0	0	none	ItemMove	Clearing	debris,random_yaw	0	0	12	0	nature
+Debris	PROP_DEBRIS	debris.glb	1.0	resource	Strength	0	0	3	0	any	1	0	0	4	0	0	none	ItemMove	Clearing	debris,random_yaw,junk	0	0	12	0	nature
 Farm	PROP_FARM	farm.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	6	30	12	0	crafting
 Turbine	PROP_TURBINE	turbine.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	8	40	12	0	crafting
 Stove	PROP_STOVE	stove.glb	1.2	crafting	Cooking	0	cookable	1	0	any	1	0	0	10	0	0	WorkCooking	DoneCooking	Cooking	built,fire:-0.17:0.34:0.31:0.12,advanced	6	30	12	0	crafting

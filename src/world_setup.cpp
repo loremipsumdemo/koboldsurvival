@@ -139,7 +139,7 @@ struct LevelBuilder {
 
     void addCampExtras(int faction, const CampKit& kit) {
         static const PropKind EXTRA_KINDS[] = {
-            PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Bones, PropKind::Stall, PropKind::LockedChest,
+            PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Boneheap, PropKind::Stall, PropKind::LockedChest,
             PropKind::Chair, PropKind::Bench, PropKind::Stool, PropKind::Table, PropKind::EndTable, PropKind::RoundTable, PropKind::StandingTorch,
             PropKind::TrainingDummy, PropKind::RawFoodStorage, PropKind::FoodStorage, PropKind::WeaponRack, PropKind::ArmorStand,
             PropKind::WaterTank, PropKind::WaterPump, PropKind::Forge,

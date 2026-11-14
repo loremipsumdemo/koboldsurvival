@@ -10,6 +10,7 @@
 #include "props.h"
 #include "schedule.h"
 #include "squads.h"
+#include "stuck.h"
 #include "systems_internal.h"
 #include "game_tables.h"
 #include <functional>
@@ -22,10 +23,10 @@ int facingOf(World& w, ObjectId gate) {
     return (((int)std::lround(yaw / 1.5707963f)) % 4 + 4) % 4;
 }
 
-// A unit of yours that can work a gate if it is placed right: awake, on its feet and not in a bed
+// A unit that can work a gate if it is placed right: awake, on its feet and not in a bed, and of the faction given (any faction if it is -1)
 bool ableToWork(World& w, ObjectId u, int faction) {
-    if (factionOf(w, u) != faction || w.has<Mob>(u) || outCold(w, u) || w.has<Carried>(u) || w.has<Occupying>(u)) return false;
-    return w.has<Commandable>(u) || w.has<Citizen>(u);
+    if (w.has<Mob>(u) || outCold(w, u) || w.has<Carried>(u) || w.has<Occupying>(u)) return false;
+    return faction < 0 || factionOf(w, u) == faction;
 }
 }
 
@@ -134,7 +135,7 @@ namespace {
 // What a finished job leaves a gate as: it is shut or opened now, and what else is to be known of it is kept
 void finishGateWork(World& w, const GateWork& job) {
     switch (job.kind) {
-    case GateJob::Request:
+    case GateJob::Request: case GateJob::Leave:
         setGateShut(w, job.gate, false);
         w.remove<GateNightShut>(job.gate);
         w.add(job.gate, GateOpening{ GATE_OPEN_SECONDS });
@@ -165,9 +166,9 @@ bool gateBeingWorked(World& w, ObjectId gate) {
 bool assignGateWork(World& w, ObjectId gate, bool shut, GateJob kind, ObjectId worker) {
     if (!w.has<Prop>(gate) || gateShut(w, gate) == shut) return false;
     if (gateBeingWorked(w, gate)) return true;
-    if (!shut && hostileNearGate(w, gate)) return false;   // never opened with a hostile in sight
+    if (!shut && kind != GateJob::Leave && hostileNearGate(w, gate)) return false;   // never opened with a hostile in sight (but for one leaving)
     // Its keeper, if it can: awake, on its feet, and not far from it
-    const int owner = systems_detail::ownerOf(w, gate);
+    const int owner = kind == GateJob::Leave ? -1 : systems_detail::ownerOf(w, gate);   // one leaving may be of any faction
     if (worker == NO_OBJECT || !ableToWork(w, worker, owner)) {
         for (ObjectId u : w.view<GateKeeper>()) {
             if (w.get<GateKeeper>(u)->gate == gate && ableToWork(w, u, owner) && !w.has<GateWork>(u) && storeyOf(w, u) == 0) worker = u;
@@ -188,7 +189,7 @@ bool gateWorkStep(World& w, Terrain& t, ObjectId u, float dt) {
     if (!job) return false;
     const Transform* ut = w.get<Transform>(u);
     const bool stale = !ut || !w.has<Prop>(job->gate) || w.has<Blueprint>(job->gate) || !ableToWork(w, u, factionOf(w, u)) || gateShut(w, job->gate) == job->shut ||
-                       (!job->shut && hostileNearGate(w, job->gate));
+                       (!job->shut && job->kind != GateJob::Leave && hostileNearGate(w, job->gate));
     if (stale) {
         w.remove<GateWork>(u);
         return false;
@@ -552,14 +553,29 @@ void gateSystem(World& w, double clockSeconds, float dt) {
             const bool shut = gateShut(w, g);
             const ObjectId operatorUnit = gateAnswerer(w, g);
             if (night) w.remove<GateHeldShut>(g);   // a gate shut by hand opens again after the closed hours
-            // Who is at the gate: friendly units just outside, asking to come in, and anyone standing in it
+            // Who is at the gate: friendly units just outside, asking to come in, anyone standing in it, and a unit of any faction just inside
+            // that means to go out (its way out is through this gate)
             bool asking = false, inGate = false;
+            ObjectId leaver = NO_OBJECT;
             for (ObjectId u : w.view<Entity, Transform>()) {
-                if (factionOf(w, u) != faction || w.has<Mob>(u) || outCold(w, u) || storeyOf(w, u) != 0) continue;
+                if (w.has<Mob>(u) || outCold(w, u) || storeyOf(w, u) != 0) continue;
+                const bool ours = factionOf(w, u) == faction;
                 const Transform* t = w.get<Transform>(u);
                 const float gap = gateGap(w, g, t->x, t->z);
                 if (gap <= 0.3f) inGate = true;
-                else if (gap <= GATE_REQUEST_RANGE && gateSideOf(w, g, t->x, t->z) > 0.0f) asking = true;
+                else if (ours && gap <= GATE_REQUEST_RANGE && gateSideOf(w, g, t->x, t->z) > 0.0f) asking = true;
+                if (leaver != NO_OBJECT || gap > GATE_REQUEST_RANGE || gateSideOf(w, g, t->x, t->z) >= -0.5f || w.has<GateWork>(u)) continue;
+                const PathGoal* goal = w.get<PathGoal>(u);
+                const bool wantsOut = w.has<Stuck>(u) || (goal && gateSideOf(w, g, goal->goal.x, goal->goal.z) > 0.5f);
+                if (!wantsOut) continue;
+                // A hostile one is let out only if no unit of the gate's faction is left inside to answer it
+                const bool hostile = ours ? false : (faction == FACTION_PLAYER ? hostileToPlayer(w, u) : factionsHostile(w, factionOf(w, u), faction));
+                if (hostile && operatorUnit != NO_OBJECT) continue;
+                leaver = u;
+            }
+            if (shut && leaver != NO_OBJECT) {
+                assignGateWork(w, g, false, GateJob::Leave, leaver);
+                continue;
             }
             if (shut) {
                 if (operatorUnit == NO_OBJECT) continue;
