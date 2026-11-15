@@ -160,7 +160,7 @@ void App::beginFrame() {
 }
 
 // A frame over this many milliseconds is written to the debug log as a hitch
-constexpr double HITCH_LOG_MS = 50.0;
+constexpr double HITCH_LOG_MS = 25.0;
 
 void App::run() {
     benchStart();

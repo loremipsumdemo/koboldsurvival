@@ -11,6 +11,7 @@
 #include "build.h"
 #include "claims.h"
 #include "game_tables.h"
+#include "prop_index.h"
 
 namespace fs = std::filesystem;
 
@@ -464,6 +465,11 @@ ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const
             }
         }
     }
+    // The props round the plan's box, found once for all its pieces and kept up as they are added (prop_index.h), and the claims once
+    const std::vector<Claim> claims = claimsOf(w);
+    std::vector<ObjectId> nearby;
+    propsNear(w, (float)x + (float)turned.w * 0.5f, (float)z + (float)turned.d * 0.5f,
+              (float)(turned.w + turned.d) * 0.5f + propIndex(w).widestReach + 1.0f, nearby);
     // Everything else as ghosts, a stage at a time, doors after the walls they go between (a door lies along them)
     const int stages = planStageCount(turned);
     for (int stage = 1; stage < stages; ++stage) {
@@ -477,14 +483,16 @@ ObjectId placePlanAll(World& w, const Terrain& t, const BuildPlan& turned, const
                     const ObjectId ghost = placeGhostPiece(w, t, p->kind, tx, tz, owner, takesMaterial(p->kind) ? material : BuildMaterial::Wood,
                                                            p->level, info.stairs ? dirOfYaw(p->yaw) : 0, stage);
                     applyPieceSettings(w, ghost, *p);
+                    if (ghost != NO_OBJECT) nearby.push_back(ghost);
                     continue;
                 }
                 // A prop that costs nothing is put down when its stage comes (npcBuilderSystem); one that costs is a ghost too. On the
                 // ground it still needs room: nothing stands in its way as the game checks it now.
                 if (info.materials <= 0.0) continue;
-                if (p->level == 0 && checkBuildSpot(w, t, p->kind, (float)x + p->x, (float)z + p->z, 0, owner) != BuildCheck::Ok) continue;
+                if (p->level == 0 && checkBuildSpot(w, t, p->kind, (float)x + p->x, (float)z + p->z, 0, owner, &claims, 0.0f, &nearby) != BuildCheck::Ok) continue;
                 const ObjectId e = placeCostedProp(w, t, p->kind, (float)x + p->x, (float)z + p->z, p->yaw, owner, p->level);
                 if (e == NO_OBJECT) continue;
+                nearby.push_back(e);
                 if (Blueprint* bp = w.get<Blueprint>(e)) {
                     bp->autoPlaced = true;
                     bp->ghost = true;

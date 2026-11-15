@@ -13,6 +13,7 @@
 #include "items.h"
 #include "npc_camps.h"
 #include "npc_roles.h"
+#include "prop_index.h"
 #include "spatial.h"
 #include "systems_internal.h"
 #include <map>
@@ -189,9 +190,12 @@ bool cellCovered(const std::set<long long>& covered, float x, float z) {
 }
 
 // The tiles of every Perimeter piece a faction has, built or laid
-std::set<long long> perimeterCovered(World& w, int owner) {
+std::set<long long> perimeterCovered(World& w, int owner, float cx, float cz, float claimRadius) {
     std::set<long long> covered;
-    for (ObjectId p : w.view<Prop, Transform>()) {
+    // Its pieces stand on the ring inside the claim: only the props round the claim need looking at (prop_index.h)
+    std::vector<ObjectId> nearby;
+    propsNear(w, cx, cz, claimRadius + propIndex(w).widestReach + 2.0f, nearby);
+    for (ObjectId p : nearby) {
         const Prop* pp = w.get<Prop>(p);
         const PropInfo& info = propInfo(pp->kind);
         if (!info.perimeter || ownerOf(w, p) != owner) continue;
@@ -255,8 +259,9 @@ ObjectId placeClearing(World& w, Terrain& t, const std::vector<Claim>& claims, i
     if (check == BuildCheck::Blocked) {
         int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
         propTileRect(propInfo(kind), x, z, yaw, x0, z0, x1, z1);
-        std::vector<ObjectId> away;
-        for (ObjectId p : w.view<Prop, Transform>()) {
+        std::vector<ObjectId> away, nearby;
+        propsNear(w, x, z, (float)std::max(x1 - x0, z1 - z0) + 2.0f, nearby);
+        for (ObjectId p : nearby) {
             const Transform* pt = w.get<Transform>(p);
             const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
             if (px >= x0 && px <= x1 && pz >= z0 && pz <= z1 && clearable(w, p, owner)) away.push_back(p);
@@ -297,8 +302,11 @@ void slopeUpkeep(World& w, Terrain& t, const std::vector<Claim>& claims, const C
         int d;
     };
     std::vector<Existing> have;
-    for (ObjectId p : w.view<Prop, Transform>()) {
-        if (ownerOf(w, p) != c.owner) continue;
+    // Its walls and Slopes stand inside the claim: only the props round it need looking at (prop_index.h)
+    std::vector<ObjectId> nearby;
+    propsNear(w, c.x, c.z, c.radius + propIndex(w).widestReach + 2.0f, nearby);
+    for (ObjectId p : nearby) {
+        if (!w.has<Prop>(p) || ownerOf(w, p) != c.owner) continue;
         const Prop* pp = w.get<Prop>(p);
         const PropInfo& info = propInfo(pp->kind);
         const Transform* tr = w.get<Transform>(p);
@@ -391,6 +399,7 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
         since += hours;
         if (since < PERIMETER_LOOK_HOURS) continue;
         since = 0.0;
+        PROFILE_SCOPE("perimeter: one claim");
         const bool npc = c.owner != FACTION_PLAYER;
 
         // The faction's Perimeter pieces: built ones close tiles, and all of them (laid ones too) are in the way of more
@@ -403,8 +412,12 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
             std::vector<long long> tiles;
         };
         std::vector<Piece> pieces;
-        for (ObjectId p : w.view<Prop, Transform>()) {
+        // Only the props round the claim matter (its Perimeter stands inside its radius): found once, and kept up as pieces are laid
+        std::vector<ObjectId> nearby;
+        propsNear(w, c.x, c.z, c.radius + propIndex(w).widestReach + 2.0f, nearby);
+        for (ObjectId p : nearby) {
             const Prop* pp = w.get<Prop>(p);
+            if (!pp) continue;
             const PropInfo& info = propInfo(pp->kind);
             if (!info.perimeter || ownerOf(w, p) != c.owner) continue;
             const Transform* tr = w.get<Transform>(p);
@@ -434,12 +447,14 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
         }
 
         // Whether anything can walk out of the claim from the Altar: walls and gates count as shut, as a gate can be
+        bool escaped = false;
+        {
+        PROFILE_SCOPE("perimeter: floodFill");
         std::unordered_set<long long> seen;
         std::queue<std::pair<int, int>> q;
         const int sx = (int)std::floor(c.x), sz = (int)std::floor(c.z);
         q.push({ sx, sz });
         seen.insert(tileKey(sx, sz));
-        bool escaped = false;
         while (!q.empty() && !escaped) {
             const auto [x, z] = q.front();
             q.pop();
@@ -457,9 +472,10 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                 q.push({ nx, nz });
             }
         }
+        }
 
         // Its Perimeter, kept automatically (unless it was drawn by hand): to its walls and gates where they close a ring, else the default
-        refreshAutoPerimeter(w, t, c.altar);
+        PROFILED("perimeter: refreshAuto", refreshAutoPerimeter(w, t, c.altar));
 
         // An NPC faction keeps its Perimeter to the ring its claim has now (nothing is remembered of how it was laid: the ring is
         // worked out again each look, so a claim that has grown gets its new ring), with a Gate, and clears what is in the way
@@ -481,7 +497,7 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
             }
             const PropKind wallKind = perimeterKind(true), gateKind = perimeterKind(false);
             // The ring in hand is finished first. Only when it is, and the claim has grown more than 8 beyond it, is a bigger one begun.
-            float ringP = activeRing(covered, c.x, c.z, c.radius);
+            float ringP = PROFILED("perimeter: activeRing", activeRing(covered, c.x, c.z, c.radius));
             std::vector<RingCell> ring = perimeterRing(ringP);
             float ax = 0.0f, az = 0.0f;
             snapBuildSpot(wallKind, c.x, c.z, ax, az);
@@ -523,14 +539,16 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                 }
             }
             auto place = [&](PropKind kind, float x, float z, float yaw) {
-                BuildCheck check = checkBuildSpot(w, t, kind, x, z, 0, c.owner, &claims, yaw);
+                PROFILE_SCOPE("perimeter: place");
+                BuildCheck check = checkBuildSpot(w, t, kind, x, z, 0, c.owner, &claims, yaw, &nearby);
                 if (check == BuildCheck::Blocked) {
                     // Props in the way that can be broken are cleared, and it is tried again
                     int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
                     propTileRect(propInfo(kind), x, z, yaw, x0, z0, x1, z1);
                     std::vector<ObjectId> away;
-                    for (ObjectId p : w.view<Prop, Transform>()) {
+                    for (ObjectId p : nearby) {
                         const Transform* pt = w.get<Transform>(p);
+                        if (!pt || !w.has<Prop>(p)) continue;   // taken down since the list was made
                         const int px = (int)std::floor(pt->x), pz = (int)std::floor(pt->z);
                         if (px >= x0 && px <= x1 && pz >= z0 && pz <= z1 && clearable(w, p, c.owner)) away.push_back(p);
                     }
@@ -538,11 +556,12 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                         releasePropLinks(w, p);
                         w.destroy(p);
                     }
-                    if (!away.empty()) check = checkBuildSpot(w, t, kind, x, z, 0, c.owner, &claims, yaw);
+                    if (!away.empty()) check = checkBuildSpot(w, t, kind, x, z, 0, c.owner, &claims, yaw, &nearby);
                 }
                 if (check != BuildCheck::Ok) return false;
-                const ObjectId e = placeCostedProp(w, t, kind, x, z, yaw, c.owner);
+                const ObjectId e = PROFILED("perimeter: placeCostedProp", placeCostedProp(w, t, kind, x, z, yaw, c.owner));
                 if (e == NO_OBJECT) return false;
+                nearby.push_back(e);
                 w.add(e, Material{ material });
                 int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
                 propTileRect(propInfo(kind), x, z, yaw, x0, z0, x1, z1);
@@ -553,6 +572,7 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                 return true;
             };
             if (housed && missing > 0 && laidBefore < PERIMETER_MOST_PENDING) {
+                PROFILE_SCOPE("perimeter: laying");
                 // The Gate first: two cells beside each other on a straight run facing the same way, nearest the middle of that side
                 if (gatesIn == 0) {
                     const int faces[4][2] = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } };
@@ -592,13 +612,14 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
             missing = countMissing();
             // Once the ring is whole, built and has a Gate, and the Perimeter is secure, an older inner ring is taken down
             if (missing == 0 && !unbuilt && !escaped && gatesIn > 0) {
+                PROFILE_SCOPE("perimeter: stale");
                 for (ObjectId e : stale) {
                     if (!w.has<Prop>(e)) continue;
                     if (w.has<Blueprint>(e)) destroyBuilding(w, e);
                     else deconstructBuilding(w, e);
                 }
             }
-            slopeUpkeep(w, t, claims, c);
+            PROFILED("perimeter: slopeUpkeep", slopeUpkeep(w, t, claims, c));
             if (!housed && built == 0) continue;   // nothing built yet: nothing said
         }
 
@@ -745,7 +766,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
             site.demolishHours = 0.0;
         }
     }
-    claimBedSystem(w, t);
+    PROFILED("sites: claimBedSystem", claimBedSystem(w, t));
     // Ghosts that no building owns any more (the first tile of its foundation was cancelled) go
     for (ObjectId b : autoPlaced) {
         if (!w.has<Blueprint>(b) || !w.get<Blueprint>(b)->ghost) continue;
@@ -772,6 +793,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
             continue;
         }
         if (!mapped) {
+            PROFILE_SCOPE("sites: buildingMap+clusters");
             map = buildingMap(w);
             clusters = buildingClusters(w, map);
             mapped = true;
@@ -798,8 +820,9 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         }
         if (plans.empty()) continue;
         const BuildPlan& plan = *plans[(size_t)rng.range(0, (int)plans.size() - 1)];
-        const float ringNow = activeRing(perimeterCovered(w, c.owner), c.x, c.z, c.radius);
-        const std::unordered_set<long long> reserve = perimeterReserve(c.x, c.z, ringNow, c.radius);
+        const std::set<long long> coveredNow = PROFILED("sites: perimeterCovered", perimeterCovered(w, c.owner, c.x, c.z, c.radius));
+        const float ringNow = PROFILED("sites: activeRing", activeRing(coveredNow, c.x, c.z, c.radius));
+        const std::unordered_set<long long> reserve = PROFILED("sites: perimeterReserve", perimeterReserve(c.x, c.z, ringNow, c.radius));
         const BuildPlan turnedBy[4] = { planTurned(plan, 0), planTurned(plan, 1), planTurned(plan, 2), planTurned(plan, 3) };
         const std::vector<PlanRect> rectsBy[4] = { planFoundationRects(turnedBy[0]), planFoundationRects(turnedBy[1]),
                                                    planFoundationRects(turnedBy[2]), planFoundationRects(turnedBy[3]) };
@@ -828,7 +851,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
                 for (int tx = x - 1; tx <= x + turned.w && clear; ++tx) clear = !map.foundation.count(tileKey(tx, tz));
             }
             if (!clear || !planFoundationFits(w, t, rectsBy[turns], x, z, c.owner)) continue;
-            const ObjectId anchor = placePlanAll(w, t, turned, rectsBy[turns], x, z, c.owner, material);
+            const ObjectId anchor = PROFILED("sites: placePlanAll", placePlanAll(w, t, turned, rectsBy[turns], x, z, c.owner, material));
             if (anchor == NO_OBJECT) continue;
             PlanSite site;
             site.plan = plan.name;

@@ -1,5 +1,6 @@
 #include "build.h"
 #include "building.h"
+#include "prop_index.h"
 #include <algorithm>
 #include <cmath>
 
@@ -52,7 +53,7 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
 }
 
 BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder,
-                          const std::vector<Claim>* given, float yaw) {
+                          const std::vector<Claim>* given, float yaw, const std::vector<ObjectId>* nearby) {
     const Footprint& f = propInfo(kind).foot;
 
     // On an upper floor, every bit of it must stand on a finished floor of yours on that level
@@ -101,12 +102,19 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
         }
     }
 
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    // Only the props within reach of this one's footprint can overlap it (prop_index.h)
+    std::vector<ObjectId> found;
+    if (!nearby) {
+        propsNear(w, x, z, footprintReach(f) + propIndex(w).widestReach, found);
+        nearby = &found;
+    }
+    for (ObjectId e : *nearby) {
         const Prop* p = w.get<Prop>(e);
+        const Transform* tr = w.get<Transform>(e);
+        if (!p || !tr) continue;
         const PropInfo& other = propInfo(p->kind);
         // Floors (a foundation's tiles, upper floors) are stood on, not in the way; things on other floors don't count
         if (other.foundation || other.upperFloor || storeyOf(w, e) != storey) continue;
-        const Transform* tr = w.get<Transform>(e);
         if (footprintsOverlap(f, x, z, yaw, other.foot, tr->x, tr->z, p->yaw)) return BuildCheck::Blocked;
     }
     return BuildCheck::Ok;

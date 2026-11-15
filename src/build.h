@@ -24,8 +24,10 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
 // builder: the faction placing it (yours by default)
 // claims: the claims in the world when the caller has them at hand (claimsOf), else they are worked out here
 // yaw: the way it is turned (a Perimeter piece, covering several tiles, is turned in quarters)
+// nearby: the props that may overlap it, when the caller has the props round the spot at hand (propsNear) and is checking many spots in a row,
+//         keeping the list up as it adds props to it; else they are looked up here. Entries that no longer exist are passed over.
 BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey = 0, int builder = FACTION_PLAYER,
-                          const std::vector<Claim>* claims = nullptr, float yaw = 0.0f);
+                          const std::vector<Claim>* claims = nullptr, float yaw = 0.0f, const std::vector<ObjectId>* nearby = nullptr);
 
 bool buildAnywhere(const BuildPick& pick);
 bool selectionInClaim(World& w);

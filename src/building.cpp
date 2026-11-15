@@ -1242,9 +1242,10 @@ ObjectId layPiece(World& w, const Terrain& t, PropKind kind, int x, int z, int o
                   int ghostStage) {
     const PropInfo& info = propInfo(kind);
     if (ghostStage >= 0 && (info.materials <= 0.0 || level < 0 || level > STOREY_MAX)) return NO_OBJECT;
-    const BuildingMap m = buildingMap(w);
     float yaw = info.stairs ? (float)(((dir % 4) + 4) % 4) * 1.5707963f : 0.0f;
     if (info.door) {
+        // Only a door needs the map of the buildings (it goes over every prop in the world, so it is not made for each piece laid)
+        const BuildingMap m = buildingMap(w);
         // Across the doorway: in line with the walls beside it, or along the building's edge
         // Its two ends go to walls: the line (north-south or east-west) with the walls beside it, a wall counting for more than another
         // door. With as many on both lines, or none, it lies along the building's edge.
