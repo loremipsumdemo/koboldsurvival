@@ -4,7 +4,7 @@
 #include "stats.h"
 
 constexpr float SNEAK_SPEED = 0.5f;
-constexpr float RUN_SPEED_BONUS = 0.5f;
+constexpr float RUN_SPEED_BONUS = 3.0f;
 constexpr float MIN_LOAD_SPEED = 0.1f;   // the least share of its speed a load leaves a unit
 
 float wornWeight(const Equipment& worn);
