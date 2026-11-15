@@ -62,12 +62,15 @@ std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar);
 std::set<std::pair<int, int>> defaultPerimeter(World& w, ObjectId altar);
 bool inPerimeterCore(World& w, ObjectId altar, int x, int z);
 
-// The same claims, kept: worked out again only when a Prop, Owner, Blueprint, ClaimGrowth or Transform is added or removed, when
-// invalidateClaims says one was changed in place, and once a second of play besides (simulation.cpp), in case something changed in
-// place without saying so. claimsOf gives a copy of them. For lookups made many times a step (every unit's lock check); the reference
-// is good until the next call that may change a prop, so copy it to hold on.
+// The same claims, kept. Only the Altars and Campfires are looked at on each ask (found from the whole map once per world; new ones are
+// added by makeProp through claimMakerAdded), and the claims are worked out again from them when one is gone, moved, finished, grown or
+// has changed hands, or when invalidateClaims says so. Placing anything else never makes the map be looked over. claimsOf gives a copy
+// of them. For lookups made many times a step (every unit's lock check); the reference is good until the next call that may change a
+// prop, so copy it to hold on.
 const std::vector<Claim>& cachedClaims(World& w);
 void invalidateClaims(World& w);
+// A prop was just made: if it is an Altar or Campfire, the kept claims take it in
+void claimMakerAdded(World& w, ObjectId prop);
 // An Altar's claim grows when its faction has more complete buildings in it than it has grown by, and the room is there:
 // no other Altar's claim within reach of the larger one. A camp of another faction under the larger claim is destroyed.
 // It looks only when there is something earned, and when claims have changed since it last found no room.

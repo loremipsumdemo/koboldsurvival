@@ -195,6 +195,7 @@ ObjectId makeProp(World& w, PropKind kind, const Transform& at, float yaw) {
     if (propInfo(kind).claimsLand) w.add(e, Health{});
     else if (info.health > 0.0) w.add(e, Health{ info.health, info.health });
     onPropSpawned(w, e);
+    claimMakerAdded(w, e);
     return e;
 }
 

@@ -15,17 +15,18 @@
 #include "prop_index.h"
 
 namespace {
+bool makesClaims(PropKind kind) { return propInfo(kind).claimsLand || kind == PropKind::Campfire; }
+
 // The claims as the world stands, worked out from its Altars and Campfires (cachedClaims keeps them)
-std::vector<Claim> computeClaims(World& w) {
+std::vector<Claim> computeClaims(World& w, const std::vector<ObjectId>& sources) {
     std::vector<Claim> out;
     std::vector<ObjectId> altarProps, campfires;
-    for (int k = 0; k < propKindCount(); ++k) {
-        if (propInfo((PropKind)k).claimsLand) {
-            const std::vector<ObjectId>& of = propsOfKind(w, (PropKind)k);
-            altarProps.insert(altarProps.end(), of.begin(), of.end());
-        }
+    for (ObjectId e : sources) {
+        const Prop* p = w.get<Prop>(e);
+        if (!p) continue;
+        if (propInfo(p->kind).claimsLand) altarProps.push_back(e);
+        else if (p->kind == PropKind::Campfire) campfires.push_back(e);
     }
-    campfires = propsOfKind(w, PropKind::Campfire);
     for (ObjectId e : altarProps) {
         if (!w.has<Transform>(e) || !w.has<Owner>(e)) continue;
         if (w.has<Blueprint>(e) || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
@@ -72,20 +73,72 @@ std::vector<Claim> computeClaims(World& w) {
     return out;
 }
 
+// What a claim depends on in one Altar or Campfire, as it was when the claims were last worked out
+struct SourceState {
+    ObjectId id = NO_OBJECT;
+    bool alive = false, blueprint = false;
+    PropKind kind{};
+    float x = 0.0f, z = 0.0f;
+    int owner = -1, steps = 0;
+    bool operator==(const SourceState& o) const {
+        return id == o.id && alive == o.alive && blueprint == o.blueprint && kind == o.kind && x == o.x && z == o.z && owner == o.owner &&
+               steps == o.steps;
+    }
+};
+
+SourceState sourceState(World& w, ObjectId e) {
+    SourceState s;
+    s.id = e;
+    const Prop* p = w.get<Prop>(e);
+    const Transform* t = w.get<Transform>(e);
+    if (!p || !t) return s;
+    s.alive = true;
+    s.kind = p->kind;
+    s.blueprint = w.has<Blueprint>(e);
+    s.x = t->x;
+    s.z = t->z;
+    if (const Owner* own = w.get<Owner>(e)) s.owner = own->faction;
+    if (const ClaimGrowth* g = w.get<ClaimGrowth>(e)) s.steps = g->steps;
+    return s;
+}
+
+// The claims, and the few props they come from. Placing anything else (a wall, a foundation tile) never touches them: only the
+// Altars and Campfires are looked at again, never the whole map. A new one is added to the list by makeProp (claimMakerAdded).
 struct ClaimCache {
     std::vector<Claim> claims;
-    std::uint64_t revisions[5] = { 0, 0, 0, 0, 0 };
-    std::uint64_t generation = 1, builtGeneration = 0;
+    std::vector<SourceState> sources;
+    bool scanned = false;   // the sources have been found once from the props
+    bool stale = true;
 };
 }
 
 const std::vector<Claim>& cachedClaims(World& w) {
     ClaimCache& c = w.resource<ClaimCache>();
-    const std::uint64_t now[5] = { w.revision<Prop>(), w.revision<Owner>(), w.revision<Blueprint>(), w.revision<ClaimGrowth>(), w.revision<Transform>() };
-    if (c.builtGeneration != c.generation || !std::equal(now, now + 5, c.revisions)) {
-        c.claims = computeClaims(w);
-        std::copy(now, now + 5, c.revisions);
-        c.builtGeneration = c.generation;
+    if (!c.scanned) {
+        // Once per world: every Altar and Campfire there is (blueprints and ownerless ones too, which may become claims)
+        c.sources.clear();
+        for (int k = 0; k < propKindCount(); ++k) {
+            if (!makesClaims((PropKind)k)) continue;
+            for (ObjectId e : propsOfKind(w, (PropKind)k)) c.sources.push_back(SourceState{ e });
+        }
+        c.scanned = true;
+        c.stale = true;
+    }
+    // Any source gone, moved, finished, grown or changed hands?
+    for (SourceState& s : c.sources) {
+        const SourceState now = sourceState(w, s.id);
+        if (!(now == s)) {
+            s = now;
+            c.stale = true;
+        }
+    }
+    if (c.stale) {
+        c.sources.erase(std::remove_if(c.sources.begin(), c.sources.end(), [](const SourceState& s) { return !s.alive || !makesClaims(s.kind); }), c.sources.end());
+        std::vector<ObjectId> ids;
+        ids.reserve(c.sources.size());
+        for (const SourceState& s : c.sources) ids.push_back(s.id);
+        c.claims = computeClaims(w, ids);
+        c.stale = false;
     }
     return c.claims;
 }
@@ -94,7 +147,19 @@ const std::vector<Claim>& cachedClaims(World& w) {
 std::vector<Claim> claimsOf(World& w) { return cachedClaims(w); }
 
 void invalidateClaims(World& w) {
-    ++w.resource<ClaimCache>().generation;
+    w.resource<ClaimCache>().stale = true;
+}
+
+void claimMakerAdded(World& w, ObjectId prop) {
+    const Prop* p = w.get<Prop>(prop);
+    if (!p || !makesClaims(p->kind)) return;
+    ClaimCache& c = w.resource<ClaimCache>();
+    c.stale = true;
+    if (!c.scanned) return;   // the first scan will find it
+    for (const SourceState& s : c.sources) {
+        if (s.id == prop) return;
+    }
+    c.sources.push_back(SourceState{ prop });   // looked at (and so taken in) on the next ask
 }
 
 bool campSheltered(World& w, const std::vector<Claim>& claims, float x, float z, int faction) {
