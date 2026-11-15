@@ -40,7 +40,8 @@ inline constexpr int UI_SCALE_STEP = 5;
 inline constexpr int DETAIL_RANGE_MIN = 16;
 inline constexpr int DETAIL_RANGE_MAX = 2048;
 inline constexpr int DETAIL_RANGE_STEP = 8;
-// The tiles the ground is drawn at its full detail out to (renderer_types.h's LOD_NEAR_TILES is the same number)
+// The base the view distance is measured from, in tiles (it was once how far the ground had its full detail; renderer_types.h's
+// LOD_NEAR_TILES says that now)
 inline constexpr int FULL_DETAIL_TILES = 1024;
 // The view distance: how far from the view's centre the ground's terrain chunks are drawn at all, as a percent of FULL_DETAIL_TILES:
 // 100 (1x, the least) to 1000 (10x, the most)

@@ -1,3 +1,4 @@
+#include "profile.h"
 #include "systems_internal.h"
 #include "inventory.h"
 #include "world_labels.h"
@@ -93,6 +94,7 @@ bool storeCouldTake(World& w, const std::vector<Claim>& claims, ObjectId u, cons
 // Auto-Haul Ground Items: the nearest item lying in the unit's claim that one of its haul tasks could put away, that it
 // has room for and nobody else is fetching
 ObjectId groundHaulTarget(World& w, const std::vector<Claim>& claims, ObjectId u, const Behaviors& b, BehaviorWait& why) {
+    PROFILE_SCOPE("auto: groundHaulTarget");
     why = BehaviorWait::NothingToHaul;
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return NO_OBJECT;
@@ -158,6 +160,7 @@ ItemFilter stockpileFor(int item) {
 
 // The nearest stockpile of the unit's faction for this item with room in it, or NO_OBJECT
 ObjectId stockpileWithRoom(World& w, const std::vector<Claim>& claims, ObjectId u, int item) {
+    PROFILE_SCOPE("auto: stockpileWithRoom");
     const Transform* ut = w.get<Transform>(u);
     const ItemFilter want = stockpileFor(item);
     if (!ut || want == ItemFilter::Any) return NO_OBJECT;
@@ -178,6 +181,7 @@ bool harvestLoaded(World& w, const std::vector<Claim>& claims, ObjectId u, const
 }
 
 ObjectId harvestTarget(World& w, const std::vector<Claim>& claims, ObjectId u, int ruleKind) {
+    PROFILE_SCOPE("auto: harvestTarget");
     const Transform* ut = w.get<Transform>(u);
     if (!ut || ruleKind < 0 || ruleKind >= propKindCount()) return NO_OBJECT;
     const PropKind kind = (PropKind)ruleKind;
@@ -246,6 +250,7 @@ BehaviorWait roamSpot(World& w, const Terrain& t, const std::vector<Claim>& clai
 }
 
 ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
+    PROFILE_SCOPE("auto: restTarget");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return NO_OBJECT;
     std::vector<ObjectId> wanted;
@@ -259,7 +264,7 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
     ObjectId best = NO_OBJECT;
     float bestD2 = 0.0f;
     bool bestOwned = false;
-    for (ObjectId p : w.view<Prop, Transform>()) {
+    for (ObjectId p : propsWhere(w, [](PropKind k) { return restedGainPerHour(k) > 0.0; })) {
         const PropKind kind = w.get<Prop>(p)->kind;
         if (restedGainPerHour(kind) <= 0.0) continue;
         const bool ownBed = lyingIn && lyingIn->prop == p;
@@ -287,6 +292,7 @@ ObjectId restTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
 
 // The nearest piece of junk (Debris, a Boneheap: props.txt's junk flag) in the unit's own claim that nobody is already clearing
 ObjectId junkTarget(World& w, const std::vector<Claim>& claims, ObjectId u) {
+    PROFILE_SCOPE("auto: junkTarget");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return NO_OBJECT;
     const int faction = factionOf(w, u);
@@ -313,6 +319,7 @@ constexpr float GUARD_SECONDS = 8.0f;
 // A random open tile on the edge of the Perimeter (a tile of it with a side tile outside it) of the Altar whose claim is nearest the
 // unit, among its own faction's. False if there is none.
 bool guardSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, Vec2& to) {
+    PROFILE_SCOPE("auto: guardSpot");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     const int faction = factionOf(w, u);
@@ -387,6 +394,7 @@ int nightHomeSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, 
 // An idle citizen outside the perimeter: shut out by a gate (at any hour), it goes to the front of it to ask to be let in, where a gate's
 // keeper opens it; at night, outside everything, it goes back in. True while it has that to do (so it does not drift off).
 bool homewardMove(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, bool night, float dt) {
+    PROFILE_SCOPE("auto: homewardMove");
     HomewardLook* look = w.get<HomewardLook>(u);
     if (!look) look = &w.add(u, HomewardLook{});
     if ((look->left -= dt) > 0.0f) return w.has<AskingEntry>(u);
@@ -481,6 +489,7 @@ BehaviorWait spawnSpot(World& w, const Terrain& t, ObjectId u, Rng& rng, Vec2& t
 // A free seat (chair, stool, bench...) of the unit's faction or in its claim: one of the few nearest, picked at random so that
 // the units at recreation do not all crowd one seat
 ObjectId seatTarget(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rng) {
+    PROFILE_SCOPE("auto: seatTarget");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return NO_OBJECT;
     std::vector<ObjectId> wanted;
@@ -492,7 +501,7 @@ ObjectId seatTarget(World& w, const std::vector<Claim>& claims, ObjectId u, Rng&
     const int faction = factionOf(w, u);
     const int level = storeyOf(w, u);
     std::vector<std::pair<float, ObjectId>> found;
-    for (ObjectId p : w.view<Prop, Transform>()) {
+    for (ObjectId p : propsWhere(w, [](PropKind k) { return isSeat(k); })) {
         if (!isSeat(w.get<Prop>(p)->kind) || w.has<Blueprint>(p) || storeyOf(w, p) != level) continue;
         if (countIn(occupied, p) > 0 || lockShutFor(w, claims, p, u) || std::binary_search(wanted.begin(), wanted.end(), p)) continue;
         const Owner* own = w.get<Owner>(p);
@@ -548,6 +557,7 @@ Vec2 tableSeatPos(const Transform& table, int slot) {
 
 // A Game Table of the unit's faction (or in its claim) with a side free: one of the few nearest, a side picked at random
 bool tableChoice(World& w, const Terrain& t, const std::vector<Claim>& claims, ObjectId u, Rng& rng, ObjectId& table, int& slot) {
+    PROFILE_SCOPE("auto: tableChoice");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     const int faction = factionOf(w, u);
@@ -559,7 +569,7 @@ bool tableChoice(World& w, const Terrain& t, const std::vector<Claim>& claims, O
     }
     struct Option { float d2; ObjectId table; int slot; };
     std::vector<Option> found;
-    for (ObjectId p : w.view<Prop, Transform>()) {
+    for (ObjectId p : propsWhere(w, [](PropKind k) { return k == PropKind::GameTable; })) {
         if (w.get<Prop>(p)->kind != PropKind::GameTable || w.has<Blueprint>(p) || storeyOf(w, p) != level) continue;
         const Owner* own = w.get<Owner>(p);
         if (own && own->faction != faction && !inOwnClaim(w, claims, p, faction)) continue;
@@ -616,6 +626,7 @@ bool inAltarClaim(const std::vector<Claim>& claims, const Transform& at, int fac
 // that was never known), so it goes back to normal collision without being stuck in anyone. While the Campfire or Altar
 // still stands the place is beside it; once it is gone, the place may be right where it stood.
 void leaveDance(World& w, Terrain& t, const Dancing& dance, ObjectId u) {
+    PROFILE_SCOPE("auto: leaveDance");
     Transform* ut = w.get<Transform>(u);
     if (!ut) return;
     const float ax = dance.known ? dance.centerX : ut->x, az = dance.known ? dance.centerZ : ut->z;
@@ -663,6 +674,7 @@ void leaveDance(World& w, Terrain& t, const Dancing& dance, ObjectId u) {
 
 // The nearest Campfire or Altar of the unit's faction (or in its claim) with a place free on its circle
 bool danceChoice(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rng, ObjectId& center, int& slot) {
+    PROFILE_SCOPE("auto: danceChoice");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     const int faction = factionOf(w, u);
@@ -676,7 +688,7 @@ bool danceChoice(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rn
     }
     float bestD2 = 40.0f * 40.0f;
     ObjectId best = NO_OBJECT;
-    for (ObjectId p : w.view<Prop, Transform>()) {
+    for (ObjectId p : propsWhere(w, [](PropKind k) { return isDanceCenter(k); })) {
         const PropKind kind = w.get<Prop>(p)->kind;
         if (!isDanceCenter(kind) || w.has<Blueprint>(p) || storeyOf(w, p) != 0 || storeyOf(w, u) != 0) continue;
         const Owner* own = w.get<Owner>(p);
@@ -705,6 +717,7 @@ bool danceChoice(World& w, const std::vector<Claim>& claims, ObjectId u, Rng& rn
 }
 
 bool startStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
+    PROFILE_SCOPE("auto: startStep");
     if (r.kind == BehaviorKind::Play) {
         r.why = BehaviorWait::None;
         if (w.has<Mob>(u) || w.has<Carrying>(u) || w.has<Occupying>(u)) return false;
@@ -989,6 +1002,7 @@ bool systems_detail::openTile(const Terrain& t, float x, float z) {
 }
 
 bool systems_detail::claimInnerSpot(World& w, const Terrain& t, ObjectId u, float centreX, float centreZ, Vec2& out) {
+    PROFILE_SCOPE("auto: claimInnerSpot");
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
     unsigned seed = (unsigned)u * 2654435761u + (unsigned)(ut->x * 16.0f) * 40503u + (unsigned)(ut->z * 16.0f);
@@ -1002,7 +1016,9 @@ bool systems_detail::claimInnerSpot(World& w, const Terrain& t, ObjectId u, floa
         const float z = std::floor(ut->z + (centreZ - ut->z) * f) + 0.5f;
         if (!openTile(t, x, z) || foundationAt(w, (int)std::floor(x), (int)std::floor(z)) != NO_OBJECT) continue;
         bool clear = true;
-        for (ObjectId p : w.view<Prop, Transform>()) {
+        static std::vector<ObjectId> near;
+        propsNear(w, x, z, 1.0f, near);
+        for (ObjectId p : near) {
             const Transform* pt = w.get<Transform>(p);
             if (std::fabs(pt->x - x) < 1.0f && std::fabs(pt->z - z) < 1.0f) {
                 clear = false;
@@ -1017,14 +1033,19 @@ bool systems_detail::claimInnerSpot(World& w, const Terrain& t, ObjectId u, floa
 }
 
 void systems_detail::stepOffProp(World& w, Terrain& t, ObjectId u, ObjectId prop) {
+    PROFILE_SCOPE("auto: stepOffProp");
     Transform* ut = w.get<Transform>(u);
     const Transform* pt = w.get<Transform>(prop);
     const Prop* pp = w.get<Prop>(prop);
     if (!ut || !pt || !pp) return;
     const Footprint& pf = propInfo(pp->kind).foot;
     const int cx = (int)std::floor(pt->x), cz = (int)std::floor(pt->z);
+    // Only the props in the cells round the spot can cover it (prop_index.h)
+    const float widest = propIndex(w).widestReach + PROP_BLOCK_RADIUS;
+    std::vector<ObjectId> near;
     auto onOtherProp = [&](float x, float z) {
-        for (ObjectId o : w.view<Prop, Transform>()) {
+        propsNear(w, x, z, widest, near);
+        for (ObjectId o : near) {
             if (o == prop) continue;
             const PropInfo& oi = propInfo(w.get<Prop>(o)->kind);
             if (oi.airship || oi.wheelbarrow) continue;
@@ -1108,7 +1129,18 @@ void leaveOpenLocksSystem(World& w, Terrain& t) {
     }
 }
 
-void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
+// A unit's tasks are looked at every THINK_EVERY_STEPS simulation steps (15 times a second), each unit on a step of its own so the work
+// is spread evenly, with the time since its last look: 60 times a second was most of what the simulation cost, for no difference anyone
+// could see. Your own units, dancers (whose place on the circle moves every step) and units working a gate are looked at every step.
+// Not saved: after a load every unit is on its step again within a few steps.
+constexpr unsigned THINK_EVERY_STEPS = 4;
+struct ThinkClock {
+    unsigned tick = 0;
+};
+
+void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
+    float dt = stepDt;   // the step's time; in the units loop below, each unit's time since it was last looked at
+    const unsigned thinkTick = ++w.resource<ThinkClock>().tick;
     const std::vector<Claim> claims = cachedClaims(w);
     // Whoever was attacked in a bed or on a seat wakes and gets off it, and keeps off beds and seats for a while (as one
     // turned out of a bed does). One out cold, carried or locked in stays where it is.
@@ -1191,8 +1223,13 @@ void automationSystem(World& w, Terrain& t, float dt, Rng& rng) {
             }
         }
     }
+    PROFILE_SCOPE("auto: units loop");
     for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
+        const bool everyStep = w.has<Commandable>(u) || w.has<Dancing>(u) || (b->busy && b->step.kind == BehaviorKind::Dance) ||
+                               w.has<GateWork>(u);
+        if (!everyStep && (u + thinkTick) % THINK_EVERY_STEPS != 0) continue;
+        dt = everyStep ? stepDt : stepDt * (float)THINK_EVERY_STEPS;
         // A task begun, or one dropped for another, goes to the Game tab (both filters start off)
         TaskMemo* memo = nullptr;
         if (!w.has<Mob>(u)) {

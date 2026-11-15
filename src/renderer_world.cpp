@@ -845,7 +845,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
     drawFires(cam);
     drawBuildPreview(t);
-    drawNavmesh(t, cam);
+    drawNavmesh(w, t, cam);
     drawClouds(cam);
     grabScene();
     glUseProgram(glyphProgram_);
@@ -1082,11 +1082,36 @@ void Renderer::drawBuildPreview(const Terrain& t) {
 
 // The Developer panel's Show Navmesh: each tile near the camera's focus is tinted by the piece of ground it is in (tiles that join up share a
 // color, so a walled-off yard shows as its own), and a tile a building has closed is red
-void Renderer::drawNavmesh(const Terrain& t, const Camera& cam) {
+// The ground: each piece of open ground in its own color (tiles of one color can be walked between), tiles closed by a building red.
+// Above it, each upper floor and Perimeter walkway tile a unit can stand on, by the part of its floor (a stronger color, with a dark
+// edge), and each Ladder, Stairs or Slope as a line from where it is got onto to where it comes out: yellow for a ladder, cyan for
+// stairs or a Slope, red for one that comes out nowhere a unit can stand (planning leaves those out).
+void Renderer::drawNavmesh(World& w, const Terrain& t, const Camera& cam) {
     if (!showNavmesh_) return;
     constexpr int REACH = 36;
     const int cx = (int)std::floor(cam.focusX), cz = (int)std::floor(cam.focusZ);
     Batch b;
+    std::vector<NavFloorTile> floors;
+    std::vector<NavClimb> climbs;
+    navFloorsNear(w, cx, cz, REACH, floors, climbs);
+    for (const NavFloorTile& f : floors) {
+        const unsigned h = (unsigned)(f.part * 31 + f.level * 977 + 7) * 2654435761u;
+        const RGBA tone{ 0.35f + 0.65f * (float)((h >> 8) & 255) / 255.0f, 0.35f + 0.65f * (float)((h >> 16) & 255) / 255.0f,
+                         0.35f + 0.65f * (float)((h >> 24) & 255) / 255.0f, 0.55f };
+        const float y = t.heightAt(f.x + 0.5f, f.z + 0.5f) + storeyBaseHeight(f.level) + 0.08f;
+        const float a = 0.12f;
+        b.quad(V3{ f.x + a, y, f.z + a }, V3{ f.x + 1 - a, y, f.z + a }, V3{ f.x + 1 - a, y, f.z + 1 - a }, V3{ f.x + a, y, f.z + 1 - a }, tone);
+        outlineSquare(b, f.x + 0.5f, y + 0.005f, f.z + 0.5f, 0.5f - a * 0.5f, 0.05f, RGBA{ 0.05f, 0.05f, 0.08f, 0.7f });
+    }
+    for (const NavClimb& c : climbs) {
+        const RGBA tone = !c.topOpen ? RGBA{ 1.0f, 0.2f, 0.2f, 0.9f } : c.stairs ? RGBA{ 0.3f, 1.0f, 1.0f, 0.9f } : RGBA{ 1.0f, 0.9f, 0.2f, 0.9f };
+        const V3 lo{ c.foot.x, t.heightAt(c.foot.x, c.foot.z) + storeyBaseHeight(c.level) + 0.1f, c.foot.z };
+        const V3 hi{ c.top.x, t.heightAt(c.top.x, c.top.z) + storeyBaseHeight(c.level + 1) + 0.1f, c.top.z };
+        constexpr float R = 0.06f;
+        b.quad(V3{ lo.x - R, lo.y, lo.z }, V3{ lo.x + R, lo.y, lo.z }, V3{ hi.x + R, hi.y, hi.z }, V3{ hi.x - R, hi.y, hi.z }, tone);
+        b.quad(V3{ lo.x, lo.y, lo.z - R }, V3{ lo.x, lo.y, lo.z + R }, V3{ hi.x, hi.y, hi.z + R }, V3{ hi.x, hi.y, hi.z - R }, tone);
+        outlineSquare(b, lo.x, lo.y, lo.z, 0.25f, 0.06f, tone);
+    }
     for (int z = cz - REACH; z <= cz + REACH; ++z) {
         for (int x = cx - REACH; x <= cx + REACH; ++x) {
             if (!t.inBounds(x, z)) continue;

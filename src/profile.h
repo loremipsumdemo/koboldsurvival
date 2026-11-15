@@ -71,10 +71,17 @@ inline void frameEnd() {
     return __VA_ARGS__;                                      \
 }())
 #define PROFILE_FRAME_END() profile::frameEnd()
+// Times the rest of the block it is put in, as PROFILED times one call
+#define PROFILE_JOIN2(a, b) a##b
+#define PROFILE_JOIN(a, b) PROFILE_JOIN2(a, b)
+#define PROFILE_SCOPE(name)                                                         \
+    static profile::Site PROFILE_JOIN(profileSite, __LINE__)(name);                \
+    const profile::Scope PROFILE_JOIN(profileScope, __LINE__)(PROFILE_JOIN(profileSite, __LINE__))
 
 #else
 
 #define PROFILED(name, ...) (__VA_ARGS__)
 #define PROFILE_FRAME_END() ((void)0)
+#define PROFILE_SCOPE(name) ((void)0)
 
 #endif

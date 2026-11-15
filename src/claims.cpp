@@ -12,11 +12,23 @@
 #include "hostility.h"
 #include "language.h"
 #include "game_log.h"
+#include "prop_index.h"
 
-std::vector<Claim> claimsOf(World& w) {
+namespace {
+// The claims as the world stands, worked out from its Altars and Campfires (cachedClaims keeps them)
+std::vector<Claim> computeClaims(World& w) {
     std::vector<Claim> out;
-    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).claimsLand || w.has<Blueprint>(e) || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
+    std::vector<ObjectId> altarProps, campfires;
+    for (int k = 0; k < propKindCount(); ++k) {
+        if (propInfo((PropKind)k).claimsLand) {
+            const std::vector<ObjectId>& of = propsOfKind(w, (PropKind)k);
+            altarProps.insert(altarProps.end(), of.begin(), of.end());
+        }
+    }
+    campfires = propsOfKind(w, PropKind::Campfire);
+    for (ObjectId e : altarProps) {
+        if (!w.has<Transform>(e) || !w.has<Owner>(e)) continue;
+        if (w.has<Blueprint>(e) || !factionCanClaim(w.get<Owner>(e)->faction)) continue;
         Claim c;
         c.altar = e;
         c.x = w.get<Transform>(e)->x;
@@ -27,8 +39,8 @@ std::vector<Claim> claimsOf(World& w) {
     }
     // Camps: a campfire (yours or another faction's) that stands outside its own faction's Altar claim
     const size_t altars = out.size();
-    for (ObjectId e : w.view<Prop, Transform, Owner>()) {
-        if (w.get<Prop>(e)->kind != PropKind::Campfire || w.has<Blueprint>(e)) continue;
+    for (ObjectId e : campfires) {
+        if (!w.has<Transform>(e) || !w.has<Owner>(e) || w.has<Blueprint>(e)) continue;
         const int faction = w.get<Owner>(e)->faction;
         if (!factionCanClaim(faction)) continue;
         const Transform* t = w.get<Transform>(e);
@@ -60,24 +72,26 @@ std::vector<Claim> claimsOf(World& w) {
     return out;
 }
 
-namespace {
 struct ClaimCache {
     std::vector<Claim> claims;
-    std::uint64_t revisions[4] = { 0, 0, 0, 0 };
+    std::uint64_t revisions[5] = { 0, 0, 0, 0, 0 };
     std::uint64_t generation = 1, builtGeneration = 0;
 };
 }
 
 const std::vector<Claim>& cachedClaims(World& w) {
     ClaimCache& c = w.resource<ClaimCache>();
-    const std::uint64_t now[4] = { w.revision<Prop>(), w.revision<Owner>(), w.revision<Blueprint>(), w.revision<ClaimGrowth>() };
-    if (c.builtGeneration != c.generation || !std::equal(now, now + 4, c.revisions)) {
-        c.claims = claimsOf(w);
-        std::copy(now, now + 4, c.revisions);
+    const std::uint64_t now[5] = { w.revision<Prop>(), w.revision<Owner>(), w.revision<Blueprint>(), w.revision<ClaimGrowth>(), w.revision<Transform>() };
+    if (c.builtGeneration != c.generation || !std::equal(now, now + 5, c.revisions)) {
+        c.claims = computeClaims(w);
+        std::copy(now, now + 5, c.revisions);
         c.builtGeneration = c.generation;
     }
     return c.claims;
 }
+
+// A copy of the kept claims: about sixty places ask for the claims, many of them every step, and each used to work them out from every prop
+std::vector<Claim> claimsOf(World& w) { return cachedClaims(w); }
 
 void invalidateClaims(World& w) {
     ++w.resource<ClaimCache>().generation;

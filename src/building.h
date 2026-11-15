@@ -201,6 +201,20 @@ bool floorSurfaceOn(World& w, const BuildingMap& m, int x, int z, int level, int
 // Stairs standing on this floor whose step this tile is: the step (0 the bottom, 2 the top), or -1
 int stairsStepAt(World& w, const BuildingMap& m, int x, int z, int level, ObjectId& stairs);
 
+// For the Developer's Show Navmesh: what path planning walks on above the ground, near a tile. Each upper floor tile a unit can stand on
+// (the walkways on Perimeter Walls and Gates are floor 1) with the part of its floor it is in (tiles of one part can be walked between),
+// and each way between floors (a Ladder, Stairs or a Slope) from where it is got onto to where it comes out.
+struct NavFloorTile {
+    int x = 0, z = 0, level = 0, part = 0;
+};
+struct NavClimb {
+    Vec2 foot{}, top{};
+    int level = 0;          // the floor its foot is on
+    bool topOpen = false;   // false: it comes out nowhere a unit can stand, so planning does not use it
+    bool stairs = false;    // stairs or a Slope; else a ladder
+};
+void navFloorsNear(World& w, int x, int z, int reach, std::vector<NavFloorTile>& tiles, std::vector<NavClimb>& climbs);
+
 enum class PieceCheck {
     Ok,
     TooSmall,

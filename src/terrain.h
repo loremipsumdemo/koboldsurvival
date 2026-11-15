@@ -115,6 +115,10 @@ private:
     struct Nav;
     mutable std::shared_ptr<Nav> nav_;
     void navTileChanged(int x, int z);
+    // Hierarchical path finding (nav_regions.cpp): marks the regions a walk between the two tiles goes through, and the regions beside
+    // them; false if there is no way, or no regions (a map too big for them). navAllowed then says whether a tile is among those marked.
+    bool navCorridor(int sx, int sz, int gx, int gz) const;
+    bool navAllowed(int x, int z) const;
     void navStashBlocked();
     void navSettleBlocked();
 

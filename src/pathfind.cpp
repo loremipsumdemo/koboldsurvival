@@ -6,10 +6,14 @@
 #include <utility>
 #include <vector>
 #include "terrain.h"
+#include "profile.h"
 
 namespace {
 constexpr float SQRT2 = 1.41421356f;
 constexpr int MAX_SEARCH_TILES = 400000;
+// A walk longer than this (in tiles, as the crow flies) is first found over the navigation regions (nav_regions.cpp), and the tile search
+// kept to their corridor; a shorter one searches the tiles straight away, which is as quick
+constexpr float CORRIDOR_FROM_TILES = 24.0f;
 constexpr int UNREACHABLE_SEARCH_TILES = 20000;
 // The distance estimate is nudged up a little, so a search on open ground runs straight at the goal rather than
 // opening every tile of equal cost. A path can come out a tenth of a percent longer than the shortest; smoothing
@@ -72,7 +76,9 @@ Node& nodeAt(int x, int z) {
 using Entry = std::pair<float, int>;
 std::vector<Entry> gOpen;
 
-std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int gx, int gz, int maxTiles) {
+// allowed(x, z): whether the search may step onto a tile (a walkable one), to keep it to a corridor
+template <typename Allowed>
+std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int gx, int gz, int maxTiles, Allowed allowed) {
     const int size = t.size();
     if (gPagesSize != size || gPagesHeld > MOST_NODE_PAGES) {
         const size_t pagesAcross = (size_t)(size + NODE_PAGE_TILES - 1) / NODE_PAGE_TILES;
@@ -115,7 +121,7 @@ std::vector<std::pair<int, int>> tilePath(const Terrain& t, int sx, int sz, int 
 
         for (const Step& s : STEPS) {
             const int nx = x + s.dx, nz = z + s.dz;
-            if (!t.walkable(nx, nz)) continue;
+            if (!t.walkable(nx, nz) || !allowed(nx, nz)) continue;
             if (s.dx != 0 && s.dz != 0 && (!t.walkable(x + s.dx, z) || !t.walkable(x, z + s.dz))) continue;
 
             const int nk = nz * size + nx;
@@ -178,9 +184,20 @@ std::vector<Vec2> Terrain::findPath(Vec2 start, Vec2 goal) const {
     const int gx = (int)std::floor(goal.x), gz = (int)std::floor(goal.z);
     if (!walkable(sx, sz)) return {};
     // A goal the buildings have shut off from here is not searched for all over the map: it ends at the nearest ground that can be reached
-    const int maxTiles = connected(sx, sz, gx, gz) ? MAX_SEARCH_TILES : UNREACHABLE_SEARCH_TILES;
-    std::vector<std::pair<int, int>> tiles = tilePath(*this, sx, sz, gx, gz, maxTiles);
-    const bool reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
+    const bool joined = connected(sx, sz, gx, gz);
+    const int maxTiles = joined ? MAX_SEARCH_TILES : UNREACHABLE_SEARCH_TILES;
+    std::vector<std::pair<int, int>> tiles;
+    bool reached = false;
+    // A long walk: found over the regions first, then searched tile by tile along their corridor only
+    if (joined && octile(sx, sz, gx, gz) > CORRIDOR_FROM_TILES && PROFILED("path: regions", navCorridor(sx, sz, gx, gz))) {
+        tiles = PROFILED("path: corridor tiles", tilePath(*this, sx, sz, gx, gz, maxTiles, [this](int x, int z) { return navAllowed(x, z); }));
+        reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
+    }
+    // A short walk, one the regions don't know, or (should it ever happen) a corridor the tiles could not get through: every tile
+    if (!reached) {
+        tiles = PROFILED("path: open tiles", tilePath(*this, sx, sz, gx, gz, maxTiles, [](int, int) { return true; }));
+        reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
+    }
 
     if (!tiles.empty() && tiles.front().first == sx && tiles.front().second == sz) tiles.erase(tiles.begin());
     if (tiles.empty() && !reached) return {};

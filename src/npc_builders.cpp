@@ -1,3 +1,4 @@
+#include "profile.h"
 #include "npc_builders.h"
 #include <algorithm>
 #include <cmath>
@@ -643,8 +644,9 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     clock.timer = 0.0f;
     clock.hours = 0.0;
     const std::vector<Claim> claims = claimsOf(w);
-    perimeterHour(w, t, claims, hours);
-    npcRolesHour(w, hours);   // each NPC faction's share of citizens, military and Fortified (npc_roles.h)
+    PROFILED("npcBuilder: perimeterHour", perimeterHour(w, t, claims, hours));
+    PROFILED("npcBuilder: rolesHour", npcRolesHour(w, hours));   // each NPC faction's share of citizens, military and Fortified (npc_roles.h)
+    PROFILE_SCOPE("npcBuilder: sites");
 
     // The buildings under way, NPC factions' and yours (laid from the Build tab's Building Blueprint): when what is laid of one is
     // built, the ghosts of its next stage become blueprints. An NPC building that makes no progress is condemned, then pulled down.

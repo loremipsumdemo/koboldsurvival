@@ -24,6 +24,7 @@
 #include "airship.h"
 #include "building.h"
 #include "stuck.h"
+#include "prop_index.h"
 
 namespace systems_detail {
 inline constexpr float UNIT_CLEARANCE = 0.2f;
@@ -86,20 +87,10 @@ void spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn, int i);
 // Gives a unit made by makeEntity its stats, health, gear, body and name
 void finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std::string>& takenNames);
 
-// The nearest prop that passes the test, or NO_OBJECT
+// The nearest prop that passes the test, or NO_OBJECT. Looked for in the prop index's grid, nearest cells first (prop_index.h).
 template <typename Pred>
 ObjectId nearestProp(World& w, const Transform& from, Pred pred) {
-    ObjectId best = NO_OBJECT;
-    float bestD2 = 0.0f;
-    for (ObjectId p : w.view<Prop, Transform>()) {
-        if (w.has<Blueprint>(p) || !pred(p)) continue;
-        const float d2 = distSq(*w.get<Transform>(p), from);
-        if (best == NO_OBJECT || d2 < bestD2) {
-            best = p;
-            bestD2 = d2;
-        }
-    }
-    return best;
+    return nearestIndexedProp(w, from.x, from.z, pred);
 }
 
 void autoWalk(World& w, Terrain& t, ObjectId u, Vec2 to, int storey = -1);

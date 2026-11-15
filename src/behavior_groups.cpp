@@ -1,3 +1,4 @@
+#include "profile.h"
 #include "behavior_groups.h"
 #include <algorithm>
 #include "components.h"
@@ -186,7 +187,9 @@ int citizensInGroup(World& w, int group) {
     return n;
 }
 
-bool isGroupStore(World& w, ObjectId p, int faction) {
+// The claims are passed in: this is asked of every store, for every faction, twice a second, and working the claims out for each
+// store was what made the store sync stall
+bool isGroupStore(World& w, const std::vector<Claim>& claims, ObjectId p, int faction) {
     const Prop* pp = w.get<Prop>(p);
     if (!pp || !w.has<Storage>(p) || w.has<Blueprint>(p)) return false;
     const PropInfo& info = propInfo(pp->kind);
@@ -194,13 +197,14 @@ bool isGroupStore(World& w, ObjectId p, int faction) {
     const Owner* own = w.get<Owner>(p);
     if (own && own->faction != faction) return false;
     const Transform* t = w.get<Transform>(p);
-    return t && claimAt(claimsOf(w), t->x, t->z, faction) != nullptr;
+    return t && claimAt(claims, t->x, t->z, faction) != nullptr;
 }
 
 std::vector<ObjectId> groupStores(World& w, int faction) {
     std::vector<ObjectId> out;
+    const std::vector<Claim> claims = claimsOf(w);
     for (ObjectId p : w.view<Prop, Storage>()) {
-        if (isGroupStore(w, p, faction)) out.push_back(p);
+        if (isGroupStore(w, claims, p, faction)) out.push_back(p);
     }
     return out;
 }
@@ -213,6 +217,7 @@ void markStoresListed(World& w) {
 }
 
 bool storeHaulSync(World& w, int faction) {
+    PROFILE_SCOPE("groups: storeHaulSync");
     BehaviorGroups& g = behaviorGroups(w, faction);
     bool changed = false;
     // Haul tasks to a store that is gone leave every list

@@ -1,6 +1,8 @@
 #include "patrons.h"
 #include "building.h"
 #include "gates.h"
+#include "profile.h"
+#include "prop_index.h"
 #include <algorithm>
 #include <cmath>
 #include <deque>
@@ -215,6 +217,7 @@ bool ladderTop(World& w, const BuildingMap& m, ObjectId ladder, Vec2& out) {
 
 // A walk on one upper floor, tile to tile: empty if the goal can't be reached
 std::vector<Vec2> floorPath(World& w, const BuildingMap& m, int level, Vec2 from, Vec2 to) {
+    PROFILE_SCOPE("path: floor");
     const int sx = tileOf(from.x), sz = tileOf(from.z), gx = tileOf(to.x), gz = tileOf(to.z);
     if (!floorWalkable(w, m, gx, gz, level)) return {};
     if (sx == gx && sz == gz) return { to };
@@ -295,25 +298,71 @@ std::unordered_map<long long, int> floorParts(World& w, const BuildingMap& m, in
 
 bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out);
 
+// The ways between floors, kept until the buildings change (a piece added, removed or moved between floors, a blueprint finished or
+// placed): every finished Ladder, Stairs and Slope, with each spot it is got onto from below (an open tile beside stairs' or a Slope's
+// bottom step, a ladder's own tile) and where it comes out above. A Slope stands on open ground and comes out on the walkway of a
+// Perimeter Wall or Gate (BuildingMap::perimTop), so it joins the ground to the walkways as stairs join floors. Also the parts of each
+// upper floor (the walkways are floor 1), made the first time a floor is asked about. Path planning asks for these on every walk between
+// floors, which used to work the buildings and the parts of the floors out again each time.
+struct ClimbLink {
+    ObjectId ladder = NO_OBJECT;
+    int level = 0;          // the floor its foot is on
+    Vec2 foot{};            // got onto from here, on that floor
+    bool topOpen = false;   // it comes out above: on a floor tile a unit can stand on
+    Vec2 top{};             // where, on the floor above
+    bool stairs = false;    // stairs or a Slope, walked up; else a ladder, climbed
+};
+struct RouteLinks {
+    const World* world = nullptr;
+    BuildingStamp stamp;
+    std::uint64_t blueprints = 0;
+    bool filled = false;
+    std::vector<ClimbLink> links;
+    std::unordered_map<int, std::unordered_map<long long, int>> parts;   // by floor
+};
+RouteLinks& routeLinks(World& w) {
+    static thread_local RouteLinks c;
+    const BuildingStamp now = buildingStamp(w);
+    const std::uint64_t bps = w.revision<Blueprint>();
+    if (c.filled && c.world == &w && c.stamp == now && c.blueprints == bps) return c;
+    c = RouteLinks{};
+    c.world = &w;
+    c.stamp = now;
+    c.blueprints = bps;
+    c.filled = true;
+    const BuildingMap& m = cachedBuildingMap(w);
+    for (ObjectId e : propsWhere(w, [](PropKind k) { return propInfo(k).ladder; })) {
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        if (!info.ladder || w.has<Blueprint>(e)) continue;
+        Vec2 top{ 0.0f, 0.0f };
+        const bool topOpen = ladderTop(w, m, e, top);
+        const std::vector<Vec2> feet = info.stairs ? stairsLandings(w, m, e) : std::vector<Vec2>{ climbFoot(w, e) };
+        for (const Vec2& foot : feet) c.links.push_back(ClimbLink{ e, storeyOf(w, e), foot, topOpen, top, info.stairs });
+    }
+    return c;
+}
+
+const std::unordered_map<long long, int>& cachedFloorParts(World& w, int level) {
+    RouteLinks& c = routeLinks(w);
+    auto it = c.parts.find(level);
+    if (it == c.parts.end()) it = c.parts.emplace(level, floorParts(w, cachedBuildingMap(w), level)).first;
+    return it->second;
+}
+
 // Plans a walk from the unit to goal on goalStorey by way of ladders. False if there is no way. A goal on an upper floor
 // that can't be reached, as a corner tile walled in, is swapped for the nearest tile that can, near enough to work from.
 bool planRoute(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out) {
-    if (planRouteTo(w, t, u, goal, goalStorey, out)) return true;
+    if (PROFILED("path: route", planRouteTo(w, t, u, goal, goalStorey, out))) return true;
     if (goalStorey <= 0) return false;
-    const BuildingMap m = buildingMap(w);
-    const std::unordered_map<long long, int> parts = floorParts(w, m, goalStorey);
+    const std::unordered_map<long long, int>& parts = cachedFloorParts(w, goalStorey);
     // The parts of this floor a ladder comes to
     std::unordered_set<int> reached;
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (!info.ladder || w.has<Blueprint>(e)) continue;
-        const int level = storeyOf(w, e);
-        std::vector<Vec2> spots = isStairs(w, e) ? stairsLandings(w, m, e) : std::vector<Vec2>{ climbFoot(w, e) };
-        if (level == goalStorey - 1) {
-            Vec2 top{ 0.0f, 0.0f };
-            if (!ladderTop(w, m, e, top)) continue;
-            spots = { top };
-        } else if (level != goalStorey) {
+    for (const ClimbLink& link : routeLinks(w).links) {
+        std::vector<Vec2> spots{ link.foot };
+        if (link.level == goalStorey - 1) {
+            if (!link.topOpen) continue;
+            spots = { link.top };
+        } else if (link.level != goalStorey) {
             continue;
         }
         for (const Vec2& spot : spots) {
@@ -344,35 +393,36 @@ bool planRoute(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey
 bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStorey, Route& out) {
     const Transform* ut = w.get<Transform>(u);
     if (!ut) return false;
-    const BuildingMap m = buildingMap(w);
     struct Node {
         int level;
         Vec2 p;
         ObjectId ladder;
     };
-    // 0 the start, 1 the goal, then each usable ladder's foot and head, side by side. Stairs have a pair for each open
+    // 0 the start, 1 the goal, then each usable ladder's foot and head, side by side. Stairs and Slopes have a pair for each open
     // tile beside their bottom step, so a walk can come at them from any side; flights on floor after floor chain up.
     std::vector<Node> nodes = { { storeyOf(w, u), Vec2{ ut->x, ut->z }, NO_OBJECT }, { goalStorey, goal, NO_OBJECT } };
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (!info.ladder || w.has<Blueprint>(e)) continue;
-        Vec2 top;
-        if (!ladderTop(w, m, e, top)) continue;
-        const int level = storeyOf(w, e);
-        const std::vector<Vec2> feet = info.stairs ? stairsLandings(w, m, e) : std::vector<Vec2>{ climbFoot(w, e) };
-        for (const Vec2& foot : feet) {
-            nodes.push_back({ level, foot, e });
-            nodes.push_back({ level + 1, top, e });
-        }
+    for (const ClimbLink& link : routeLinks(w).links) {
+        if (!link.topOpen) continue;
+        nodes.push_back({ link.level, link.foot, link.ladder });
+        nodes.push_back({ link.level + 1, link.top, link.ladder });
     }
-    std::unordered_map<int, std::unordered_map<long long, int>> parts;
+    // Which spots can be walked between on their floor. On the ground that is the navigation regions' pieces, which count the tiles
+    // buildings close: a Perimeter Wall, a shut Gate, a wall or a step parts the ground, so a walk from outside a closed Perimeter to
+    // inside it goes up a Slope, along the walkway and down another, where there are Slopes, rather than straight at the wall.
     auto partOf = [&](const Node& n) -> long long {
         const int x = tileOf(n.p.x), z = tileOf(n.p.z);
-        if (n.level == 0) return t.areaAt(x, z);
-        auto it = parts.find(n.level);
-        if (it == parts.end()) it = parts.emplace(n.level, floorParts(w, m, n.level)).first;
-        const auto p = it->second.find(tileKey(x, z));
-        return p == it->second.end() ? 0 : p->second;
+        if (n.level == 0) {
+            int piece = t.navPieceAt(x, z);
+            if (piece == 0) {
+                // Standing where a unit can't (in a doorway being shut, on a wall just built): the open tile it would step to
+                const Vec2 s = t.snap(n.p);
+                piece = t.navPieceAt(tileOf(s.x), tileOf(s.z));
+            }
+            return piece;
+        }
+        const std::unordered_map<long long, int>& parts = cachedFloorParts(w, n.level);
+        const auto p = parts.find(tileKey(x, z));
+        return p == parts.end() ? 0 : p->second;
     };
     const size_t n = nodes.size();
     std::vector<long long> part(n);
@@ -428,6 +478,30 @@ bool planRouteTo(World& w, const Terrain& t, ObjectId u, Vec2 goal, int goalStor
     }
     return !out.legs.empty();
 }
+}
+
+void navFloorsNear(World& w, int x, int z, int reach, std::vector<NavFloorTile>& tiles, std::vector<NavClimb>& climbs) {
+    tiles.clear();
+    climbs.clear();
+    const BuildingMap& m = cachedBuildingMap(w);
+    std::unordered_set<long long> seen;
+    auto take = [&](long long lk) {
+        const int level = (int)(lk % 16);
+        const long long tk = lk / 16;
+        const int tx = keyX(tk), tz = keyZ(tk);
+        if (level <= 0 || std::abs(tx - x) > reach || std::abs(tz - z) > reach || !seen.insert(lk).second) return;
+        if (!floorWalkable(w, m, tx, tz, level)) return;
+        const std::unordered_map<long long, int>& parts = cachedFloorParts(w, level);
+        const auto it = parts.find(tk);
+        tiles.push_back(NavFloorTile{ tx, tz, level, it != parts.end() ? it->second : 0 });
+    };
+    for (const auto& [lk, e] : m.floor) take(lk);
+    for (const auto& [lk, e] : m.stairTop) take(lk);
+    for (const auto& [lk, e] : m.perimTop) take(lk);
+    for (const ClimbLink& link : routeLinks(w).links) {
+        if (std::abs(tileOf(link.foot.x) - x) > reach || std::abs(tileOf(link.foot.z) - z) > reach) continue;
+        climbs.push_back(NavClimb{ link.foot, link.top, link.level, link.topOpen, link.stairs });
+    }
 }
 
 const char* pieceRefusalKey(PieceCheck c) {
@@ -1379,6 +1453,7 @@ bool blockFootprint(World& w, ObjectId e, BlockFootprint& out, bool blueprints) 
 }
 
 void rebuildBlocking(World& w, Terrain& t) {
+    PROFILE_SCOPE("build: rebuildBlocking");
     t.clearBlocked();
     t.clearDecks();
     BlockFootprint fp;
@@ -1434,6 +1509,7 @@ bool routeNear(Vec2 from, const std::vector<Vec2>& waypoints, size_t next, const
 }
 
 void refreshBuildingTiles(World& w, Terrain& t) {
+    PROFILE_SCOPE("build: refreshTiles");
     BuildingsChanged& bc = w.resource<BuildingsChanged>();
     if (bc.tiles.empty()) return;
     std::vector<std::pair<int, int>> tiles;
@@ -1607,6 +1683,7 @@ bool doorLets(World& w, ObjectId door, ObjectId u) {
 }
 
 void doorSystem(World& w, float dt) {
+    PROFILE_SCOPE("build: doorSystem");
     for (ObjectId u : w.view<AtDoor>()) {
         AtDoor& at = *w.get<AtDoor>(u);
         at.since += dt;
@@ -1664,7 +1741,7 @@ bool bedOpenTo(World& w, ObjectId bed, ObjectId u) {
 bool isUpstairs(World& w, ObjectId u) { return w.has<Upstairs>(u); }
 
 Vec2 nearestFloorSpot(World& w, ObjectId, Vec2 target, int level) {
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     Vec2 best = target;
     float bestD2 = -1.0f;
     std::vector<long long> tiles;
@@ -1689,14 +1766,14 @@ Vec2 nearestFloorSpot(World& w, ObjectId, Vec2 target, int level) {
 bool canClimbUp(World& w, ObjectId ladder) {
     const PropInfo* info = infoOf(w, ladder);
     if (!info || !info->ladder || w.has<Blueprint>(ladder)) return false;
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     Vec2 top;
     return ladderTop(w, m, ladder, top);
 }
 
 Vec2 climbFoot(World& w, ObjectId ladder) {
     if (isStairs(w, ladder)) {
-        const BuildingMap m = buildingMap(w);
+        const BuildingMap& m = cachedBuildingMap(w);
         int xs[4], zs[4];
         stairsTiles(w, ladder, xs, zs);
         // In front of the bottom step if it is open, else beside it
@@ -1707,7 +1784,7 @@ Vec2 climbFoot(World& w, ObjectId ladder) {
 }
 
 bool climbTop(World& w, ObjectId ladder, Vec2& out) {
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     return ladderTop(w, m, ladder, out);
 }
 
@@ -1721,7 +1798,7 @@ bool atClimbSpot(World& w, ObjectId u, ObjectId ladder) {
     // beside it) or their top step
     int ax = tileOf(lt->x), az = tileOf(lt->z);
     const int ux = tileOf(ut->x), uz = tileOf(ut->z);
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     if (const PropInfo* li = infoOf(w, ladder); li && li->slope) {
         // A Slope stands on open ground: from beside its bottom step on the ground, or from its top step (or the walkway beside it) above
         int xs[4], zs[4];
@@ -1751,7 +1828,7 @@ namespace {
 // one height to the next is a hop, noted by how far along the walk it comes.
 void planStairsWalk(World& w, const Terrain& t, ObjectId u, ObjectId stairs, bool down, const Vec2* off, Climbing& c) {
     const Transform* ut = w.get<Transform>(u);
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     int xs[4], zs[4];
     stairsTiles(w, stairs, xs, zs);
     const Vec2 bottom{ xs[0] + 0.5f, zs[0] + 0.5f }, top{ xs[2] + 0.5f, zs[2] + 0.5f };
@@ -1845,6 +1922,7 @@ struct StairWalkers {
 }
 
 void climbSystem(World& w, Terrain& t, float dt) {
+    PROFILE_SCOPE("build: climbSystem");
     std::vector<ObjectId> done;
     for (ObjectId u : w.view<Climbing, Transform>()) {
         Climbing& c = *w.get<Climbing>(u);
@@ -1922,7 +2000,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
         }
     };
     if (!done.empty()) {
-        const BuildingMap m = buildingMap(w);
+        const BuildingMap& m = cachedBuildingMap(w);
         for (ObjectId u : done) {
             const Climbing c = *w.get<Climbing>(u);
             w.remove<Climbing>(u);
@@ -1949,7 +2027,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
             if (isStairs(w, l)) sw.units.push_back({ u, l });
         }
         if (!stopped.empty()) {
-            const BuildingMap m = buildingMap(w);
+            const BuildingMap& m = cachedBuildingMap(w);
             for (const auto& [u, stairs] : stopped) {
                 const Transform* ut = w.get<Transform>(u);
                 const Vec2 foot = nearestLanding(w, m, stairs, Vec2{ ut->x, ut->z });
@@ -1976,7 +2054,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
     // Upstairs with no floor under it any more: it comes down to the ground
     const std::vector<ObjectId> ups = w.view<Upstairs, Transform>();
     if (ups.empty()) return;
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     for (ObjectId u : ups) {
         if (w.has<Climbing>(u)) continue;
         Transform* ut = w.get<Transform>(u);
@@ -1994,6 +2072,7 @@ void climbSystem(World& w, Terrain& t, float dt) {
 namespace {
 // Plans the way now, whatever the pacing (stuck.h) says
 void planSoloNow(World& w, Terrain& t, ObjectId e, Vec2 target) {
+    PROFILE_SCOPE("path: planSoloNow");
     SoloMove* so = w.get<SoloMove>(e);
     if (!so) so = &w.add(e, SoloMove{});
     so->held = false;
@@ -2001,7 +2080,7 @@ void planSoloNow(World& w, Terrain& t, ObjectId e, Vec2 target) {
     if (!tr) return;
     notePathfind(w, e);
     if (const Upstairs* up = w.get<Upstairs>(e)) {
-        const BuildingMap m = buildingMap(w);
+        const BuildingMap& m = cachedBuildingMap(w);
         std::vector<Vec2> path = floorPath(w, m, up->level, Vec2{ tr->x, tr->z }, target);
         if (path.empty()) {
             path = { nearestFloorSpot(w, up->foundation, target, up->level) };
@@ -2023,6 +2102,7 @@ void planSoloMove(World& w, Terrain& t, ObjectId e, Vec2 target) {
 }
 
 void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
+    PROFILE_SCOPE("path: walkSoloTo");
     if (deferPath(w, e, target, storey, true)) return;
     w.remove<Route>(e);
     const Transform* tr = w.get<Transform>(e);
@@ -2032,18 +2112,40 @@ void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey) {
     if (storey < 0) {
         storey = 0;
         if (here > 0) {
-            const BuildingMap m = buildingMap(w);
+            const BuildingMap& m = cachedBuildingMap(w);
             if (floorWalkable(w, m, tileOf(target.x), tileOf(target.z), here)) storey = here;
         }
     }
     w.add(e, SoloMove{});
     if (storey == here) {
         if (here == 0) {
+            // Ground the buildings have parted from this (a closed Perimeter, a shut Gate) may still be reached over the walls: up a Slope,
+            // along the walkway and down another, or up and down stairs. Only then is it a route; otherwise the walk is on the ground.
+            auto pieceOf = [&](Vec2 p) {
+                int piece = t.navPieceAt(tileOf(p.x), tileOf(p.z));
+                if (piece == 0) {
+                    const Vec2 s = t.snap(p);
+                    piece = t.navPieceAt(tileOf(s.x), tileOf(s.z));
+                }
+                return piece;
+            };
+            const int from = pieceOf(Vec2{ tr->x, tr->z }), to = pieceOf(target);
+            if (from != 0 && to != 0 && from != to && !routeLinks(w).links.empty()) {
+                Route over;
+                if (planRoute(w, t, e, target, 0, over) &&
+                    std::any_of(over.legs.begin(), over.legs.end(), [](const RouteLeg& l) { return l.ladder != NO_OBJECT; })) {
+                    const Vec2 first = over.legs.front().to;
+                    over.planned = true;
+                    w.add(e, std::move(over));
+                    planSoloNow(w, t, e, first);
+                    return;
+                }
+            }
             setPathGoal(w, e, target);   // noticed if it cannot get there (stuck.h)
             planSoloNow(w, t, e, target);
             return;
         }
-        const BuildingMap m = buildingMap(w);
+        const BuildingMap& m = cachedBuildingMap(w);
         std::vector<Vec2> path = floorPath(w, m, here, Vec2{ tr->x, tr->z }, target);
         if (!path.empty()) {
             w.get<SoloMove>(e)->waypoints = std::move(path);
@@ -2070,6 +2172,7 @@ struct FloorChase {
 }
 
 void routeSystem(World& w, Terrain& t, float dt) {
+    PROFILE_SCOPE("build: routeSystem");
     for (ObjectId u : w.view<Route>()) {
         if (w.has<Climbing>(u)) continue;
         Route& r = *w.get<Route>(u);
@@ -2408,6 +2511,7 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
 }
 
 void buildJobSystem(World& w, Terrain& t, float dt) {
+    PROFILE_SCOPE("build: buildJobSystem");
     for (ObjectId e : w.view<Blueprint>()) {
         Blueprint* bp = w.get<Blueprint>(e);
         bp->retryIn = std::max(0.0f, bp->retryIn - dt);

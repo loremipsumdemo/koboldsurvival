@@ -1,3 +1,4 @@
+#include "profile.h"
 #include "systems_internal.h"
 #include "schedule.h"
 #include "stuck.h"
@@ -860,7 +861,7 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
     }
     std::sort(s.attacked.begin(), s.attacked.end());
 
-    for (size_t i = 0; i < units.size(); ++i) steerGoal(w, t, s, i, running);
+    for (size_t i = 0; i < units.size(); ++i) PROFILED("steer: goal", steerGoal(w, t, s, i, running));
 
     s.pos.resize(units.size());
     s.radius.resize(units.size());
@@ -875,9 +876,12 @@ void steeringSystem(World& w, Terrain& t, float dt, bool running) {
 
     std::vector<std::uint32_t> nearby, around;
     for (size_t i = 0; i < units.size(); ++i) {
-        if (!s.pinned[i]) steerVelocity(w, t, s, i, nearby, around);
+        if (!s.pinned[i]) PROFILED("steer: velocity", steerVelocity(w, t, s, i, nearby, around));
     }
-    for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, s, units[i], s.vel[i], dt, running);
+    {
+        PROFILE_SCOPE("steer: apply");
+        for (size_t i = 0; i < units.size(); ++i) applySteering(w, t, s, units[i], s.vel[i], dt, running);
+    }
 }
 
 void cleanupActiveSquads(World& w) {

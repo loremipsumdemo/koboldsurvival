@@ -247,7 +247,7 @@ void computeRoute(World& w, PerimeterRoute& rt, int faction) {
     rt.gateTops.clear();
     // The walkway tiles of each piece
     std::map<ObjectId, std::vector<Vec2>> tops;
-    for (const auto& [lk, piece] : buildingMap(w).perimTop) {
+    for (const auto& [lk, piece] : cachedBuildingMap(w).perimTop) {
         const long long tk = lk / 16;
         tops[piece].push_back(Vec2{ (float)(tk % 1000003LL) + 0.5f, (float)(tk / 1000003LL) + 0.5f });
     }
@@ -395,13 +395,13 @@ bool isPerimeterWork(World& w, ObjectId piece) {
 bool onPerimeterTop(World& w, ObjectId u) {
     const Transform* t = w.get<Transform>(u);
     if (!t || !w.has<Upstairs>(u) || storeyOf(w, u) != 1) return false;
-    return buildingMap(w).perimTop.count(levelKey((int)std::floor(t->x), (int)std::floor(t->z), 1)) > 0;
+    return cachedBuildingMap(w).perimTop.count(levelKey((int)std::floor(t->x), (int)std::floor(t->z), 1)) > 0;
 }
 
 bool climbDownPerimeter(World& w, const Terrain& t, ObjectId u) {
     Transform* tr = w.get<Transform>(u);
     if (!tr || !w.has<Upstairs>(u) || storeyOf(w, u) != 1) return false;
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);
     const auto it = m.perimTop.find(levelKey((int)std::floor(tr->x), (int)std::floor(tr->z), 1));
     if (it == m.perimTop.end()) return false;
     const ObjectId piece = it->second;

@@ -36,6 +36,7 @@ struct Claim {
 struct ClaimGrowth {
     int steps = 0;
 };
+// Every claim: the Altars' first, then the camps'. A copy of cachedClaims.
 std::vector<Claim> claimsOf(World& w);
 // On an Altar: the tiles beyond its core that its owner drew as the Perimeter, the ground the Fortified defend. Each is a ground floor
 // tile, and counts on every floor above it. Always there, and never drawn or erased: the 5 by 5 tiles round the Altar. Saved.
@@ -61,9 +62,10 @@ std::set<std::pair<int, int>> perimeterOf(World& w, ObjectId altar);
 std::set<std::pair<int, int>> defaultPerimeter(World& w, ObjectId altar);
 bool inPerimeterCore(World& w, ObjectId altar, int x, int z);
 
-// The same claims, kept: worked out again only when a Prop, Owner, Blueprint or ClaimGrowth is added or removed, when
-// invalidateClaims says one was changed in place, and at the start of every simulation step. For lookups made many times a
-// step (every unit's lock check); the reference is good until the next call that may change a prop, so copy it to hold on.
+// The same claims, kept: worked out again only when a Prop, Owner, Blueprint, ClaimGrowth or Transform is added or removed, when
+// invalidateClaims says one was changed in place, and once a second of play besides (simulation.cpp), in case something changed in
+// place without saying so. claimsOf gives a copy of them. For lookups made many times a step (every unit's lock check); the reference
+// is good until the next call that may change a prop, so copy it to hold on.
 const std::vector<Claim>& cachedClaims(World& w);
 void invalidateClaims(World& w);
 // An Altar's claim grows when its faction has more complete buildings in it than it has grown by, and the room is there:

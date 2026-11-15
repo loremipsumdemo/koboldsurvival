@@ -25,6 +25,11 @@
 namespace {
 SimEvents& events(World& w) { return w.resource<SimEvents>(); }
 
+struct ClaimRefresh {
+    int steps = 0;
+};
+constexpr int CLAIM_REFRESH_STEPS = 60;
+
 template <typename T>
 void append(std::vector<T>& to, std::vector<T>&& more) {
     if (to.empty()) to = std::move(more);
@@ -80,7 +85,12 @@ void queueFloatingNumber(World& w, const FloatingNumber& number) {
 
 void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool running) {
     w.resource<WorldClock>().seconds = gs.clockSeconds;
-    invalidateClaims(w);   // what is kept of the claims is good for one step
+    // The kept claims follow every change made through the components; once a second they are worked out again besides, in case one
+    // was changed in place without a word (they used to be worked out again every step)
+    if (++w.resource<ClaimRefresh>().steps >= CLAIM_REFRESH_STEPS) {
+        w.resource<ClaimRefresh>().steps = 0;
+        invalidateClaims(w);
+    }
     // Walks planned from here to the end of the step are the game's own, and paced (stuck.h); an order of yours is not
     struct Stepping {
         World& w;

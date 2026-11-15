@@ -168,7 +168,7 @@ public:
     // Whether a click can't reach this: left out by the cutaway, or under the floor looked at
     bool pickHidden(World& w, ObjectId e) const;
     void drawBuildPreview(const Terrain& t);
-    void drawNavmesh(const Terrain& t, const Camera& cam);
+    void drawNavmesh(World& w, const Terrain& t, const Camera& cam);
     void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int storey, int winW, int winH);
