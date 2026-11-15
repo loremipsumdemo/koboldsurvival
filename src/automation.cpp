@@ -1138,12 +1138,9 @@ struct ThinkClock {
     unsigned tick = 0;
 };
 
-void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
-    float dt = stepDt;   // the step's time; in the units loop below, each unit's time since it was last looked at
-    const unsigned thinkTick = ++w.resource<ThinkClock>().tick;
-    const std::vector<Claim> claims = cachedClaims(w);
-    // Whoever was attacked in a bed or on a seat wakes and gets off it, and keeps off beds and seats for a while (as one
-    // turned out of a bed does). One out cold, carried or locked in stays where it is.
+// Whoever was attacked in a bed or on a seat wakes and gets off it, and keeps off beds and seats for a while (as one
+// turned out of a bed does). One out cold, carried or locked in stays where it is.
+void wakeAttackedSleepers(World& w, Terrain& t) {
     for (ObjectId u : w.view<RousedByAttack>()) {
         w.remove<RousedByAttack>(u);
         const Occupying* in = w.get<Occupying>(u);
@@ -1161,7 +1158,11 @@ void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
             if (BehaviorRule* rule = stepRule(*b)) rule->cooldown = EVACUATE_OCCUPY_BAN_SECONDS;
         }
     }
-    {
+}
+
+// Dancers: whoever left a dance is held then sent to an open place, the circles that still have dancers keep turning, and each dancer
+// lands a light thud once a hop
+void danceStep(World& w, Terrain& t, Rng& rng, float dt) {
         // Whoever left a dance a moment ago is held at its new place until it has been shown getting there
         for (ObjectId u : w.view<LeavingDance, Transform>()) {
             LeavingDance* leaving = w.get<LeavingDance>(u);
@@ -1222,7 +1223,12 @@ void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
                 queueSoundFrom(w, Sfx::DanceStep, u);
             }
         }
-    }
+}
+
+// Each unit with behaviors thinks: every step for the ones the player commands and the dancers, every few steps for the rest, with the
+// time since it was last looked at
+void thinkUnits(World& w, Terrain& t, float stepDt, Rng& rng, unsigned thinkTick, const std::vector<Claim>& claims) {
+    float dt = stepDt;
     PROFILE_SCOPE("auto: units loop");
     for (ObjectId u : w.view<Behaviors, Transform>()) {
         Behaviors* b = w.get<Behaviors>(u);
@@ -1799,6 +1805,14 @@ void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
             }
         }
     }
+}
+
+void automationSystem(World& w, Terrain& t, float stepDt, Rng& rng) {
+    const unsigned thinkTick = ++w.resource<ThinkClock>().tick;
+    const std::vector<Claim> claims = cachedClaims(w);
+    wakeAttackedSleepers(w, t);
+    danceStep(w, t, rng, stepDt);
+    thinkUnits(w, t, stepDt, rng, thinkTick, claims);
 }
 
 ObjectId addHaulForHarvest(World& w, ObjectId u, int propKind) {

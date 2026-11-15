@@ -86,6 +86,7 @@ set(SIM_SOURCES
     src/faction_rules.cpp
     src/recipes.cpp
     src/building.cpp
+    src/building_climb.cpp
     src/gates.cpp
     src/build_plan.cpp
     src/npc_builders.cpp

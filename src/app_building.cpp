@@ -10,7 +10,6 @@ using namespace play;
 // paints them along.
 
 namespace {
-int tileOf(float v) { return (int)std::floor(v); }
 
 // A floor as players count them: the ground floor is Floor 1, the first upper floor Floor 2, and so on
 std::string floorName(int level) {

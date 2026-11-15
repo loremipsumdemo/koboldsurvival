@@ -492,6 +492,184 @@ void App::talkOrWalkUp(ObjectId target, const std::vector<ObjectId>& actors, boo
     issueTalkOrder(world, actors, target, false, shop);
 }
 
+// The actions that only open a window or a screen. True if it was one of them.
+bool App::pickWindowAction(MenuAction a, ObjectId target) {
+    if (a == MenuAction::Disband) {
+        if (world.has<Commandable>(target)) {
+            session.disbandTarget = target;
+            session.disbandHeldAt = 0;
+            itemMenu.open = false;
+            playSfx(Sfx::UiMenuOpen);
+        }
+        return true;
+    }
+    if (a == MenuAction::ManageUnits) {
+        openAltar();
+        return true;
+    }
+    if (a == MenuAction::Rename) {
+        startRename(target);
+        return true;
+    }
+    if (a == MenuAction::AppeaseGhosts) {
+        openGhosts(target);
+        return true;
+    }
+    if (a == MenuAction::BehaviorGroups) {
+        openBehaviorGroups(target);
+        return true;
+    }
+    if (a == MenuAction::Schedule) {
+        openSchedule(target);
+        return true;
+    }
+    if (a == MenuAction::FactionInfo) {
+        openFactionInfo(altarOwnerOf(world, target));
+        return true;
+    }
+    if (a == MenuAction::SeeUnits) {
+        openAltar(altarOwnerOf(world, target));
+        return true;
+    }
+    if (a == MenuAction::SeeGroups) {
+        openBehaviorGroups(target, altarOwnerOf(world, target));
+        return true;
+    }
+    if (a == MenuAction::SeeSchedule) {
+        openSchedule(target, altarOwnerOf(world, target));
+        return true;
+    }
+    if (a == MenuAction::SeePatron) {
+        openPatrons(altarOwnerOf(world, target), false);
+        return true;
+    }
+    if (a == MenuAction::SeePerimeter) {
+        // For a few seconds: its Perimeter as it is now (always automatic)
+        refreshAutoPerimeter(world, terrain, target);
+        perimShowAltar = target;
+        perimShowUntil = SDL_GetTicks() + 6000;
+        return true;
+    }
+    if (a == MenuAction::SetPerimeter) {
+        openPerimeter(target);
+        return true;
+    }
+    if (a == MenuAction::StoreFilter) {
+        openStoreFilter(target);
+        return true;
+    }
+    return false;
+}
+
+// The actions on your own props and blueprints that take effect at once. True if it was one of them.
+bool App::pickPropAction(MenuAction a, ObjectId target, ObjectId clicked) {
+    // Your own door locks and unlocks at once, from anywhere
+    if ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target)) {
+        if (Lock* l = world.get<Lock>(target)) {
+            l->locked = a == MenuAction::Lock;
+            showNotice(lang(l->locked ? "MISC_DOOR_LOCKED" : "MISC_DOOR_UNLOCKED"));
+            playSfx(Sfx::UiToggle);
+        }
+        return true;
+    }
+    // Your own piece is rebuilt in a better material
+    if (a == MenuAction::UpgradeStone || a == MenuAction::UpgradeIron || a == MenuAction::UpgradeCrystal) {
+        const BuildMaterial to = a == MenuAction::UpgradeStone ? BuildMaterial::Stone : a == MenuAction::UpgradeIron ? BuildMaterial::Iron : BuildMaterial::Crystal;
+        upgradePiece(world, target, to);
+        showNotice(langf("MISC_UPGRADE_BEGUN", { lang(to == BuildMaterial::Stone ? "MISC_BUILD_STONE" : to == BuildMaterial::Iron ? "MISC_BUILD_METAL" : "MISC_BUILD_CRYSTAL") }));
+        playSfx(Sfx::UiToggle);
+        return true;
+    }
+    // Your own Gate opens and shuts at once, but only while a unit of yours is inside it or on top of it to work it (never from outside)
+    if ((a == MenuAction::OpenGate || a == MenuAction::CloseGate) && ownGate(target)) {
+        if (gateOperator(world, target) == NO_OBJECT) {
+            refuse(lang("MISC_GATE_NO_OPERATOR"));
+            return true;
+        }
+        if (a == MenuAction::OpenGate && hostileNearGate(world, target)) {
+            refuse(lang("MISC_GATE_HOSTILES_SEEN"));
+            return true;
+        }
+        // A unit has to do it: it is sent, walks to the gate and works it
+        if (!assignGateWork(world, target, a == MenuAction::CloseGate, GateJob::Manual)) {
+            refuse(lang("MISC_GATE_NO_OPERATOR"));
+            return true;
+        }
+        showNotice(lang(a == MenuAction::CloseGate ? "MISC_GATE_CLOSING" : "MISC_GATE_OPENING"));
+        playSfx(Sfx::UiToggle);
+        return true;
+    }
+    if (a == MenuAction::BedPublic || a == MenuAction::BedPrivate) {
+        if (a == MenuAction::BedPublic) world.add(target, BedPublic{});
+        else world.remove<BedPublic>(target);
+        showNotice(lang(a == MenuAction::BedPublic ? "MISC_BED_NOW_PUBLIC" : "MISC_BED_NOW_PRIVATE"));
+        playSfx(Sfx::UiToggle);
+        return true;
+    }
+    if (a == MenuAction::StockStall) {
+        openStall(target);
+        return true;
+    }
+    if (a == MenuAction::Evacuate && isWheelbarrow(world, target)) {
+        // Its pusher lets go: the selected one, or else the unit of yours pushing it
+        ObjectId pusher = NO_OBJECT;
+        for (ObjectId u : selectedUnits(world)) {
+            if (barrowOf(world, u) == target) pusher = u;
+        }
+        if (pusher == NO_OBJECT) {
+            const ObjectId other = pusherOf(world, target);
+            if (other != NO_OBJECT && world.has<Commandable>(other)) pusher = other;
+        }
+        if (pusher != NO_OBJECT) {
+            stopPushing(world, pusher);
+            playSfx(Sfx::UiClick);
+        }
+        return true;
+    }
+    if (a == MenuAction::Evacuate && isAirship(world, target)) {
+        // Those aboard get off: the selected ones, or else the unit of yours that was clicked
+        std::vector<ObjectId> leaving;
+        for (ObjectId u : selectedUnits(world)) {
+            if (airshipOf(world, u) == target) leaving.push_back(u);
+        }
+        if (leaving.empty() && clicked != target && world.has<Commandable>(clicked) && airshipOf(world, clicked) == target) {
+            leaving.push_back(clicked);
+        }
+        int off = 0, stuck = 0;
+        for (ObjectId u : leaving) {
+            if (startLeaving(world, u)) ++off;
+            else ++stuck;
+        }
+        if (stuck > 0) refuse(lang("MISC_CANT_EVACUATE_AIRSHIP"));
+        else if (off > 0) playSfx(Sfx::UiClick);
+        return true;
+    }
+    if (a == MenuAction::PutDown) {
+        const ObjectId carrier = putDownCarrier(target);
+        if (carrier != NO_OBJECT) putDown(world, carrier);
+        return true;
+    }
+    if (a == MenuAction::CancelAllBuild) {
+        // Every blueprint joined to this one (the building's, the floors above it, and what hangs over its edges): asked first, with how many
+        if (!world.has<Blueprint>(target)) return true;
+        session.cancelList = connectedBlueprints(world, target);
+        session.askCancel = !session.cancelList.empty();
+        playSfx(Sfx::UiMenuOpen);
+        return true;
+    }
+    if (a == MenuAction::CancelBuild) {
+        // The blueprint goes, and whatever was brought to it and not yet built with drops where it stood; a foundation
+        // takes the blueprints laid on it with it
+        const Prop* tp = world.get<Prop>(target);
+        const std::string name = tp ? lang(propInfo(tp->kind).nameKey) : std::string();
+        if (!world.has<Blueprint>(target) || !destroyBuilding(world, target)) return true;
+        showNotice(langf("MISC_BUILD_CANCELLED", { name }));
+        playSfx(Sfx::UiClick);
+        return true;
+    }
+    return false;
+}
+
 void App::pickMenuAction(MenuAction a) {
     ObjectId target = session.contextMenu.target;
     const ObjectId clicked = target;
@@ -533,174 +711,8 @@ void App::pickMenuAction(MenuAction a) {
         target = a == MenuAction::Evacuate ? heldProp(world, target) : occupiedProp(world, target);
         if (target == NO_OBJECT) return;
     }
-    if (a == MenuAction::Disband) {
-        if (world.has<Commandable>(target)) {
-            session.disbandTarget = target;
-            session.disbandHeldAt = 0;
-            itemMenu.open = false;
-            playSfx(Sfx::UiMenuOpen);
-        }
-        return;
-    }
-    if (a == MenuAction::ManageUnits) {
-        openAltar();
-        return;
-    }
-    if (a == MenuAction::Rename) {
-        startRename(target);
-        return;
-    }
-    if (a == MenuAction::AppeaseGhosts) {
-        openGhosts(target);
-        return;
-    }
-    if (a == MenuAction::BehaviorGroups) {
-        openBehaviorGroups(target);
-        return;
-    }
-    if (a == MenuAction::Schedule) {
-        openSchedule(target);
-        return;
-    }
-    if (a == MenuAction::FactionInfo) {
-        openFactionInfo(altarOwnerOf(world, target));
-        return;
-    }
-    if (a == MenuAction::SeeUnits) {
-        openAltar(altarOwnerOf(world, target));
-        return;
-    }
-    if (a == MenuAction::SeeGroups) {
-        openBehaviorGroups(target, altarOwnerOf(world, target));
-        return;
-    }
-    if (a == MenuAction::SeeSchedule) {
-        openSchedule(target, altarOwnerOf(world, target));
-        return;
-    }
-    if (a == MenuAction::SeePatron) {
-        openPatrons(altarOwnerOf(world, target), false);
-        return;
-    }
-    if (a == MenuAction::SeePerimeter) {
-        // For a few seconds: its Perimeter as it is now (always automatic)
-        refreshAutoPerimeter(world, terrain, target);
-        perimShowAltar = target;
-        perimShowUntil = SDL_GetTicks() + 6000;
-        return;
-    }
-    if (a == MenuAction::SetPerimeter) {
-        openPerimeter(target);
-        return;
-    }
-    if (a == MenuAction::StoreFilter) {
-        openStoreFilter(target);
-        return;
-    }
-    // Your own door locks and unlocks at once, from anywhere
-    if ((a == MenuAction::Lock || a == MenuAction::Unlock) && ownDoor(target)) {
-        if (Lock* l = world.get<Lock>(target)) {
-            l->locked = a == MenuAction::Lock;
-            showNotice(lang(l->locked ? "MISC_DOOR_LOCKED" : "MISC_DOOR_UNLOCKED"));
-            playSfx(Sfx::UiToggle);
-        }
-        return;
-    }
-    // Your own piece is rebuilt in a better material
-    if (a == MenuAction::UpgradeStone || a == MenuAction::UpgradeIron || a == MenuAction::UpgradeCrystal) {
-        const BuildMaterial to = a == MenuAction::UpgradeStone ? BuildMaterial::Stone : a == MenuAction::UpgradeIron ? BuildMaterial::Iron : BuildMaterial::Crystal;
-        upgradePiece(world, target, to);
-        showNotice(langf("MISC_UPGRADE_BEGUN", { lang(to == BuildMaterial::Stone ? "MISC_BUILD_STONE" : to == BuildMaterial::Iron ? "MISC_BUILD_METAL" : "MISC_BUILD_CRYSTAL") }));
-        playSfx(Sfx::UiToggle);
-        return;
-    }
-    // Your own Gate opens and shuts at once, but only while a unit of yours is inside it or on top of it to work it (never from outside)
-    if ((a == MenuAction::OpenGate || a == MenuAction::CloseGate) && ownGate(target)) {
-        if (gateOperator(world, target) == NO_OBJECT) {
-            refuse(lang("MISC_GATE_NO_OPERATOR"));
-            return;
-        }
-        if (a == MenuAction::OpenGate && hostileNearGate(world, target)) {
-            refuse(lang("MISC_GATE_HOSTILES_SEEN"));
-            return;
-        }
-        // A unit has to do it: it is sent, walks to the gate and works it
-        if (!assignGateWork(world, target, a == MenuAction::CloseGate, GateJob::Manual)) {
-            refuse(lang("MISC_GATE_NO_OPERATOR"));
-            return;
-        }
-        showNotice(lang(a == MenuAction::CloseGate ? "MISC_GATE_CLOSING" : "MISC_GATE_OPENING"));
-        playSfx(Sfx::UiToggle);
-        return;
-    }
-    if (a == MenuAction::BedPublic || a == MenuAction::BedPrivate) {
-        if (a == MenuAction::BedPublic) world.add(target, BedPublic{});
-        else world.remove<BedPublic>(target);
-        showNotice(lang(a == MenuAction::BedPublic ? "MISC_BED_NOW_PUBLIC" : "MISC_BED_NOW_PRIVATE"));
-        playSfx(Sfx::UiToggle);
-        return;
-    }
-    if (a == MenuAction::StockStall) {
-        openStall(target);
-        return;
-    }
-    if (a == MenuAction::Evacuate && isWheelbarrow(world, target)) {
-        // Its pusher lets go: the selected one, or else the unit of yours pushing it
-        ObjectId pusher = NO_OBJECT;
-        for (ObjectId u : selectedUnits(world)) {
-            if (barrowOf(world, u) == target) pusher = u;
-        }
-        if (pusher == NO_OBJECT) {
-            const ObjectId other = pusherOf(world, target);
-            if (other != NO_OBJECT && world.has<Commandable>(other)) pusher = other;
-        }
-        if (pusher != NO_OBJECT) {
-            stopPushing(world, pusher);
-            playSfx(Sfx::UiClick);
-        }
-        return;
-    }
-    if (a == MenuAction::Evacuate && isAirship(world, target)) {
-        // Those aboard get off: the selected ones, or else the unit of yours that was clicked
-        std::vector<ObjectId> leaving;
-        for (ObjectId u : selectedUnits(world)) {
-            if (airshipOf(world, u) == target) leaving.push_back(u);
-        }
-        if (leaving.empty() && clicked != target && world.has<Commandable>(clicked) && airshipOf(world, clicked) == target) {
-            leaving.push_back(clicked);
-        }
-        int off = 0, stuck = 0;
-        for (ObjectId u : leaving) {
-            if (startLeaving(world, u)) ++off;
-            else ++stuck;
-        }
-        if (stuck > 0) refuse(lang("MISC_CANT_EVACUATE_AIRSHIP"));
-        else if (off > 0) playSfx(Sfx::UiClick);
-        return;
-    }
-    if (a == MenuAction::PutDown) {
-        const ObjectId carrier = putDownCarrier(target);
-        if (carrier != NO_OBJECT) putDown(world, carrier);
-        return;
-    }
-    if (a == MenuAction::CancelAllBuild) {
-        // Every blueprint joined to this one (the building's, the floors above it, and what hangs over its edges): asked first, with how many
-        if (!world.has<Blueprint>(target)) return;
-        session.cancelList = connectedBlueprints(world, target);
-        session.askCancel = !session.cancelList.empty();
-        playSfx(Sfx::UiMenuOpen);
-        return;
-    }
-    if (a == MenuAction::CancelBuild) {
-        // The blueprint goes, and whatever was brought to it and not yet built with drops where it stood; a foundation
-        // takes the blueprints laid on it with it
-        const Prop* tp = world.get<Prop>(target);
-        const std::string name = tp ? lang(propInfo(tp->kind).nameKey) : std::string();
-        if (!world.has<Blueprint>(target) || !destroyBuilding(world, target)) return;
-        showNotice(langf("MISC_BUILD_CANCELLED", { name }));
-        playSfx(Sfx::UiClick);
-        return;
-    }
+    if (pickWindowAction(a, target)) return;
+    if (pickPropAction(a, target, clicked)) return;
     const std::vector<ObjectId> actors = menuActors(target);
     if (actors.empty()) {
         refuse(lang("MISC_SELECT_UNIT_FIRST"));

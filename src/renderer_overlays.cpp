@@ -2,6 +2,7 @@
 #include "prop_info.h"
 #include "airship.h"
 #include "building.h"
+#include "prop_index.h"
 
 using namespace render_detail;
 
@@ -157,9 +158,9 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
     const unsigned long long sinceHop = (unsigned long long)SDL_GetTicks() % EMOTE_HOP_EVERY_MS;
     const float hop = sinceHop < EMOTE_HOP_MS
         ? std::sin(PI * (float)sinceHop / (float)EMOTE_HOP_MS) * EMOTE_HOP_HEIGHT * s : 0.0f;
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    std::vector<ObjectId> claimers = propsWhere(w, [](PropKind k) { return propInfo(k).claimsLand; });
+    for (ObjectId e : claimers) {
         const PropKind kind = w.get<Prop>(e)->kind;
-        if (!propInfo(kind).claimsLand) continue;
         const Transform* tr = w.get<Transform>(e);
         if (!withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         EmoteId emote = EmoteId::None;

@@ -304,6 +304,7 @@ public:
         bool lit = false;      // over the Motivation threshold: its flames rise much higher
     };
     std::vector<FireSpot> fires_;
+    std::vector<ObjectId> nearProps_;   // the props near the camera, looked at by the frame's drawing
     TextTex glow_;   // a soft round spot, bright in the middle
     void drawFires(const Camera& cam);
     // A straight line and a filled circle, in pixels (the Adjust tool's widget)

@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include "airship.h"
 #include "building.h"
+#include "prop_index.h"
 #include "wheelbarrow.h"
 #include "frustum.h"
 #include <unordered_map>
@@ -768,7 +769,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     // Props in the order of how often what is drawn of them changes (PropMotion): the ones that stay put, then the
     // vehicles, which go wherever they are taken
     std::vector<ObjectId> moving;
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    propsInRange(w, cam.focusX, cam.focusZ, cam.viewRange, nearProps_);
+    for (ObjectId e : nearProps_) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z) || cutAway(w, e)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;

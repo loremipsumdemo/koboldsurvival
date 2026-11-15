@@ -9,6 +9,7 @@
 #include <sstream>
 #include <tuple>
 #include "build.h"
+#include "building.h"
 #include "claims.h"
 #include "game_tables.h"
 #include "prop_index.h"
@@ -17,8 +18,6 @@ namespace fs = std::filesystem;
 
 namespace {
 constexpr float QUARTER = 1.5707963f;
-
-int dirOfYaw(float yaw) { return (((int)std::lround(yaw / QUARTER)) % 4 + 4) % 4; }
 
 float wrapYaw(float yaw) {
     const float turn = 6.2831853f;

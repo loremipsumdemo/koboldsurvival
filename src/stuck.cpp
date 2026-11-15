@@ -22,7 +22,6 @@ constexpr int WINDOW_MOST = 160;
 constexpr float COST_OBJECT = 5.0f, COST_WALL = 20.0f, COST_LADDER = 40.0f, COST_STAIRS = 60.0f;
 constexpr float BREAK_REACH = 0.9f;   // from the nearest edge of what it breaks (a unit beside a tile is about 0.5 from it)
 
-int tileOf(float v) { return (int)std::floor(v); }
 
 // The piece that closes each ground tile, for every kind of piece that closes any (not only the ones in the building map, which holds
 // what stands on foundations: a Perimeter Wall, Gate or Watchtower is not in it). A tile that two pieces close has the first.

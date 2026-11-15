@@ -283,7 +283,6 @@ PropKind slopeKind() {
     return out;
 }
 
-int dirOfYawQuarter(float yaw) { return (((int)std::lround(yaw / 1.5707963f)) % 4 + 4) % 4; }
 
 // A faction keeps a Slope up to the wall top at the east-most, west-most, north-most and south-most of its Perimeter Walls that
 // can still be reached from inside: the Slope's top beside a tile of the wall's inner (back) row, rising toward the wall. If it has
@@ -310,8 +309,8 @@ void slopeUpkeep(World& w, Terrain& t, const std::vector<Claim>& claims, const C
         const Prop* pp = w.get<Prop>(p);
         const PropInfo& info = propInfo(pp->kind);
         const Transform* tr = w.get<Transform>(p);
-        if (info.perimeter && info.solid && !w.has<Blueprint>(p)) walls.push_back(Wall{ tr->x, tr->z, dirOfYawQuarter(pp->yaw) });
-        else if (info.slope) have.push_back(Existing{ p, tr->x, tr->z, dirOfYawQuarter(pp->yaw) });
+        if (info.perimeter && info.solid && !w.has<Blueprint>(p)) walls.push_back(Wall{ tr->x, tr->z, dirOfYaw(pp->yaw) });
+        else if (info.slope) have.push_back(Existing{ p, tr->x, tr->z, dirOfYaw(pp->yaw) });
     }
     if (walls.empty()) return;
     std::vector<bool> keep(have.size(), false);

@@ -64,6 +64,10 @@ std::vector<ObjectId> propsWhere(World& w, KindTest test) {
 // Every prop whose spot may be within reach of x, z (those in the cells the reach touches, and the vehicles). The caller measures.
 void propsNear(World& w, float x, float z, float reach, std::vector<ObjectId>& out);
 
+// The props within range of x, z on the ground plane (and the vehicles), in the order of their ids: what a frame's drawing and picking look
+// at, instead of every prop in the world. A superset by a cell's width: the caller still measures.
+void propsInRange(World& w, float x, float z, float range, std::vector<ObjectId>& out);
+
 // The nearest finished prop (no blueprint) that passes the test, or NO_OBJECT: the grid's cells are looked through in rings outward from
 // x, z, stopping once no cell further out can hold anything nearer. The test must not change the props.
 template <typename Pred>

@@ -80,3 +80,8 @@ void propsNear(World& w, float x, float z, float reach, std::vector<ObjectId>& o
         }
     }
 }
+
+void propsInRange(World& w, float x, float z, float range, std::vector<ObjectId>& out) {
+    propsNear(w, x, z, range, out);
+    std::sort(out.begin(), out.end());
+}

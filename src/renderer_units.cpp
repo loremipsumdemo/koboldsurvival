@@ -4,6 +4,7 @@
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include "building.h"
+#include "prop_index.h"
 #include "build_plan.h"
 #include "schedule.h"
 #include "useitem.h"
@@ -1032,7 +1033,9 @@ std::vector<ObjectId> Renderer::propsAtPixel(World& w, const Camera& cam, float 
     if (!pixelRay(vp, mx, my, winW, winH, o, d)) return {};
     std::vector<std::pair<float, ObjectId>> hits;
     const DetailRange detail(cam);
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    std::vector<ObjectId> near;
+    propsInRange(w, cam.focusX, cam.focusZ, cam.viewRange, near);
+    for (ObjectId e : near) {
         const Transform* tr = w.get<Transform>(e);
         if (!detail.within(tr->x, tr->y, tr->z) || pickHidden(w, e)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;

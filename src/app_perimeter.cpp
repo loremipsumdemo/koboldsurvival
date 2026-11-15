@@ -1,11 +1,8 @@
 #include "app.h"
+#include "building.h"
 #include "claims.h"
 
 using namespace play;
-
-namespace {
-int tileOf(float v) { return (int)std::floor(v); }
-}
 
 // Set Perimeter: a window of tools over the world, and tiles painted on the ground by dragging a rectangle, as Deconstruct is
 // dragged out. The drawing is on a copy, kept only by Confirm.

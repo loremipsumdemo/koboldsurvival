@@ -58,6 +58,10 @@ struct Foundation {
 };
 inline long long tileKey(int x, int z) { return (long long)z * 1000003LL + (long long)x; }
 inline long long levelKey(int x, int z, int level) { return tileKey(x, z) * 16 + level; }
+// The tile a coordinate is in
+inline int tileOf(float v) { return (int)std::floor(v); }
+// Which of the four quarter turns a yaw is nearest (0 to 3)
+inline int dirOfYaw(float yaw) { return (((int)std::lround(yaw / 1.5707963f)) % 4 + 4) % 4; }
 
 // A piece not finished yet: the material brought to it so far, and how far it is built
 struct Blueprint {

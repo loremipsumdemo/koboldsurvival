@@ -624,6 +624,8 @@ struct App : AppSession {
     bool openContextMenu(float mx, float my);
     void talkOrWalkUp(ObjectId target, const std::vector<ObjectId>& actors, bool shop);
     void pickMenuAction(play::MenuAction a);
+    bool pickWindowAction(play::MenuAction a, ObjectId target);
+    bool pickPropAction(play::MenuAction a, ObjectId target, ObjectId clicked);
     void chooseOption(size_t i);
 
     GameSettings settings;
