@@ -365,6 +365,29 @@ bool Terrain::isFree(float x, float z) const {
     return walkable(tx, tz);
 }
 
+bool Terrain::nearestBigLand(Vec2 from, Vec2& out) const {
+    if (groundArea_.empty()) return false;
+    const std::vector<int> sizes = areaSizes();
+    int most = 0;
+    for (int s : sizes) most = std::max(most, s);
+    if (most <= 0) return false;
+    const int big = std::max(1, most - most / 10);
+    bool found = false;
+    float bestD2 = 0.0f;
+    for (size_t k = 0; k < groundArea_.size(); ++k) {
+        const int a = groundArea_[k];
+        if (a <= 0 || (size_t)a >= sizes.size() || sizes[(size_t)a] < big) continue;
+        const float x = (float)(k % size_) + 0.5f, z = (float)(k / size_) + 0.5f;
+        const float d2 = (x - from.x) * (x - from.x) + (z - from.z) * (z - from.z);
+        if (!found || d2 < bestD2) {
+            found = true;
+            bestD2 = d2;
+            out = { x, z };
+        }
+    }
+    return found;
+}
+
 Vec2 Terrain::snap(Vec2 p) const {
     if (isFree(p.x, p.z)) return p;
 

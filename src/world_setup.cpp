@@ -45,6 +45,35 @@ bool roomAround(const Terrain& t, float cx, float cz) {
     return true;
 }
 
+// A tile for something wanted at `wanted`, found the same cheap way every time: the rings of tiles out from it (the nearest tile of the
+// first ring with any), up to maxRing, first only the tiles `strict` likes and then any open tile; and, if lastResort, the open tile
+// nearest it on a big piece of ground. False if there is none, and the caller leaves the thing out.
+template <typename Strict>
+bool placeNear(const Terrain& t, Vec2 wanted, int maxRing, bool lastResort, Strict strict, Vec2& out) {
+    const int cx = (int)std::floor(wanted.x), cz = (int)std::floor(wanted.z);
+    for (int pass = 0; pass < 2; ++pass) {
+        for (int r = 0; r <= maxRing; ++r) {
+            bool got = false;
+            float bestD = 0.0f;
+            for (int dz = -r; dz <= r; ++dz) {
+                const int step = (dz == -r || dz == r) ? 1 : 2 * r;   // a ring's top and bottom rows whole, the rows between only their ends
+                for (int dx = -r; dx <= r; dx += std::max(1, step)) {
+                    const int x = cx + dx, z = cz + dz;
+                    if (!t.walkable(x, z) || (pass == 0 && !strict(x, z))) continue;
+                    const float d = (float)(dx * dx + dz * dz);
+                    if (!got || d < bestD) {
+                        got = true;
+                        bestD = d;
+                        out = { x + 0.5f, z + 0.5f };
+                    }
+                }
+            }
+            if (got) return true;
+        }
+    }
+    return lastResort && t.nearestBigLand(wanted, out);
+}
+
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
         for (int x = x0; x < x0 + n; ++x) {
@@ -69,10 +98,15 @@ Vec2 systems_detail::findSpawn(Terrain& t) {
     std::stable_sort(cands.begin(), cands.end(),
                      [](const Candidate& a, const Candidate& b) { return a.d2 < b.d2; });
 
-    const float half = SPAWN_SQUARE * 0.5f;
-    for (const Candidate& c : cands) {
-        if (walkableSquare(t, c.x, c.z, SPAWN_SQUARE)) return { c.x + half, c.z + half };
+    // The full square first, then smaller ones, so a map of small islands still starts you on one
+    for (int n = SPAWN_SQUARE; n >= 4; n /= 2) {
+        const float half = n * 0.5f;
+        for (const Candidate& c : cands) {
+            if (c.x + n <= size && c.z + n <= size && walkableSquare(t, c.x, c.z, n)) return { c.x + half, c.z + half };
+        }
     }
+    Vec2 land;
+    if (t.nearestBigLand({ (float)mid, (float)mid }, land)) return land;
     if (!t.streamed()) {
         for (int z = 0; z < size; ++z) {
             for (int x = 0; x < size; ++x) {
@@ -199,6 +233,15 @@ struct LevelBuilder {
             z = g.y + 0.5f;
             return true;
         }
+        // Random tries found nothing (a small island, a crowded spot): the rings round it, in order, up to a little past the radius
+        Vec2 at;
+        const auto untaken = [&](int tx, int tz) { return std::find(enemyTiles.begin(), enemyTiles.end(), GridPos{ tx, tz }) == enemyTiles.end(); };
+        if (placeNear(t, { cx, cz }, (int)radius + 4, false, untaken, at)) {
+            enemyTiles.push_back(GridPos{ tileAt(at.x), tileAt(at.z) });
+            x = at.x;
+            z = at.z;
+            return true;
+        }
         return false;
     }
 
@@ -276,6 +319,18 @@ struct LevelBuilder {
                 ++placed;
             }
             if (placed >= units) break;
+        }
+        // Still some left: the nearest free tile to the camp, on this land or else the biggest
+        while (placed < units) {
+            Vec2 at;
+            const auto fine = [&](int tx, int tz) {
+                const GridPos g{ tx, tz };
+                return tileFree(g) && (!keepClearOfClaims || outsideClaims(g));
+            };
+            if (!placeNear(t, { cx, cz }, 24, true, fine, at)) break;
+            const ObjectId e = placeUnit(GridPos{ tileAt(at.x), tileAt(at.z) }, faction);
+            if (firstUnit == NO_OBJECT) firstUnit = e;
+            ++placed;
         }
         return firstUnit;
     }
@@ -383,12 +438,16 @@ struct LevelBuilder {
     }
 
     void placeCampMobs() {
+        std::vector<MobKind> campKinds;
+        for (int k = 1; k <= mobKindCount(); ++k) {
+            if (campMobKind((MobKind)k)) campKinds.push_back((MobKind)k);
+        }
+        if (campKinds.empty()) return;   // none are made for camps: no animals in them
         for (const CampKit& kit : kits) {
             if (!kit.placed || kit.faction == FACTION_PLAYER) continue;   // nothing is put in your camp for you
             for (int i = 0; i < CAMP_MOBS; ++i) {
                 float x = 0.0f, z = 0.0f;
-                MobKind kind = (MobKind)rng.range(1, mobKindCount());
-                while (!campMobKind(kind)) kind = (MobKind)rng.range(1, mobKindCount());
+                MobKind kind = campKinds[(size_t)rng.range(0, (int)campKinds.size() - 1)];
                 bool found = false;
                 for (int tries = 0; tries < 20 && !found; ++tries) {
                     if (!freeSpot(kit.x, kit.z, CAMP_MOB_RADIUS, x, z)) break;

@@ -96,6 +96,10 @@ public:
     // The piece of ground a tile is in, as connected sees it (numbered from 1), or 0 for a closed tile
     int navPieceAt(int x, int z) const;
     Vec2 snap(Vec2 p) const;
+    // The last resort of a placement: the open tile nearest `from` on a piece of ground that is big (within a tenth of the biggest piece).
+    // Ties go to the tile met first in scanning order, so the same map always gives the same answer. False on a map too big for the pieces
+    // to be worked out, or with no open ground.
+    bool nearestBigLand(Vec2 from, Vec2& out) const;
 
     std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const;
     bool lineClear(Vec2 a, Vec2 b) const;
