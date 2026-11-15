@@ -314,6 +314,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     viewProj_ = cam.viewProj((float)winW / (float)winH);
     float ex, ey, ez;
     cam.eye(ex, ey, ez);
+    eyeX_ = ex;
+    eyeY_ = ey;
+    eyeZ_ = ez;
     constexpr float BILLBOARD_DISTANCE = 200.0f;
     const float cp = std::cos(cam.pitch);
     billX_ = ex + BILLBOARD_DISTANCE * std::sin(cam.yaw) * cp;

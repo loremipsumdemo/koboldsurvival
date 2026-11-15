@@ -4,8 +4,8 @@
 #include "profile.h"
 
 namespace {
-// Game seconds between makings of the index when nothing says the props changed (two minutes of game time, a couple of real seconds)
-constexpr double REFRESH_GAME_SECONDS = 120.0;
+// Game seconds between makings of the index when nothing says the props changed (a couple of real seconds)
+constexpr double REFRESH_GAME_SECONDS = 2.0 * GAME_SECONDS_PER_REAL_SECOND;
 }
 
 const PropIndex& propIndex(World& w) {

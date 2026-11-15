@@ -336,3 +336,9 @@ int treeStageOfClock(double clockSeconds) {
     const int inYear = (int)(((d % (DAYS_PER_MONTH * MONTHS_PER_YEAR)) + DAYS_PER_MONTH * MONTHS_PER_YEAR) % (DAYS_PER_MONTH * MONTHS_PER_YEAR));
     return treeStageOfDay(inYear + 1);
 }
+
+int treeSeasonOfStage(int stage) {
+    const int day = 1 + (int)((float)(std::clamp(stage, 0, TREE_STAGES - 1) + 0.5f) * (float)TREE_YEAR_DAYS / (float)TREE_STAGES);
+    const SeasonState s = seasonOf(day);
+    return s.key == Season::Spring ? 0 : s.key == Season::Summer ? 1 : s.key == Season::Autumn ? 2 : 3;
+}

@@ -687,6 +687,8 @@ void Renderer::shutdown() {
     for (Model& m : propModels_) destroyModel(m);
     destroyModel(altarFrame_);
     for (auto& entry : treeModels_) destroyModel(entry.second);
+    for (Model& m : treeBillboardQuad_) destroyModel(m);
+    for (TextTex& g : treeBillboardTex_) drop(g);
     if (treePalette_) glDeleteTextures(1, &treePalette_);
     destroyModel(altarBanner_);
     for (auto& shapes : wallShapes_) {

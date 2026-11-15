@@ -677,6 +677,13 @@ private:
     unsigned treeFrame_ = 0;
     unsigned long long treeTicks_ = 0;
     const Model* treeModel(int variant, int stage, int detail);
+    // Trees far off are one flat picture each (data/tree/billboard_<season>.png), turned to the camera in eight steps: by season, a
+    // quad of its own with the picture as its texture. Loaded the first time a tree is that far.
+    std::array<TextTex, 4> treeBillboardTex_{};
+    std::array<Model, 4> treeBillboardQuad_{};
+    float treeBillboardAspect_ = 0.72f;   // width over height of the pictures
+    bool treeBillboardsTried_ = false;
+    bool loadTreeBillboards();
     Model altarFrame_, altarBanner_;   // altar_frame.glb and altar_banner.glb: the altar in the world is these two, with the banner tinted
     // A wall's other shapes (end, straight, corner, tee, cross), for each kind with the wall_rule flag
     std::vector<std::array<Model, 5>> wallShapes_;
@@ -791,5 +798,6 @@ private:
     bool skyBakeWanted_ = true;
     Uint64 skyBakeNotBefore_ = 0;   // a theme edited while dragging a slider is baked at most this often, not on every mouse move
     void bakeSky(int skyKind, const float* zenith, const float* horizon, float stars);
-    float billX_ = 0.0f, billZ_ = 0.0f;
+    float billX_ = 0.0f, billZ_ = 0.0f;   // a point far out in front of the camera (what billboards face), NOT where the camera is
+    float eyeX_ = 0.0f, eyeY_ = 0.0f, eyeZ_ = 0.0f;   // where the camera is
 };

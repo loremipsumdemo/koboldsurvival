@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "calendar.h"
 #include "ecs.h"
 #include "language.h"
 #include "props.h"
@@ -70,8 +71,8 @@ constexpr int BEHAVIOR_TASKS_MAX = 256;   // the longest task list: a behavior g
 constexpr int BEHAVIOR_NEED_PERCENT = 50;
 constexpr float BEHAVIOR_RETRY_SECONDS = 1.0f;
 // With no bed to be had (none free, or the one chosen could not be reached), the Sleep and Rest tasks are not looked at again for an
-// in-game hour: a day is 30 real minutes (calendar.h), so an hour is 75 seconds
-constexpr float NO_BED_RETRY_SECONDS = 75.0f;
+// in-game hour (real seconds, from the length of the day in calendar.h)
+constexpr float NO_BED_RETRY_SECONDS = (float)(SECONDS_PER_HOUR / GAME_SECONDS_PER_REAL_SECOND);
 
 struct BehaviorRule {
     bool on = true;

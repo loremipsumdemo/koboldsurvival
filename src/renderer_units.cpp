@@ -234,6 +234,33 @@ void Renderer::setTreeClock(double clockSeconds) {
     }
 }
 
+namespace {
+constexpr float TREE_BILLBOARD_TILES = 120.0f;   // trees this far from the camera are drawn as a flat picture
+}
+
+bool Renderer::loadTreeBillboards() {
+    treeBillboardsTried_ = true;
+    static const char* const SEASONS[4] = { "spring", "summer", "autumn", "winter" };
+    for (int i = 0; i < 4; ++i) {
+        const std::string path = std::string("data/tree/billboard_") + SEASONS[i] + ".png";
+        treeBillboardTex_[(size_t)i] = loadOptionalImage(path.c_str());
+        if (!treeBillboardTex_[(size_t)i].tex) {
+            SDL_Log("%s is missing: far-off trees are drawn as models", path.c_str());
+            return false;
+        }
+        addMipmaps(treeBillboardTex_[(size_t)i]);
+        treeBillboardAspect_ = treeBillboardTex_[(size_t)i].aspect;
+    }
+    // One upright quad, 1 wide and 1 tall, standing on the ground and facing +z
+    const std::vector<float> verts = { -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f,
+                                        0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f };
+    const std::vector<unsigned> indices = { 0, 1, 2, 0, 2, 3 };
+    for (int i = 0; i < 4; ++i) {
+        if (!makeModelFromMesh(verts, indices, treeBillboardTex_[(size_t)i].tex, treeBillboardQuad_[(size_t)i])) return false;
+    }
+    return true;
+}
+
 bool Renderer::queueTree(ObjectId e, float x, float y, float z, float size, float, RGBA tint) {
     auto found = treeVis_.find(e);
     if (found == treeVis_.end()) {
@@ -248,8 +275,33 @@ bool Renderer::queueTree(ObjectId e, float x, float y, float z, float size, floa
     const int variant = (int)(h % (unsigned)TREE_VARIANTS);
     const float turn = (float)((h >> 8) & 0xffff) / 65536.0f * 6.2831853f;
     const float grown = 0.85f + 0.30f * (float)((h >> 4) & 0xff) / 255.0f;
+    // How far the tree is from the camera itself (billX_ and billZ_ are a point far in front of it, for facing)
+    const float ex = eyeX_ - x, ey = eyeY_ - y, ez = eyeZ_ - z;
+    const float eyeDist2 = ex * ex + ey * ey + ez * ez;
     const float dx = billX_ - x, dz = billZ_ - z;
-    const int detail = dx * dx + dz * dz > 60.0f * 60.0f ? 1 : 0;
+    if (eyeDist2 > TREE_BILLBOARD_TILES * TREE_BILLBOARD_TILES) {
+        if (!treeBillboardsTried_) loadTreeBillboards();
+        const int season = treeSeasonOfStage(v.stage);
+        if (treeBillboardQuad_[(size_t)season].vao) {
+            // Facing the camera in whichever of eight directions is nearest: it is too far off to tell
+            constexpr float EIGHTH = 0.7853982f;
+            const float yaw = std::round(std::atan2(dx, dz) / EIGHTH) * EIGHTH;
+            const float height = size * grown, width = height * treeBillboardAspect_;
+            Mat4 flat{};
+            flat.m[0] = width * std::cos(yaw);
+            flat.m[2] = -width * std::sin(yaw);
+            flat.m[5] = height;
+            flat.m[8] = std::sin(yaw);
+            flat.m[10] = std::cos(yaw);
+            flat.m[15] = 1.0f;
+            flat.m[12] = x;
+            flat.m[13] = y;
+            flat.m[14] = z;
+            queueModelMatrix(treeBillboardQuad_[(size_t)season], flat, tint, 1.0f);
+            return true;
+        }
+    }
+    const int detail = eyeDist2 > 60.0f * 60.0f ? 1 : 0;
     const Model* m = treeModel(variant, v.stage, detail);
     if (!m) return false;
     const float k = size / TREE_MODEL_HEIGHT * grown;

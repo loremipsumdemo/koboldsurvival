@@ -7,7 +7,7 @@
 
 constexpr double SECONDS_PER_HOUR = 60.0 * 60.0;
 constexpr double SECONDS_PER_DAY = 24.0 * SECONDS_PER_HOUR;
-constexpr double DAY_REAL_SECONDS = 30.0 * 60.0;                                    // real seconds for one full day
+constexpr double DAY_REAL_SECONDS = 12.0 * 60.0;                                    // real seconds for one full day
 constexpr double GAME_SECONDS_PER_REAL_SECOND = SECONDS_PER_DAY / DAY_REAL_SECONDS;
 
 constexpr int DAYS_PER_MONTH = 30;

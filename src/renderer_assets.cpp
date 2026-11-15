@@ -90,6 +90,8 @@ void Renderer::loadMobArt(LoadStages& stages) {
         const MobInfo& info = mobInfo((MobKind)i);
         const std::string path = "data/mob/" + info.picture;
         mobSprites_.push_back(info.picture == "none" ? TextTex{} : loadOptionalImage(path.c_str()));
+        // Drawn as billboards at any distance: mipmaps, so a far one samples a small copy instead of shimmering over the full picture
+        addMipmaps(mobSprites_.back());
         const std::string profile = "data/profile/" + fileSlug(info.key) + ".png";
         mobProfiles_.push_back(loadOptionalImage(profile.c_str()));
         stages.step(0.5f + 0.05f * (float)i / (float)mobKindCount(), i);

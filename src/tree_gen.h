@@ -29,5 +29,7 @@ std::vector<uint8_t> treePalette();
 // Which stage the foliage is at on a day of the game's year (1 to 360), and the stage of the clock
 int treeStageOfDay(int dayOfYear);
 int treeStageOfClock(double clockSeconds);
+// The season a stage falls in: 0 spring, 1 summer, 2 autumn, 3 winter (which of the four far-off billboards a tree is drawn with)
+int treeSeasonOfStage(int stage);
 // The nominal height of a tree in model units, and the scale to put it at a size in tiles
 constexpr float TREE_MODEL_HEIGHT = 6.0f;
