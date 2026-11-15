@@ -148,6 +148,12 @@ public:
     void setDeveloperOpen(bool on) { developerOpen_ = on; }
     void setPlanPopupOpen(bool on) { planPopupOpen_ = on; }
     void setBuildPreview(BuildPreview p) { buildPreview_ = std::move(p); }
+    // The Developer panel's Show Navmesh: the ground near the camera coloured by the piece of ground each tile is in, closed tiles in red
+    void setShowNavmesh(bool on) { showNavmesh_ = on; }
+    // Called once a frame with the game's clock: trees take up the new day's foliage a little after the day's first hour
+    void setTreeClock(double clockSeconds);
+    // A tree as its variant and stage make it. False if it could not be (the plain tree model is drawn).
+    bool queueTree(ObjectId e, float x, float y, float z, float size, float yawJitter, RGBA tint);
     // The cutaway: inside a building, what stands on the floors above the one looked at is left out, drawn and picked
     struct Cutaway {
         bool on = false;
@@ -162,6 +168,7 @@ public:
     // Whether a click can't reach this: left out by the cutaway, or under the floor looked at
     bool pickHidden(World& w, ObjectId e) const;
     void drawBuildPreview(const Terrain& t);
+    void drawNavmesh(const Terrain& t, const Camera& cam);
     void drawBuildSection(const SidebarLayout& L, float mx, float my);
 
     void drawActionCrystal(const Camera& cam, const Terrain& t, float x, float z, float alpha, int storey, int winW, int winH);
@@ -468,6 +475,7 @@ private:
     bool planPopupOpen_ = false;   // the Build tab's Building Blueprint popout is open
     bool developerOpen_ = false;   // the Build tab's Developer spawn panel is open
     BuildPreview buildPreview_;
+    bool showNavmesh_ = false;
     Cutaway cutaway_;
     GLuint glyphVao_ = 0, glyphVbo_ = 0;
     // glyphVbo_ holds GLYPH_RING_QUADS quads, each drawn from a place of its own: writing over one the card may still be reading
@@ -653,6 +661,23 @@ private:
     std::map<ObjectId, PropHop> propHops_;
     void drawRing(float cx, float cy, float outer, float inner, float from, float to, RGBA color);
     std::vector<Model> propModels_;
+    // Trees (tree_gen.h): a model for each variant of genes and stage of the year, made when first wanted and kept while its stage is the one
+    // in use. Each tree keeps its own stage, which it takes up from the year once a day, a second or so to ten after the day's first hour.
+    struct TreeVis {
+        int stage = 0;
+        float wait = 0.0f;
+        unsigned seen = 0;
+    };
+    std::unordered_map<ObjectId, TreeVis> treeVis_;
+    std::map<int, Model> treeModels_;
+    GLuint treePalette_ = 0;
+    long long treeDay_ = -1;
+    int treeStageNow_ = 0;
+    float treeWindow_ = 0.0f;
+    unsigned treeFrame_ = 0;
+    unsigned long long treeTicks_ = 0;
+    const Model* treeModel(int variant, int stage, int detail);
+    Model altarFrame_, altarBanner_;   // altar_frame.glb and altar_banner.glb: the altar in the world is these two, with the banner tinted
     // A wall's other shapes (end, straight, corner, tee, cross), for each kind with the wall_rule flag
     std::vector<std::array<Model, 5>> wallShapes_;
     // The same in iron, crystal and stone, for the kinds made of a material: [kind][material - 1][0 plain, 1.. the wall shapes]
@@ -695,6 +720,8 @@ private:
     void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
     void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
+    // An Altar: its frame, and its banners in the color of the faction that owns it (placed as the whole altar model is)
+    void queueAltar(float x, float y, float z, float targetSize, float yaw, RGBA bannerColor);
     void drawModelInstances();
     static constexpr size_t HEAVY_MODEL_TRIANGLES = 5000;
     struct ModelDrawCount {

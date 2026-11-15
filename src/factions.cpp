@@ -3,6 +3,7 @@
 #include "ecs.h"
 #include "mobs.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
@@ -11,19 +12,23 @@
 namespace {
 const char* const DEFAULT_TEXT =
     "faction\t0\tFACTION_PLAYER\t#c77dff\t0\tcontrol=player\n"
-    "faction\t2\tFACTION_RED\t#ff4d4d\t30\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep\n"
-    "faction\t3\tFACTION_GREEN\t#5ccf5c\t10\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep\n"
-    "faction\t4\tFACTION_BLUE\t#4d7dff\t10\ttrespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut\n"
-    "faction\t5\tFACTION_YELLOW\t#f5d43a\t10\ttake=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open\n"
     "faction\t6\tFACTION_FACTIONLESS\t#9a9a9a\t0\ttake=food aid=own\n"
-    "\n"
-    "relation\t0\t2\t-100\n"
-    "relation\t2\t3\t-100\n"
-    "relation\t2\t4\t-100\n"
-    "relation\t2\t5\t-100\n"
-    "relation\t4\t3\t75\n"
-    "relation\t4\t5\t-40\n"
-    "relation\t3\t5\t0\n";
+    "faction\t100\tFACTION_EMBER\t#FF4000\t8\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep\n"
+    "faction\t101\tFACTION_SOLAR\t#EFDF00\t8\ttake=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open\n"
+    "faction\t102\tFACTION_AMBER\t#AF8010\t8\ttrespass=warn take=food markup=20 fortified=20 military=20 build=balanced gates=sleep\n"
+    "faction\t103\tFACTION_DAWN\t#FFCFAF\t8\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep\n"
+    "faction\t104\tFACTION_UMBER\t#704020\t8\ttrespass=attack downed=cage take=weapons trade=allies markup=30 aid=own fortified=35 military=25 build=base_first gates=shut\n"
+    "faction\t105\tFACTION_THICKET\t#305000\t8\ttrespass=warn aid=own fortified=40 military=10 build=perimeter_first gates=shut\n"
+    "faction\t106\tFACTION_VERDANT\t#00FF40\t8\tfactionless=friendly downed=carry_out recruit=both aid=anyone fortified=20 military=15 build=balanced gates=open\n"
+    "faction\t107\tFACTION_JADE\t#509F70\t8\tdowned=carry_out markup=10 fortified=25 military=20 build=perimeter_first gates=sleep\n"
+    "faction\t108\tFACTION_TIDAL\t#007080\t8\ttrespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut\n"
+    "faction\t109\tFACTION_GLACIER\t#00EFEF\t8\ttrespass=warn trade=allies markup=15 aid=own fortified=30 military=20 build=perimeter_first gates=shut\n"
+    "faction\t110\tFACTION_ZEPHYR\t#40AFFF\t8\trecruit=factionless aid=anyone fortified=10 military=40 build=balanced gates=open\n"
+    "faction\t111\tFACTION_COBALT\t#1000EF\t8\ttrespass=attack downed=cage take=weapons markup=20 trade=allies aid=own fortified=25 military=40 build=base_first gates=sleep\n"
+    "faction\t112\tFACTION_MYSTIC\t#9F70FF\t8\ttrade=not_factionless markup=25 recruit=rescued fortified=20 military=30 build=balanced gates=sleep\n"
+    "faction\t113\tFACTION_VEIL\t#EFCFFF\t8\tfactionless=friendly downed=carry_out aid=anyone fortified=15 military=10 build=balanced gates=open\n"
+    "faction\t114\tFACTION_GARNET\t#8F0050\t8\tfactionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own fortified=10 military=60 build=base_first gates=sleep\n"
+    "faction\t115\tFACTION_BLOSSOM\t#FF508F\t8\tfactionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone fortified=15 military=20 build=balanced gates=open\n";
 
 // Each rule's words in factions.txt and saves, and the language keys the Faction Rules window shows them by, in the
 // order of its enum
@@ -258,6 +263,18 @@ bool parseTable(const std::string& text, Table& out, std::string& err) {
         err = "the list needs the Player Faction (id 0) and at least one other";
         return false;
     }
+    // No two of the colored factions share a color, so each is told apart on the map and in the lists
+    auto colored = [](const FactionDef& f) { return f.id >= PALETTE_FIRST_ID && f.id < PALETTE_FIRST_ID + PALETTE_COUNT; };
+    for (size_t i = 0; i < t.list.size(); ++i) {
+        if (!colored(t.list[i])) continue;
+        for (size_t j = i + 1; j < t.list.size(); ++j) {
+            const FactionColor &a = t.list[i].color, &b = t.list[j].color;
+            if (colored(t.list[j]) && a.r == b.r && a.g == b.g && a.b == b.b) {
+                err = "factions " + std::to_string(t.list[i].id) + " and " + std::to_string(t.list[j].id) + " have the same color";
+                return false;
+            }
+        }
+    }
     std::sort(t.list.begin(), t.list.end(), [](const FactionDef& a, const FactionDef& b) { return a.id < b.id; });
     out = std::move(t);
     return true;
@@ -271,6 +288,37 @@ Table& table() {
         return d;
     }();
     return t;
+}
+
+int g_playerSlot = PALETTE_DEFAULT_SLOT;
+std::vector<FactionDef> g_active;
+bool g_activeBuilt = false;
+
+bool isPaletteId(int id) { return id >= PALETTE_FIRST_ID && id < PALETTE_FIRST_ID + PALETTE_COUNT; }
+
+const FactionDef* rawPalette(int slot) {
+    if (slot < 0 || slot >= PALETTE_COUNT) return nullptr;
+    for (const FactionDef& f : table().list) {
+        if (f.id == paletteFactionId(slot)) return &f;
+    }
+    return nullptr;
+}
+
+// The factions in play: the table's, with yours (id 0) taking the slot you picked and that slot's own entry left out
+const std::vector<FactionDef>& active() {
+    if (g_activeBuilt) return g_active;
+    g_active.clear();
+    const FactionDef* mine = rawPalette(g_playerSlot);
+    for (const FactionDef& f : table().list) {
+        if (mine && f.id == mine->id) continue;
+        g_active.push_back(f);
+        if (mine && f.id == FACTION_PLAYER) {
+            g_active.back().nameKey = mine->nameKey;
+            g_active.back().color = mine->color;
+        }
+    }
+    g_activeBuilt = true;
+    return g_active;
 }
 
 // How the Player Faction stands with the others, where it has changed from the start. Part of the world.
@@ -292,13 +340,48 @@ bool loadFactions(const std::string& text, std::string& err) {
     Table t;
     if (!parseTable(text, t, err)) return false;
     table() = std::move(t);
+    g_activeBuilt = false;
+    if (!rawPalette(g_playerSlot)) {
+        for (int k = 0; k < PALETTE_COUNT; ++k) {
+            if (rawPalette(k)) {
+                g_playerSlot = k;
+                break;
+            }
+        }
+    }
     return true;
 }
 
-const std::vector<FactionDef>& factions() { return table().list; }
+int playerSlot() { return g_playerSlot; }
+
+bool setPlayerSlot(int slot) {
+    if (!rawPalette(slot)) return false;
+    if (slot != g_playerSlot) {
+        g_playerSlot = slot;
+        g_activeBuilt = false;
+    }
+    return true;
+}
+
+int factionSlot(int faction) {
+    if (faction == FACTION_PLAYER) return g_playerSlot;
+    return isPaletteId(faction) ? faction - PALETTE_FIRST_ID : -1;
+}
+
+const FactionDef* paletteFaction(int slot) { return rawPalette(slot); }
+
+int loopReputation(int a, int b) {
+    if (a == b) return REP_MAX;
+    const int raw = std::abs(a - b);
+    const int d = std::min(raw, PALETTE_COUNT - raw);   // steps round the loop: 1 for neighbors
+    const int far = PALETTE_COUNT / 2;
+    return (int)std::lround(100.0 - (double)(d - 1) * 200.0 / (double)(far - 1));
+}
+
+const std::vector<FactionDef>& factions() { return active(); }
 
 const FactionDef* findFaction(int id) {
-    for (const FactionDef& f : table().list) {
+    for (const FactionDef& f : active()) {
         if (f.id == id) return &f;
     }
     return nullptr;
@@ -349,7 +432,9 @@ int defaultReputation(int a, int b) {
     if (a == b) return REP_MAX;
     const auto& r = table().relations;
     const auto it = r.find(keyOf(a, b));
-    return it == r.end() ? 0 : it->second;
+    if (it != r.end()) return it->second;
+    const int sa = factionSlot(a), sb = factionSlot(b);
+    return sa >= 0 && sb >= 0 ? loopReputation(sa, sb) : 0;
 }
 
 int reputation(World& w, int a, int b) {
@@ -418,7 +503,7 @@ bool factionCanClaim(int faction) { return faction >= 0 && faction != FACTION_FA
 
 std::map<int, int> playerReputation(World& w) {
     std::map<int, int> out;
-    for (const FactionDef& f : table().list) {
+    for (const FactionDef& f : active()) {
         if (f.id != FACTION_PLAYER && f.id != FACTION_FACTIONLESS && !isMobFaction(f.id)) out[f.id] = reputation(w, FACTION_PLAYER, f.id);
     }
     return out;
@@ -427,7 +512,7 @@ std::map<int, int> playerReputation(World& w) {
 const std::vector<FactionDef>& reputationFactions() {
     static std::vector<FactionDef> out;
     out.clear();
-    for (const FactionDef& f : table().list) {
+    for (const FactionDef& f : active()) {
         if (!isMobFaction(f.id)) out.push_back(f);
     }
     return out;
@@ -435,7 +520,7 @@ const std::vector<FactionDef>& reputationFactions() {
 
 int reputationFactionCount() {
     int n = 0;
-    for (const FactionDef& f : table().list) {
+    for (const FactionDef& f : active()) {
         if (!isMobFaction(f.id)) ++n;
     }
     return n;

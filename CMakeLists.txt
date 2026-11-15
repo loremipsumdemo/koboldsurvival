@@ -92,6 +92,7 @@ set(SIM_SOURCES
     src/npc_roles.cpp
     src/patrons.cpp
     src/world_setup.cpp
+    src/faction_land.cpp
     src/unit_spawn.cpp
     src/orders.cpp
     src/formation.cpp
@@ -108,6 +109,8 @@ set(SIM_SOURCES
     src/terrain.cpp
     src/terrain_mesh.cpp
     src/pathfind.cpp
+    src/nav_regions.cpp
+    src/tree_gen.cpp
     src/world_format.cpp
     src/look.cpp
     src/surface_tiles.cpp
@@ -166,6 +169,7 @@ add_executable(koboldsurvival
     src/app_faction_rules.cpp
     src/app_faction_info.cpp
     src/app_patron.cpp
+    src/app_faction_pick.cpp
     src/app_prop_adjust.cpp
     src/app_crafting.cpp
     src/app_behavior_groups.cpp

@@ -12,6 +12,15 @@ constexpr int FACTION_PLAYER = 0;
 // go together (mobKindsFriendly), are allies and come to one another's aid.
 constexpr int FACTION_FACTIONLESS = 6;
 
+// The 16 colored factions (data/factions.txt, ids PALETTE_FIRST_ID and up, one per slot) sit on a loop in the order they are listed: their
+// reputation with one another is set by how far apart they are round it (neighbors are the closest allies, the far side the bitterest
+// enemies). You are one of them, the slot you pick in character creation: your faction (id 0) takes that slot's name, color and place on
+// the loop, and the other 15 run themselves. No two factions have the same color.
+constexpr int PALETTE_COUNT = 16;
+constexpr int PALETTE_FIRST_ID = 100;
+constexpr int PALETTE_DEFAULT_SLOT = 12;   // the slot of a save from before the colors, and of a level built with none picked
+inline int paletteFactionId(int slot) { return PALETTE_FIRST_ID + slot; }
+
 constexpr int REP_MIN = -100;
 constexpr int REP_MAX = 100;
 constexpr int REP_HOSTILE = -25;
@@ -97,6 +106,18 @@ struct FactionDef {
 
 bool loadFactions(const std::string& text, std::string& err);
 
+// Which slot of the loop (0 to PALETTE_COUNT - 1) is yours. Setting it to one the table does not have is refused (false) and leaves it as
+// it was. Yours is the slot out of the 16 that the other 15 do not hold, so two factions never share a color.
+int playerSlot();
+bool setPlayerSlot(int slot);
+// The slot a faction holds on the loop: its own for a colored faction, yours for the Player Faction, -1 for any other
+int factionSlot(int faction);
+// The colored faction the table lists for a slot, yours included (its name key and color are what you take), or null
+const FactionDef* paletteFaction(int slot);
+// How two slots stand on the loop, -100 to 100: +100 for neighbors down to -100 on the far side
+int loopReputation(int slotA, int slotB);
+
+// The factions in play: yours (id 0, as the slot you picked), the other colored ones, the Factionless and the mobs
 const std::vector<FactionDef>& factions();
 const FactionDef* findFaction(int id);
 std::string factionName(int id);

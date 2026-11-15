@@ -5,7 +5,7 @@
 #       units) and must be listed.
 #   name key: the language key of its name (FACTION_... in data/language). A key the language files lack is
 #       shown as written.
-#   color: #rrggbb, for its dot in the Reputation tab
+#   color: #rrggbb, for its dot in the Reputation tab (the colored factions' colors must all differ)
 #   units: how many of its units a new level places, together in one camp. 0 for the Player Faction.
 #   Then, optional words of key=value, in any order. Those left out take the value in [brackets]:
 #     control      player: its units are yours to order. npc: they run themselves. [player for id 0, npc for the rest]
@@ -42,22 +42,32 @@
 #   Faction's change in play.
 
 faction	0	FACTION_PLAYER	#c77dff	0	control=player
-faction	2	FACTION_RED	#ff4d4d	30	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep
-faction	3	FACTION_GREEN	#5ccf5c	10	factionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep
-faction	4	FACTION_BLUE	#4d7dff	10	trespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut
-faction	5	FACTION_YELLOW	#f5d43a	10	take=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open
+# The 16 colored factions, ids 100 to 115, one for each slot of the loop. They are listed in loop order: how two of them stand is set by
+# how far apart they are round it (neighbors +100, the far side -100), so no relation lines are needed. You are one of them: the color you
+# pick in character creation is your faction (id 0, with its name and color), and the other 15 run themselves. No two share a color.
+# Their units are placed in one camp each, spread over the land (world_setup.cpp).
+faction	100	FACTION_EMBER	#FF4000	8	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep
+faction	101	FACTION_SOLAR	#EFDF00	8	take=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open
+faction	102	FACTION_AMBER	#AF8010	8	trespass=warn take=food markup=20 fortified=20 military=20 build=balanced gates=sleep
+faction	103	FACTION_DAWN	#FFCFAF	8	factionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep
+faction	104	FACTION_UMBER	#704020	8	trespass=attack downed=cage take=weapons trade=allies markup=30 aid=own fortified=35 military=25 build=base_first gates=shut
+faction	105	FACTION_THICKET	#305000	8	trespass=warn aid=own fortified=40 military=10 build=perimeter_first gates=shut
+faction	106	FACTION_VERDANT	#00FF40	8	factionless=friendly downed=carry_out recruit=both aid=anyone fortified=20 military=15 build=balanced gates=open
+faction	107	FACTION_JADE	#509F70	8	downed=carry_out markup=10 fortified=25 military=20 build=perimeter_first gates=sleep
+faction	108	FACTION_TIDAL	#007080	8	trespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut
+faction	109	FACTION_GLACIER	#00EFEF	8	trespass=warn trade=allies markup=15 aid=own fortified=30 military=20 build=perimeter_first gates=shut
+faction	110	FACTION_ZEPHYR	#40AFFF	8	recruit=factionless aid=anyone fortified=10 military=40 build=balanced gates=open
+faction	111	FACTION_COBALT	#1000EF	8	trespass=attack downed=cage take=weapons markup=20 trade=allies aid=own fortified=25 military=40 build=base_first gates=sleep
+faction	112	FACTION_MYSTIC	#9F70FF	8	trade=not_factionless markup=25 recruit=rescued fortified=20 military=30 build=balanced gates=sleep
+faction	113	FACTION_VEIL	#EFCFFF	8	factionless=friendly downed=carry_out aid=anyone fortified=15 military=10 build=balanced gates=open
+faction	114	FACTION_GARNET	#8F0050	8	factionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own fortified=10 military=60 build=base_first gates=sleep
+faction	115	FACTION_BLOSSOM	#FF508F	8	factionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone fortified=15 military=20 build=balanced gates=open
 # The Factionless: units disbanded from your squad, the Wandering Trader, and units spawned with no faction. No camp,
 # no Altar and no reputation: how each faction takes to them is its factionless rule. Their own rules are what each of
 # them does alone: they are not one another's allies.
 faction	6	FACTION_FACTIONLESS	#9a9a9a	0	take=food aid=own
 
-relation	0	2	-100
-relation	2	3	-100
-relation	2	4	-100
-relation	2	5	-100
-relation	4	3	75
-relation	4	5	-40
-relation	3	5	0
+# No relation lines are listed for the colored factions: their reputations come from the loop. A line here for a pair overrides it.
 
 # Mob factions: one for each kind of mob, named by its faction column in data/mobs.txt. They have no camps (units 0);
 # their mobs are placed out in the world. They have no reputation and take no relation lines: each kind's temperament

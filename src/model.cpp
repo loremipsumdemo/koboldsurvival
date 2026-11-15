@@ -312,6 +312,38 @@ bool loadGLBModel(const char* path, Model& m) {
     return true;
 }
 
+bool makeModelFromMesh(const std::vector<float>& verts, const std::vector<unsigned>& indices, GLuint texture, Model& m) {
+    if (verts.size() < 15 || indices.size() < 3) return false;
+    const float inf = std::numeric_limits<float>::infinity();
+    float minX = inf, minY = inf, minZ = inf, maxX = -inf, maxY = -inf, maxZ = -inf;
+    m.positions.clear();
+    for (size_t i = 0; i + 4 < verts.size(); i += 5) {
+        minX = std::min(minX, verts[i]); maxX = std::max(maxX, verts[i]);
+        minY = std::min(minY, verts[i + 1]); maxY = std::max(maxY, verts[i + 1]);
+        minZ = std::min(minZ, verts[i + 2]); maxZ = std::max(maxZ, verts[i + 2]);
+        m.positions.insert(m.positions.end(), { verts[i], verts[i + 1], verts[i + 2] });
+    }
+    m.minX = minX; m.minY = minY; m.minZ = minZ;
+    m.maxX = maxX; m.maxY = maxY; m.maxZ = maxZ;
+    m.triangles.assign(indices.begin(), indices.end());
+    m.draws.clear();
+    m.draws.push_back({ texture, (GLsizei)indices.size(), 0 });
+    glGenVertexArrays(1, &m.vao);
+    glGenBuffers(1, &m.vbo);
+    glGenBuffers(1, &m.ebo);
+    glBindVertexArray(m.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+    return true;
+}
+
 void destroyModel(Model& m) {
     for (Model& lod : m.lods) {   // their textures are this model's; the buffers are their own
         if (lod.ebo) glDeleteBuffers(1, &lod.ebo);

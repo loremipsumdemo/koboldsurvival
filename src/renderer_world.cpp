@@ -1,4 +1,5 @@
 #include "motivation.h"
+#include "factions.h"
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include <unordered_set>
@@ -746,6 +747,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             queueModel(*made, px, py, pz, info.size, yaw);
         } else if (modelled && visual) {
             queueModelMatrix(propModel(kind), propVisualMatrix(propModel(kind), px, py, pz, info.size, yaw, *visual), propTint_, 1.0f);
+        } else if (modelled && kind == PropKind::Tree && !planBp && queueTree(e, px, py, pz, info.size, yaw, propTint_)) {
+            // A tree is its own: genes from where it stands, the foliage of its season (tree_gen.h)
+        } else if (modelled && kind == PropKind::Altar && !planBp && altarFrame_.vao && altarBanner_.vao) {
+            // A built altar's banners are its faction's color
+            const Owner* owner = w.get<Owner>(e);
+            const FactionColor fc = factionColor(owner ? owner->faction : FACTION_PLAYER);
+            queueAltar(px, py, pz, info.size, yaw, RGBA{ fc.r, fc.g, fc.b, 1.0f });
         } else if (modelled) {
             queuePropModel(kind, px, py, pz, info.size, yaw);
         } else {
@@ -837,6 +845,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
     drawFires(cam);
     drawBuildPreview(t);
+    drawNavmesh(t, cam);
     drawClouds(cam);
     grabScene();
     glUseProgram(glyphProgram_);
@@ -1062,6 +1071,42 @@ void Renderer::drawBuildPreview(const Terrain& t) {
     if (b.v.empty()) return;
 
     // Blended (it was drawn with blending off, so every alpha above was ignored and the marks were solid)
+    const GLboolean wasBlending = glIsEnabled(GL_BLEND);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    drawColorTris(b, viewProj_);
+    glDepthMask(GL_TRUE);
+    if (!wasBlending) glDisable(GL_BLEND);
+}
+
+// The Developer panel's Show Navmesh: each tile near the camera's focus is tinted by the piece of ground it is in (tiles that join up share a
+// color, so a walled-off yard shows as its own), and a tile a building has closed is red
+void Renderer::drawNavmesh(const Terrain& t, const Camera& cam) {
+    if (!showNavmesh_) return;
+    constexpr int REACH = 36;
+    const int cx = (int)std::floor(cam.focusX), cz = (int)std::floor(cam.focusZ);
+    Batch b;
+    for (int z = cz - REACH; z <= cz + REACH; ++z) {
+        for (int x = cx - REACH; x <= cx + REACH; ++x) {
+            if (!t.inBounds(x, z)) continue;
+            const int piece = t.navPieceAt(x, z);
+            RGBA tone;
+            if (piece > 0) {
+                const unsigned h = (unsigned)piece * 2654435761u;
+                tone = RGBA{ 0.25f + 0.6f * (float)((h >> 8) & 255) / 255.0f, 0.25f + 0.6f * (float)((h >> 16) & 255) / 255.0f,
+                             0.25f + 0.6f * (float)((h >> 24) & 255) / 255.0f, 0.32f };
+            } else if (t.blockedByBuilding(x, z)) {
+                tone = RGBA{ 1.0f, 0.15f, 0.15f, 0.5f };
+            } else {
+                continue;
+            }
+            const float a = 0.05f;
+            auto at = [&](float px, float pz) { return V3{ px, t.heightAt(px, pz) + 0.06f, pz }; };
+            b.quad(at(x + a, z + a), at(x + 1 - a, z + a), at(x + 1 - a, z + 1 - a), at(x + a, z + 1 - a), tone);
+        }
+    }
+    if (b.v.empty()) return;
     const GLboolean wasBlending = glIsEnabled(GL_BLEND);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

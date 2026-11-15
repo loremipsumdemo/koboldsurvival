@@ -64,7 +64,10 @@ public:
     bool isFree(float x, float z) const;
     // Tiles closed by buildings (walls), on top of the ground's own walkability. Opening a map clears them.
     void setBlocked(int x, int y, bool blocked);
-    void clearBlocked() { blocked_.clear(); sightBlocks_.clear(); }
+    // Clears every closed tile, for them to be set again; settleBlocked afterwards (the navigation regions then only redo the clusters whose
+    // tiles ended up different)
+    void clearBlocked();
+    void settleBlocked() { navSettleBlocked(); }
     // A building's tile that blocks sight up to this height above the ground (0: none); sightClear looks at them as it looks at the ground
     void setSightBlock(int x, int y, float top);
     bool blockedByBuilding(int x, int y) const;
@@ -85,6 +88,13 @@ public:
     int areaAt(int x, int y) const { return walkable(x, y) ? areaOf(x, y) : 0; }
     // How many tiles each piece has, by its number. Empty on a map too big to work them out.
     std::vector<int> areaSizes() const;
+    // Navigation, kept up to date a cluster at a time as tiles close and open (nav_regions.cpp): whether two tiles are open ground that joins up
+    // now, the buildings' closed tiles counted (the areas above are of the bare ground, worked out once). prepareNav makes the regions the first
+    // time (a pass over the map) and brings them up to date; everything that asks does so itself. A map too big for it answers as the areas do.
+    void prepareNav() const;
+    bool connected(int ax, int az, int bx, int bz) const;
+    // The piece of ground a tile is in, as connected sees it (numbered from 1), or 0 for a closed tile
+    int navPieceAt(int x, int z) const;
     Vec2 snap(Vec2 p) const;
 
     std::vector<Vec2> findPath(Vec2 start, Vec2 goal) const;
@@ -102,6 +112,11 @@ private:
     void applyEdits(int cx, int cz, std::vector<float>& heights) const;
     void refreshCorner(int x, int z);
     int areaOf(int x, int y) const;
+    struct Nav;
+    mutable std::shared_ptr<Nav> nav_;
+    void navTileChanged(int x, int z);
+    void navStashBlocked();
+    void navSettleBlocked();
 
     int size_ = 0;
     int cps_ = 0;

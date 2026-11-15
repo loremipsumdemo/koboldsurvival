@@ -51,7 +51,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         if (pw->workers <= 0 && !hopping) continue;
 
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         const PropKind kind = w.get<Prop>(e)->kind;
         const float top = propTop(kind);
         float sx = 0.0f, sy = 0.0f;
@@ -69,7 +69,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         const int need = materialsNeeded(w, e);
         if (bp->supplied <= 0 && bp->progress <= 0.0) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         const float top = propInfo(w.get<Prop>(e)->kind).foundation ? 0.6f : FLOOR_HEIGHT + 0.4f;
         if (!worldToScreen(vp, tr->x, tr->y + top, tr->z, winW, winH, sx, sy)) continue;
@@ -84,7 +84,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
         const Climbing* c = w.get<Climbing>(u);
         const Transform* tr = w.get<Transform>(u);
         if (const Prop* lp = w.get<Prop>(c->ladder); lp && propInfo(lp->kind).stairs) continue;
-        if (!withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u) || c->whole <= 0.0f) continue;
+        if (!withinOverlay(cam, tr->x, tr->y, tr->z) || cutAway(w, u) || c->whole <= 0.0f) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.3f, tr->z, winW, winH, sx, sy)) continue;
         const float frac = std::clamp(1.0f - c->left / c->whole, 0.0f, 1.0f);
@@ -96,7 +96,7 @@ void Renderer::drawPropProgress(World& w, const Camera& cam, int winW, int winH)
     for (ObjectId u : w.view<Boarding, Transform>()) {
         const Boarding* b = w.get<Boarding>(u);
         const Transform* tr = w.get<Transform>(u);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.3f, tr->z, winW, winH, sx, sy)) continue;
         const float whole = b->leaving ? AIRSHIP_LEAVE_SECONDS : AIRSHIP_BOARD_SECONDS;
@@ -135,7 +135,7 @@ void Renderer::drawEmotes(World& w, const Camera& cam, int winW, int winH, bool 
     const float nameRow = listTextHeight("Ag") + 2.0f * s;
     for (ObjectId u : w.view<Entity, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
-        if (!labelled(cam, w, u, tr) || !withinDetail(cam, tr->x, tr->y, tr->z) || cutAway(w, u)) continue;
+        if (!labelled(cam, w, u, tr) || !withinOverlay(cam, tr->x, tr->y, tr->z) || cutAway(w, u)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
         float bottom = sy - 2.0f * s;
@@ -161,7 +161,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
         const PropKind kind = w.get<Prop>(e)->kind;
         if (!propInfo(kind).claimsLand) continue;
         const Transform* tr = w.get<Transform>(e);
-        if (!withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         EmoteId emote = EmoteId::None;
         if (!altarHasUpkeep(w, e)) emote = EmoteId::NoUpkeep;
         if (propDecaying(w, e)) emote = EmoteId::Decaying;
@@ -178,7 +178,7 @@ void Renderer::drawPropEmotes(World& w, const Camera& cam, int winW, int winH) {
 
 void Renderer::drawHoverCue(World& w, const Camera& cam, int winW, int winH, ObjectId u, EmoteId emote, bool namesShown) {
     const Transform* tr = w.get<Transform>(u);
-    if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) return;
+    if (!tr || !withinOverlay(cam, tr->x, tr->y, tr->z)) return;
     const float s = uiScaleFor(winH);
     const float size = 28.0f * s;
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
@@ -218,7 +218,7 @@ void Renderer::drawUnitNames(World& w, const Camera& cam, int winW, int winH, bo
         const Transform* tr = w.get<Transform>(u);
         const Name* nm = w.get<Name>(u);
         if (!(w.has<Commandable>(u) ? players : others)) continue;
-        if (!labelled(cam, w, u, tr) || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!labelled(cam, w, u, tr) || !withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, tr->x, tr->y + unitTop(w, u) + 0.1f, tr->z, winW, winH, sx, sy)) continue;
 
@@ -237,7 +237,7 @@ void Renderer::drawFloatingNumbers(const std::vector<FloatingNumber>& floats, co
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     for (const FloatingNumber& f : floats) {
-        if (!withinDetail(cam, f.x, f.y, f.z)) continue;
+        if (!withinOverlay(cam, f.x, f.y, f.z)) continue;
         float sx = 0.0f, sy = 0.0f;
         if (!worldToScreen(vp, f.x, f.y + GLYPH_H, f.z, winW, winH, sx, sy)) continue;
 
@@ -261,7 +261,7 @@ void Renderer::drawPuffs(const std::vector<Puff>& puffs, const Camera& cam, int 
     const float s = uiScaleFor(winH);
     const Mat4 vp = cam.viewProj((float)winW / (float)winH);
     for (const Puff& p : puffs) {
-        if (!withinDetail(cam, p.x, p.y, p.z)) continue;
+        if (!withinOverlay(cam, p.x, p.y, p.z)) continue;
         const float t = std::clamp(p.age / PUFF_LIFE, 0.0f, 1.0f);
         const float alpha = (t < 0.25f ? t / 0.25f : (1.0f - t) / 0.75f) * 0.8f;
         for (int k = 0; k < 9; ++k) {
@@ -282,7 +282,7 @@ void Renderer::drawTradeLabels(const std::vector<TradeLabel>& labels, World& w, 
     std::map<ObjectId, int> stacked;
     for (const TradeLabel& l : labels) {
         const Transform* tr = w.get<Transform>(l.unit);
-        if (!tr || !withinDetail(cam, tr->x, tr->y, tr->z)) continue;
+        if (!tr || !withinOverlay(cam, tr->x, tr->y, tr->z)) continue;
         float sx = 0.0f, sy = 0.0f;
         // Over a prop (a store, a blueprint), above its model rather than at a unit's head height
         float lift = GLYPH_H * 2.2f;

@@ -22,11 +22,13 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 }
 
 const Terrain::FarField* Terrain::farField() const {
-    static constexpr int FAR_FIELD_RES = 513;
     if (!streamed_ || farDone_) return far_.get();
+    // About a sample every 4 tiles, as a 2048 map has had, for as far as the limit lets it grow (the mesh is res squared vertices): 513 up to
+    // 2048 tiles across, then 1025 (a bigger map is coarser past that, 8 tiles at 8192 and 16 at 16384, instead of 32 at 16384)
+    const int FAR_FIELD_RES = size_ <= 2048 ? 513 : 1025;
     if (!farJob_.valid()) {
         const std::shared_ptr<const ChunkSource> src = source_;
-        farJob_ = std::async(std::launch::async, [src]() -> std::shared_ptr<FarField> {
+        farJob_ = std::async(std::launch::async, [src, FAR_FIELD_RES]() -> std::shared_ptr<FarField> {
             auto f = std::make_shared<FarField>();
             const std::atomic<bool> never{ false };
             if (!src->farField(FAR_FIELD_RES, f->heights, f->rgb, never)) return nullptr;
@@ -48,6 +50,7 @@ void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     farDone_ = false;
     if (farJob_.valid()) farJob_.wait();
     farJob_ = {};
+    nav_.reset();
     blocked_.clear();
     sightBlocks_.clear();
     decks_.clear();
@@ -312,6 +315,13 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
     const long long key = (long long)y * 1000003LL + (long long)x;
     if (blocked) blocked_.insert(key);
     else blocked_.erase(key);
+    navTileChanged(x, y);
+}
+
+void Terrain::clearBlocked() {
+    navStashBlocked();
+    blocked_.clear();
+    sightBlocks_.clear();
 }
 
 void Terrain::setSightBlock(int x, int y, float top) {

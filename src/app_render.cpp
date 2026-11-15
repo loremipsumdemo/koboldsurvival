@@ -233,9 +233,10 @@ void App::drawPartyScreen() {
     const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
     renderer.beginUi(winW, winH);
     drawMenuBackdrop();
-    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText()), party, partyUi,
+    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText(), factionButtonText()), party, partyUi,
                             partyPanels(winW, winH), mouseX, mouseY);
     drawPatrons();
+    drawFactionPick();
     renderer.endUi();
 }
 

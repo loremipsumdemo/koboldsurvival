@@ -45,6 +45,7 @@ enum class Action {
     PartyDropBack,
     PartyRandomAll,
     PartyPatron,
+    PartyFaction,
     PartyConfirm,
     PartyMessage
 };

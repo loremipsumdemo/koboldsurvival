@@ -662,6 +662,14 @@ struct App : AppSession {
     bool patronOpen = false, patronPicking = false;
     int patronFaction = 0;   // the Altar's faction whose patron is lit
     int patronPick = -1;     // the one you pick for a new game (an index into patrons()): -1, a random one
+    // Character creation's faction color (app_faction_pick.cpp): the window of the 16, and the slot of the loop you pick (factions.h), -1 a random one
+    bool factionPickOpen = false;
+    int factionPick = -1;
+    std::string factionButtonText();
+    void openFactionPick();
+    int resolveFactionPick();
+    bool pressOnFactionPick();
+    void drawFactionPick();
     struct ChatLine {
         int patron = -1;
         bool right = false;
@@ -791,6 +799,7 @@ struct App : AppSession {
     SpawnPicker devSpawn;   // the Build tab's Developer panel (its Theme tab edits the world's theme, temporarily)
     // The Developer panel's theme: what the world has saved, and what is shown now. Changes are temporary until made permanent.
     bool devThemeLoaded = false;
+    bool devShowNavmesh = false;   // the Developer panel: draw the navigation regions over the ground near the camera
     bool devThemeConfirm = false;   // Make permanent was pressed once: a second press changes the world's theme
     MapTheme devSavedTheme;
     int devSavedPreset = 0;

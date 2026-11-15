@@ -661,6 +661,10 @@ void Renderer::shutdown() {
     if (modelInstProgram_) glDeleteProgram(modelInstProgram_);
     instVbo_ = modelInstProgram_ = 0;
     for (Model& m : propModels_) destroyModel(m);
+    destroyModel(altarFrame_);
+    for (auto& entry : treeModels_) destroyModel(entry.second);
+    if (treePalette_) glDeleteTextures(1, &treePalette_);
+    destroyModel(altarBanner_);
     for (auto& shapes : wallShapes_) {
         for (Model& m : shapes) destroyModel(m);
     }

@@ -93,7 +93,10 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
 std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
     std::vector<PropArrival> out;
     for (ObjectId u : w.view<PropOrder, Transform>()) {
-        const ObjectId prop = w.get<PropOrder>(u)->prop;
+        // An earlier unit's order this pass (a prop broken, a unit freed or killed) may have taken this one's order off already
+        const PropOrder* order = w.get<PropOrder>(u);
+        if (!order) continue;
+        const ObjectId prop = order->prop;
         const Transform* pt = w.get<Transform>(prop);
         if (!pt || !w.has<Prop>(prop)) {
             w.remove<PropOrder>(u);

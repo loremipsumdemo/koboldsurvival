@@ -173,6 +173,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
         if (!d.squadNames[k].empty()) w.line("squadname", k, d.squadNames[k]);
     }
     w.line("squadat", d.currentSquad);
+    w.line("playerslot", d.playerSlot);
     for (const Ghost& g : d.ghosts) w.line("ghost", g.appeased, g.hours, g.sprite, g.name);
     // Behavior groups: a bgroup line, then its tasks. A Group task's ref goes where a haul's prop does.
     for (const SaveGroup& g : d.groups) {
@@ -508,6 +509,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
             return l.rest(l.d.squadNames[k]);
         } },
         { "squadat", [](Line& l) { return l.read(l.d.currentSquad); } },
+        { "playerslot", [](Line& l) { return l.read(l.d.playerSlot); } },
         { "ghost", [](Line& l) {
             Ghost g;
             if (!l.read(g.appeased, g.hours, g.sprite)) return false;

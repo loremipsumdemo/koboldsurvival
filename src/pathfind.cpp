@@ -177,7 +177,8 @@ std::vector<Vec2> Terrain::findPath(Vec2 start, Vec2 goal) const {
     const int sx = (int)std::floor(start.x), sz = (int)std::floor(start.z);
     const int gx = (int)std::floor(goal.x), gz = (int)std::floor(goal.z);
     if (!walkable(sx, sz)) return {};
-    const int maxTiles = areaOf(sx, sz) == areaOf(gx, gz) ? MAX_SEARCH_TILES : UNREACHABLE_SEARCH_TILES;
+    // A goal the buildings have shut off from here is not searched for all over the map: it ends at the nearest ground that can be reached
+    const int maxTiles = connected(sx, sz, gx, gz) ? MAX_SEARCH_TILES : UNREACHABLE_SEARCH_TILES;
     std::vector<std::pair<int, int>> tiles = tilePath(*this, sx, sz, gx, gz, maxTiles);
     const bool reached = !tiles.empty() && tiles.back().first == gx && tiles.back().second == gz;
 

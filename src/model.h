@@ -25,6 +25,9 @@ struct Model {
 };
 
 bool loadGLBModel(const char* path, Model& m);
+// A model made from a mesh in memory: five floats a vertex (position, then texture coordinates), drawn with a texture that the caller owns (it is
+// not freed with the model)
+bool makeModelFromMesh(const std::vector<float>& verts, const std::vector<unsigned>& indices, GLuint texture, Model& m);
 void destroyModel(Model& m);
 
 struct ModelPlacement {

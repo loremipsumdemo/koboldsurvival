@@ -166,6 +166,7 @@ struct SaveData {
     std::vector<std::pair<int, std::string>> researched;   // a faction and the key of a recipe it has researched
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
+    int playerSlot = -1;   // the color you are, a slot of the loop (factions.h); -1 in a file from before the colors
     std::vector<Ghost> ghosts;
     std::vector<SaveGroup> groups;   // empty in a file from before behavior groups: the defaults are used
     std::vector<std::pair<int, int>> patrons;   // each faction's patron (patrons.h)

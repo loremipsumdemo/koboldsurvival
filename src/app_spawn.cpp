@@ -56,8 +56,9 @@ DeveloperLayout layoutDeveloper(int W, int H, EditorTab tab) {
     DeveloperLayout L;
     const float w = 300.0f * s, h = std::min((float)H - 2.0f * m - 60.0f * s, 620.0f * s);
     L.panel = Rect{ m, std::floor((H - h) * 0.5f), w, h };
-    L.title = Rect{ L.panel.x + pad, L.panel.y + pad, w - 2.0f * pad - line, line };
     L.close = Rect{ L.panel.x + w - pad - line, L.panel.y + pad, line, line };
+    L.navToggle = Rect{ L.close.x - gap - 150.0f * s, L.panel.y + pad, 150.0f * s, line };
+    L.title = Rect{ L.panel.x + pad, L.panel.y + pad, L.navToggle.x - gap - (L.panel.x + pad), line };
     // Two rows of tabs: Spawn and Theme, then Kill, Clean and Destroy
     const float halfW = (w - 2.0f * pad - gap) * 0.5f, thirdW = (w - 2.0f * pad - 2.0f * gap) / 3.0f;
     L.spawnTab = Rect{ L.panel.x + pad, L.title.y + line + gap, halfW, line };
@@ -463,6 +464,11 @@ bool App::pressOnDeveloper() {
             closeDeveloper();
             return true;
         }
+        if (L.navToggle.contains(x, y)) {
+            devShowNavmesh = !devShowNavmesh;
+            playSfx(Sfx::UiToggle);
+            return true;
+        }
         if (L.spawnTab.contains(x, y) || L.themeTab.contains(x, y) || L.killTab.contains(x, y) || L.cleanTab.contains(x, y) ||
             L.destroyTab.contains(x, y)) {
             const bool toTheme = L.themeTab.contains(x, y), toKill = L.killTab.contains(x, y), toClean = L.cleanTab.contains(x, y),
@@ -564,6 +570,8 @@ void App::drawDeveloper() {
     renderer.drawListText(renderer.fitListText(lang("UILABEL_BUILD_DEVELOPER"), L.title.w), L.title.x,
                           L.title.y + (L.title.h - textH) * 0.5f, gold);
     renderer.drawCloseButton(L.close);
+    renderer.drawButton(L.navToggle, (devShowNavmesh ? "> " : "") + lang("UILABEL_DEV_SHOW_NAVMESH"), true, L.navToggle.contains(mouseX, mouseY));
+    if (L.navToggle.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_DEV_SHOW_NAVMESH_TIP"), L.navToggle);
     renderer.drawButton(L.spawnTab, (themeTab || killTab || cleanTab || destroyTab ? "" : "> ") + lang("UILABEL_DEV_TAB_SPAWN"), true, L.spawnTab.contains(mouseX, mouseY));
     renderer.drawButton(L.themeTab, (themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_THEME"), true, L.themeTab.contains(mouseX, mouseY));
     renderer.drawButton(L.killTab, (killTab ? "> " : "") + lang("UILABEL_DEV_TAB_KILL"), true, L.killTab.contains(mouseX, mouseY));

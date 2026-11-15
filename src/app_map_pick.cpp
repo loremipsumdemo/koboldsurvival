@@ -249,7 +249,6 @@ void App::drawMapPickScreen() {
                 renderer.drawRect(Rect{ sx - side * 0.5f, sy - side * 0.5f, side, side }, RGBA{ fc.r, fc.g, fc.b, c.roomy ? 0.35f : 0.18f });
                 dot(c.x, c.z, std::max(4.0f, 6.0f * s), RGBA{ fc.r, fc.g, fc.b, 1.0f });
             }
-            dot(mapPick.plan.spawnX, mapPick.plan.spawnZ, 9.0f * s, accent);
         }
     }
     const std::string note = pendingLevel.empty() ? (mapPick.planReady ? lang("UILABEL_MAP_PICK_CAMPS_NOTE") : lang("UILABEL_MAP_PICK_RANDOM_NOTE"))

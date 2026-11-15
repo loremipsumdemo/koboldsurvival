@@ -58,7 +58,11 @@ void App::updateRightHold() {
         }
         std::vector<ObjectId> steered, routed;
         for (ObjectId u : selectedUnits(world)) {
-            if (airshipOf(world, u) != NO_OBJECT) continue;
+            // Aboard an Airship, the hold flies it after the pointer, as it walks the rest
+            if (const ObjectId ship = airshipOf(world, u); ship != NO_OBJECT) {
+                flyAirship(world, ship, Vec2{ holdX, holdZ });
+                continue;
+            }
             if (clickStorey == 0 && !world.has<Upstairs>(u) && !world.has<Route>(u) && !world.has<Climbing>(u)) steered.push_back(u);
             else routed.push_back(u);
         }
@@ -421,6 +425,8 @@ void App::update() {
     if (screen == Screen::Playing) followSelectionSquad();
     pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
     updateRightHold();
+    renderer.setShowNavmesh(devShowNavmesh);
+    renderer.setTreeClock(gs.clockSeconds);
     moveMarkTime = std::max(0.0f, moveMarkTime - dt);
 
     showEvents();

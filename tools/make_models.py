@@ -70,6 +70,15 @@ SHAPES = {
     'cylinder': ([(0, 0), (0.5, 0), (0.5, 1), (0, 1)], 8, 0),
     'cone': ([(0, 0), (0.5, 0), (0, 1)], 8, 0),
     'ball': ([(0, 0), (0.35, 0.15), (0.5, 0.5), (0.35, 0.85), (0, 1)], 8, 0),
+    # The Altar's: tapering square posts (top width over bottom width: .77 and .65), an eight-sided pedestal that widens upward, and the
+    # bowl's two shells, which have no top so that it is open
+    # The airship's balloon: a capsule standing on end (it is turned onto its side where it is used), eight-sided
+    'blimp': ([(0, 0), (0.26, 0.015), (0.4, 0.06), (0.48, 0.14), (0.5, 0.24), (0.5, 0.76), (0.48, 0.86), (0.4, 0.94), (0.26, 0.985), (0, 1)], 8, 22.5),
+    'taper_base': ([(0, 0), (SQUARE, 0), (SQUARE * 0.77, 1), (0, 1)], 4, 45),
+    'taper_post': ([(0, 0), (SQUARE, 0), (SQUARE * 0.65, 1), (0, 1)], 4, 45),
+    'pedestal': ([(0, 0), (0.5, 0), (0.675, 1), (0, 1)], 8, 22.5),
+    'bowl_outer': ([(0, 0), (0.151, 0), (0.5, 1)], 8, 22.5),
+    'bowl_inner': ([(0, 0), (0.297, 0), (0.5, 1)], 8, 22.5),
 }
 
 
@@ -189,15 +198,31 @@ def mushroom():
     return mushroom_parts(-0.04, 0, 0.6, 0.42) + mushroom_parts(0.2, 0.15, 0.34, 0.2) + mushroom_parts(0.17, -0.16, 0.4, 0.22, (146, 68, 168))
 
 
+def bone(a, b, shaft, color):
+    """One chunky bone from a to b: a shaft with a pair of knobs at each end, side by side as on a real one."""
+    dx, dy, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+    length = math.sqrt(dx * dx + dy * dy + dz * dz)
+    px, pz = -dz / (math.hypot(dx, dz) or 1.0), dx / (math.hypot(dx, dz) or 1.0)   # sideways, across the ground
+    parts = [rod(a, b, shaft, color, 'cylinder')]
+    for end, sign in ((a, 1), (b, -1)):
+        along = shaft * 0.5 * sign
+        for side in (-1, 1):
+            k = 0.07 * side
+            parts.append(ball(end[0] + dx / length * along + px * k, end[1] - 0.045 + (0.012 if side > 0 else 0), end[2] + dz / length * along + pz * k, 0.125, 0.11, 0.125, color))
+    return parts
+
+
 def bones():
-    parts = [ball(-0.48, 0, 0, 0.24, 0.2, 0.22, BONE), rod((-0.34, 0.03, 0), (0.28, 0.03, 0), 0.045, BONE, 'cylinder'),
-             rod((0.3, 0.03, 0.05), (0.6, 0.02, 0.2), 0.04, BONE, 'cylinder'), rod((0.3, 0.03, -0.05), (0.6, 0.02, -0.2), 0.04, BONE, 'cylinder'),
-             rod((-0.28, 0.03, 0.06), (-0.05, 0.02, 0.3), 0.035, BONE, 'cylinder'), rod((-0.28, 0.03, -0.06), (-0.05, 0.02, -0.3), 0.035, BONE, 'cylinder')]
-    for i in range(4):
-        x = -0.22 + i * 0.1
-        for s in (-1, 1):
-            parts.append(rod((x, 0.04, 0), (x, 0.17, s * 0.13), 0.022, BONE))
-            parts.append(rod((x, 0.17, s * 0.13), (x, 0.01, s * 0.2), 0.022, BONE))
+    """A heap of chunky, knobbed bones piled up to about a third of a tile."""
+    pale, tan = BONE, (212, 192, 158)
+    heap = [((-0.55, 0.08, 0.10), (0.50, 0.10, -0.05), pale), ((-0.50, 0.07, -0.25), (0.45, 0.09, 0.30), tan),
+            ((-0.30, 0.10, 0.35), (0.30, 0.12, -0.30), pale), ((-0.45, 0.13, 0.05), (0.20, 0.30, -0.20), tan),
+            ((0.40, 0.13, 0.30), (-0.15, 0.28, -0.10), pale), ((-0.35, 0.21, -0.20), (0.45, 0.23, 0.15), tan),
+            ((0.00, 0.21, 0.40), (0.05, 0.25, -0.40), pale), ((-0.40, 0.29, 0.15), (0.35, 0.35, -0.05), pale),
+            ((0.30, 0.31, -0.30), (-0.25, 0.33, 0.28), tan), ((0.10, 0.37, 0.15), (-0.30, 0.39, -0.10), pale)]
+    parts = []
+    for i, (a, b, color) in enumerate(heap):
+        parts += bone(a, b, 0.075 + 0.004 * (i % 3), color)
     return parts
 
 
@@ -212,26 +237,33 @@ def stall():
 
 
 def locked_chest():
-    """A strongbox: planked body on a dark plinth, a domed lid, iron straps and corner plates, and a brass padlock on a hasp.
-    Its front, where the lock is, faces +z."""
-    parts = [box(0, 0, 0, 0.94, 0.06, 0.6, DARK_WOOD),                                   # plinth
-             box(0, 0.06, 0, 0.9, 0.3, 0.56, WOOD)]                                       # body
-    for y in (0.15, 0.24):                                                                # plank seams, front and back
-        parts += [box(0, y, 0.295, 0.9, 0.012, 0.02, DARK_WOOD), box(0, y, -0.295, 0.9, 0.012, 0.02, DARK_WOOD)]
-    # The lid is a half cylinder lying along x, resting on the body. It runs a little past the body's ends (0.48 against 0.45), so its end
-    # caps are not flush with the body's sides. The straps and corner plates stop just under the body's top, and each ring over the lid
-    # is a little wider than the strap beneath it, so no cap, side or top shares a plane.
-    parts.append(cyl(0.49, 0.36, 0, 0.56, 0.98, 0.56, DARK_WOOD, 0, 90))
+    """A strongbox: a reddish wood body with a domed lid, all banded in gold, gold corner posts with pyramid feet, and a padlock hanging
+    from a hasp. Its front, where the lock is, faces +z."""
+    WOOD_RED = (150, 72, 48)
+    GOLD = (232, 170, 60)
+    GOLD_DARK = (190, 130, 40)
+    GOLD_LIGHT = (250, 196, 80)
+    parts = [box(0, 0, 0, 0.96, 0.05, 0.66, GOLD_DARK),                                  # the gold foot round the base
+             box(0, 0.04, 0, 0.88, 0.31, 0.56, WOOD_RED)]                                # body, y .04 to .35
+    for y in (0.14, 0.24):                                                                # plank seams, front and back
+        parts += [box(0, y, 0.285, 0.88, 0.012, 0.02, (98, 48, 34)), box(0, y, -0.285, 0.88, 0.012, 0.02, (98, 48, 34))]
+    parts.append(box(0, 0.3, 0, 0.95, 0.07, 0.62, GOLD))                                  # the gold band round the body's top, y .30 to .37
+    # The lid is an eight-sided cylinder lying along x, half sunk in the body, a little longer than it (0.46 against 0.44) so its ends are
+    # not flush with the body's. Gold rings round it sit a hair wider than the lid, and stop short of its ends.
+    parts.append(cyl(0.46, 0.36, 0, 0.56, 0.92, 0.56, WOOD_RED, 0, 90))
     for x in (-0.3, 0.3):
-        parts.append(box(x, 0.06, 0, 0.07, 0.29, 0.585, IRON))                          # strap down the body
-        parts.append(cyl(x + 0.045, 0.36, 0, 0.6, 0.09, 0.6, IRON, 0, 90))             # and over the lid
+        parts.append(cyl(x + 0.035, 0.36, 0, 0.62, 0.07, 0.62, GOLD, 0, 90))
+    for x in (-0.4, 0.4):
+        parts.append(cyl(x + 0.03, 0.36, 0, 0.6, 0.06, 0.6, GOLD_LIGHT, 0, 90))
     for sx in (-1, 1):
         for sz in (-1, 1):
-            parts.append(box(sx * 0.435, 0.06, sz * 0.27, 0.075, 0.29, 0.075, IRON))    # corner plates
-    parts += [box(0, 0.2, 0.3, 0.15, 0.2, 0.04, IRON),                                 # hasp plate on the front
-              box(0, 0.12, 0.325, 0.11, 0.1, 0.05, BRASS),                              # padlock body
-              box(0, 0.22, 0.33, 0.05, 0.05, 0.04, BRASS),                               # its shackle
-              box(0, 0.145, 0.35, 0.02, 0.035, 0.02, DARK_STONE)]                        # keyhole
+            parts.append(box(sx * 0.43, 0.04, sz * 0.27, 0.08, 0.3, 0.08, GOLD))              # corner posts
+            parts.append(pyramid(sx * 0.43, -0.01, sz * 0.27, 0.12, 0.07, 0.12, GOLD_LIGHT, 0, 180))   # pyramid feet, point down... a hair under
+    parts += [box(0, 0.2, 0.285, 0.14, 0.2, 0.03, GOLD_DARK),                            # hasp plate on the front
+              box(0, 0.36, 0.25, 0.12, 0.13, 0.06, GOLD),                                  # the hasp's tab over the lid
+              box(0, 0.09, 0.3, 0.15, 0.17, 0.06, GOLD_LIGHT),                             # padlock body
+              box(-0.04, 0.26, 0.3, 0.025, 0.07, 0.03, GOLD), box(0.04, 0.26, 0.3, 0.025, 0.07, 0.03, GOLD), box(0, 0.32, 0.3, 0.105, 0.025, 0.03, GOLD),   # its shackle
+              box(0, 0.13, 0.36, 0.028, 0.065, 0.02, (60, 36, 20))]                        # keyhole
     return parts
 
 
@@ -482,12 +514,76 @@ def forge():
             cyl(0.6, 0, 0.2, 0.28, 0.3, 0.28, BARK), box(0.6, 0.3, 0.2, 0.2, 0.05, 0.12, IRON), box(0.6, 0.35, 0.2, 0.09, 0.07, 0.08, IRON), box(0.6, 0.42, 0.2, 0.3, 0.05, 0.1, IRON)]
 
 
+ALTAR_LIGHT = (168, 146, 144)
+ALTAR_MID = (128, 108, 110)
+ALTAR_DARK = (98, 82, 86)
+ALTAR_DEEP = (80, 66, 72)
+ALTAR_GOLD = (236, 160, 72)
+ALTAR_GOLD_DARK = (184, 114, 46)
+ALTAR_CLOTH = (190, 190, 190)   # the banner's cloth in the model the game tints: the faction's color is laid over its shading
+
+
+def spin(x, z, yaw):
+    """A point turned about the up axis the way a part's yaw turns it, so a part can be moved round the altar a quarter at a time."""
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    return (x * c + z * s, -x * s + z * c)
+
+
+def altar_banner_cloth(red):
+    """The four banners' cloth (a swallowtail on each face of the core), in the one color, so the game can give it the faction's."""
+    parts = []
+    for k in range(4):
+        yaw = 90 * k
+        for x, y, z, w, h, d, kind in ((0, 0.23, 0.3675, 0.22, 0.2, 0.025, 'box'),
+                                       (-0.055, 0.24, 0.3675, 0.11, 0.08, 0.025, 'tail'), (0.055, 0.24, 0.3675, 0.11, 0.08, 0.025, 'tail')):
+            px, pz = spin(x, z, yaw)
+            if kind == 'box':
+                parts.append(box(px, y, pz, w, h, d, red, yaw))
+            else:
+                parts.append(pyramid(px, y, pz, w, h, d, red, yaw, 180))   # tilted over: its point hangs down
+    return parts
+
+
+def altar_frame():
+    """The altar without the cloth of its banners: a stepped stone base, four posts with gold caps, the core and the bowl on its pedestal."""
+    parts = [box(0, 0, 0, 1.2, 0.07, 1.2, ALTAR_LIGHT), box(0, 0.06, 0, 0.92, 0.08, 0.92, ALTAR_MID), box(0, 0.13, 0, 0.7, 0.33, 0.7, ALTAR_DARK),
+             box(0, 0.45, 0, 0.8, 0.05, 0.8, ALTAR_LIGHT), part('pedestal', 0, 0.49, 0, 0.34, 0.23, 0.34, ALTAR_DEEP)]
+    # Four posts at the corners, each on a stepped foot and capped in gold
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * 0.44, sz * 0.44
+            parts += [part('taper_base', x, 0.06, z, 0.3, 0.11, 0.3, ALTAR_LIGHT), part('taper_post', x, 0.16, z, 0.2, 0.46, 0.2, ALTAR_DARK),
+                      box(x, 0.61, z, 0.2, 0.04, 0.2, ALTAR_GOLD), box(x, 0.64, z, 0.15, 0.04, 0.15, ALTAR_GOLD_DARK), pyramid(x, 0.67, z, 0.12, 0.09, 0.12, ALTAR_GOLD)]
+    # Four gold struts up the pedestal to the bowl
+    for k in range(4):
+        c, s = math.cos(math.radians(90 * k)), math.sin(math.radians(90 * k))
+        parts.append(rod((c * 0.19, 0.54, s * 0.19), (c * 0.255, 0.78, s * 0.255), 0.032, ALTAR_GOLD))
+    # The bowl: an outer shell, a shallower inner one a little inside it, and a gold rim of eight beams round the top (every other one a hair
+    # taller, so the corners where they cross do not share a plane)
+    parts += [part('bowl_outer', 0, 0.72, 0, 0.86, 0.30, 0.86, ALTAR_DEEP), part('bowl_inner', 0, 0.86, 0, 0.74, 0.155, 0.74, (150, 128, 140))]
+    apothem = 0.385
+    edge = 2 * 0.43 * math.sin(math.radians(22.5)) + 0.04
+    for i in range(8):
+        a = math.radians(45 * i)
+        lift = 0.012 * (i % 2)
+        parts.append(box(apothem * math.cos(a), 0.98 + lift, apothem * math.sin(a), edge, 0.06, 0.09, ALTAR_GOLD, -(45 * i + 90)))
+    # Each banner's gold board, on the core's four faces (the cloth is laid over it)
+    for k in range(4):
+        yaw = 90 * k
+        px, pz = spin(0, 0.3525, yaw)
+        parts.append(box(px, 0.16, pz, 0.3, 0.31, 0.025, ALTAR_GOLD_DARK, yaw))
+    return parts
+
+
+def altar_banner():
+    """Just the banners' cloth, for the game to draw in the owner faction's color over the altar."""
+    return altar_banner_cloth(ALTAR_CLOTH)
+
+
 def altar():
-    parts = [box(0, 0, 0, 1.2, 0.14, 0.95, DARK_STONE), box(0, 0.14, 0, 0.95, 0.12, 0.75, STONE), box(0, 0.26, 0, 0.66, 0.36, 0.5, (150, 140, 170)),
-             box(0, 0.62, 0, 0.8, 0.07, 0.6, STONE), cyl(0, 0.69, 0, 0.1, 0.1, 0.1, IRON), cyl(0, 0.79, 0, 0.42, 0.09, 0.42, IRON)]
-    parts += [rod((-0.09, 0.3, 0.255), (0, 0.52, 0.255), 0.022, (150, 225, 255)), rod((0.09, 0.3, 0.267), (0, 0.52, 0.267), 0.022, (150, 225, 255))]
-    parts += [rod((-0.5, 0.06, 0.32), (-0.2, 0.06, 0.32), 0.1, BARK, 'cylinder'), rod((-0.48, 0.06, 0.42), (-0.2, 0.06, 0.42), 0.1, BARK, 'cylinder')]
-    return parts + [cyl(0, 0.88, 0, 0.3, 0.03, 0.3, (58, 44, 40))]   # the game draws its fire
+    """The whole altar, banners in red, as the mockup has it. The game draws altar_frame.glb and altar_banner.glb (in the faction's color)
+    for an altar in the world; this one is what the building menu and previews show. The game draws its fire at the bowl's floor."""
+    return altar_frame() + altar_banner_cloth(RED)
 
 
 def debris():
@@ -547,20 +643,57 @@ def stove():
 
 
 def airship():
-    """A wooden boat hung under a canvas balloon. The game floats it above the ground; y = 0 here is the bottom of its keel."""
-    parts = [box(0, 0, 0, 2.0, 0.18, 0.55, DARK_WOOD), box(0, 0.18, 0, 2.5, 0.42, 1.0, WOOD), box(0, 0.6, 0, 2.5, 0.05, 1.0, PALE_WOOD),
-             pyramid(1.45, 0.18, 0, 0.5, 0.42, 1.0, WOOD, 0, 0), box(-1.3, 0.6, 0, 0.3, 0.35, 0.96, DARK_WOOD)]
-    for z in (-0.5, 0.5):
-        parts.append(box(0, 0.65, z, 2.5, 0.14, 0.05, DARK_WOOD))
-    parts.append(ball(0, 1.45, 0, 3.6, 1.35, 1.7, CANVAS))
-    parts.append(box(0, 1.42, 0, 3.0, 0.06, 1.3, BURLAP))
-    for x in (-0.9, 0.9):
+    """A copper-brown boat hung under a cream balloon on four rods, with a ship's wheel in the bow and red tail fins. The game floats it above
+    the ground; y = 0 here is the bottom of its keel, and its occupants stand at 0.7 (AIRSHIP_DECK), so the deck is at 0.66. Forward is +x. The
+    mooring rope ties on at about (-0.5, 0.66, 0.52), on the side wall."""
+    CREAM = (250, 224, 192)
+    HULL = (160, 88, 48)
+    HULL_DARK = (118, 64, 38)
+    HULL_LIGHT = (205, 120, 60)
+    ORANGE = (232, 148, 70)
+    PALE = (236, 196, 130)
+    BAND = (168, 92, 50)
+    FIN_RED = (206, 70, 58)
+    parts = [box(0, 0, 0, 1.7, 0.16, 0.5, HULL_DARK), box(0, 0.14, 0, 2.2, 0.2, 0.8, HULL), box(0, 0.32, 0, 2.5, 0.28, 1.0, HULL),
+             box(0, 0.58, 0, 2.3, 0.08, 0.84, (170, 100, 56))]                           # the deck, its top at 0.66
+    for z in (-0.44, 0.44):
+        parts.append(box(0, 0.6, z, 2.5, 0.22, 0.1, HULL_LIGHT))                            # the side walls to 0.82
+        parts.append(box(0, 0.8, z * 1.02, 2.52, 0.06, 0.14, ORANGE))                       # and their rims
+    for x in (-1.2, 1.2):
+        parts.append(box(x, 0.6, 0, 0.1, 0.22, 0.9, HULL_LIGHT))                            # the end walls
+        parts.append(box(x * 1.008, 0.8, 0, 0.14, 0.06, 0.92, ORANGE))
+    # Blocks on the rims where the rods stand: the corners, and under the balloon's two bands
+    for x in (-1.2, -0.75, 0.75, 1.2):
         for z in (-0.45, 0.45):
-            parts.append(rod((x, 0.65, z), (x * 1.05, 1.5, z * 1.35), 0.03, BURLAP))
-    parts += [rod((-1.45, 0.45, 0), (-1.75, 0.45, 0), 0.06, IRON, 'cylinder'),
-              box(-1.8, 0.2, 0, 0.04, 0.5, 0.12, DARK_WOOD), box(-1.8, 0.4, 0, 0.06, 0.12, 0.55, DARK_WOOD)]
+            parts.append(box(x, 0.84, z, 0.16, 0.14, 0.16, (240, 156, 72)))
+    # The balloon, laid along x (nose forward), 3.7 long and 1.4 high; two brown bands round it
+    top = 2.2
+    parts.append(part('blimp', 1.85, top, 0, 1.4, 3.7, 1.55, CREAM, 0, 90))
+    for x in (-0.75, 0.75):
+        parts.append(cyl(x + 0.14, top, 0, 1.4 * 1.07, 0.28, 1.55 * 1.07, BAND, 0, 90))
+        for z in (-0.45, 0.45):
+            parts.append(box(x, 1.55, z, 0.16, 0.14, 0.16, (240, 156, 72)))                 # the block each rod ends in, under the band
+            parts.append(rod((x, 0.9, z * 0.93), (x, 1.6, z), 0.045, PALE))                 # the rod up from the rim
+    # Tail fins at the stern: a upright one and a flat one, each a red panel in a brown frame, on a brown collar
+    parts.append(cyl(-1.62, top, 0, 0.5, 0.18, 0.5, BAND, 0, 90))
+    parts.append(box(-2.12, top - 0.5, 0, 0.55, 1.0, 0.05, FIN_RED))
+    parts.append(box(-2.12, top - 0.015, 0, 0.55, 0.03, 1.0, FIN_RED))
+    for z, y in ((0, top - 0.52), (0, top + 0.47)):
+        parts.append(box(-2.12, y, z, 0.6, 0.06, 0.07, BAND))                              # the upright fin's top and bottom bars
+    parts.append(box(-2.4, top - 0.52, 0, 0.06, 1.06, 0.07, BAND))
+    parts.append(box(-2.1, top - 0.03, -0.5, 0.6, 0.06, 0.07, BAND))
+    parts.append(box(-2.1, top - 0.03, 0.5, 0.6, 0.06, 0.07, BAND))
+    parts.append(box(-2.4, top - 0.03, 0, 0.06, 0.06, 1.08, BAND))
+    # The wheel in the bow, on a post: eight spokes, a ring of eight rods, and handles past it
+    wx, wy, wr = 0.88, 1.1, 0.22
+    parts.append(box(wx - 0.1, 0.64, -0.1, 0.2, 0.34, 0.2, HULL_DARK))
+    parts.append(cyl(wx + 0.05, wy, 0, 0.12, 0.1, 0.12, HULL_LIGHT, 0, 90))
+    for i in range(8):
+        a, b = math.radians(45 * i), math.radians(45 * (i + 1))
+        parts.append(rod((wx, wy, 0), (wx, wy + wr * math.cos(a), wr * math.sin(a)), 0.03, HULL_LIGHT))
+        parts.append(rod((wx, wy + wr * math.cos(a), wr * math.sin(a)), (wx, wy + wr * math.cos(b), wr * math.sin(b)), 0.04, HULL_LIGHT))
+        parts.append(rod((wx, wy + wr * math.cos(a), wr * math.sin(a)), (wx, wy + (wr + 0.08) * math.cos(a), (wr + 0.08) * math.sin(a)), 0.035, ORANGE))
     return parts
-
 
 
 def wheelbarrow():
@@ -1084,6 +1217,7 @@ BUILDERS = {
     'IronStockpile': iron_stockpile, 'OreStockpile': ore_stockpile,
     'Wheelbarrow': wheelbarrow, 'TamingCage': taming_cage,
 }
+ALTAR_EXTRAS = {'altar_frame.glb': altar_frame, 'altar_banner.glb': altar_banner}
 # Props the game draws itself, with no model file
 PROCEDURAL = {'Stairs'}
 
@@ -1234,6 +1368,11 @@ def main():
     if set(files) != set(BUILDERS):
         raise SystemExit('BUILDERS and data/props.txt differ: ' + ', '.join(sorted(set(files) ^ set(BUILDERS))))
     only = set(sys.argv[1:])
+    # Models the game draws beside a prop's own, named for the prop they go with
+    for file, builder in ALTAR_EXTRAS.items():
+        if not only or 'Altar' in only:
+            parts = builder()
+            print(f'{"Altar":16s} {file:18s} {len(parts):3d} parts  {write_glb(os.path.join(DATA, "model", file), parts):4d} triangles')
     for key, file in files.items():
         if only and key not in only:
             continue

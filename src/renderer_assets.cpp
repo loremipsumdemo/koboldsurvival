@@ -125,6 +125,11 @@ void Renderer::loadPropModels(LoadStages& stages) {
     wallShapes_.assign((size_t)propKindCount(), {});
     materialModels_.assign((size_t)propKindCount(), {});
     const char* standIn = "as a pink square";
+    // The altar's frame and its banners, which are drawn in the owner faction's color. Without them, the whole altar model is drawn.
+    for (const auto& [file, model] : { std::pair<const char*, Model*>{ "data/model/altar_frame.glb", &altarFrame_ },
+                                       std::pair<const char*, Model*>{ "data/model/altar_banner.glb", &altarBanner_ } }) {
+        if (!pakHas(file) || !loadDrawableModel(file, *model, false)) SDL_Log("Altar model %s could not be read: the altar is drawn whole", file);
+    }
     for (int k = 0; k < propKindCount(); ++k) {
         const PropKind kind = (PropKind)k;
         const PropInfo& info = propInfo(kind);

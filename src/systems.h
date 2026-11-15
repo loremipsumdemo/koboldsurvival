@@ -22,7 +22,27 @@ struct LayoutPlan {
     std::vector<CampPlan> camps;
 };
 constexpr float CAMP_ROOM = 10.0f;
+// playerCamp is ignored for the picture: all 16 colored factions are shown, the same as in the game whichever one you are
 LayoutPlan planRandomLayout(Terrain& t, bool playerCamp, const std::atomic<bool>* cancel = nullptr);
+
+// Where each of the 16 colored factions (a slot of the loop, factions.h) goes on this ground. Spread: evenly over the biggest landmass,
+// and what does not fit there over the next biggest. Scattered: at random, with at least half an Altar's claim of walkable ground. Nomadic:
+// at random on walkable ground outside every claim, with no Altar. Eliminated: nowhere to be had.
+enum class LandTier : int { Spread = 0, Scattered, Nomadic, Eliminated };
+struct FactionLanding {
+    LandTier tier = LandTier::Eliminated;
+    float x = 0.0f, z = 0.0f;
+};
+struct FactionLandPlan {
+    std::vector<FactionLanding> slots;   // by slot
+    std::vector<Vec2> open;              // the middles of ground with open room all round it, over all the land looked at
+};
+FactionLandPlan planFactionLand(Terrain& t, const std::atomic<bool>* cancel = nullptr);
+// What setupWorld found for the factions, for the messages: a faction in the first set found no land and is nomadic (it has units and no
+// Altar), one in the second was eliminated (it has none). A World resource.
+struct FactionLandNotes {
+    std::vector<int> nomadic, eliminated;
+};
 
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot);

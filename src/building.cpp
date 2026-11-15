@@ -1396,6 +1396,8 @@ void rebuildBlocking(World& w, Terrain& t) {
             if (fp.sight > 0.0f) t.setSightBlock(x, z, fp.sight);
         }
     }
+    t.settleBlocked();   // the navigation regions redo only the clusters where a tile ended up different
+    t.prepareNav();
     w.resource<BuildingsChanged>().dirty = false;
     w.resource<BuildingsChanged>().tiles.clear();
     collapseCheck(w);
@@ -1449,8 +1451,12 @@ void refreshBuildingTiles(World& w, Terrain& t) {
         z0 = std::min(z0, z); z1 = std::max(z1, z);
     }
     // Only the changed tiles are worked out again: a finished ground-floor wall closes its tile, a finished foundation
-    // tile decks its own
+    // tile decks its own. Only the kinds that can close ground are looked at (a map has thousands of trees and boulders).
     BlockFootprint fp;
+    auto closesGround = [&](ObjectId e) {
+        const PropInfo& pi = propInfo(w.get<Prop>(e)->kind);
+        return pi.wallRule || pi.perimeter || pi.tower || pi.stairs;
+    };
     for (ObjectId e : w.view<Prop, Transform>()) {
         if (w.has<Blueprint>(e)) continue;
         if (const Foundation* f = w.get<Foundation>(e)) {
@@ -1460,6 +1466,7 @@ void refreshBuildingTiles(World& w, Terrain& t) {
             }
             continue;
         }
+        if (!closesGround(e)) continue;
         if (!blockFootprint(w, e, fp)) continue;
         for (const auto& [x, z] : fp.tiles) {
             if (!changed.count(tileKey(x, z))) continue;

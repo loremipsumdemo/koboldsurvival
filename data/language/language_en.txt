@@ -354,7 +354,7 @@ UILABEL_MAP_PICK_LEVELS	Level
 UILABEL_MAP_PICK_LOADING	Drawing the map...
 UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when the game starts.
 UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
-UILABEL_MAP_PICK_CAMPS_NOTE	Yellow: where you start. Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
+UILABEL_MAP_PICK_CAMPS_NOTE	Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
 UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
 UILABEL_GEN_DEFAULT_NAME	world
 
@@ -930,6 +930,8 @@ UILABEL_DEV_THEME_SAVED	The world's theme is saved
 UILABEL_DEV_TAB_KILL	Kill
 UILABEL_DEV_GATHER	Move Units Here
 UILABEL_DEV_GATHER_TIP	Moves every unit of yours to the ground floor, around the point the camera is looking at
+UILABEL_DEV_SHOW_NAVMESH	Show Navmesh
+UILABEL_DEV_SHOW_NAVMESH_TIP	Colors the ground near the camera by the piece of ground each tile is in: tiles that join up share a color, and tiles a building has closed are red
 UILABEL_DEV_KILL_MODE	Mode
 UILABEL_DEV_KILL_SINGLE	Single selection
 UILABEL_DEV_KILL_RADIUS	Radius
@@ -1194,11 +1196,47 @@ UILABEL_TALK	Talk
 MISC_FREE_TRADE_ADD	Add items to either side
 MISC_FREE_TRADE_READY	Ready to trade
 FACTION_PLAYER	Player Faction
-FACTION_RED	Red Faction
-FACTION_GREEN	Green Faction
-FACTION_BLUE	Blue Faction
-FACTION_YELLOW	Yellow Faction
+FACTION_EMBER	Ember Faction
+FACTION_SOLAR	Solar Faction
+FACTION_AMBER	Amber Faction
+FACTION_DAWN	Dawn Faction
+FACTION_UMBER	Umber Faction
+FACTION_THICKET	Thicket Faction
+FACTION_VERDANT	Verdant Faction
+FACTION_JADE	Jade Faction
+FACTION_TIDAL	Tidal Faction
+FACTION_GLACIER	Glacier Faction
+FACTION_ZEPHYR	Zephyr Faction
+FACTION_COBALT	Cobalt Faction
+FACTION_MYSTIC	Mystic Faction
+FACTION_VEIL	Veil Faction
+FACTION_GARNET	Garnet Faction
+FACTION_BLOSSOM	Blossom Faction
+COLORNAME_EMBER	Ember
+COLORNAME_SOLAR	Solar
+COLORNAME_AMBER	Amber
+COLORNAME_DAWN	Dawn
+COLORNAME_UMBER	Umber
+COLORNAME_THICKET	Thicket
+COLORNAME_VERDANT	Verdant
+COLORNAME_JADE	Jade
+COLORNAME_TIDAL	Tidal
+COLORNAME_GLACIER	Glacier
+COLORNAME_ZEPHYR	Zephyr
+COLORNAME_COBALT	Cobalt
+COLORNAME_MYSTIC	Mystic
+COLORNAME_VEIL	Veil
+COLORNAME_GARNET	Garnet
+COLORNAME_BLOSSOM	Blossom
 FACTION_FACTIONLESS	Factionless
+UILABEL_FACTION_COLOR_TITLE	Choose Your Faction Color
+UILABEL_FACTION_COLOR_BUTTON	Faction: {0}
+UILABEL_FACTION_COLOR_RANDOM	Random
+UILABEL_FACTION_COLOR_ALLIES	Allies: {0}
+UILABEL_FACTION_COLOR_ENEMIES	Enemies: {0}
+UILABEL_FACTION_COLOR_TIP	The colors sit on a loop. A faction's neighbors on it are its closest allies, and the faction opposite is its bitterest enemy. Each faction has its own color, and the 15 you do not pick are run by others.
+MISC_FACTION_NOMADIC	{0} could not find land and becomes nomadic.
+MISC_FACTION_ELIMINATED	{0} was eliminated.
 MISC_REPUTATION_DROPS	Reputation with the {0} falls by {1}, to {2}
 UILABEL_FACTION_TAB	Faction
 UILABEL_FACTION_SUB_SQUADS	Squads

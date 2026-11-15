@@ -522,6 +522,9 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, c
     LoadStages stages(progress);
     stages.stage(0.6f, "LOADING_SAVE_PROPS", (int)d.props.size());
     world = World{};
+    // Which color you are comes first: the factions in play, and how they stand with you, follow from it. A save from before the colors
+    // is given the default one.
+    if (!setPlayerSlot(d.playerSlot)) setPlayerSlot(PALETTE_DEFAULT_SLOT);
     setPlayerReputation(world, d.reputation);
     setChangedFactionRules(world, d.factionRules);
     for (const auto& [faction, key] : d.researched) setResearched(world, faction, key);
@@ -589,6 +592,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     }
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
+    d.playerSlot = playerSlot();
     d.ghosts = w.resource<Graveyard>().ghosts;
     d.stallHaulListed = true;
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };

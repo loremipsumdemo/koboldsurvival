@@ -159,6 +159,9 @@ void App::beginFrame() {
     }
 }
 
+// A frame over this many milliseconds is written to the debug log as a hitch
+constexpr double HITCH_LOG_MS = 50.0;
+
 void App::run() {
     benchStart();
     while (running) {
@@ -171,11 +174,14 @@ void App::run() {
             if (!afterFadeOut || e.type == SDL_EVENT_QUIT) handleEvent();
         }
 
+        const Uint64 tUpdate0 = SDL_GetPerformanceCounter();
         PROFILED("frame: update", update());
         PROFILED("frame: updateHover", updateHover());
+        const Uint64 tUpdate1 = SDL_GetPerformanceCounter();
         benchFrame();
         debugLogFrame();
         PROFILED("frame: render", render());
+        const Uint64 tRender1 = SDL_GetPerformanceCounter();
         putUnitsBack();
 
         // The first screen, and the game once entered, come up out of black. The first frame is wholly black and the
@@ -193,6 +199,17 @@ void App::run() {
 
         if (renderer.hoverFrameEnd()) playSfx(Sfx::UiHover);
         PROFILED("frame: swap", SDL_GL_SwapWindow(window));
+        // A frame that took far longer than it should is logged with where the time went (Debug logging on), so a hitch can be traced to the
+        // simulation, to drawing, or to the card catching up. The loading and fading frames are expected to be slow.
+        if (debuglog::enabled() && !bench.on && !afterFadeOut && !wentBlack) {
+            const double perMs = 1000.0 / (double)SDL_GetPerformanceFrequency();
+            const double updateMs = (double)(tUpdate1 - tUpdate0) * perMs, renderMs = (double)(tRender1 - tUpdate1) * perMs;
+            const double swapMs = (double)(SDL_GetPerformanceCounter() - tRender1) * perMs;
+            if (updateMs + renderMs + swapMs > HITCH_LOG_MS) {
+                debuglog::line("hitch", "%.0f ms frame: update %.0f, drawing %.0f, swap %.0f (%s)", updateMs + renderMs + swapMs, updateMs, renderMs, swapMs,
+                               screen == Screen::Playing ? "playing" : "menu");
+            }
+        }
         if (fadingIn && !fadeInFrom) fadeInFrom = SDL_GetTicksNS();
         if (wentBlack) {
             // The screen is black: now the slow part, and whatever it leaves showing comes up out of black

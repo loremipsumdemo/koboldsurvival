@@ -662,6 +662,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyRandomAll:
         case Action::PartyPatron:
+        case Action::PartyFaction:
         case Action::PartyConfirm:
         case Action::Back:
             drawRect(b.rect, plateFor(hot, false, b.enabled));

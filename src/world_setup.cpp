@@ -12,7 +12,6 @@ constexpr int SPAWN_SQUARE = 16;
 constexpr int SPAWN_SEARCH_STEP = 32;
 constexpr float ENEMY_RANGE = 128.0f;
 constexpr float ENEMY_MIN_RANGE = 12.0f;
-constexpr float CAMP_DISTANCE = 90.0f;
 constexpr float CAMP_SHIFT = 18.0f;
 constexpr float CAMP_GAP = 2.0f * CLAIM_RADIUS + 6.0f;
 constexpr float CAMP_MOB_RADIUS = 10.0f;
@@ -21,6 +20,11 @@ constexpr float WILD_MOB_NEAR = 30.0f;
 constexpr float WILD_MOB_FAR = 70.0f;
 constexpr float WILD_HERD_RADIUS = 8.0f;
 constexpr float PLAYER_CAMP_OFFSET = 8.0f;
+constexpr int RESOURCE_CELL = 16;          // the resource nodes' grid, in tiles
+constexpr int RESOURCE_SPAN = 2048;        // the most of a map they are made over (the middle of it, on a bigger one)
+constexpr float RESOURCE_HIGH_SHARE = 0.4f;  // the share of the land that counts as the higher ground
+constexpr float RESOURCE_MIN_HEIGHT = 0.3f;   // the least height above sea level a node stands at, in tiles
+constexpr int RESOURCE_SHORE_GAP = 2;      // trees keep this far from water
 constexpr int CAMP_EXTRA_MIN = 3;
 constexpr int CAMP_EXTRA_MAX = 5;
 constexpr float CAMP_EXTRA_NEAR = 5.0f;
@@ -206,9 +210,9 @@ struct LevelBuilder {
         return true;
     }
 
-    Vec2 placePlayerCamp(bool playerCamp) {
-        const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, spawn.x, spawn.z + PLAYER_CAMP_OFFSET) : CampKit{};
-        if (!planning) addCampExtras(FACTION_PLAYER, playerKit);
+    // Your camp at `at`, if there is to be one
+    void placePlayerCamp(bool playerCamp, Vec2 at) {
+        const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, at.x, at.z) : CampKit{};
         if (playerKit.placed) kits.push_back(playerKit);
         if (playerKit.placed) {
             ObjectId first = NO_OBJECT;
@@ -217,88 +221,152 @@ struct LevelBuilder {
             }
             woodcutters.push_back({ first, playerKit });
         }
-        return playerKit.placed ? Vec2{ playerKit.x, playerKit.z } : spawn;
     }
 
-    void placeFactionCamp(const std::vector<const FactionDef*>& camps, size_t ci, Vec2 middle) {
-        const FactionDef& f = *camps[ci];
-        static const float DIRS[8][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 },
-                                          { 0.7071f, -0.7071f }, { 0.7071f, 0.7071f }, { -0.7071f, 0.7071f }, { -0.7071f, -0.7071f } };
-        float dirX = DIRS[ci % 8][0], dirZ = DIRS[ci % 8][1];
-        if (ci >= 8) {
-            const float a = TWO_PI * (float)ci / (float)camps.size();
-            dirX = std::cos(a);
-            dirZ = std::sin(a);
-        }
-        const float dist = CAMP_DISTANCE * (ci >= 4 ? 1.4f : 1.0f);
-        // First anywhere along the way with room all round it, and only then anywhere the camp itself fits
+    // A camp of this faction where planFactionLand put it: first with room all round it, then anywhere it fits. False if it will not
+    // go there after all, and the faction is left to be nomadic.
+    bool placeCampFaction(int faction, int units, const FactionLanding& at) {
         CampKit kit;
         bool roomy = false;
         for (const bool needRoom : { true, false }) {
-            for (float d = dist; !kit.placed && d >= CAMP_GAP; d -= 10.0f) {
-                kit = placeCamp(f.id, middle.x + dirX * d, middle.z + dirZ * d, needRoom);
-            }
+            kit = placeCamp(faction, at.x, at.z, needRoom);
             if (kit.placed) {
                 roomy = needRoom;
                 break;
             }
         }
-        if (kit.placed) plan.push_back(CampPlan{ f.id, kit.x, kit.z, roomy });
-        if (planning) return;
-        addCampExtras(f.id, kit);
-        const float cx = kit.placed ? kit.x : middle.x + dirX * dist, cz = kit.placed ? kit.z : middle.z + dirZ * dist;
-        ObjectId firstUnit = NO_OBJECT;
-        const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)f.units);
-        int placed = 0;
-        for (int attempt = 0; attempt < 4000 && placed < f.units; ++attempt) {
-            GridPos g{ rng.range(tileAt(cx - radius), tileAt(cx + radius)), rng.range(tileAt(cz - radius), tileAt(cz + radius)) };
-            if (distSq(g.x + 0.5f, g.y + 0.5f, cx, cz) > radius * radius || !tileFree(g)) continue;
-            const ObjectId e = placeUnit(g, f.id);
-            if (firstUnit == NO_OBJECT) firstUnit = e;
-            ++placed;
-        }
-        for (int attempt = 0; attempt < 20000 && placed < f.units; ++attempt) {
-            GridPos g{ rng.range(tileAt(spawn.x - ENEMY_RANGE), tileAt(spawn.x + ENEMY_RANGE)),
-                       rng.range(tileAt(spawn.z - ENEMY_RANGE), tileAt(spawn.z + ENEMY_RANGE)) };
-            if (distSq(g.x + 0.5f, g.y + 0.5f, spawn.x, spawn.z) > ENEMY_RANGE * ENEMY_RANGE || !tileFree(g)) continue;
-            const ObjectId e = placeUnit(g, f.id);
-            if (firstUnit == NO_OBJECT) firstUnit = e;
-            ++placed;
-        }
+        if (!kit.placed) return false;
+        plan.push_back(CampPlan{ faction, kit.x, kit.z, roomy });
+        if (planning) return true;
+        addCampExtras(faction, kit);
+        const ObjectId firstUnit = placeFactionUnits(faction, units, kit.x, kit.z, false);
         kits.push_back(kit);
         woodcutters.push_back({ firstUnit, kit });
+        return true;
     }
 
-    void placeLevelProps() {
-        std::vector<GridPos> propTiles;
-        // PROP_COPIES of each kind, and one of a rare kind
-        std::vector<PropKind> scattered;
-        for (PropKind k : scatteredPropKinds()) scattered.insert(scattered.end(), propInfo(k).rare ? 1 : PROP_COPIES, k);
-        std::stable_sort(scattered.begin(), scattered.end(), [](PropKind a, PropKind b) { return propInfo(a).rare < propInfo(b).rare; });
-        const int propTotal = (int)scattered.size();
-        for (int attempt = 0; attempt < 400 * propTotal && (int)propTiles.size() < propTotal; ++attempt) {
-            GridPos g{ rng.range(tileAt(spawn.x - PROP_RANGE), tileAt(spawn.x + PROP_RANGE)),
-                       rng.range(tileAt(spawn.z - PROP_RANGE), tileAt(spawn.z + PROP_RANGE)) };
-            if (!t.walkable(g.x, g.y)) continue;
-            if (std::find(propTiles.begin(), propTiles.end(), g) != propTiles.end()) continue;
-            // Each camp keeps its room clear
-            bool inCamp = false;
-            for (const CampPlan& c : plan) {
-                inCamp = inCamp || distSq(g.x + 0.5f, g.y + 0.5f, c.x, c.z) <= CAMP_ROOM * CAMP_ROOM;
+    // A faction with no land of its own: its units together round (x, z), clear of every claim, and no Altar (it keeps camps as it goes)
+    void placeNomadFaction(int faction, int units, float x, float z) {
+        if (planning) return;
+        placeFactionUnits(faction, units, x, z, true);
+        w.resource<FactionLandNotes>().nomadic.push_back(faction);
+    }
+
+    bool outsideClaims(GridPos g) const {
+        const float x = g.x + 0.5f, z = g.y + 0.5f;
+        for (const Vec2& f : flagSpots) {
+            if ((f.x - x) * (f.x - x) + (f.z - z) * (f.z - z) < CLAIM_RADIUS * CLAIM_RADIUS) return false;
+        }
+        return true;
+    }
+
+    // The units of a faction, together round (cx, cz). Returns the first.
+    ObjectId placeFactionUnits(int faction, int units, float cx, float cz, bool keepClearOfClaims) {
+        ObjectId firstUnit = NO_OBJECT;
+        const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)units);
+        int placed = 0;
+        for (const float reach : { 1.0f, 3.0f, 8.0f }) {
+            const float r = radius * reach;
+            for (int attempt = 0; attempt < 4000 && placed < units; ++attempt) {
+                GridPos g{ rng.range(tileAt(cx - r), tileAt(cx + r)), rng.range(tileAt(cz - r), tileAt(cz + r)) };
+                if (distSq(g.x + 0.5f, g.y + 0.5f, cx, cz) > r * r || !tileFree(g)) continue;
+                if (keepClearOfClaims && !outsideClaims(g)) continue;
+                const ObjectId e = placeUnit(g, faction);
+                if (firstUnit == NO_OBJECT) firstUnit = e;
+                ++placed;
             }
-            if (inCamp) continue;
-            bool kitHere = false;
-            for (ObjectId e : w.view<Prop, Transform>()) {
-                const Transform* kt = w.get<Transform>(e);
-                if (std::fabs(kt->x - (g.x + 0.5f)) < 0.5f && std::fabs(kt->z - (g.y + 0.5f)) < 0.5f) { kitHere = true; break; }
+            if (placed >= units) break;
+        }
+        return firstUnit;
+    }
+
+    // Resource nodes, worked out from the map's seed alone (the same map always has the same ones; nothing of them is kept in the map file).
+    // The map is looked over in cells of RESOURCE_CELL tiles; each kind has its own roll in each cell for whether it has a node there and
+    // where in the cell. Each kind has a zone it keeps to: Ore the higher ground, the others the lower, by the heights of the land (above
+    // sea level) on this map: the higher ground is the top RESOURCE_HIGH_SHARE of it. Nine in ten of a kind are in its own zone, the rest
+    // out of it. Trees keep two tiles from the shore, and every node is on walkable ground and clear of the camps and where you start.
+    void placeResourceNodes() {
+        if (planning) return;
+        struct Resource {
+            PropKind kind;
+            float density;   // the chance a cell has one, before its zone is looked at
+            bool high;       // keeps to the higher ground, else the lower
+            bool inland;     // keeps RESOURCE_SHORE_GAP tiles from water
+        };
+        std::vector<Resource> kinds{ { PropKind::Tree, 0.22f, false, true }, { PropKind::Boulder, 0.09f, false, false },
+                                     { PropKind::Ore, 0.06f, true, false }, { PropKind::Mushroom, 0.03f, false, false } };
+        PropKind crystal = PropKind::Ore;
+        if (propKindNamed("DragonCrystal", crystal)) kinds.push_back({ crystal, 0.008f, true, false });
+
+        const uint64_t seed = (uint64_t)t.surface().seed;
+        const int span = std::min(size, RESOURCE_SPAN);   // a map bigger than that is done round the middle
+        const int x0 = std::clamp((int)spawn.x - span / 2, 0, size - span), z0 = std::clamp((int)spawn.z - span / 2, 0, size - span);
+
+        // Where the higher ground begins: the heights of the land above sea level, sampled over the map
+        std::vector<float> heights;
+        for (int z = z0 + 8; z < z0 + span; z += 16) {
+            for (int x = x0 + 8; x < x0 + span; x += 16) {
+                if (!t.walkable(x, z)) continue;
+                const float h = t.heightAt(x + 0.5f, z + 0.5f);
+                if (h >= RESOURCE_MIN_HEIGHT) heights.push_back(h);
             }
-            if (kitHere) continue;
-            const PropKind kind = scattered[propTiles.size()];
-            propTiles.push_back(g);
-            const float x = g.x + 0.5f, z = g.y + 0.5f;
-            const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z });
-            if (propInfo(kind).use == PropUse::Storage) w.add(prop, startingStorage(kind, rng));
-            claimOwnership(w, prop);
+        }
+        if (heights.size() < 2) return;
+        const size_t cut = (size_t)((1.0f - RESOURCE_HIGH_SHARE) * (float)heights.size());
+        std::nth_element(heights.begin(), heights.begin() + (long)cut, heights.end());
+        const float highFrom = heights[cut];
+        // The chance a node rolled out of its zone is let stand, so that nine in ten of its kind are in it: with the zone a share f of the
+        // land, f / (f + r (1 - f)) = 0.9
+        auto strayChance = [](float zoneShare) { return zoneShare / (9.0f * (1.0f - zoneShare)); };
+        const float strayHigh = strayChance(RESOURCE_HIGH_SHARE), strayLow = strayChance(1.0f - RESOURCE_HIGH_SHARE);
+
+        auto mix = [](uint64_t z) {
+            z += 0x9E3779B97F4A7C15ull;
+            z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+            z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+            return z ^ (z >> 31);
+        };
+        auto roll = [&](uint64_t h, int salt) { return (float)(mix(h + (uint64_t)salt * 0x632BE59BD9B4E019ull) >> 40) / 16777216.0f; };
+        std::vector<GridPos> taken;
+        auto isTaken = [&](GridPos g) { return std::find(taken.begin(), taken.end(), g) != taken.end(); };
+        const int cells = span / RESOURCE_CELL;
+        for (int cz = 0; cz < cells; ++cz) {
+            for (int cx = 0; cx < cells; ++cx) {
+                for (size_t k = 0; k < kinds.size(); ++k) {
+                    const Resource& r = kinds[k];
+                    const uint64_t h = mix(mix(seed ^ (uint64_t)(k + 1) * 0xD6E8FEB86659FD93ull) + (uint64_t)cx * 0x9E3779B1ull + (uint64_t)cz * 0x85EBCA6Bull * 4096ull);
+                    if (roll(h, 0) >= r.density) continue;
+                    const int gx = x0 + cx * RESOURCE_CELL + std::min(RESOURCE_CELL - 1, (int)(roll(h, 1) * RESOURCE_CELL));
+                    const int gz = z0 + cz * RESOURCE_CELL + std::min(RESOURCE_CELL - 1, (int)(roll(h, 2) * RESOURCE_CELL));
+                    if (!t.walkable(gx, gz)) continue;
+                    const float x = gx + 0.5f, z = gz + 0.5f;
+                    const float height = t.heightAt(x, z);
+                    if (height < RESOURCE_MIN_HEIGHT) continue;   // not at the water's edge, where the water laps over it
+                    const bool inZone = r.high ? height >= highFrom : height < highFrom;
+                    if (!inZone && roll(h, 3) >= (r.high ? strayHigh : strayLow)) continue;
+                    // Every node keeps a tile clear of the water and stays out of it (every tile round it is walkable and above the waterline);
+                    // trees keep RESOURCE_SHORE_GAP tiles
+                    const int gap = r.inland ? RESOURCE_SHORE_GAP : 1;
+                    bool shore = false;
+                    for (int dz = -gap; dz <= gap && !shore; ++dz) {
+                        for (int dx = -gap; dx <= gap; ++dx) {
+                            if (!t.walkable(gx + dx, gz + dz) || t.heightAt(gx + dx + 0.5f, gz + dz + 0.5f) < RESOURCE_MIN_HEIGHT * 0.5f) {
+                                shore = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (shore) continue;
+                    if (distSq(x, z, spawn.x, spawn.z) < ENEMY_MIN_RANGE * ENEMY_MIN_RANGE) continue;
+                    bool inCamp = false;
+                    for (const Vec2& f : flagSpots) inCamp = inCamp || distSq(x, z, f.x, f.z) <= CAMP_ROOM * CAMP_ROOM;
+                    if (inCamp) continue;
+                    const GridPos g{ gx, gz };
+                    if (isTaken(g)) continue;
+                    taken.push_back(g);
+                    makeProp(w, r.kind, Transform{ x, height, z }, roll(h, 4) * TWO_PI);
+                }
+            }
         }
     }
 
@@ -316,7 +384,7 @@ struct LevelBuilder {
 
     void placeCampMobs() {
         for (const CampKit& kit : kits) {
-            if (!kit.placed) continue;
+            if (!kit.placed || kit.faction == FACTION_PLAYER) continue;   // nothing is put in your camp for you
             for (int i = 0; i < CAMP_MOBS; ++i) {
                 float x = 0.0f, z = 0.0f;
                 MobKind kind = (MobKind)rng.range(1, mobKindCount());
@@ -344,18 +412,38 @@ struct LevelBuilder {
         }
     }
 
-    void placeWildMobs() {
+    void placeWildMobs(const std::vector<Vec2>& open) {
         float farthest = 0.0f;
         for (const CampKit& kit : kits) {
             if (kit.placed) farthest = std::max(farthest, std::hypot(kit.x - spawn.x, kit.z - spawn.z) + CLAIM_RADIUS);
         }
+        auto clearOfKits = [&](float x, float z, float gap) {
+            for (const CampKit& kit : kits) {
+                if (kit.placed && distSq(kit.x, kit.z, x, z) < gap * gap) return false;
+            }
+            return true;
+        };
         const float turn = rng.unit() * TWO_PI;
         for (int k = 1; k <= mobKindCount(); ++k) {
             const MobKind kind = (MobKind)k;
-            const float a = turn + TWO_PI * (float)(k - 1) / (float)mobKindCount();
-            const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
-            const float hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
-            const float hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
+            // A herd's home: open ground somewhere over the land, away from the camps. Failing that, a ring out past the farthest of them.
+            float hx = 0.0f, hz = 0.0f;
+            bool homed = false;
+            for (const float gap : { CLAIM_RADIUS + WILD_MOB_NEAR, CLAIM_RADIUS + 10.0f }) {
+                for (int attempt = 0; attempt < 120 && !homed && !open.empty(); ++attempt) {
+                    const Vec2 at = open[(size_t)rng.range(0, (int)open.size() - 1)];
+                    if (!clearOfKits(at.x, at.z, gap)) continue;
+                    hx = at.x;
+                    hz = at.z;
+                    homed = true;
+                }
+            }
+            if (!homed) {
+                const float a = turn + TWO_PI * (float)(k - 1) / (float)mobKindCount();
+                const float d = farthest + WILD_MOB_NEAR + rng.unit() * (WILD_MOB_FAR - WILD_MOB_NEAR);
+                hx = std::clamp(spawn.x + std::cos(a) * d, 8.0f, size - 8.0f);
+                hz = std::clamp(spawn.z + std::sin(a) * d, 8.0f, size - 8.0f);
+            }
             for (int i = 0; i < mobInfo(kind).wild; ++i) {
                 float x = 0.0f, z = 0.0f;
                 if (freeSpot(hx, hz, WILD_HERD_RADIUS, x, z) || freeSpot(hx, hz, WILD_HERD_RADIUS * 3.0f, x, z)) {
@@ -391,45 +479,71 @@ struct LevelBuilder {
 }
 
 void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
-    const Vec2 spawn = findSpawn(t);
+    const FactionLandPlan land = planFactionLand(t);
+    const FactionLanding mine = land.slots.empty() ? FactionLanding{} : land.slots[(size_t)playerSlot()];
+    const bool campForYou = mine.tier == LandTier::Spread || mine.tier == LandTier::Scattered;
+
+    // You start where your faction's place on the loop is: just north of your camp, if you have one. Never without units, whatever the land.
+    Vec2 spawn = findSpawn(t);
+    if (mine.tier != LandTier::Eliminated) {
+        spawn = Vec2{ mine.x, mine.z };
+        const Vec2 north{ mine.x, mine.z - PLAYER_CAMP_OFFSET };
+        if (campForYou && playerCamp && t.walkable((int)std::floor(north.x), (int)std::floor(north.z))) spawn = north;
+    }
     LevelBuilder b{ w, t, rng, spawn, t.size() };
+    FactionLandNotes& notes = w.resource<FactionLandNotes>();
+    notes = FactionLandNotes{};
 
     for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
+    b.placePlayerCamp(campForYou && playerCamp, Vec2{ mine.x, mine.z });
+    if (!campForYou) notes.nomadic.push_back(FACTION_PLAYER);
 
-    std::vector<const FactionDef*> camps;
-    for (const FactionDef& f : factions()) {
-        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
+    // The camps first, then the factions with no land (they keep clear of every camp)
+    std::vector<int> landless;
+    for (int slot = 0; slot < PALETTE_COUNT && !land.slots.empty(); ++slot) {
+        if (slot == playerSlot()) continue;
+        const FactionDef* f = paletteFaction(slot);
+        if (!f) continue;
+        const FactionLanding& at = land.slots[(size_t)slot];
+        const bool camped = (at.tier == LandTier::Spread || at.tier == LandTier::Scattered) && b.placeCampFaction(f->id, f->units, at);
+        if (!camped) landless.push_back(slot);
     }
-
-    const Vec2 middle = b.placePlayerCamp(playerCamp);
-    for (size_t ci = 0; ci < camps.size(); ++ci) b.placeFactionCamp(camps, ci, middle);
-    b.placeLevelProps();
+    for (int slot : landless) {
+        const FactionDef* f = paletteFaction(slot);
+        const FactionLanding& at = land.slots[(size_t)slot];
+        if (at.tier == LandTier::Eliminated) {
+            notes.eliminated.push_back(f->id);
+            continue;
+        }
+        b.placeNomadFaction(f->id, f->units, at.x, at.z);
+    }
+    b.placeResourceNodes();
     b.settleCamps();
     b.finishUnits();
 
     b.placeCampMobs();
-    b.placeWildMobs();
+    b.placeWildMobs(land.open);
     b.giveFactionPatrols();
 }
 
-LayoutPlan planRandomLayout(Terrain& t, bool playerCamp, const std::atomic<bool>* cancel) {
+LayoutPlan planRandomLayout(Terrain& t, bool, const std::atomic<bool>* cancel) {
     LayoutPlan out;
+    const FactionLandPlan land = planFactionLand(t, cancel);
+    if (land.slots.empty()) return LayoutPlan{};
     World w;
     Rng rng;
     const Vec2 spawn = findSpawn(t);
     LevelBuilder b{ w, t, rng, spawn, t.size() };
     b.planning = true;
-    out.spawnX = spawn.x;
-    out.spawnZ = spawn.z;
-    std::vector<const FactionDef*> camps;
-    for (const FactionDef& f : factions()) {
-        if (f.id != FACTION_PLAYER && f.units > 0) camps.push_back(&f);
-    }
-    const Vec2 middle = b.placePlayerCamp(playerCamp);
-    for (size_t ci = 0; ci < camps.size(); ++ci) {
+    // All 16 are shown as their own colors, since which of them is you is picked after the map
+    for (int slot = 0; slot < PALETTE_COUNT; ++slot) {
         if (cancel && cancel->load()) return LayoutPlan{};
-        b.placeFactionCamp(camps, ci, middle);
+        const FactionLanding& at = land.slots[(size_t)slot];
+        const FactionDef* f = paletteFaction(slot);
+        if (f && (at.tier == LandTier::Spread || at.tier == LandTier::Scattered)) b.placeCampFaction(f->id, f->units, at);
     }
+    out.spawnX = land.slots[(size_t)playerSlot()].x;
+    out.spawnZ = land.slots[(size_t)playerSlot()].z;
     out.camps = b.plan;
     return out;
 }
@@ -507,7 +621,10 @@ void settleFactionHomes(World& w, Terrain& t) {
         for (const Claim& c : claimsOf(w)) {
             if (c.owner == f.id) altar = c.altar;
         }
-        if (altar == NO_OBJECT) {
+        // A faction that found no land has no Altar: it keeps its camps as it goes
+        const std::vector<int>& nomads = w.resource<FactionLandNotes>().nomadic;
+        const bool nomadic = std::find(nomads.begin(), nomads.end(), f.id) != nomads.end();
+        if (altar == NO_OBJECT && !nomadic) {
             float x = 0.0f, z = 0.0f;
             const float mx = sx / (float)units.size(), mz = sz / (float)units.size();
             if (campSpot(w, t, mx, mz, x, z)) {
@@ -516,7 +633,7 @@ void settleFactionHomes(World& w, Terrain& t) {
                 settleClaimOwnership(w);
             }
         }
-        if (altar == NO_OBJECT) {
+        if (altar == NO_OBJECT && !nomadic) {
             float x = 0.0f, z = 0.0f;
             if (altarSpot(w, t, sx / (float)units.size(), sz / (float)units.size(), x, z)) {
                 altar = placeBuiltProp(w, t, PropKind::Altar, x, z, 0.0f, f.id);

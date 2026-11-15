@@ -64,7 +64,8 @@ PartyListBar partyListBar(int W, int H, int count, int scroll);
 int partyListScrollAt(int W, int H, int count, float thumbTop);
 
 std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi& ui,
-                                     const std::vector<DropEntry>& drop, const std::string& patronName = "");
+                                     const std::vector<DropEntry>& drop, const std::string& patronName = "",
+                                     const std::string& factionName = "");
 
 std::string partyMessage(const Party& p);
 

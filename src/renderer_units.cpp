@@ -1,4 +1,6 @@
 #include "gates.h"
+#include "tree_gen.h"
+#include "calendar.h"
 #include "prop_visual.h"
 #include "renderer_internal.h"
 #include "building.h"
@@ -157,6 +159,120 @@ static Mat4 placementMatrix(const ModelPlacement& p) {
 
 void Renderer::queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw) {
     queueModel(propModel(kind), x, y, z, targetSize, yaw);
+}
+
+namespace {
+unsigned mixBits(unsigned a, unsigned b) {
+    unsigned h = a * 0x9e3779b1u ^ (b + 0x7f4a7c15u + (a << 6) + (a >> 2));
+    h ^= h >> 16;
+    h *= 0x7feb352du;
+    h ^= h >> 15;
+    h *= 0x846ca68bu;
+    h ^= h >> 16;
+    return h;
+}
+}
+
+const Model* Renderer::treeModel(int variant, int stage, int detail) {
+    const int key = (variant * TREE_STAGES + stage) * 2 + detail;
+    auto it = treeModels_.find(key);
+    if (it != treeModels_.end()) return it->second.vao ? &it->second : nullptr;
+    if (!treePalette_) {
+        const std::vector<uint8_t> px = treePalette();
+        treePalette_ = MakeRgbaTexture(TREE_PALETTE_SHADES, TREE_PALETTE_ROWS, px.data(), GL_LINEAR);
+    }
+    const TreeMesh mesh = generateTree(variant, stage, detail);
+    Model m;
+    if (!makeModelFromMesh(mesh.verts, mesh.indices, treePalette_, m)) m = Model{};
+    return treeModels_.emplace(key, std::move(m)).first->second.vao ? &treeModels_[key] : nullptr;
+}
+
+void Renderer::setTreeClock(double clockSeconds) {
+    const unsigned long long now = SDL_GetTicks();
+    float dt = treeTicks_ ? (float)(now - treeTicks_) / 1000.0f : 0.0f;
+    treeTicks_ = now;
+    dt = std::min(dt, 0.25f);
+    ++treeFrame_;
+    const long long day = dayIndexOf(clockSeconds);
+    treeStageNow_ = treeStageOfClock(clockSeconds);
+    if (treeDay_ < 0) treeDay_ = day;
+    if (day != treeDay_) {
+        // A new day: every tree looks at the year again, each a different moment in the next ten seconds, so that they do not all change in one frame
+        treeDay_ = day;
+        treeWindow_ = 10.5f;
+        for (auto it = treeVis_.begin(); it != treeVis_.end();) {
+            if (it->second.seen + 600 < treeFrame_) {
+                it = treeVis_.erase(it);   // not seen for a good while: it takes up the year as it is when it is next seen
+                continue;
+            }
+            it->second.wait = 1.0f + 9.0f * (float)(mixBits((unsigned)it->first, (unsigned)day) >> 8) / 16777216.0f;
+            ++it;
+        }
+    }
+    if (treeWindow_ > 0.0f) {
+        treeWindow_ -= dt;
+        for (auto& entry : treeVis_) {
+            TreeVis& v = entry.second;
+            if (v.wait <= 0.0f) continue;
+            v.wait -= dt;
+            if (v.wait <= 0.0f) v.stage = treeStageNow_;
+        }
+        if (treeWindow_ <= 0.0f) {
+            // Every tree is at the new stage: the meshes of the others are let go
+            for (auto it = treeModels_.begin(); it != treeModels_.end();) {
+                const int stage = (it->first / 2) % TREE_STAGES;
+                const bool inUse = stage == treeStageNow_ || std::any_of(treeVis_.begin(), treeVis_.end(), [&](const auto& t) { return t.second.stage == stage; });
+                if (inUse) {
+                    ++it;
+                    continue;
+                }
+                destroyModel(it->second);
+                it = treeModels_.erase(it);
+            }
+        }
+    }
+}
+
+bool Renderer::queueTree(ObjectId e, float x, float y, float z, float size, float, RGBA tint) {
+    auto found = treeVis_.find(e);
+    if (found == treeVis_.end()) {
+        TreeVis fresh;
+        fresh.stage = treeStageNow_;
+        found = treeVis_.emplace(e, fresh).first;
+    }
+    TreeVis& v = found->second;
+    v.seen = treeFrame_;
+    // Where it stands settles what it is: its genes, how it is turned and how big it is, so that it is the same tree every time it is seen
+    const unsigned h = mixBits((unsigned)std::floor(x * 4.0f), (unsigned)std::floor(z * 4.0f));
+    const int variant = (int)(h % (unsigned)TREE_VARIANTS);
+    const float turn = (float)((h >> 8) & 0xffff) / 65536.0f * 6.2831853f;
+    const float grown = 0.85f + 0.30f * (float)((h >> 4) & 0xff) / 255.0f;
+    const float dx = billX_ - x, dz = billZ_ - z;
+    const int detail = dx * dx + dz * dz > 60.0f * 60.0f ? 1 : 0;
+    const Model* m = treeModel(variant, v.stage, detail);
+    if (!m) return false;
+    const float k = size / TREE_MODEL_HEIGHT * grown;
+    Mat4 place{};
+    place.m[0] = k * std::cos(turn);
+    place.m[2] = -k * std::sin(turn);
+    place.m[5] = k;
+    place.m[8] = k * std::sin(turn);
+    place.m[10] = k * std::cos(turn);
+    place.m[15] = 1.0f;
+    place.m[12] = x;
+    place.m[13] = y;
+    place.m[14] = z;
+    queueModelMatrix(*m, place, tint, 1.0f);
+    return true;
+}
+
+void Renderer::queueAltar(float x, float y, float z, float targetSize, float yaw, RGBA bannerColor) {
+    // Both are made in the whole altar's space, so they are placed as it is (its size is what is scaled to targetSize)
+    const ModelPlacement p = placeModel(propModel(PropKind::Altar), x, y, z, targetSize, yaw);
+    if (!p.ok) return;
+    const Mat4 place = placementMatrix(p);
+    queueModelMatrix(altarFrame_, place, propTint_, 1.0f);
+    queueModelMatrix(altarBanner_, place, propTint_.a > 0.0f ? propTint_ : bannerColor, 1.0f);
 }
 
 void Renderer::queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw) {

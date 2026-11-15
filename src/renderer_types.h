@@ -207,6 +207,15 @@ struct DetailRange {
     }
 };
 inline bool withinDetail(const Camera& cam, float x, float y, float z) { return DetailRange(cam).within(x, y, z); }
+// Progress rings, floating numbers, the +/- item text, emotes and names over units and props are drawn only this near the camera's eye
+// (tiles, and within the detail range too): further out they are specks of clutter over things too small to read
+constexpr float OVERLAY_RANGE_TILES = 110.0f;
+inline bool withinOverlay(const Camera& cam, float x, float y, float z) {
+    const DetailRange d(cam);
+    if (!d.within(x, y, z)) return false;
+    const float dx = x - d.ex, dy = y - d.ey, dz = z - d.ez;
+    return dx * dx + dy * dy + dz * dz <= OVERLAY_RANGE_TILES * OVERLAY_RANGE_TILES;
+}
 
 constexpr RGBA MISSING_PROP_PINK{ 1.0f, 0.35f, 0.75f, 1.0f };
 float missingPropSide(PropKind kind);

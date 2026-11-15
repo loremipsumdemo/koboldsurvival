@@ -61,6 +61,8 @@ void App::startMapLevel(const MapChoice& choice) {
         return;
     }
     audio::stopTracks();
+    // Which color you are: the one picked in character creation, or a random one. The other 15 factions are the rest.
+    setPlayerSlot(resolveFactionPick());
     if (!pendingLevel.empty()) {
         LevelData level;
         if (!readLevelFile(levelFilePath(pendingLevel), level, err)) {
@@ -106,6 +108,9 @@ void App::startMapLevel(const MapChoice& choice) {
     currentMap = choice;
     gs = GameState{};
     enterLevel();
+    // A faction that found no land, and one that was eliminated, are told of
+    for (int f : world.resource<FactionLandNotes>().nomadic) gameLog.add(langf("MISC_FACTION_NOMADIC", { factionName(f) }));
+    for (int f : world.resource<FactionLandNotes>().eliminated) gameLog.add(langf("MISC_FACTION_ELIMINATED", { factionName(f) }));
     primeStreaming(world, terrain, cam);
     clearSelection(world);
     const ObjectId firstUnit = firstSquadUnit(world);
