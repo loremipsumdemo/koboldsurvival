@@ -819,10 +819,15 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             const Mat4 place = unitWorldMatrix(w, e, *m, yaw);
             const RGBA tint = unitFactionTint(w, e);
             const float sat = pose.lying ? unitSaturation(w, e) : 1.0f;
-            // A rigged model that is near and on its feet is posed (idle, walk or attack); lying down, or far off in its coarser copy, it is
-            // drawn as it was made
+            // A rigged model that is near and on its feet is posed (idle, walk or attack); lying down, it holds the first frame of its idle
+            // (asleep); far off in its coarser copy, it is drawn as it was made
             if (shown == m && m->skeleton && !pose.lying) {
                 unitPoseJoints(w, e, *m, tr->x, tr->z, poseJoints_);
+                queueSkinnedModel(*m, place, tint, sat, unitHue(w, e), poseJoints_.data());
+            } else if (shown == m && m->skeleton && m->skeleton->clipNamed("idle") >= 0) {
+                const Skeleton& sk = *m->skeleton;
+                poseJoints_.resize((size_t)sk.jointCount * 16);
+                poseSkeleton(sk, sk.clipNamed("idle"), 0.0f, -1, 0.0f, 0.0f, poseJoints_.data());
                 queueSkinnedModel(*m, place, tint, sat, unitHue(w, e), poseJoints_.data());
             } else {
                 queueModelMatrix(*shown, place, tint, sat, unitHue(w, e));

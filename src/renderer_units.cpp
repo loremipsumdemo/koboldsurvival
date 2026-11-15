@@ -616,6 +616,13 @@ Mat4 Renderer::unitWorldMatrix(World& w, ObjectId e, const Model& m, float yaw) 
             z += dz / len * 0.15f;
         }
     }
+    // Lying in a bed or bedroll, the head goes to the pillow end. The beds' models are made with the pillow toward +X of the prop, which
+    // is (cos, -sin) of its yaw in the world, and a lying unit's head points (-cos, sin) of its own yaw: the same line when the unit's
+    // yaw is the prop's plus a half turn.
+    if (pose.lying && !pose.carried && bedLift(w, e) >= 0.0f) {
+        const Prop* bed = w.get<Prop>(w.get<Occupying>(e)->prop);
+        yaw = bed->yaw + 3.14159265f;
+    }
     return unitModelMatrix(m, x, tr->y + pose.lift, z, yaw, pose.lying, unitHeight(w, e));
 }
 
