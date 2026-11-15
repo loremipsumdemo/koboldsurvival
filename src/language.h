@@ -21,7 +21,7 @@ std::string languageDisplayName();
 
 bool loadLanguage(const std::string& id, std::string& err);
 
-enum class NameSet { Masculine, Feminine, Androgynous };
+enum class NameSet { Male, Female };
 
 std::vector<std::string> languageNames(NameSet set);
 

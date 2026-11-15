@@ -19,13 +19,11 @@ Stats randomStartingStats(Rng& rng) {
 }
 
 BodyType randomBodyType(Rng& rng) {
-    const int r = rng.range(1, 100);
-    return r <= 45 ? BodyType::Masculine : r <= 90 ? BodyType::Feminine : BodyType::Androgynous;
+    return rng.range(1, 100) <= 50 ? BodyType::Male : BodyType::Female;
 }
 
 std::string randomUnitName(Rng& rng, BodyType body, const std::vector<std::string>& taken) {
-    const NameSet set = body == BodyType::Feminine ? NameSet::Feminine
-                      : body == BodyType::Androgynous ? NameSet::Androgynous : NameSet::Masculine;
+    const NameSet set = body == BodyType::Female ? NameSet::Female : NameSet::Male;
     const std::vector<std::string> names = languageNames(set);
     if (names.empty()) return lang("UILABEL_UNNAMED_UNIT");
     for (int attempt = 0; attempt < 200; ++attempt) {
@@ -40,7 +38,7 @@ void systems_detail::spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn,
                             spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });
     const ObjectId u = makeEntity(w, Transform{ p.x, t.heightAt(p.x, p.z), p.z }, FACTION_PLAYER);
     const BodyType body = randomBodyType(rng);
-    w.add(u, UnitSprite{ randomModelForBody(rng, body) });
+    w.add(u, UnitSprite{ modelForBody(body) });
     w.add(u, Body{ body });
 }
 
@@ -146,7 +144,7 @@ void systems_detail::finishUnit(World& w, Rng& rng, ObjectId u, std::vector<std:
     }
     if (!w.has<Body>(u)) w.add(u, Body{ randomBodyType(rng) });
     const BodyType body = w.get<Body>(u)->type;
-    if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = randomModelForBody(rng, body);
+    if (UnitSprite* us = w.get<UnitSprite>(u)) us->id = modelForBody(body);
     Name* nm = w.get<Name>(u);
     if (!nm) return;
     if (w.has<Commandable>(u)) {

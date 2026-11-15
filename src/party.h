@@ -12,25 +12,8 @@
 #include "rng.h"
 #include "stats.h"
 
-// Unit models come in rows of three, feminine, masculine and androgynous: f1 m1 a1, then f2 m2 a2, and so on.
-inline constexpr int UNIT_MODEL_ROW = 3;
-static_assert(UNIT_SPRITE_COUNT % UNIT_MODEL_ROW == 0, "unit models come in whole rows of three");
-
-// The model of that body in the given row (0 is f1 m1 a1).
-inline int modelForBody(BodyType body, int row) {
-    const int column = body == BodyType::Feminine ? 0 : body == BodyType::Masculine ? 1 : 2;
-    return row * UNIT_MODEL_ROW + column + 1;
-}
-
-// The row a model is in, so a change of body keeps the same look number (f2 becomes m2).
-inline int modelRow(int model) { return model >= 1 ? (model - 1) / UNIT_MODEL_ROW : 0; }
-
-// A random model of that body.
-inline int randomModelForBody(Rng& rng, BodyType body) {
-    return modelForBody(body, rng.range(0, UNIT_SPRITE_COUNT / UNIT_MODEL_ROW - 1));
-}
-
-std::string modelLabel(int n);
+// A unit's model is its body's: f1 for a female, m1 for a male.
+inline int modelForBody(BodyType body) { return body == BodyType::Female ? 1 : 2; }
 
 inline constexpr size_t PARTY_NAME_CHARS = 32;
 
@@ -54,7 +37,7 @@ inline constexpr int PARTY_MAX_UNITS = 32;
 
 struct PartyMember {
     std::string name;
-    BodyType body = BodyType::Masculine;
+    BodyType body = BodyType::Male;
     int sprite = 1;
     Stats stats;
     GearItems gear{};

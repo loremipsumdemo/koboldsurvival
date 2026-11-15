@@ -125,18 +125,36 @@ layout(location=2) in mat4 aModel;   // locations 2 to 5, one per instance
 layout(location=6) in vec4 aFaction;
 layout(location=7) in float aSat;
 layout(location=8) in float aHue;
+layout(location=9) in vec4 aJoints;    // a skinned model's: which joints move the vertex, and how much each does
+layout(location=10) in vec4 aWeights;
+layout(location=11) in float aBone;    // per copy: its row of uBones, the pose it is drawn in
 uniform mat4 uVP;
+uniform float uSkinOn;                 // 1 for a skinned model
+uniform sampler2D uBones;              // a row for each posed copy: a joint's matrix is four texels, one for each column
 out vec2 vUV;
 out vec4 vFaction;
 out float vSat;
 out float vHue;
 out vec3 vWorld;
+mat4 boneMatrix(int joint, int row) {
+    return mat4(texelFetch(uBones, ivec2(joint * 4, row), 0), texelFetch(uBones, ivec2(joint * 4 + 1, row), 0),
+                texelFetch(uBones, ivec2(joint * 4 + 2, row), 0), texelFetch(uBones, ivec2(joint * 4 + 3, row), 0));
+}
 void main() {
     vUV = aUV;
     vFaction = aFaction;
     vSat = aSat;
     vHue = aHue;
-    vec4 world = aModel * vec4(aPos, 1.0);
+    vec4 local = vec4(aPos, 1.0);
+    if (uSkinOn > 0.5) {
+        int row = int(aBone + 0.5);
+        vec4 skinned = vec4(0.0);
+        for (int i = 0; i < 4; ++i) {
+            if (aWeights[i] > 0.0) skinned += aWeights[i] * (boneMatrix(int(aJoints[i] + 0.5), row) * local);
+        }
+        local = vec4(skinned.xyz, 1.0);
+    }
+    vec4 world = aModel * local;
     vWorld = world.xyz;
     gl_Position = uVP * world;
 }
@@ -561,8 +579,11 @@ bool Renderer::initGl() {
         setGlyphDefaults(modelInstProgram_);
         uTintInst_ = glGetUniformLocation(modelInstProgram_, "uTint");
         uGrainOnInst_ = glGetUniformLocation(modelInstProgram_, "uGrainOn");
+        uSkinOnInst_ = glGetUniformLocation(modelInstProgram_, "uSkinOn");
         glUseProgram(modelInstProgram_);
         glUniform1i(glGetUniformLocation(modelInstProgram_, "uGrain"), 1);
+        glUniform1i(glGetUniformLocation(modelInstProgram_, "uBones"), 2);
+        glUniform1f(uSkinOnInst_, 0.0f);
         glUniform1f(glGetUniformLocation(modelInstProgram_, "uGrainTile"), GRAIN_TILE);
         glUniform1f(uGrainOnInst_, 0.0f);
         glUseProgram(0);
@@ -658,6 +679,9 @@ void Renderer::shutdown() {
     instQueues_.clear();
     instSlot_.clear();
     if (instVbo_) glDeleteBuffers(1, &instVbo_);
+    if (boneTex_) glDeleteTextures(1, &boneTex_);
+    boneTex_ = 0;
+    boneTexRows_ = 0;
     if (modelInstProgram_) glDeleteProgram(modelInstProgram_);
     instVbo_ = modelInstProgram_ = 0;
     for (Model& m : propModels_) destroyModel(m);

@@ -62,15 +62,11 @@ std::vector<int> allItemChoices() {
     return sortedByName(out);
 }
 
-std::string modelLabel(int n) {
-    return langf("UILABEL_MODEL_N", { unitModelKey(n) });
-}
-
 PartyMember randomMember(Rng& rng, const std::vector<std::string>& taken) {
     PartyMember m;
     m.body = randomBodyType(rng);
     m.name = randomUnitName(rng, m.body, taken);
-    m.sprite = randomModelForBody(rng, m.body);
+    m.sprite = modelForBody(m.body);
     m.stats = randomStartingStats(rng);
 
     for (int slot = 0; slot < GEAR_SLOTS; ++slot) {
@@ -206,7 +202,7 @@ void applyParty(World& w, const Party& p) {
         const PartyMember& m = *people[i];
         const std::string name = cleanName(m.name);
         w.add(u, Name{ name.empty() ? std::string(lang("UILABEL_UNNAMED_UNIT")) : name });
-        w.add(u, UnitSprite{ modelForBody(m.body, modelRow(m.sprite)) });
+        w.add(u, UnitSprite{ modelForBody(m.body) });
         w.add(u, Body{ m.body });
         w.add(u, m.stats);
         Needs needs;

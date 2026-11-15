@@ -26,7 +26,6 @@ enum class Action {
     PartyPick,
     PartyTabPick,
     PartyNameField,
-    PartySpriteBox,
     PartyBodyBox,
     PartyRandomUnit,
     PartyAddUnit,

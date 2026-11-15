@@ -160,6 +160,228 @@ void setLodLayout(GLuint vao, GLuint vbo, GLuint ebo) {
 }
 }
 
+int Skeleton::clipNamed(const char* name) const {
+    for (size_t i = 0; i < clips.size(); ++i) {
+        if (clips[i].name == name) return (int)i;
+    }
+    return -1;
+}
+
+namespace {
+void mulMat(const float* a, const float* b, float* out) {   // out = a * b, column-major
+    float r[16];
+    for (int c = 0; c < 4; ++c) {
+        for (int row = 0; row < 4; ++row) {
+            r[c * 4 + row] = a[0 * 4 + row] * b[c * 4 + 0] + a[1 * 4 + row] * b[c * 4 + 1] + a[2 * 4 + row] * b[c * 4 + 2] +
+                             a[3 * 4 + row] * b[c * 4 + 3];
+        }
+    }
+    std::memcpy(out, r, sizeof r);
+}
+
+void composeTRS(const float t[3], const float q[4], const float s[3], float* m) {
+    const float x = q[0], y = q[1], z = q[2], w = q[3];
+    m[0] = (1 - 2 * (y * y + z * z)) * s[0];
+    m[1] = (2 * (x * y + z * w)) * s[0];
+    m[2] = (2 * (x * z - y * w)) * s[0];
+    m[3] = 0;
+    m[4] = (2 * (x * y - z * w)) * s[1];
+    m[5] = (1 - 2 * (x * x + z * z)) * s[1];
+    m[6] = (2 * (y * z + x * w)) * s[1];
+    m[7] = 0;
+    m[8] = (2 * (x * z + y * w)) * s[2];
+    m[9] = (2 * (y * z - x * w)) * s[2];
+    m[10] = (1 - 2 * (x * x + y * y)) * s[2];
+    m[11] = 0;
+    m[12] = t[0];
+    m[13] = t[1];
+    m[14] = t[2];
+    m[15] = 1;
+}
+
+// One channel at a time, wrapped round the clip's length
+void sampleChannel(const Skeleton::Channel& ch, float duration, float t, float* out) {
+    const int n = ch.path == 1 ? 4 : 3;
+    const size_t keys = ch.times.size();
+    if (keys == 0) return;
+    if (duration > 0.0f) t = t - std::floor(t / duration) * duration;
+    if (keys == 1 || t <= ch.times.front()) {
+        std::memcpy(out, ch.values.data(), sizeof(float) * (size_t)n);
+        return;
+    }
+    if (t >= ch.times.back()) {
+        std::memcpy(out, ch.values.data() + (keys - 1) * (size_t)n, sizeof(float) * (size_t)n);
+        return;
+    }
+    const size_t hi = (size_t)(std::upper_bound(ch.times.begin(), ch.times.end(), t) - ch.times.begin());
+    const size_t lo = hi - 1;
+    const float span = ch.times[hi] - ch.times[lo];
+    const float k = span > 1e-6f ? (t - ch.times[lo]) / span : 0.0f;
+    const float* a = ch.values.data() + lo * (size_t)n;
+    const float* b = ch.values.data() + hi * (size_t)n;
+    float sign = 1.0f;
+    if (n == 4 && a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] < 0.0f) sign = -1.0f;   // the short way round
+    for (int i = 0; i < n; ++i) out[i] = a[i] + (b[i] * sign - a[i]) * k;
+    if (n == 4) {
+        const float len = std::sqrt(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] + out[3] * out[3]);
+        if (len > 1e-6f) for (int i = 0; i < 4; ++i) out[i] /= len;
+    }
+}
+
+// Every joint's own place, turn and scale in a clip at a time (the rest pose where the clip does not move it)
+void localPose(const Skeleton& s, int clip, float t, std::vector<float>& T, std::vector<float>& R, std::vector<float>& S) {
+    T = s.restT;
+    R = s.restR;
+    S = s.restS;
+    if (clip < 0 || clip >= (int)s.clips.size()) return;
+    const Skeleton::Clip& c = s.clips[(size_t)clip];
+    for (const Skeleton::Channel& ch : c.channels) {
+        float* dst = ch.path == 0 ? &T[(size_t)ch.joint * 3] : ch.path == 1 ? &R[(size_t)ch.joint * 4] : &S[(size_t)ch.joint * 3];
+        sampleChannel(ch, c.duration, t, dst);
+    }
+}
+}
+
+void poseSkeleton(const Skeleton& s, int clipA, float ta, int clipB, float tb, float blend, float* out) {
+    thread_local std::vector<float> T, R, S, T2, R2, S2;
+    localPose(s, clipA, ta, T, R, S);
+    if (blend > 0.0f && clipB != clipA) {
+        localPose(s, clipB, tb, T2, R2, S2);
+        const float k = std::min(blend, 1.0f);
+        for (size_t i = 0; i < T.size(); ++i) T[i] += (T2[i] - T[i]) * k;
+        for (size_t i = 0; i < S.size(); ++i) S[i] += (S2[i] - S[i]) * k;
+        for (int j = 0; j < s.jointCount; ++j) {
+            float* a = &R[(size_t)j * 4];
+            const float* b = &R2[(size_t)j * 4];
+            const float sign = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3] < 0.0f ? -1.0f : 1.0f;
+            for (int i = 0; i < 4; ++i) a[i] += (b[i] * sign - a[i]) * k;
+            const float len = std::sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2] + a[3] * a[3]);
+            if (len > 1e-6f) for (int i = 0; i < 4; ++i) a[i] /= len;
+        }
+    }
+    thread_local std::vector<float> global;
+    global.assign((size_t)s.jointCount * 16, 0.0f);
+    for (int j : s.order) {
+        float local[16];
+        composeTRS(&T[(size_t)j * 3], &R[(size_t)j * 4], &S[(size_t)j * 3], local);
+        const int p = s.parent[(size_t)j];
+        if (p >= 0) mulMat(&global[(size_t)p * 16], local, &global[(size_t)j * 16]);
+        else std::memcpy(&global[(size_t)j * 16], local, sizeof local);
+        mulMat(&global[(size_t)j * 16], &s.invBind[(size_t)j * 16], out + (size_t)j * 16);
+    }
+}
+
+void setSkinLayout() {
+    glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(9);
+    glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
+    glEnableVertexAttribArray(10);
+}
+
+namespace {
+// The rig of the glTF's first skin, with its animations. Null if there is none, or it is more than the card is given room for.
+std::shared_ptr<const Skeleton> readSkeleton(const tinygltf::Model& g, float& pivotX, float& pivotZ) {
+    if (g.skins.empty()) return nullptr;
+    const tinygltf::Skin& skin = g.skins[0];
+    const int n = (int)skin.joints.size();
+    if (n <= 0 || n > Skeleton::MAX_JOINTS) return nullptr;
+    auto sk = std::make_shared<Skeleton>();
+    sk->jointCount = n;
+    std::unordered_map<int, int> jointOfNode;
+    for (int j = 0; j < n; ++j) jointOfNode[skin.joints[(size_t)j]] = j;
+    std::vector<int> parentNode(g.nodes.size(), -1);
+    for (size_t i = 0; i < g.nodes.size(); ++i) {
+        for (int c : g.nodes[i].children) {
+            if (c >= 0 && c < (int)parentNode.size()) parentNode[(size_t)c] = (int)i;
+        }
+    }
+    sk->parent.assign((size_t)n, -1);
+    sk->restT.assign((size_t)n * 3, 0.0f);
+    sk->restR.assign((size_t)n * 4, 0.0f);
+    sk->restS.assign((size_t)n * 3, 1.0f);
+    for (int j = 0; j < n; ++j) {
+        const int nodeIndex = skin.joints[(size_t)j];
+        if (nodeIndex < 0 || nodeIndex >= (int)g.nodes.size()) return nullptr;
+        const tinygltf::Node& node = g.nodes[(size_t)nodeIndex];
+        for (int i = 0; i < 3 && i < (int)node.translation.size(); ++i) sk->restT[(size_t)j * 3 + i] = (float)node.translation[(size_t)i];
+        for (int i = 0; i < 4; ++i) sk->restR[(size_t)j * 4 + i] = i < (int)node.rotation.size() ? (float)node.rotation[(size_t)i] : (i == 3 ? 1.0f : 0.0f);
+        for (int i = 0; i < 3 && i < (int)node.scale.size(); ++i) sk->restS[(size_t)j * 3 + i] = (float)node.scale[(size_t)i];
+        for (int up = parentNode[(size_t)nodeIndex]; up >= 0; up = parentNode[(size_t)up]) {
+            auto it = jointOfNode.find(up);
+            if (it != jointOfNode.end()) {
+                sk->parent[(size_t)j] = it->second;
+                break;
+            }
+        }
+    }
+    // Parents before children
+    std::vector<char> placed((size_t)n, 0);
+    while ((int)sk->order.size() < n) {
+        bool progress = false;
+        for (int j = 0; j < n; ++j) {
+            if (placed[(size_t)j]) continue;
+            const int p = sk->parent[(size_t)j];
+            if (p < 0 || placed[(size_t)p]) {
+                placed[(size_t)j] = 1;
+                sk->order.push_back(j);
+                progress = true;
+            }
+        }
+        if (!progress) return nullptr;   // a loop in the rig
+    }
+    sk->invBind.assign((size_t)n * 16, 0.0f);
+    for (int j = 0; j < n; ++j) {
+        float* m = &sk->invBind[(size_t)j * 16];
+        m[0] = m[5] = m[10] = m[15] = 1.0f;
+    }
+    Accessor ib;
+    if (skin.inverseBindMatrices >= 0 && getAccessor(g, skin.inverseBindMatrices, ib) && ib.compType == TINYGLTF_COMPONENT_TYPE_FLOAT &&
+        ib.count >= (size_t)n) {
+        for (int j = 0; j < n; ++j) std::memcpy(&sk->invBind[(size_t)j * 16], ib.data + (size_t)j * ib.stride, sizeof(float) * 16);
+    }
+    for (const tinygltf::Animation& anim : g.animations) {
+        Skeleton::Clip clip;
+        clip.name = anim.name;
+        for (const tinygltf::AnimationChannel& ch : anim.channels) {
+            auto joint = jointOfNode.find(ch.target_node);
+            if (joint == jointOfNode.end() || ch.sampler < 0 || ch.sampler >= (int)anim.samplers.size()) continue;
+            const int path = ch.target_path == "translation" ? 0 : ch.target_path == "rotation" ? 1 : ch.target_path == "scale" ? 2 : -1;
+            if (path < 0) continue;
+            const tinygltf::AnimationSampler& sm = anim.samplers[(size_t)ch.sampler];
+            Accessor in, outA;
+            if (!getAccessor(g, sm.input, in) || !getAccessor(g, sm.output, outA)) continue;
+            if (in.compType != TINYGLTF_COMPONENT_TYPE_FLOAT || outA.compType != TINYGLTF_COMPONENT_TYPE_FLOAT) continue;
+            const int comps = path == 1 ? 4 : 3;
+            if (outA.count < in.count) continue;
+            Skeleton::Channel out;
+            out.joint = joint->second;
+            out.path = path;
+            for (size_t k = 0; k < in.count; ++k) {
+                float t;
+                std::memcpy(&t, in.data + k * in.stride, sizeof t);
+                out.times.push_back(t);
+                float v[4];
+                std::memcpy(v, outA.data + k * outA.stride, sizeof(float) * (size_t)comps);
+                out.values.insert(out.values.end(), v, v + comps);
+                clip.duration = std::max(clip.duration, t);
+            }
+            clip.channels.push_back(std::move(out));
+        }
+        sk->clips.push_back(std::move(clip));
+    }
+    // Where a root joint stands in the bind pose: the model is placed by that, not by the middle of its box (its spear and tail
+    // stick out). A root's inverse bind matrix moves back by where it stands.
+    pivotX = pivotZ = 0.0f;
+    for (int j : sk->order) {
+        if (sk->parent[(size_t)j] >= 0) continue;
+        pivotX = -sk->invBind[(size_t)j * 16 + 12];
+        pivotZ = -sk->invBind[(size_t)j * 16 + 14];
+        break;
+    }
+    return sk;
+}
+}
+
 bool loadGLBModel(const char* path, Model& m) {
     tinygltf::Model gltf;
     tinygltf::TinyGLTF loader;
@@ -177,7 +399,16 @@ bool loadGLBModel(const char* path, Model& m) {
     }
 
     std::vector<GLuint> imageTex(gltf.images.size(), 0);
+    // Only the pictures a material paints with are sent to the card (a rigged model also carries a normal map and the like)
+    std::vector<char> pictureUsed(gltf.images.size(), 0);
+    for (const tinygltf::Material& mat : gltf.materials) {
+        const int ti = mat.pbrMetallicRoughness.baseColorTexture.index;
+        if (ti < 0 || ti >= (int)gltf.textures.size()) continue;
+        const int src = gltf.textures[(size_t)ti].source;
+        if (src >= 0 && src < (int)pictureUsed.size()) pictureUsed[(size_t)src] = 1;
+    }
     for (size_t i = 0; i < gltf.images.size(); ++i) {
+        if (!pictureUsed[i]) continue;
         const tinygltf::Image& img = gltf.images[i];
         if (img.image.empty() || (img.component != 3 && img.component != 4)) continue;
         GLenum fmt = img.component == 4 ? GL_RGBA : GL_RGB;
@@ -195,6 +426,8 @@ bool loadGLBModel(const char* path, Model& m) {
 
     std::vector<float> verts;
     std::vector<GLuint> indices;
+    std::vector<float> skinVerts;   // joints then weights, 4 floats each, for every vertex of verts
+    bool skinnedAll = !gltf.skins.empty();
     const float inf = std::numeric_limits<float>::infinity();
     float minX = inf, minY = inf, minZ = inf, maxX = -inf, maxY = -inf, maxZ = -inf;
 
@@ -215,8 +448,49 @@ bool loadGLBModel(const char* path, Model& m) {
                 hasUV = true;
             }
 
+            Accessor joints, weights;
+            bool hasSkin = false;
+            auto jointIt = prim.attributes.find("JOINTS_0");
+            auto weightIt = prim.attributes.find("WEIGHTS_0");
+            if (jointIt != prim.attributes.end() && weightIt != prim.attributes.end() && getAccessor(gltf, jointIt->second, joints) &&
+                getAccessor(gltf, weightIt->second, weights) && joints.count >= pos.count && weights.count >= pos.count &&
+                (joints.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE || joints.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) &&
+                (weights.compType == TINYGLTF_COMPONENT_TYPE_FLOAT || weights.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE ||
+                 weights.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)) {
+                hasSkin = true;
+            }
+            if (!hasSkin) skinnedAll = false;
+
             GLuint base = (GLuint)(verts.size() / 5);
             for (size_t v = 0; v < pos.count; ++v) {
+                float sk[8] = {};
+                if (hasSkin) {
+                    float sum = 0.0f;
+                    for (int c = 0; c < 4; ++c) {
+                        if (joints.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                            sk[c] = (float)joints.data[v * joints.stride + (size_t)c];
+                        } else {
+                            uint16_t j;
+                            std::memcpy(&j, joints.data + v * joints.stride + (size_t)c * 2, sizeof j);
+                            sk[c] = (float)j;
+                        }
+                        float wv;
+                        if (weights.compType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+                            std::memcpy(&wv, weights.data + v * weights.stride + (size_t)c * 4, sizeof wv);
+                        } else if (weights.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                            wv = (float)weights.data[v * weights.stride + (size_t)c] / 255.0f;
+                        } else {
+                            uint16_t w16;
+                            std::memcpy(&w16, weights.data + v * weights.stride + (size_t)c * 2, sizeof w16);
+                            wv = (float)w16 / 65535.0f;
+                        }
+                        sk[4 + c] = std::max(0.0f, wv);
+                        sum += sk[4 + c];
+                    }
+                    if (sum > 1e-6f) for (int c = 0; c < 4; ++c) sk[4 + c] /= sum;
+                    else sk[4] = 1.0f;
+                }
+                skinVerts.insert(skinVerts.end(), sk, sk + 8);
                 float p[3];
                 std::memcpy(p, pos.data + v * pos.stride, sizeof(p));
                 float t[2] = { 0.0f, 0.0f };
@@ -282,6 +556,19 @@ bool loadGLBModel(const char* path, Model& m) {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    float pivotX = 0.0f, pivotZ = 0.0f;
+    if (skinnedAll && skinVerts.size() == verts.size() / 5 * 8) {
+        if (std::shared_ptr<const Skeleton> sk = readSkeleton(gltf, pivotX, pivotZ)) {
+            m.skeleton = sk;
+            m.hasPivot = true;
+            m.pivotX = pivotX;
+            m.pivotZ = pivotZ;
+            glGenBuffers(1, &m.skinVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, m.skinVbo);
+            glBufferData(GL_ARRAY_BUFFER, skinVerts.size() * sizeof(float), skinVerts.data(), GL_STATIC_DRAW);
+            setSkinLayout();
+        }
+    }
     glBindVertexArray(0);
 
     // A model with this many triangles is too much to draw whole for a unit far off: one coarser copy, a quarter of the
@@ -356,6 +643,7 @@ void destroyModel(Model& m) {
     }
     if (m.ebo) glDeleteBuffers(1, &m.ebo);
     if (m.vbo) glDeleteBuffers(1, &m.vbo);
+    if (m.skinVbo) glDeleteBuffers(1, &m.skinVbo);
     if (m.vao) glDeleteVertexArrays(1, &m.vao);
     if (m.instVao) glDeleteVertexArrays(1, &m.instVao);
     m = Model{};

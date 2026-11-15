@@ -34,12 +34,9 @@ void App::partyDropPick(int param) {
     PartyMember& m = pickedMember(party, partyUi);
     const int value = entries[param].value;
     switch (partyUi.dropKind) {
-    case DropKind::Sprite:
-        m.sprite = value;
-        break;
     case DropKind::Body:
         m.body = (BodyType)value;
-        m.sprite = modelForBody(m.body, modelRow(m.sprite));
+        m.sprite = modelForBody(m.body);
         break;
     case DropKind::Gear:
         if (partyUi.editable) m.gear[partyUi.dropSlot] = value;
@@ -97,12 +94,6 @@ bool App::partyAction(Action action, int param) {
         stopNameEdit();
         partyUi.dropKind = DropKind::Body;
         partyUi.dropScroll = 0;
-        return true;
-    case Action::PartySpriteBox:
-        stopNameEdit();
-        partyUi.dropKind = DropKind::Sprite;
-        partyUi.dropScroll = clampDropScroll(modelRow(pickedMember(party, partyUi).sprite) - DROP_VISIBLE_ROWS / 2,
-                                             UNIT_SPRITE_COUNT / UNIT_MODEL_ROW);
         return true;
     case Action::PartyMobBox:
         if (!partyUi.mobKindEditable) return true;

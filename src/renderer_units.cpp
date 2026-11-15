@@ -21,7 +21,8 @@ Mat4 unitModelMatrix(const Model& m, float x, float y, float z, float yaw, bool 
         { lying ? 1.0f : 0.0f, lying ? 0.0f : 1.0f, 0.0f },
         { lying ? 0.0f : -sn, lying ? sn : 0.0f, cs }
     };
-    const float c[3] = { (m.minX + m.maxX) * 0.5f, lying ? (m.minY + m.maxY) * 0.5f : m.minY, (m.minZ + m.maxZ) * 0.5f };
+    const float c[3] = { m.hasPivot ? m.pivotX : (m.minX + m.maxX) * 0.5f, lying ? (m.minY + m.maxY) * 0.5f : m.minY,
+                         m.hasPivot ? m.pivotZ : (m.minZ + m.maxZ) * 0.5f };
     const float t[3] = { x, lying ? y + k * (m.maxX - m.minX) * 0.5f : y, z };
     Mat4 out{};
     for (int r = 0; r < 3; ++r) {
@@ -285,7 +286,81 @@ void Renderer::queueModel(const Model& m, float x, float y, float z, float targe
     if (p.ok) queueModelMatrix(m, placementMatrix(p), propTint_, 1.0f);
 }
 
-void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue) {
+namespace {
+constexpr float ANIM_FADE_SECONDS = 0.15f;      // how long one clip takes to give way to the next
+constexpr float WALK_SPEED_REFERENCE = 2.2f;    // tiles a second the walk clip is made for (a unit's usual pace)
+constexpr float WALK_START_SPEED = 0.4f;        // tiles a second above which a unit is taken to be walking
+}
+
+void Renderer::unitPoseJoints(World& w, ObjectId e, const Model& m, float x, float z, std::vector<float>& out) {
+    const Skeleton& sk = *m.skeleton;
+    out.resize((size_t)sk.jointCount * 16);
+    const int idle = sk.clipNamed("idle"), walk = sk.clipNamed("walk"), attack = sk.clipNamed("attack");
+    const double clock = w.resource<DanceHops>().clock;   // the game's own clock: it stops while the game is paused
+    const Combat* combat = w.get<Combat>(e);
+    const float swing = combat ? combat->swingLeft : 0.0f;
+    auto found = unitAnims_.find(e);
+    if (found == unitAnims_.end()) {
+        UnitAnim fresh;
+        fresh.clock = clock;
+        fresh.x = x;
+        fresh.z = z;
+        fresh.prevSwing = swing;
+        fresh.clip = idle;
+        // Each unit starts its idle somewhere different, so a crowd does not breathe in step
+        if (idle >= 0) fresh.t = (float)(e * 2654435761u % 1000u) / 1000.0f * sk.clips[(size_t)idle].duration;
+        found = unitAnims_.emplace(e, fresh).first;
+    }
+    UnitAnim& a = found->second;
+    a.seen = animFrame_;
+    const float dt = (float)std::clamp(clock - a.clock, 0.0, 0.25);
+    const float duration = [&](int clip) { return clip >= 0 ? sk.clips[(size_t)clip].duration : 0.0f; }(a.clip);
+    if (dt > 0.0f) {
+        const float moved = std::sqrt((x - a.x) * (x - a.x) + (z - a.z) * (z - a.z));
+        const float now = moved / dt;
+        a.speed += ((now > 12.0f ? 0.0f : now) - a.speed) * std::min(1.0f, dt * 10.0f);   // a jump across the map is not a run
+        a.x = x;
+        a.z = z;
+        const bool swung = swing > a.prevSwing + 0.01f;
+        a.prevSwing = swing;
+        auto change = [&](int clip) {
+            a.fromClip = a.clip;
+            a.fromT = a.clip == attack && duration > 0.0f ? std::min(a.t, duration * 0.999f) : a.t;
+            a.fade = 0.0f;
+            a.clip = clip;
+            a.t = 0.0f;
+        };
+        const bool attacking = a.clip == attack && attack >= 0 && a.t < sk.clips[(size_t)attack].duration;
+        if (swung && attack >= 0) {
+            change(attack);
+        } else if (!attacking) {
+            const int want = a.speed > WALK_START_SPEED && walk >= 0 ? walk : idle;
+            if (want != a.clip) change(want);
+        }
+        float rate = 1.0f;
+        if (a.clip == walk && walk >= 0) rate = std::clamp(a.speed / WALK_SPEED_REFERENCE, 0.5f, 2.5f);
+        else if (a.clip == attack && attack >= 0) rate = std::max(1.0f, sk.clips[(size_t)attack].duration / std::max(swing, 0.05f));
+        a.t += dt * rate;
+        a.fromT += dt;
+        a.fade = std::min(1.0f, a.fade + dt / ANIM_FADE_SECONDS);
+    }
+    a.clock = clock;
+    poseSkeleton(sk, a.clip, a.t, a.fromClip, a.fromT, a.fade < 1.0f ? 1.0f - a.fade : 0.0f, out.data());
+}
+
+void Renderer::queueSkinnedModel(const Model& m, const Mat4& place, RGBA faction, float sat, float hue, const float* joints) {
+    if (!m.vao) return;
+    if (!modelInstProgram_ || !m.skeleton || !joints) {
+        queueModelMatrix(m, place, faction, sat, hue);
+        return;
+    }
+    const size_t row = (size_t)boneRowCount_++;
+    if (boneRows_.size() < (row + 1) * (size_t)BONE_TEXELS * 4) boneRows_.resize(std::max((row + 1) * 2, (size_t)64) * (size_t)BONE_TEXELS * 4, 0.0f);
+    std::memcpy(&boneRows_[row * (size_t)BONE_TEXELS * 4], joints, sizeof(float) * 16 * (size_t)m.skeleton->jointCount);
+    queueModelMatrix(m, place, faction, sat, hue, (float)row);
+}
+
+void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue, float bone) {
     if (!m.vao) return;
     if (!modelInstProgram_) {
         glUseProgram(glyphProgram_);
@@ -311,6 +386,7 @@ void Renderer::queueModelMatrix(const Model& m, const Mat4& place, RGBA faction,
     inst.faction[3] = faction.a;
     inst.sat = sat;
     inst.hue = hue;
+    inst.pad[0] = bone;
     instQueues_[slot->second].second.push_back(inst);
 }
 
@@ -328,6 +404,12 @@ GLuint Renderer::modelInstVao(const Model& m) {
     for (int a = 2; a <= 8; ++a) {
         glEnableVertexAttribArray((GLuint)a);
         glVertexAttribDivisor((GLuint)a, 1);
+    }
+    glEnableVertexAttribArray(11);
+    glVertexAttribDivisor(11, 1);
+    if (m.skinVbo) {
+        glBindBuffer(GL_ARRAY_BUFFER, m.skinVbo);
+        setSkinLayout();
     }
     glBindVertexArray(0);
     return m.instVao;
@@ -353,6 +435,26 @@ void Renderer::drawModelInstances() {
     glBindBuffer(GL_ARRAY_BUFFER, instVbo_);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), nullptr, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(instUpload_.size() * sizeof(ModelInstance)), instUpload_.data());
+    // The skinned copies' poses go on unit 2
+    if (boneRowCount_ > 0) {
+        glActiveTexture(GL_TEXTURE2);
+        if (!boneTex_ || boneTexRows_ < boneRowCount_) {
+            if (!boneTex_) glGenTextures(1, &boneTex_);
+            glBindTexture(GL_TEXTURE_2D, boneTex_);
+            boneTexRows_ = std::max(64, boneRowCount_ * 2);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, BONE_TEXELS, boneTexRows_, 0, GL_RGBA, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, boneTex_);
+        }
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, BONE_TEXELS, boneRowCount_, GL_RGBA, GL_FLOAT, boneRows_.data());
+        glActiveTexture(GL_TEXTURE0);
+    }
+    boneRowCount_ = 0;
+    bool skinBound = false;
     // A building piece's material texture goes on unit 1, bound only when it changes
     GLuint surfaceBound = 0;
     glUniform1f(uGrainOnInst_, 0.0f);
@@ -373,6 +475,12 @@ void Renderer::drawModelInstances() {
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, faction)));
             glVertexAttribPointer(7, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, sat)));
             glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, hue)));
+            glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, STRIDE, (void*)(at + offsetof(ModelInstance, pad)));
+            const bool skinned = m.skeleton != nullptr;
+            if (skinned != skinBound) {
+                glUniform1f(uSkinOnInst_, skinned ? 1.0f : 0.0f);
+                skinBound = skinned;
+            }
             if (m.surface != surfaceBound) {
                 if (m.surface) {
                     glActiveTexture(GL_TEXTURE1);
@@ -401,6 +509,7 @@ void Renderer::drawModelInstances() {
         list.clear();
     }
     if (surfaceBound) glUniform1f(uGrainOnInst_, 0.0f);
+    if (skinBound) glUniform1f(uSkinOnInst_, 0.0f);
     glBindVertexArray(0);
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);

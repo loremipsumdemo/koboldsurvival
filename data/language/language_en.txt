@@ -28,9 +28,8 @@ GAME_TITLE_SECOND	Survival
 # ----------------------------------------------------------------------
 # Unit names (lists the game picks from)
 # ----------------------------------------------------------------------
-NAME_MASCULINE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin", "Alaric", "Bertram", "Cedric", "Corwin", "Darian", "Edmund", "Edric", "Falk", "Gareth", "Godwin", "Hadrian", "Harold", "Ivor", "Jasper", "Kendrick", "Leofric", "Lorcan", "Magnus", "Malcolm", "Merrick", "Osric", "Oswin", "Percival", "Roderick", "Roland", "Silas", "Stellan", "Thaddeus", "Torin", "Tristan", "Ulric", "Victor", "Walter", "Wystan", "Aiden", "Brandt", "Callum", "Desmond", "Emrys", "Finnian", "Garrick", "Hector", "Lucan", "Rowan", "Tobias"]
-NAME_FEMININE	["Cora", "Elin", "Gwen", "Isolde", "Maren", "Adela", "Alys", "Anwen", "Beatrix", "Brienne", "Catrin", "Celia", "Delphine", "Edith", "Elspeth", "Esme", "Fenna", "Freya", "Gisela", "Hazel", "Helena", "Ilsa", "Imogen", "Ivy", "Juliet", "Leda", "Linnea", "Lorelei", "Mabel", "Matilda", "Mirabel", "Nell", "Odette", "Petra", "Rosalind", "Rowena", "Seren", "Sybil", "Tamsin", "Thea", "Una", "Vera", "Viola", "Wilhelmina", "Yara", "Agnes", "Bryony", "Clara", "Ottilie", "Signe"]
-NAME_ANDROGYNOUS	["Kestrel", "Wren", "Sable", "Quill", "Tobin", "Ash", "Avery", "Blair", "Briar", "Corin", "Dale", "Ember", "Ellis", "Emery", "Fallon", "Finch", "Gray", "Haven", "Hollis", "Indigo", "Jules", "Kai", "Lark", "Linden", "Marlow", "Merritt", "Morgan", "Nova", "Oakley", "Onyx", "Perrin", "Quinn", "Raven", "Reed", "Rook", "Rory", "Sage", "Shay", "Sparrow", "Sterling", "Tarn", "Teagan", "Vale", "Wynn", "Yarrow", "Zephyr", "Arden", "Cypress", "Ellery", "Lumen"]
+NAME_MALE	["Aldric", "Bren", "Dunstan", "Liam", "Orrin", "Alaric", "Bertram", "Cedric", "Corwin", "Darian", "Edmund", "Edric", "Falk", "Gareth", "Godwin", "Hadrian", "Harold", "Ivor", "Jasper", "Kendrick", "Leofric", "Lorcan", "Magnus", "Malcolm", "Merrick", "Osric", "Oswin", "Percival", "Roderick", "Roland", "Silas", "Stellan", "Thaddeus", "Torin", "Tristan", "Ulric", "Victor", "Walter", "Wystan", "Aiden", "Brandt", "Callum", "Desmond", "Emrys", "Finnian", "Garrick", "Hector", "Lucan", "Rowan", "Tobias"]
+NAME_FEMALE	["Cora", "Elin", "Gwen", "Isolde", "Maren", "Adela", "Alys", "Anwen", "Beatrix", "Brienne", "Catrin", "Celia", "Delphine", "Edith", "Elspeth", "Esme", "Fenna", "Freya", "Gisela", "Hazel", "Helena", "Ilsa", "Imogen", "Ivy", "Juliet", "Leda", "Linnea", "Lorelei", "Mabel", "Matilda", "Mirabel", "Nell", "Odette", "Petra", "Rosalind", "Rowena", "Seren", "Sybil", "Tamsin", "Thea", "Una", "Vera", "Viola", "Wilhelmina", "Yara", "Agnes", "Bryony", "Clara", "Ottilie", "Signe"]
 
 # ----------------------------------------------------------------------
 # Common buttons and words
@@ -123,12 +122,10 @@ MISC_DELETE_MAP_Q	Delete the map "{0}"?
 UILABEL_DELETE_MAP_SAVES	Game saves played on it: {0}. They won't load without the map.
 UILABEL_DELETE_MAP_LEVELS	Levels made on it are deleted too: {0}.
 UILABEL_MAP_SAVES_TIP	Game saves played on this map: {0}
-UILABEL_MODEL_N	Model {0}
 UILABEL_PAUSE_HINT	(Use the space bar to unpause.)
 UILABEL_BODY_TYPE	Body type
-UILABEL_BODY_MASCULINE	Masculine
-UILABEL_BODY_FEMININE	Feminine
-UILABEL_BODY_ANDROGYNOUS	Androgynous
+UILABEL_BODY_MALE	Male
+UILABEL_BODY_FEMALE	Female
 UILABEL_NEEDS_UNITS	Add at least one unit to start.
 UILABEL_SCENARIO	Scenario
 SCENARIO_VAGABOND_NAME	Vagabond

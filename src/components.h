@@ -104,14 +104,13 @@ struct SpawnHome {
     float replanIn = 0.0f;
 };
 
-enum class BodyType : int { Masculine = 0, Feminine = 1, Androgynous = 2 };
+enum class BodyType : int { Male = 0, Female = 1 };
 struct Body {
-    BodyType type = BodyType::Masculine;
+    BodyType type = BodyType::Male;
 };
 
 inline const char* bodyTypeKey(BodyType type) {
-    return type == BodyType::Feminine ? "UILABEL_BODY_FEMININE"
-         : type == BodyType::Androgynous ? "UILABEL_BODY_ANDROGYNOUS" : "UILABEL_BODY_MASCULINE";
+    return type == BodyType::Female ? "UILABEL_BODY_FEMALE" : "UILABEL_BODY_MALE";
 }
 
 struct Faction {

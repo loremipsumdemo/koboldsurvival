@@ -789,6 +789,12 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
 
     // Units with a model join the props' models, one draw for each model; the few without one are pictures
+    ++animFrame_;
+    if (animFrame_ % 300 == 0) {
+        for (auto it = unitAnims_.begin(); it != unitAnims_.end();) {
+            it = it->second.seen + 300 < animFrame_ ? unitAnims_.erase(it) : std::next(it);
+        }
+    }
     for (ObjectId e : w.view<Entity, Transform>()) {
         const Transform shown = unitShownAt(w, e);
         const Transform* tr = &shown;
@@ -805,8 +811,17 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 const float lx = tr->x - camX, ly = tr->y - camY, lz = tr->z - camZ;
                 if (lx * lx + ly * ly + lz * lz > MODEL_LOD_FAR_TILES * MODEL_LOD_FAR_TILES) shown = &m->lods.front();
             }
-            queueModelMatrix(*shown, unitWorldMatrix(w, e, *m, yaw), unitFactionTint(w, e), pose.lying ? unitSaturation(w, e) : 1.0f,
-                             unitHue(w, e));
+            const Mat4 place = unitWorldMatrix(w, e, *m, yaw);
+            const RGBA tint = unitFactionTint(w, e);
+            const float sat = pose.lying ? unitSaturation(w, e) : 1.0f;
+            // A rigged model that is near and on its feet is posed (idle, walk or attack); lying down, or far off in its coarser copy, it is
+            // drawn as it was made
+            if (shown == m && m->skeleton && !pose.lying) {
+                unitPoseJoints(w, e, *m, tr->x, tr->z, poseJoints_);
+                queueSkinnedModel(*m, place, tint, sat, unitHue(w, e), poseJoints_.data());
+            } else {
+                queueModelMatrix(*shown, place, tint, sat, unitHue(w, e));
+            }
             continue;
         }
         if (pose.lying) {

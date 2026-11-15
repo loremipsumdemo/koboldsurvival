@@ -385,7 +385,7 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     } else if (u.down) {
         world.add(e, *u.down);
     }
-    if (u.body) world.add(e, Body{ (BodyType)std::clamp(*u.body, 0, 2) });
+    if (u.body) world.add(e, Body{ *u.body == (int)BodyType::Female ? BodyType::Female : BodyType::Male });
     if (u.retreat && !u.corpseHours) world.add(e, *u.retreat);
     if (u.home) world.add(e, *u.home);
     if (u.stats) world.add(e, *u.stats);
@@ -393,8 +393,8 @@ ObjectId restoreUnit(World& world, const SaveUnit& u, const std::vector<ObjectId
     *world.get<Needs>(e) = u.needs;
     world.get<Name>(e)->text = u.name;
     world.get<UnitSprite>(e)->id = std::clamp(u.sprite, 1, UNIT_SPRITE_COUNT);
-    // A model is always one of its body's
-    if (const Body* body = world.get<Body>(e)) world.get<UnitSprite>(e)->id = modelForBody(body->type, modelRow(world.get<UnitSprite>(e)->id));
+    // A model is always its body's (a save from before there were only two bodies may name another)
+    if (const Body* body = world.get<Body>(e)) world.get<UnitSprite>(e)->id = modelForBody(body->type);
     restoreSlots(u.stacks, world.get<Inventory>(e)->slots);
     for (const SaveGear& g : u.gear) {
         if (findItem(g.item)) world.get<Equipment>(e)->items[g.slot] = g.item;

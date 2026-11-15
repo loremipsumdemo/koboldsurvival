@@ -7,7 +7,7 @@
 enum class PartyTab : int { Identity = 0, Stats, Gear, Items };
 inline constexpr int PARTY_TAB_COUNT = 4;
 
-enum class DropKind { None, Sprite, Body, Gear, Item, MobKind };
+enum class DropKind { None, Body, Gear, Item, MobKind };
 
 struct DropEntry {
     std::string label;

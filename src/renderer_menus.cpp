@@ -530,16 +530,6 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
         }
 
-        case Action::PartySpriteBox:
-            {
-                std::string heading = langf("UILABEL_MODEL_N", { "" });
-                while (!heading.empty() && heading.back() == ' ') heading.pop_back();
-                drawListText(heading, b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
-            }
-            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Sprite, true));
-            leftText(b.rect, b.label, WHITE, 10.0f * s);
-            break;
-
         case Action::PartyBodyBox:
             drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
             drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Body, true));

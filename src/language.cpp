@@ -277,8 +277,7 @@ static std::vector<std::string> parseNameArray(const std::string& text) {
 }
 
 std::vector<std::string> languageNames(NameSet set) {
-    const char* key = set == NameSet::Feminine ? "NAME_FEMININE"
-                    : set == NameSet::Androgynous ? "NAME_ANDROGYNOUS" : "NAME_MASCULINE";
+    const char* key = set == NameSet::Female ? "NAME_FEMALE" : "NAME_MALE";
     std::vector<std::string> out;
     const auto a = activeTable().find(key);
     if (a != activeTable().end()) out = parseNameArray(a->second);

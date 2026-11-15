@@ -691,6 +691,34 @@ private:
     GLuint modelInstProgram_ = 0;
     GLint uVPInst_ = -1;
     GLint uGrainOnInst_ = -1;
+    GLint uSkinOnInst_ = -1;
+    // The pose of every skinned copy queued this frame: a row of BONE_TEXELS texels each (a joint's matrix is four), sent to the card
+    // with the copies
+    static constexpr int BONE_TEXELS = Skeleton::MAX_JOINTS * 4;
+    std::vector<float> boneRows_;
+    int boneRowCount_ = 0;
+    GLuint boneTex_ = 0;
+    int boneTexRows_ = 0;
+    // Queues a skinned model's copy in the pose that `joints` (jointCount matrices) gives
+    void queueSkinnedModel(const Model& m, const Mat4& place, RGBA faction, float sat, float hue, const float* joints);
+    // What a unit is doing, for the clip it plays (idle, walk, attack), kept from frame to frame by its id
+    struct UnitAnim {
+        double clock = -1.0;        // the game's clock when it was last seen
+        float x = 0.0f, z = 0.0f;
+        float speed = 0.0f;         // tiles a second of game time, smoothed
+        float prevSwing = 0.0f;
+        int clip = -1;
+        float t = 0.0f;
+        int fromClip = -1;
+        float fromT = 0.0f;
+        float fade = 1.0f;          // 0 just changed clip, 1 all the new one
+        unsigned seen = 0;
+    };
+    std::unordered_map<ObjectId, UnitAnim> unitAnims_;
+    unsigned animFrame_ = 0;
+    std::vector<float> poseJoints_;   // scratch: one unit's joint matrices
+    // The joint matrices for a unit's pose this frame, in `out` (jointCount * 16 floats)
+    void unitPoseJoints(World& w, ObjectId e, const Model& m, float x, float z, std::vector<float>& out);
     // Each building material's texture, by BuildMaterial (tools/make_building_textures.py), laid over its pieces
     std::array<TextTex, 4> surfaces_{};
     GLuint instVbo_ = 0;
@@ -718,7 +746,7 @@ private:
     float planSpan_ = 1.0f;
     RGBA propTint_{ 0.0f, 0.0f, 0.0f, 0.0f };   // what queueModel tints a model with: red for a building being pulled down
     void queueModel(const Model& m, float x, float y, float z, float targetSize, float yaw);
-    void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f);
+    void queueModelMatrix(const Model& m, const Mat4& place, RGBA faction, float sat, float hue = 0.0f, float bone = -1.0f);
     void queuePropModel(PropKind kind, float x, float y, float z, float targetSize, float yaw);
     // An Altar: its frame, and its banners in the color of the faction that owns it (placed as the whole altar model is)
     void queueAltar(float x, float y, float z, float targetSize, float yaw, RGBA bannerColor);

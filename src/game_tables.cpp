@@ -63,7 +63,7 @@ const char* const PROP_KEYS[] = {
 static_assert(std::size(PROP_KEYS) == PROP_NAMED_KIND_COUNT);
 
 // In save order: a save keeps a unit's model as its place here plus one, so models are only ever added on the end.
-const char* const UNIT_KEYS[] = { "f1", "m1", "a1", "f2", "m2", "a2", "f3", "m3", "a3" };
+const char* const UNIT_KEYS[] = { "f1", "m1" };
 static_assert(std::size(UNIT_KEYS) == UNIT_SPRITE_COUNT);
 
 const char* const SCREEN_KEYS[] = { "Title", "Settings", "ScenarioSelect", "PartySetup", "Pause", "Playing" };

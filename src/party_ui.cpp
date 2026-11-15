@@ -45,15 +45,8 @@ std::vector<DropEntry> dropdownEntries(const Party& p, const PartyUi& ui) {
     switch (ui.dropKind) {
     case DropKind::None:
         break;
-    case DropKind::Sprite:
-        // Only the models of its body: f1 f2 f3 for Feminine, m1 m2 m3 for Masculine, a1 a2 a3 for Androgynous
-        for (int row = 0; row < UNIT_SPRITE_COUNT / UNIT_MODEL_ROW; ++row) {
-            const int model = modelForBody(pickedMember(p, ui).body, row);
-            out.push_back(DropEntry{ modelLabel(model), model });
-        }
-        break;
     case DropKind::Body:
-        for (int i = 0; i < 3; ++i) out.push_back(DropEntry{ lang(bodyTypeKey((BodyType)i)), i });
+        for (int i = 0; i < 2; ++i) out.push_back(DropEntry{ lang(bodyTypeKey((BodyType)i)), i });
         break;
     case DropKind::Gear:
         out.push_back(DropEntry{ lang("UILABEL_EMPTY"), 0 });
@@ -144,7 +137,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     const PartyMember& m = pickedMember(p, ui);
     std::vector<Button> out;
     std::vector<Button> dropGroup;
-    Rect sprAnchor, gearAnchor, invAnchor;
+    Rect gearAnchor, invAnchor;
     Rect bodyAnchor;
     Rect mobAnchor, addMobAnchor;
     const bool mob = !p.empty() && m.mob != MobKind::None;
@@ -193,11 +186,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                                   Action::PartyRandomUnit, true, sel });
             break;
         }
-        const Rect sprBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
-        sprAnchor = sprBox;
-        out.push_back(Button{ modelLabel(m.sprite) + "   v", sprBox, Action::PartySpriteBox, true, sel });
-
-        const Rect bodyBox{ inX, sprBox.y + sprBox.h + 26.0f * s, 220.0f * s, 40.0f * s };
+        const Rect bodyBox{ inX, top + 108.0f * s, 220.0f * s, 40.0f * s };
         bodyAnchor = bodyBox;
         out.push_back(Button{ lang(bodyTypeKey(m.body)) + "   v", bodyBox, Action::PartyBodyBox, true, sel });
 
@@ -329,8 +318,7 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
                           Action::PartyMessage, false, 0 });
 
     if (ui.dropKind != DropKind::None) {
-        const Rect anchor = ui.dropKind == DropKind::Sprite ? sprAnchor
-                          : ui.dropKind == DropKind::Body ? bodyAnchor
+        const Rect anchor = ui.dropKind == DropKind::Body ? bodyAnchor
                           : ui.dropKind == DropKind::MobKind ? (ui.dropSlot < 0 ? addMobAnchor : mobAnchor)
                           : ui.dropKind == DropKind::Gear ? gearAnchor : invAnchor;
         const int total = (int)drop.size();
@@ -354,7 +342,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             ry += scrollH;
         }
         int current = 0;
-        if (ui.dropKind == DropKind::Sprite) current = m.sprite;
         if (ui.dropKind == DropKind::Body) current = idx(m.body);
         if (ui.dropKind == DropKind::Gear) current = m.gear[std::clamp(ui.dropSlot, 0, GEAR_SLOTS - 1)];
         if (ui.dropKind == DropKind::Item) current = m.items[std::clamp(ui.dropSlot, 0, INVENTORY_SLOTS - 1)].item;
