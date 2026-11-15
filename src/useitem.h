@@ -22,6 +22,12 @@ struct UseTarget {
 
 int applyUse(const std::vector<UseEffect>& effects, const UseTarget& target);
 
+// A unit that has just eaten, drunk or used a medicine: the renderer plays its consume animation while this lasts (behaviorSystem counts it down)
+inline constexpr float CONSUME_SECONDS = 2.0f;
+struct Consuming {
+    float left = CONSUME_SECONDS;
+};
+
 enum class UseResult {
     Empty,
     NotUsable,

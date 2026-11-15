@@ -115,6 +115,9 @@ bool canShareWith(World& w, ObjectId g, ObjectId taker, bool food, int takerValu
 
 size_t behaviorSystem(World& w, float dt) {
     size_t checked = 0;
+    for (ObjectId u : w.view<Consuming>()) {
+        if ((w.get<Consuming>(u)->left -= dt) <= 0.0f) w.remove<Consuming>(u);
+    }
     for (ObjectId actor : w.view<Behaviors, Needs>()) {
         Behaviors* b = w.get<Behaviors>(actor);
         Needs* n = w.get<Needs>(actor);

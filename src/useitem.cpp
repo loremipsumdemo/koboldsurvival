@@ -198,6 +198,7 @@ UseResult useStackOn(World& w, ObjectId consumer, ObjectId target, int slot) {
         queueSoundFrom(w, hurt ? Sfx::Poison : food ? Sfx::Eat : Sfx::Drink, target);
     }
     if (--s.count <= 0) s = ItemStack{};
+    if (!w.has<Mob>(target)) w.add(target, Consuming{});   // the one who takes it does the eating (a shared meal is the taker's)
     grantXp(w, consumer, StatId::Medical, (float)restored, "healing");
     return UseResult::Used;
 }

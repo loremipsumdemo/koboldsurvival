@@ -6,6 +6,8 @@
 #include "building.h"
 #include "build_plan.h"
 #include "schedule.h"
+#include "useitem.h"
+#include "airship.h"
 #include <cstddef>
 
 using namespace render_detail;
@@ -357,6 +359,7 @@ void Renderer::queueModel(const Model& m, float x, float y, float z, float targe
 namespace {
 constexpr float ANIM_FADE_SECONDS = 0.15f;      // how long one clip takes to give way to the next
 constexpr float WALK_SPEED_REFERENCE = 2.2f;    // tiles a second the walk clip is made for (a unit's usual pace)
+constexpr float RUN_SPEED_REFERENCE = 4.5f;     // tiles a second the run clip is made for
 constexpr float WALK_START_SPEED = 0.4f;        // tiles a second above which a unit is taken to be walking
 }
 
@@ -364,6 +367,8 @@ void Renderer::unitPoseJoints(World& w, ObjectId e, const Model& m, float x, flo
     const Skeleton& sk = *m.skeleton;
     out.resize((size_t)sk.jointCount * 16);
     const int idle = sk.clipNamed("idle"), walk = sk.clipNamed("walk"), attack = sk.clipNamed("attack");
+    // The clips a unit's model may or may not have: one it lacks falls back to idle (consume, dance) or walk (run)
+    const int consumeClip = sk.clipNamed("consume"), danceClip = sk.clipNamed("dance"), runClip = sk.clipNamed("run");
     const double clock = w.resource<DanceHops>().clock;   // the game's own clock: it stops while the game is paused
     const Combat* combat = w.get<Combat>(e);
     const float swing = combat ? combat->swingLeft : 0.0f;
@@ -402,13 +407,25 @@ void Renderer::unitPoseJoints(World& w, ObjectId e, const Model& m, float x, flo
         if (swung && attack >= 0) {
             change(attack);
         } else if (!attacking) {
-            const int want = a.speed > WALK_START_SPEED && walk >= 0 ? walk : idle;
+            const bool moving = a.speed > WALK_START_SPEED;
+            const Behaviors* bh = w.get<Behaviors>(e);
+            const bool dancing = bh && bh->busy && bh->began && bh->step.kind == BehaviorKind::Dance;
+            const bool fleeing = !w.has<Mob>(e) && w.has<Fleeing>(e);
+            int want = moving && walk >= 0 ? walk : idle;
+            if (moving && fleeing && runClip >= 0) want = runClip;
+            else if (dancing && danceClip >= 0) want = danceClip;   // dancers go round the fire, and keep dancing as they go
+            else if (!moving && w.has<Consuming>(e) && consumeClip >= 0) want = consumeClip;
             if (want != a.clip) change(want);
         }
         float rate = 1.0f;
         if (a.clip == walk && walk >= 0) rate = std::clamp(a.speed / WALK_SPEED_REFERENCE, 0.5f, 2.5f);
+        else if (a.clip == runClip && runClip >= 0) rate = std::clamp(a.speed / RUN_SPEED_REFERENCE, 0.6f, 2.0f);
         else if (a.clip == attack && attack >= 0) rate = std::max(1.0f, sk.clips[(size_t)attack].duration / std::max(swing, 0.05f));
         a.t += dt * rate;
+        // The consume clip plays once through, over the seconds the unit is Consuming
+        if (a.clip == consumeClip && consumeClip >= 0) {
+            if (const Consuming* c = w.get<Consuming>(e)) a.t = (1.0f - std::clamp(c->left / CONSUME_SECONDS, 0.0f, 1.0f)) * sk.clips[(size_t)consumeClip].duration * 0.999f;
+        }
         a.fromT += dt;
         a.fade = std::min(1.0f, a.fade + dt / ANIM_FADE_SECONDS);
     }
