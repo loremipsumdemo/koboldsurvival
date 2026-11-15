@@ -382,6 +382,46 @@ std::shared_ptr<const Skeleton> readSkeleton(const tinygltf::Model& g, float& pi
 }
 }
 
+namespace {
+// A model with vertex colors and no picture (COLOR_0, a color to every triangle's corners, as the low-poly props are made) is given a
+// small palette texture of the colors it uses instead, each vertex pointing at its color's texel: the card still draws every model from
+// a position and a texture position. Triangles are one color each, so nothing is blended between palette entries. The colors are
+// linear in the file, and the palette is sRGB like the game's pictures.
+constexpr int PALETTE_W = 64, PALETTE_H = 32;
+constexpr GLuint PALETTE_DRAW = 0xFFFFFFFFu;   // a draw's placeholder texture until the palette is made
+
+unsigned char srgbByte(float linear) {
+    linear = std::max(0.0f, std::min(1.0f, linear));
+    const float s = linear <= 0.0031308f ? 12.92f * linear : 1.055f * std::pow(linear, 1.0f / 2.4f) - 0.055f;
+    return (unsigned char)std::lround(std::max(0.0f, std::min(1.0f, s)) * 255.0f);
+}
+
+struct VertexColors {
+    Accessor acc;
+    int components = 0;   // 3 or 4; 0 for none
+    bool read(const tinygltf::Model& g, const tinygltf::Primitive& prim, size_t count) {
+        auto it = prim.attributes.find("COLOR_0");
+        if (it == prim.attributes.end() || !getAccessor(g, it->second, acc) || acc.count < count) return false;
+        const tinygltf::Accessor& a = g.accessors[(size_t)it->second];
+        components = a.type == TINYGLTF_TYPE_VEC3 ? 3 : a.type == TINYGLTF_TYPE_VEC4 ? 4 : 0;
+        return components > 0 && (acc.compType == TINYGLTF_COMPONENT_TYPE_FLOAT || acc.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE ||
+                                  acc.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT);
+    }
+    float at(size_t v, int c) const {
+        const unsigned char* p = acc.data + v * acc.stride;
+        if (acc.compType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+            float f;
+            std::memcpy(&f, p + (size_t)c * 4, sizeof f);
+            return f;
+        }
+        if (acc.compType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) return (float)p[c] / 255.0f;
+        uint16_t u;
+        std::memcpy(&u, p + (size_t)c * 2, sizeof u);
+        return (float)u / 65535.0f;
+    }
+};
+}
+
 bool loadGLBModel(const char* path, Model& m) {
     tinygltf::Model gltf;
     tinygltf::TinyGLTF loader;
@@ -427,6 +467,16 @@ bool loadGLBModel(const char* path, Model& m) {
     std::vector<float> verts;
     std::vector<GLuint> indices;
     std::vector<float> skinVerts;   // joints then weights, 4 floats each, for every vertex of verts
+    std::vector<unsigned char> palette((size_t)PALETTE_W * PALETTE_H * 4, 255);
+    std::unordered_map<uint32_t, int> paletteOf;   // color (rgba bytes) to its place in the palette
+    bool paletteUsed = false;
+    auto pictureOf = [&](const tinygltf::Primitive& prim) -> GLuint {
+        if (prim.material < 0 || prim.material >= (int)gltf.materials.size()) return 0;
+        const int ti = gltf.materials[(size_t)prim.material].pbrMetallicRoughness.baseColorTexture.index;
+        if (ti < 0 || ti >= (int)gltf.textures.size()) return 0;
+        const int src = gltf.textures[(size_t)ti].source;
+        return src >= 0 && src < (int)imageTex.size() ? imageTex[(size_t)src] : 0;
+    };
     bool skinnedAll = !gltf.skins.empty();
     const float inf = std::numeric_limits<float>::infinity();
     float minX = inf, minY = inf, minZ = inf, maxX = -inf, maxY = -inf, maxZ = -inf;
@@ -460,6 +510,10 @@ bool loadGLBModel(const char* path, Model& m) {
                 hasSkin = true;
             }
             if (!hasSkin) skinnedAll = false;
+
+            VertexColors colors;
+            const bool usePalette = pictureOf(prim) == 0 && colors.read(gltf, prim, pos.count);
+            if (usePalette) paletteUsed = true;
 
             GLuint base = (GLuint)(verts.size() / 5);
             for (size_t v = 0; v < pos.count; ++v) {
@@ -495,6 +549,19 @@ bool loadGLBModel(const char* path, Model& m) {
                 std::memcpy(p, pos.data + v * pos.stride, sizeof(p));
                 float t[2] = { 0.0f, 0.0f };
                 if (hasUV) std::memcpy(t, uv.data + v * uv.stride, sizeof(t));
+                if (usePalette) {
+                    const unsigned char rgb[4] = { srgbByte(colors.at(v, 0)), srgbByte(colors.at(v, 1)), srgbByte(colors.at(v, 2)),
+                                                   colors.components == 4 ? (unsigned char)std::lround(std::max(0.0f, std::min(1.0f, colors.at(v, 3))) * 255.0f) : (unsigned char)255 };
+                    const uint32_t key = (uint32_t)rgb[0] | (uint32_t)rgb[1] << 8 | (uint32_t)rgb[2] << 16 | (uint32_t)rgb[3] << 24;
+                    auto known = paletteOf.find(key);
+                    if (known == paletteOf.end()) {
+                        const int at = std::min((int)paletteOf.size(), PALETTE_W * PALETTE_H - 1);   // past the end the last color is shared
+                        std::memcpy(&palette[(size_t)at * 4], rgb, 4);
+                        known = paletteOf.emplace(key, at).first;
+                    }
+                    t[0] = ((float)(known->second % PALETTE_W) + 0.5f) / (float)PALETTE_W;
+                    t[1] = ((float)(known->second / PALETTE_W) + 0.5f) / (float)PALETTE_H;
+                }
 
                 verts.insert(verts.end(), { p[0], p[1], p[2], t[0], t[1] });
                 minX = std::min(minX, p[0]); maxX = std::max(maxX, p[0]);
@@ -512,7 +579,9 @@ bool loadGLBModel(const char* path, Model& m) {
             GLsizei count = (GLsizei)indices.size() - firstIndex;
 
             GLuint tex = 0;
-            if (prim.material >= 0 && prim.material < (int)gltf.materials.size()) {
+            if (usePalette) {
+                tex = PALETTE_DRAW;
+            } else if (prim.material >= 0 && prim.material < (int)gltf.materials.size()) {
                 const tinygltf::Material& mat = gltf.materials[prim.material];
                 int ti = mat.pbrMetallicRoughness.baseColorTexture.index;
                 if (ti >= 0 && ti < (int)gltf.textures.size()) {
@@ -529,6 +598,14 @@ bool loadGLBModel(const char* path, Model& m) {
             if (!tex) tex = solid(255, 255, 255, 255);
 
             m.draws.push_back({ tex, count, firstIndex });
+        }
+    }
+
+    if (paletteUsed) {
+        const GLuint tex = makeTexture2D(PALETTE_W, PALETTE_H, GL_RGBA, GL_RGBA, palette.data(), GL_NEAREST, GL_CLAMP_TO_EDGE);
+        m.textures.push_back(tex);
+        for (DrawRange& d : m.draws) {
+            if (d.texture == PALETTE_DRAW) d.texture = tex;
         }
     }
 

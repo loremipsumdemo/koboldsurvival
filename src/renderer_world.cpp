@@ -757,6 +757,8 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             const Owner* owner = w.get<Owner>(e);
             const FactionColor fc = factionColor(owner ? owner->faction : FACTION_PLAYER);
             queueAltar(px, py, pz, info.size, yaw, RGBA{ fc.r, fc.g, fc.b, 1.0f });
+        } else if (modelled && !planBp && queueFarProp(kind, px, py, pz, info.size, propTint_)) {
+            // A boulder or ore far from the camera is one flat picture
         } else if (modelled) {
             queuePropModel(kind, px, py, pz, info.size, yaw);
         } else {

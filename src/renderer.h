@@ -677,13 +677,20 @@ private:
     unsigned treeFrame_ = 0;
     unsigned long long treeTicks_ = 0;
     const Model* treeModel(int variant, int stage, int detail);
-    // Trees far off are one flat picture each (data/tree/billboard_<season>.png), turned to the camera in eight steps: by season, a
-    // quad of its own with the picture as its texture. Loaded the first time a tree is that far.
-    std::array<TextTex, 4> treeBillboardTex_{};
-    std::array<Model, 4> treeBillboardQuad_{};
-    float treeBillboardAspect_ = 0.72f;   // width over height of the pictures
-    bool treeBillboardsTried_ = false;
-    bool loadTreeBillboards();
+    // Trees, boulders and ore far off are one flat picture each (data/billboard/), turned to the camera in eight steps: a tree's by
+    // season (FarPicture::Spring to Winter), then the Boulder and the Ore. Each has a quad of its own with the picture as its texture.
+    // Loaded the first time one is that far.
+    enum FarPicture { FarSpring, FarSummer, FarAutumn, FarWinter, FarBoulder, FarOre, FarPictureCount };
+    std::array<TextTex, FarPictureCount> farTex_{};
+    std::array<Model, FarPictureCount> farQuad_{};
+    bool farPicturesTried_ = false;
+    bool loadFarPictures();
+    // Queues a far-off picture standing at x y z, `width` wide, facing the camera in the nearest of eight directions
+    void queueFarPicture(FarPicture which, float x, float y, float z, float width, RGBA tint);
+public:
+    // The prop's far-off picture, if it has one and it is far enough from the camera: queued, true
+    bool queueFarProp(PropKind kind, float x, float y, float z, float size, RGBA tint);
+private:
     Model altarFrame_, altarBanner_;   // altar_frame.glb and altar_banner.glb: the altar in the world is these two, with the banner tinted
     // A wall's other shapes (end, straight, corner, tee, cross), for each kind with the wall_rule flag
     std::vector<std::array<Model, 5>> wallShapes_;

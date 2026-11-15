@@ -235,29 +235,59 @@ void Renderer::setTreeClock(double clockSeconds) {
 }
 
 namespace {
-constexpr float TREE_BILLBOARD_TILES = 120.0f;   // trees this far from the camera are drawn as a flat picture
+constexpr float FAR_PICTURE_TILES = 120.0f;   // trees, boulders and ore this far from the camera are drawn as a flat picture
 }
 
-bool Renderer::loadTreeBillboards() {
-    treeBillboardsTried_ = true;
-    static const char* const SEASONS[4] = { "spring", "summer", "autumn", "winter" };
-    for (int i = 0; i < 4; ++i) {
-        const std::string path = std::string("data/tree/billboard_") + SEASONS[i] + ".png";
-        treeBillboardTex_[(size_t)i] = loadOptionalImage(path.c_str());
-        if (!treeBillboardTex_[(size_t)i].tex) {
-            SDL_Log("%s is missing: far-off trees are drawn as models", path.c_str());
-            return false;
-        }
-        addMipmaps(treeBillboardTex_[(size_t)i]);
-        treeBillboardAspect_ = treeBillboardTex_[(size_t)i].aspect;
-    }
+bool Renderer::loadFarPictures() {
+    farPicturesTried_ = true;
+    static const char* const FILES[FarPictureCount] = { "tree_spring", "tree_summer", "tree_autumn", "tree_winter", "boulder", "ore" };
     // One upright quad, 1 wide and 1 tall, standing on the ground and facing +z
     const std::vector<float> verts = { -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  0.5f, 0.0f, 0.0f, 1.0f, 1.0f,
                                         0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f };
     const std::vector<unsigned> indices = { 0, 1, 2, 0, 2, 3 };
-    for (int i = 0; i < 4; ++i) {
-        if (!makeModelFromMesh(verts, indices, treeBillboardTex_[(size_t)i].tex, treeBillboardQuad_[(size_t)i])) return false;
+    bool all = true;
+    for (int i = 0; i < FarPictureCount; ++i) {
+        const std::string path = std::string("data/billboard/") + FILES[i] + ".png";
+        farTex_[(size_t)i] = loadOptionalImage(path.c_str());
+        if (!farTex_[(size_t)i].tex) {
+            SDL_Log("%s is missing: that far-off picture is drawn as its model", path.c_str());
+            all = false;
+            continue;
+        }
+        addMipmaps(farTex_[(size_t)i]);
+        if (!makeModelFromMesh(verts, indices, farTex_[(size_t)i].tex, farQuad_[(size_t)i])) all = false;
     }
+    return all;
+}
+
+void Renderer::queueFarPicture(FarPicture which, float x, float y, float z, float width, RGBA tint) {
+    // Facing the camera in whichever of eight directions is nearest: it is too far off to tell
+    constexpr float EIGHTH = 0.7853982f;
+    const float yaw = std::round(std::atan2(billX_ - x, billZ_ - z) / EIGHTH) * EIGHTH;
+    const float height = width / farTex_[(size_t)which].aspect;
+    Mat4 flat{};
+    flat.m[0] = width * std::cos(yaw);
+    flat.m[2] = -width * std::sin(yaw);
+    flat.m[5] = height;
+    flat.m[8] = std::sin(yaw);
+    flat.m[10] = std::cos(yaw);
+    flat.m[15] = 1.0f;
+    flat.m[12] = x;
+    flat.m[13] = y;
+    flat.m[14] = z;
+    queueModelMatrix(farQuad_[(size_t)which], flat, tint, 1.0f);
+}
+
+bool Renderer::queueFarProp(PropKind kind, float x, float y, float z, float size, RGBA tint) {
+    FarPicture which;
+    if (kind == PropKind::Boulder) which = FarBoulder;
+    else if (kind == PropKind::Ore) which = FarOre;
+    else return false;
+    const float ex = eyeX_ - x, ey = eyeY_ - y, ez = eyeZ_ - z;
+    if (ex * ex + ey * ey + ez * ez <= FAR_PICTURE_TILES * FAR_PICTURE_TILES) return false;
+    if (!farPicturesTried_) loadFarPictures();
+    if (!farQuad_[(size_t)which].vao) return false;
+    queueFarPicture(which, x, y, z, size, tint);
     return true;
 }
 
@@ -278,26 +308,12 @@ bool Renderer::queueTree(ObjectId e, float x, float y, float z, float size, floa
     // How far the tree is from the camera itself (billX_ and billZ_ are a point far in front of it, for facing)
     const float ex = eyeX_ - x, ey = eyeY_ - y, ez = eyeZ_ - z;
     const float eyeDist2 = ex * ex + ey * ey + ez * ez;
-    const float dx = billX_ - x, dz = billZ_ - z;
-    if (eyeDist2 > TREE_BILLBOARD_TILES * TREE_BILLBOARD_TILES) {
-        if (!treeBillboardsTried_) loadTreeBillboards();
-        const int season = treeSeasonOfStage(v.stage);
-        if (treeBillboardQuad_[(size_t)season].vao) {
-            // Facing the camera in whichever of eight directions is nearest: it is too far off to tell
-            constexpr float EIGHTH = 0.7853982f;
-            const float yaw = std::round(std::atan2(dx, dz) / EIGHTH) * EIGHTH;
-            const float height = size * grown, width = height * treeBillboardAspect_;
-            Mat4 flat{};
-            flat.m[0] = width * std::cos(yaw);
-            flat.m[2] = -width * std::sin(yaw);
-            flat.m[5] = height;
-            flat.m[8] = std::sin(yaw);
-            flat.m[10] = std::cos(yaw);
-            flat.m[15] = 1.0f;
-            flat.m[12] = x;
-            flat.m[13] = y;
-            flat.m[14] = z;
-            queueModelMatrix(treeBillboardQuad_[(size_t)season], flat, tint, 1.0f);
+    if (eyeDist2 > FAR_PICTURE_TILES * FAR_PICTURE_TILES) {
+        if (!farPicturesTried_) loadFarPictures();
+        const FarPicture season = (FarPicture)treeSeasonOfStage(v.stage);   // spring, summer, autumn, winter
+        if (farQuad_[(size_t)season].vao) {
+            const float height = size * grown;
+            queueFarPicture(season, x, y, z, height * farTex_[(size_t)season].aspect, tint);
             return true;
         }
     }
