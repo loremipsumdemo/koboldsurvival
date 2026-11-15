@@ -437,6 +437,18 @@ bool climbDownPerimeter(World& w, const Terrain& t, ObjectId u) {
     return true;
 }
 
+namespace {
+// Busy with something other than a duty: asleep or resting in a bed or seat, working a prop, carrying, following an order, or in the middle
+// of any task of its Behaviors. (Working a gate is the keeper's own duty.) A unit like this is not given a gate to keep, and one that
+// holds a gate gives it up, so someone free takes it.
+bool onOtherTask(World& w, ObjectId u) {
+    if (w.has<GateWork>(u)) return false;
+    if (const Behaviors* b = w.get<Behaviors>(u); b && (b->busy || b->seeking)) return true;
+    return w.has<Occupying>(u) || w.has<Working>(u) || w.has<PropOrder>(u) || w.has<Carrying>(u) || w.has<CarryOrder>(u) || w.has<LootOrder>(u) ||
+           w.has<DefendOrder>(u) || w.has<FollowOrder>(u) || w.has<AttackOrder>(u) || w.has<TalkOrder>(u) || w.has<PickupOrder>(u) || w.has<PickupChain>(u);
+}
+}
+
 void gateSystem(World& w, double clockSeconds, float dt) {
     struct Watch {
         float timer = 0.0f;
@@ -469,7 +481,9 @@ void gateSystem(World& w, double clockSeconds, float dt) {
         for (ObjectId u : w.view<GateKeeper>()) {
             if (factionOf(w, u) != faction) continue;
             const GateKeeper* k = w.get<GateKeeper>(u);
-            if (!w.has<Fortified>(u) || outCold(w, u) || !inClaim(u) || !std::binary_search(gates.begin(), gates.end(), k->gate)) w.remove<GateKeeper>(u);
+            if (!w.has<Fortified>(u) || outCold(w, u) || !inClaim(u) || !std::binary_search(gates.begin(), gates.end(), k->gate) || onOtherTask(w, u)) {
+                w.remove<GateKeeper>(u);   // a keeper asleep or at another task gives the gate up for someone free
+            }
         }
         std::vector<ObjectId> posts;
         if (hasPostKind) {
@@ -493,7 +507,7 @@ void gateSystem(World& w, double clockSeconds, float dt) {
             std::vector<ObjectId> free;
             for (ObjectId u : fortified) {
                 if (outCold(w, u) || w.has<Carried>(u) || !w.get<Transform>(u) || !inClaim(u)) continue;
-                if (!w.has<GateKeeper>(u) && !w.has<GuardPostDuty>(u)) free.push_back(u);
+                if (!w.has<GateKeeper>(u) && !w.has<GuardPostDuty>(u) && !onOtherTask(w, u)) free.push_back(u);
             }
             auto nearestFree = [&](float x, float z) {
                 size_t best = 0;
@@ -509,12 +523,49 @@ void gateSystem(World& w, double clockSeconds, float dt) {
                 return best;
             };
             for (ObjectId g : gates) {
-                if (free.empty()) break;
                 bool held = false;
                 for (ObjectId u : w.view<GateKeeper>()) held = held || w.get<GateKeeper>(u)->gate == g;
                 if (held) continue;
                 const Vec2 c = gateCenter(w, g);
-                const size_t i = nearestFree(c.x, c.z);
+                // A gate is the first duty: it goes to a unit already marching the walls if there is one (it only changes task), then to any
+                // free unit, and failing those to a guard at a Guard Post (the post waits for the next free unit)
+                std::vector<size_t> marching;
+                for (size_t i = 0; i < free.size(); ++i) {
+                    if (w.has<Patrolling>(free[i])) marching.push_back(i);
+                }
+                if (marching.empty() && free.empty()) {
+                    ObjectId from = NO_OBJECT;
+                    float fromD = -1.0f;
+                    for (ObjectId u : fortified) {
+                        if (!w.has<GuardPostDuty>(u) || w.has<GateKeeper>(u) || outCold(w, u) || w.has<Carried>(u) || !inClaim(u) || onOtherTask(w, u)) continue;
+                        const Transform* t = w.get<Transform>(u);
+                        const float d = t ? distSq(t->x, t->z, c.x, c.z) : 0.0f;
+                        if (fromD < 0.0f || d < fromD) {
+                            fromD = d;
+                            from = u;
+                        }
+                    }
+                    if (from == NO_OBJECT) break;
+                    w.remove<GuardPostDuty>(from);
+                    w.remove<Patrolling>(from);
+                    w.add(from, GateKeeper{ g });
+                    continue;
+                }
+                size_t i = 0;
+                if (!marching.empty()) {
+                    float bestD = -1.0f;
+                    for (size_t m : marching) {
+                        const Transform* t = w.get<Transform>(free[m]);
+                        const float d = distSq(t->x, t->z, c.x, c.z);
+                        if (bestD < 0.0f || d < bestD) {
+                            bestD = d;
+                            i = m;
+                        }
+                    }
+                } else {
+                    i = nearestFree(c.x, c.z);
+                }
+                w.remove<Patrolling>(free[i]);
                 w.add(free[i], GateKeeper{ g });
                 free.erase(free.begin() + (long)i);
             }
