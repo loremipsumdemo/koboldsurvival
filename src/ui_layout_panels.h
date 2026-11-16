@@ -106,7 +106,11 @@ struct UnitPanelLayout {
     std::array<Rect, SQUAD_COUNT> squadCells{};   // Squads: the squads, laid out like a numpad: 7 8 9 on top
     Rect manageSquadsButton;   // Squads: below the squads, opens Manage Squads
     Rect renameButton;         // Squads: below manageSquadsButton
-    Rect factionRulesButton;   // Settings: opens Faction Rules
+    // Settings: a row for each detail of your faction (its name, then each rule), with its Edit button, which opens a menu of its options
+    struct SettingRow {
+        Rect row, edit;
+    };
+    std::vector<SettingRow> settingRows;
     Rect repHeading;           // Reputation: whose view it is, kept at the top while the list scrolls
     std::vector<Rect> repRows;   // the rows that show, from repFirst
     int repFirst = 0;
@@ -132,6 +136,7 @@ constexpr int FACTION_TAB_FACTION = 1;
 constexpr int FACTION_SUB_SQUADS = 0;
 constexpr int FACTION_SUB_REPUTATION = 1;
 constexpr int FACTION_SUB_SETTINGS = 2;
+constexpr int FACTION_SETTING_ROWS = 9;   // the name, then the rules for outsiders (PLAYER_RULE_ROWS, factions.h)
 
 UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool collapsed = false,
                                        const PanelPlace& place = PanelPlace{}, int tab = FACTION_TAB_SQUAD,

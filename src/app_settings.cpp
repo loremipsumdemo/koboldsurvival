@@ -67,6 +67,7 @@ void App::settingsCommit(const SettingsChange& c, bool save) {
 void App::leaveSettings() {
     settingsUi.openRow = -1;
     settingsUi.dragRow = -1;
+    settingsUi.dragBar = false;
     screen = backScreen;
 }
 
@@ -83,9 +84,10 @@ void App::resetPanels() {
 
 void App::settingsClick(float x, float y, int W, int H) {
     const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
-    const SettingsClick c = hitSettings(layoutSettings(W, H, rows, settingsUi), rows, x, y);
+    const SettingsLayout L = layoutSettings(W, H, rows, settingsUi);
+    const SettingsClick c = hitSettings(L, rows, x, y);
     switch (c.kind) {
-    case ClickKind::None: case ClickKind::CloseDropdown: case ClickKind::LevelDrag: break;
+    case ClickKind::None: case ClickKind::CloseDropdown: case ClickKind::LevelDrag: case ClickKind::ScrollBar: break;
     case ClickKind::Tab: playSfx(Sfx::UiTab); break;
     case ClickKind::ToggleRow: case ClickKind::LevelToggle: playSfx(Sfx::UiToggle); break;
     case ClickKind::OpenDropdown: playSfx(Sfx::UiMenuOpen); break;
@@ -93,6 +95,12 @@ void App::settingsClick(float x, float y, int W, int H) {
     default: playSfx(Sfx::UiClick); break;
     }
     switch (c.kind) {
+    case ClickKind::ScrollBar:
+        // On the thumb: held where it was grabbed. On the track: the thumb's middle goes there.
+        settingsUi.dragBar = true;
+        settingsUi.barGrab = L.area.thumb.contains(x, y) ? y - L.area.thumb.y : L.area.thumb.h * 0.5f;
+        settingsUi.scroll = scrollOffsetAt(L.area, y - settingsUi.barGrab);
+        break;
     case ClickKind::Tab:
         settingsSelectTab(settingsUi, static_cast<SettingsTab>(c.index));
         break;

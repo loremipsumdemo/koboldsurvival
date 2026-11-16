@@ -22,8 +22,9 @@ void needsSystem(World& w, int hours, double gameSeconds) {
                 n->rested = full ? RESTED_MAX : std::min(n->rested, RESTED_MAX);
             }
             int ticks = hours;
+            // Having moved at a run since the last tick, hunger comes at three times the rate this tick
             if (hours > 0 && n->hurried) {
-                ticks += 1;
+                ticks = hours * RUN_HUNGER_FACTOR;
                 n->hurried = false;
             }
             // Lying in a bed or bedroll: asleep, so hunger comes at half the rate

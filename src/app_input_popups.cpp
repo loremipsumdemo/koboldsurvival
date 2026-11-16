@@ -394,7 +394,7 @@ bool App::mouseDownOnPopups() {
     if (pressOnCancelAsk()) return true;
     if (pressOnAltar()) return true;
     if (pressOnManageSquads()) return true;
-    if (pressOnFactionRules()) return true;
+    if (pressOnRuleMenu()) return true;
     if (pressOnFactionInfo()) return true;
     if (pressOnPatrons()) return true;
     if (pressOnCraftWindow()) return true;

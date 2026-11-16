@@ -84,6 +84,9 @@ struct SettingsMenuState {
     int openRow = -1;
     int dropFirst = 0;
     int dragRow = -1;
+    float scroll = 0.0f;       // how far the rows are scrolled, when they don't fit
+    bool dragBar = false;      // the scroll bar's thumb is held
+    float barGrab = 0.0f;
 };
 
 struct RowLayout {
@@ -111,10 +114,11 @@ struct SettingsLayout {
     DropLayout drop;
     Rect defaults{ 0, 0, 0, 0 };
     Rect back{ 0, 0, 0, 0 };
+    ScrollArea area;   // the rows' area: what shows, and the bar once they no longer fit
 };
 
 enum class ClickKind {
-    None, Tab, OpenDropdown, CloseDropdown, PickOption, ToggleRow, LevelToggle, LevelDrag, Defaults, Back, Action
+    None, ScrollBar, Tab, OpenDropdown, CloseDropdown, PickOption, ToggleRow, LevelToggle, LevelDrag, Defaults, Back, Action
 };
 
 struct SettingsClick {

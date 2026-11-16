@@ -57,7 +57,9 @@
 #                                those data/recipes.txt lists for it, a batch at a time into its output
 #                needs_camp      placed only within a camp's reach of a Campfire, or in an Altar's claim, of its
 #                                faction; one whose camp is gone falls to Debris
-#                fire:x:y:z:size a fire burns on it, at this spot from the middle of its base (x and z turn with it)
+#                fire:x:y:z:size a fire burns on it, at this spot from the middle of its base (x and z turn with it). The spot is measured on the
+#                                prop's 3D model: when a model is made or replaced, update its fire origin (and any other particle origin) too, and
+#                                note how it was found beside its row, as Forge's is
 #                                and this big: the game draws its flames and a warm glow for its light, so its
 #                                model has none
 #                random_yaw      faces a way of its own (a full turn, by where it stands) whenever one comes into being,
@@ -109,7 +111,10 @@ WeaponRack	PROP_WEAPON_RACK	weapon_rack.glb	1.4	storage	none	0	0	0	0	weapon	1	0	
 ArmorStand	PROP_ARMOR_STAND	armor_stand.glb	1.7	storage	none	0	0	0	0	armor	1	0	0	1	0	0	none	ItemMove	none	scatter	4	20	32	0	storage
 WaterTank	PROP_WATER_TANK	water_tank.glb	1.4	storage	none	0	0	0	0	water	1	0	0	1	0	0	none	ItemMove	none	scatter	6	30	32	0	storage
 WaterPump	PROP_WATER_PUMP	water_pump.glb	1.4	crafting	Strength	91	0	1	0	any	1	0	0	1	0	0	WorkPump	DoneWater	Strength	scatter	5	25	12	0	crafting
-Forge	PROP_FORGE	forge.glb	1.6	passive	Smelting	92	1	0	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	Smelting	scatter,fire:-0.24:0.24:0.45:0.26	8	40	12	0	crafting
+# Fire origins (the fire: flag) are measured on the model, so when a 3D model is made or replaced, set its fire origin from the new model and
+# record how it was found here. Forge: forge.glb (x -1.57..1.57, y -0.04..2.46, z -0.63..1.33, drawn at k = 1.6/3.14 about the middle of its base, z middle 0.35):
+# the firebox's coal bed is at x 0, y 0.43, z 0.08 in the model, which is x 0, y 0.24, z -0.14 from the base's middle here.
+Forge	PROP_FORGE	forge.glb	1.6	passive	Smelting	92	1	0	0	any	1	0	0	1	0	0	ForgeBurning	ItemMove	Smelting	scatter,fire:0:0.24:-0.14:0.26	8	40	12	0	crafting
 Debris	PROP_DEBRIS	debris.glb	1.0	resource	Strength	0	0	3	0	any	1	0	0	4	0	0	none	ItemMove	Clearing	debris,random_yaw,junk	0	0	12	0	nature
 Farm	PROP_FARM	farm.glb	2.0	storage	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	6	30	12	0	crafting
 Turbine	PROP_TURBINE	turbine.glb	2.0	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	built	8	40	12	0	crafting

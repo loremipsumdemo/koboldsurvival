@@ -360,7 +360,7 @@ void Renderer::queueModel(const Model& m, float x, float y, float z, float targe
 namespace {
 constexpr float ANIM_FADE_SECONDS = 0.15f;      // how long one clip takes to give way to the next
 constexpr float WALK_SPEED_REFERENCE = 2.2f;    // tiles a second the walk clip is made for (a unit's usual pace)
-constexpr float RUN_SPEED_REFERENCE = 8.8f;     // tiles a second the run clip is made for
+constexpr float RUN_SPEED_REFERENCE = 6.6f;     // tiles a second the run clip is made for
 constexpr float WALK_START_SPEED = 0.4f;        // tiles a second above which a unit is taken to be walking
 }
 

@@ -129,7 +129,7 @@ void App::drawFactionPick() {
     const float fieldPad = 8.0f * s;
     if (factionNameText.empty() && !factionNameEditing) {
         const FactionDef* mine = factionPick >= 0 ? paletteFaction(factionPick) : nullptr;
-        const std::string shown = renderer.fitListText(mine ? lang(mine->nameKey) : lang("UILABEL_FACTION_COLOR_RANDOM"), L.field.w - 2.0f * fieldPad);
+        const std::string shown = renderer.fitListText(langf("UILABEL_FACTION_NAME_HINT", { mine ? lang(mine->nameKey) : lang("UILABEL_FACTION_COLOR_RANDOM") }), L.field.w - 2.0f * fieldPad);
         renderer.drawListText(shown, L.field.x + fieldPad, L.field.y + (L.field.h - textH) * 0.5f, dim);
     } else {
         std::string shown = factionNameText + (factionNameEditing && (SDL_GetTicks() / 500) % 2 ? "|" : "");

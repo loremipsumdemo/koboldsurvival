@@ -294,11 +294,30 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
     }
 
-    const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s, bW = 200.0f * s, bGap = 12.0f * s;
-    out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + 16.0f * s, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
-    out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + 16.0f * s + bW + bGap, bY, 160.0f * s, bH }, Action::Back, true, 0 });
+    // The row of buttons shrinks together when the window is too narrow for all of them (a Custom Squad has the most), each label fitting
+    // its button, rather than running into the ones beside it
+    const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s;
+    float bW = 200.0f * s, bGap = 12.0f * s, backW = 160.0f * s, unitW = 150.0f * s, patronW = 260.0f * s, factionW = 220.0f * s;
+    {
+        const float lefts = bW + backW + (ui.resizable ? 3.0f * unitW : 0.0f);
+        const float rights = bW + (!patronName.empty() ? patronW : 0.0f) + (!factionName.empty() ? factionW : 0.0f);
+        const int leftN = 2 + (ui.resizable ? 3 : 0), rightN = 1 + (!patronName.empty() ? 1 : 0) + (!factionName.empty() ? 1 : 0);
+        const float want = lefts + rights + (float)(leftN - 1 + rightN - 1 + 1) * bGap + 32.0f * s;
+        const float fit = std::clamp((float)W / want, 0.4f, 1.0f);
+        if (fit < 1.0f) {
+            bW *= fit;
+            bGap *= fit;
+            backW *= fit;
+            unitW *= fit;
+            patronW *= fit;
+            factionW *= fit;
+        }
+    }
+    const float edge = 16.0f * s;
+    out.push_back(Button{ lang("UILABEL_RANDOMIZE_ALL"), Rect{ P.bottom.x + edge, bY, bW, bH }, Action::PartyRandomAll, true, 0 });
+    out.push_back(Button{ lang("UILABEL_BACK"), Rect{ P.bottom.x + edge + bW + bGap, bY, backW, bH }, Action::Back, true, 0 });
     if (ui.resizable) {
-        const float unitsX = P.bottom.x + 16.0f * s + bW + bGap + 160.0f * s + bGap, unitW = 150.0f * s;
+        const float unitsX = P.bottom.x + edge + bW + bGap + backW + bGap;
         out.push_back(Button{ lang("UILABEL_ADD_UNIT"), Rect{ unitsX, bY, unitW, bH }, Action::PartyAddUnit,
                               (int)p.size() < PARTY_MAX_UNITS, 0 });
         out.push_back(Button{ lang("UILABEL_REMOVE_UNIT"), Rect{ unitsX + unitW + bGap, bY, unitW, bH }, Action::PartyRemoveUnit,
@@ -306,14 +325,16 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         addMobAnchor = Rect{ unitsX + 2.0f * (unitW + bGap), bY, unitW, bH };
         out.push_back(Button{ lang("UILABEL_ADD_MOB"), addMobAnchor, Action::PartyAddMob, (int)p.size() < PARTY_MAX_UNITS, 0 });
     }
+    float rightX = P.bottom.x + P.bottom.w - edge - bW;
+    out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ rightX, bY, bW, bH }, Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
     if (!patronName.empty()) {
-        out.push_back(Button{ patronName, Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW - bGap - 260.0f * s, bY, 260.0f * s, bH }, Action::PartyPatron, true, 0 });
+        rightX -= bGap + patronW;
+        out.push_back(Button{ patronName, Rect{ rightX, bY, patronW, bH }, Action::PartyPatron, true, 0 });
     }
     if (!factionName.empty()) {
-        out.push_back(Button{ factionName, Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW - bGap - 260.0f * s - bGap - 220.0f * s, bY, 220.0f * s, bH }, Action::PartyFaction, true, 0 });
+        rightX -= bGap + factionW;
+        out.push_back(Button{ factionName, Rect{ rightX, bY, factionW, bH }, Action::PartyFaction, true, 0 });
     }
-    out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ P.bottom.x + P.bottom.w - 16.0f * s - bW, bY, bW, bH },
-                          Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
     out.push_back(Button{ partyMessage(p), Rect{ P.bottom.x + 16.0f * s, P.bottom.y + 6.0f * s, P.bottom.w - 32.0f * s, 20.0f * s },
                           Action::PartyMessage, false, 0 });
 

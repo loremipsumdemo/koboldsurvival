@@ -144,6 +144,25 @@ void App::behaviorClick(ObjectId unit, const BehaviorHit& hit) {
 
 void App::answerPercentPrompt(bool keep) {
     if (!percentPrompt.open) return;
+    if (percentPrompt.faction) {
+        // A percent of your faction's rules
+        const RuleRow row = (RuleRow)percentPrompt.ruleRow;
+        if (keep) {
+            const int value = percentPrompt.text.empty() ? -1 : std::atoi(percentPrompt.text.c_str());
+            if (value < 0 || value > ruleNumberMax(row)) {
+                percentPrompt.error = langf("UILABEL_BEHAVIOR_PROMPT_BAD", { "0", std::to_string(ruleNumberMax(row)) });
+                playSfx(Sfx::UiBack);
+                return;
+            }
+            FactionRules rules = factionRules(world, FACTION_PLAYER);
+            setRule(rules, row, value);
+            setFactionRules(world, FACTION_PLAYER, rules);
+        }
+        percentPrompt = PercentPrompt{};
+        SDL_StopTextInput(window);
+        playSfx(keep ? Sfx::UiClick : Sfx::UiBack);
+        return;
+    }
     if (keep) {
         Behaviors* b = world.get<Behaviors>(percentPrompt.unit);
         const int row = percentPrompt.row;

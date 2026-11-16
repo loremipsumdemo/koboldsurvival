@@ -95,9 +95,15 @@ void reputationHit(World& w, int faction, ObjectId victim) {
 int takeFromDowned(World& w, ObjectId u, ObjectId target, DownedTakeRule rule) {
     if (rule == DownedTakeRule::Nothing) return 0;
     std::vector<ItemStack> taken;
-    if (rule == DownedTakeRule::Weapons || rule == DownedTakeRule::Everything) {
+    if (rule == DownedTakeRule::Weapons || rule == DownedTakeRule::Everything || rule == DownedTakeRule::All) {
         if (Equipment* worn = w.get<Equipment>(target)) {
-            for (int slot : { (int)GearSlot::MainHand, (int)GearSlot::OffHand }) {
+            // Loot All strips every worn piece too; the rest take only what is in the hands
+            std::vector<int> slots{ (int)GearSlot::MainHand, (int)GearSlot::OffHand };
+            if (rule == DownedTakeRule::All) {
+                slots.clear();
+                for (int slot = 0; slot < GEAR_SLOTS; ++slot) slots.push_back(slot);
+            }
+            for (int slot : slots) {
                 if (worn->items[slot] == 0) continue;
                 taken.push_back(ItemStack{ worn->items[slot], 1 });
                 worn->items[slot] = 0;
@@ -109,7 +115,7 @@ int takeFromDowned(World& w, ObjectId u, ObjectId target, DownedTakeRule rule) {
             if (s.item == 0 || s.count <= 0) continue;
             const ItemDef* d = findItem(s.item);
             const bool food = d && restoreAmount(*d, UseEffect::Stat::Hunger) > 0;
-            if (rule != DownedTakeRule::Everything && !food) continue;
+            if (rule != DownedTakeRule::Everything && rule != DownedTakeRule::All && !food) continue;
             taken.push_back(s);
             s = ItemStack{};
         }

@@ -110,6 +110,8 @@ struct AppSession {
         BehaviorKind kind = BehaviorKind::Eat;
         std::string text;
         std::string error;
+        bool faction = false;   // a percent of your faction's rules (ruleRow, a RuleRow), not a unit's behavior
+        int ruleRow = 0;
     } percentPrompt;
     ObjectId lastLone = NO_OBJECT;
     float mapCx = 0.0f, mapCz = 0.0f, mapSpan = 0.0f;
@@ -542,9 +544,18 @@ struct App : AppSession {
     void scrollCraftWindow(float notches);
     void drawCraftWindow();
     // Faction Rules: your faction's rules for outsiders (app_faction_rules.cpp)
-    void openFactionRules();
-    bool pressOnFactionRules();
-    void drawFactionRules();
+    // The Faction tab's Settings (app_faction_rules.cpp): an Edit button's menu of what a detail can be
+    struct RuleMenu {
+        bool open = false;
+        int row = 0;   // 0 the name, then each of your rules
+    } ruleMenu;
+    std::vector<std::string> ruleMenuLabels();
+    std::string colorFactionName();
+    ItemMenuLayout ruleMenuLayout();
+    void runRuleMenu(int choice);
+    bool pressOnRuleMenu();
+    bool pressOnFactionSettings(const UnitPanelLayout& fp, float x, float y);
+    void drawRuleMenu();
     // Faction Info, from any Altar's menu: a faction's settings and setup, view only (app_faction_info.cpp)
     void openFactionInfo(int faction);
     bool pressOnFactionInfo();
@@ -658,7 +669,9 @@ struct App : AppSession {
     unsigned long long lastSquadTapAt = 0;
     AltarUi altar;
     SquadsUi squadsUi;
-    bool factionRulesOpen = false;
+    std::string factionRulesName;   // your faction's name as it is typed in the Faction tab (applied as it is typed)
+    bool factionRulesNaming = false;
+    void stopFactionRulesNaming();
     bool factionInfoOpen = false;
     // Patrons (app_patron.cpp): the window of them all, and the banner of what they say
     bool patronOpen = false, patronPicking = false;

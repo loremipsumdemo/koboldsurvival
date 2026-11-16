@@ -234,7 +234,8 @@ void Renderer::drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& 
 }
 
 void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                             int repView, const std::string* renameText, int floorLevel, bool floorManual, bool formOpen) {
+                             int repView, const std::string* renameText, int floorLevel, bool floorManual, bool formOpen,
+                             const std::string* factionNameEdit) {
     const float s = uiScale();
     const float bgAlpha = 0.5f;
     drawRect(L.panel, RGBA{ 0.085f, 0.035f, 0.045f, bgAlpha });
@@ -276,7 +277,8 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
             drawReputationList(w, L, repView);
         } else if (L.view.w > 0.0f && L.view.h > 0.0f) {
             beginClip(L.view);
-            drawSquadGrid(w, L, renameText);
+            if (L.sub == FACTION_SUB_SETTINGS) drawFactionSettings(w, L, factionNameEdit);
+            else drawSquadGrid(w, L, renameText);
             endClip();
         }
         if (L.subScrollable()) {
@@ -415,15 +417,6 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
         noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), visibleRect(b));
     }
-    if (L.factionRulesButton.w > 0.0f) {
-        const Rect& b = L.factionRulesButton;
-        const bool hot = inView && b.contains(mouseX_, mouseY_);
-        if (hot) noteHover(b);
-        drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
-        const std::string shown = fitText(lang("UILABEL_FACTION_RULES"), b.w - 6.0f * s, false);
-        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
-        noteTip(lang("UILABEL_FACTION_RULES_TIP"), visibleRect(b));
-    }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;
         const bool hot = inView && b.contains(mouseX_, mouseY_);
@@ -433,6 +426,42 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
                                              : langf("UILABEL_SQUAD_RENAME", { std::to_string(book.current + 1) });
         const std::string shown = fitText(label, b.w - 6.0f * s, false);
         drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
+    }
+}
+
+void Renderer::drawFactionSettings(World& w, const UnitPanelLayout& L, const std::string* factionNameEdit) {
+    const float s = uiScale();
+    const float th = listTextHeight("Ag");
+    const bool inView = L.view.contains(mouseX_, mouseY_);
+    const FactionRules& rules = factionRules(w, FACTION_PLAYER);
+    for (size_t i = 0; i < L.settingRows.size(); ++i) {
+        const Rect& r = L.settingRows[i].row;
+        const Rect& eb = L.settingRows[i].edit;
+        if (r.y + r.h < L.view.y || r.y > L.view.y + L.view.h) continue;
+        const bool name = i == 0;
+        const RuleRow row = (RuleRow)(i - 1);
+        const bool hotRow = inView && r.contains(mouseX_, mouseY_);
+        const bool hotEdit = inView && eb.contains(mouseX_, mouseY_);
+        drawRect(r, RGBA{ 0.16f, 0.07f, 0.085f, hotRow ? 0.95f : 0.6f });
+        const std::string label = name ? lang("UILABEL_FACTION_NAME") : lang(ruleRowKey(row));
+        std::string value = name ? factionName(FACTION_PLAYER) : ruleValueText(rules, row);
+        const bool typing = name && factionNameEdit;
+        if (typing) value = *factionNameEdit + ((SDL_GetTicks() / 500) % 2 ? "|" : " ");
+        // The detail's name in dim, its value in gold after it, both cut to the room left of the Edit button
+        const float room = r.w - eb.w - 12.0f * s;
+        const float labelW = std::min(listTextWidth(label) + 8.0f * s, room * 0.55f);
+        const std::string shownLabel = fitText(label, labelW - 4.0f * s, false);
+        drawListText(shownLabel, r.x + 6.0f * s, r.y + (r.h - th) * 0.5f, theme::TEXT_DIM);
+        std::string shownValue = fitText(value, room - labelW, false);
+        while (typing && utf8Length(shownValue) > 1 && listTextWidth(shownValue) > room - labelW) shownValue.erase(0, 1);
+        drawListText(shownValue, r.x + 6.0f * s + labelW, r.y + (r.h - th) * 0.5f, theme::GOLD);
+        drawRect(eb, typing ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.30f, 0.14f, 0.12f, hotEdit ? 1.0f : 0.8f });
+        const std::string eText = fitText(lang(typing ? "UILABEL_SQUAD_RENAME_DONE" : "UILABEL_EDIT"), eb.w - 6.0f * s, false);
+        drawListText(eText, eb.x + (eb.w - listTextWidth(eText)) * 0.5f, eb.y + (eb.h - th) * 0.5f, WHITE);
+        if (hotRow) {
+            const Rect shown{ std::max(r.x, L.view.x), std::max(r.y, L.view.y), r.w, std::min(r.h, L.view.y + L.view.h - r.y) };
+            noteTip(name ? lang("UILABEL_FACTION_NAME_TIP") : lang(ruleRowTipKey(row)), shown);
+        }
     }
 }
 

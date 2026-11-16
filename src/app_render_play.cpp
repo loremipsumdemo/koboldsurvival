@@ -82,7 +82,7 @@ void App::drawGamePanels() {
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
     renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr, session.floorLevel,
-                           session.floorManual, squadMenu == SQUAD_MENU_FORM);
+                           session.floorManual, squadMenu == SQUAD_MENU_FORM, factionRulesNaming ? &factionRulesName : nullptr);
     drawPanelLock(PanelId::Squad);
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
@@ -334,7 +334,7 @@ void App::drawPlayingScreen() {
     drawPerimeterPanel();
     drawNoUnitsPanel();
     drawManageSquads();
-    drawFactionRules();
+    drawRuleMenu();
     drawFactionInfo();
     drawPatronChat();
     drawPatrons();

@@ -2,117 +2,125 @@
 
 using namespace play;
 
-// Faction Rules: your faction's rules for those outside it, one row each with < and > to step its value. A change takes
-// hold at once, and the save keeps it (factionrules). The other factions' rules are data/factions.txt's.
+// The Faction tab's Settings: your faction's name and rules for those outside it, a row each. A row's Edit button opens a menu of
+// everything it can be (and Custom, for a percent, to type an exact one); the choice takes hold at once, and the save keeps it
+// (factionrules, factionname). The other factions' rules are data/factions.txt's.
 
 namespace {
-struct FactionRulesLayout {
-    Rect box, title, close, reset;
-    std::vector<Rect> labels, down, value, up;
-    Rect help;
-};
+static_assert(FACTION_SETTING_ROWS == 1 + PLAYER_RULE_ROWS, "the Faction tab has a row for the name and one for each of your rules");
+const char* const BULLET = "\xE2\x80\xA2 ";
+}
 
-FactionRulesLayout layoutFactionRules(int W, int H) {
-    const float s = uiScaleFor((float)H);
-    const float pad = 14.0f * s, gap = 6.0f * s, line = 30.0f * s, small = 30.0f * s;
-    const int rows = PLAYER_RULE_ROWS;
-    const float helpH = 3.0f * 20.0f * s;
-    const float w = std::min((float)W - 20.0f * s, 560.0f * s);
-    const float h = pad + line + gap + rows * (line + gap) + helpH + gap + line + pad;
-    FactionRulesLayout L;
-    L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
-    L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad - line, line };
-    L.close = Rect{ L.box.x + w - pad - line, L.box.y + pad, line, line };
-    float y = L.title.y + line + gap;
-    const float labelW = (w - 2.0f * pad) * 0.45f;
-    const float valueX = L.box.x + pad + labelW + gap;
-    const float right = L.box.x + w - pad;
-    for (int i = 0; i < rows; ++i) {
-        L.labels.push_back(Rect{ L.box.x + pad, y, labelW, line });
-        L.down.push_back(Rect{ valueX, y, small, line });
-        L.up.push_back(Rect{ right - small, y, small, line });
-        L.value.push_back(Rect{ valueX + small + gap, y, right - small - gap - (valueX + small + gap), line });
-        y += line + gap;
+void App::stopFactionRulesNaming() {
+    if (factionRulesNaming) SDL_StopTextInput(window);
+    factionRulesNaming = false;
+    factionRulesName = playerFactionName();
+}
+
+// The faction's name from its color alone, ignoring what you typed
+std::string App::colorFactionName() {
+    const FactionDef* f = paletteFaction(playerSlot());
+    return f ? lang(f->nameKey) : lang("FACTION_PLAYER");
+}
+
+// What the menu lists: the name's two choices, or a rule's every value (the current one marked) and Custom for a percent
+std::vector<std::string> App::ruleMenuLabels() {
+    std::vector<std::string> out;
+    if (ruleMenu.row == 0) {
+        out.push_back(lang("UILABEL_FACTION_NAME_RENAME"));
+        out.push_back(langf("UILABEL_FACTION_NAME_DEFAULT", { colorFactionName() }));
+        return out;
     }
-    L.help = Rect{ L.box.x + pad, y, w - 2.0f * pad, helpH };
-    y += helpH + gap;
-    const float resetW = 200.0f * s;
-    L.reset = Rect{ L.box.x + (w - resetW) * 0.5f, y, resetW, line };
+    const RuleRow row = (RuleRow)(ruleMenu.row - 1);
+    const int now = ruleCurrent(factionRules(world, FACTION_PLAYER), row);
+    bool matched = false;
+    for (const RuleChoice& c : ruleChoices(row)) {
+        const bool on = c.value == now;
+        matched = matched || on;
+        out.push_back(std::string(on ? BULLET : "") + c.label);
+    }
+    if (ruleIsNumber(row)) out.push_back(std::string(matched ? "" : BULLET) + lang("UILABEL_RULE_CUSTOM"));
+    return out;
+}
+
+ItemMenuLayout App::ruleMenuLayout() {
+    const UnitPanelLayout pl = squadPanelLayout(winW, winH);
+    const size_t i = (size_t)std::clamp(ruleMenu.row, 0, FACTION_SETTING_ROWS - 1);
+    const Rect b = i < pl.settingRows.size() ? pl.settingRows[i].edit : Rect{};
+    const std::vector<std::string> labels = ruleMenuLabels();
+    ItemMenuLayout L = renderer.itemMenuLayout(b.x, b.y + b.h, (int)labels.size(), winW, winH, labels);
+    // No room below the button: open upward instead
+    if (L.box.y < b.y + b.h - 0.5f) L = renderer.itemMenuLayout(b.x, b.y - L.box.h, (int)labels.size(), winW, winH, labels);
     return L;
 }
-}
 
-void App::openFactionRules() {
-    factionRulesOpen = true;
-    session.contextMenu.open = false;
-    itemMenu.open = false;
-    playSfx(Sfx::UiMenuOpen);
-}
-
-bool App::pressOnFactionRules() {
-    if (screen != Screen::Playing || !factionRulesOpen) return false;
-    const float x = e.button.x, y = e.button.y;
-    const FactionRulesLayout L = layoutFactionRules(winW, winH);
-    if (e.button.button != SDL_BUTTON_LEFT) return true;
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
-        factionRulesOpen = false;
-        playSfx(Sfx::UiBack);
-        return true;
+void App::runRuleMenu(int choice) {
+    if (ruleMenu.row == 0) {
+        if (choice == 0) {
+            factionRulesName = playerFactionName();
+            if (!factionRulesNaming) SDL_StartTextInput(window);
+            factionRulesNaming = true;
+        } else {
+            setPlayerFactionName(std::string());
+            factionRulesName.clear();
+        }
+        playSfx(Sfx::UiClick);
+        return;
+    }
+    const RuleRow row = (RuleRow)(ruleMenu.row - 1);
+    const std::vector<RuleChoice> choices = ruleChoices(row);
+    if (choice >= (int)choices.size()) {
+        // Custom: type the percent
+        percentPrompt = PercentPrompt{};
+        percentPrompt.open = true;
+        percentPrompt.faction = true;
+        percentPrompt.ruleRow = (int)row;
+        percentPrompt.text = std::to_string(ruleCurrent(factionRules(world, FACTION_PLAYER), row));
+        SDL_StartTextInput(window);
+        playSfx(Sfx::UiClick);
+        return;
     }
     FactionRules rules = factionRules(world, FACTION_PLAYER);
-    if (L.reset.contains(x, y)) {
-        const FactionDef* f = findFaction(FACTION_PLAYER);
-        setFactionRules(world, FACTION_PLAYER, f ? f->rules : FactionRules{});
-        playSfx(Sfx::UiClick);
-        return true;
-    }
-    // Shift steps the markup by 25 percent
-    const int step = (SDL_GetModState() & SDL_KMOD_SHIFT) != 0 ? 5 : 1;
-    for (int i = 0; i < PLAYER_RULE_ROWS; ++i) {
-        const RuleRow row = (RuleRow)i;
-        const bool down = L.down[(size_t)i].contains(x, y), up = L.up[(size_t)i].contains(x, y) || L.value[(size_t)i].contains(x, y);
-        if (!down && !up) continue;
-        stepRule(rules, row, (up ? 1 : -1) * (row == RuleRow::Markup ? step : 1));
-        setFactionRules(world, FACTION_PLAYER, rules);
-        playSfx(Sfx::UiClick);
-        return true;
-    }
-    return true;
+    setRule(rules, row, choices[(size_t)choice].value);
+    setFactionRules(world, FACTION_PLAYER, rules);
+    playSfx(Sfx::UiClick);
 }
 
-void App::drawFactionRules() {
-    if (screen != Screen::Playing || !factionRulesOpen) return;
-    const FactionRulesLayout L = layoutFactionRules(winW, winH);
-    const float s = uiScaleFor((float)winH);
-    const float textH = renderer.listTextHeight("Ag");
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f }, dim{ 0.80f, 0.72f, 0.64f, 1.0f };
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(renderer.fitListText(langf("UILABEL_FACTION_RULES_TITLE", { factionName(FACTION_PLAYER) }), L.title.w),
-                          L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
-    const FactionRules& rules = factionRules(world, FACTION_PLAYER);
-    std::string tip;
-    for (int i = 0; i < PLAYER_RULE_ROWS; ++i) {
-        const RuleRow row = (RuleRow)i;
-        const Rect& lr = L.labels[(size_t)i];
-        const Rect& vr = L.value[(size_t)i];
-        const bool hot = lr.contains(mouseX, mouseY) || vr.contains(mouseX, mouseY) || L.down[(size_t)i].contains(mouseX, mouseY) ||
-                         L.up[(size_t)i].contains(mouseX, mouseY);
-        if (hot) tip = lang(ruleRowTipKey(row));
-        renderer.drawListText(renderer.fitListText(lang(ruleRowKey(row)), lr.w), lr.x, lr.y + (lr.h - textH) * 0.5f, hot ? gold : white);
-        renderer.drawButton(L.down[(size_t)i], "<", true, L.down[(size_t)i].contains(mouseX, mouseY));
-        renderer.drawRect(vr, RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
-        const std::string value = renderer.fitListText(ruleValueText(rules, row), vr.w - 12.0f * s);
-        renderer.drawListText(value, vr.x + (vr.w - renderer.listTextWidth(value)) * 0.5f, vr.y + (vr.h - textH) * 0.5f, gold);
-        renderer.drawButton(L.up[(size_t)i], ">", true, L.up[(size_t)i].contains(mouseX, mouseY));
+// A click while the menu is open: it picks, or closes it; a click on the menu or the button that opened it is not passed on
+bool App::pressOnRuleMenu() {
+    if (screen != Screen::Playing || !ruleMenu.open) return false;
+    const ItemMenuLayout L = ruleMenuLayout();
+    const int hit = e.button.button == SDL_BUTTON_LEFT ? itemMenuButtonAt(L, e.button.x, e.button.y) : -1;
+    const UnitPanelLayout pl = squadPanelLayout(winW, winH);
+    const size_t i = (size_t)std::clamp(ruleMenu.row, 0, FACTION_SETTING_ROWS - 1);
+    const bool onButton = i < pl.settingRows.size() && pl.settingRows[i].edit.contains(e.button.x, e.button.y);
+    ruleMenu.open = false;
+    if (hit >= 0) {
+        runRuleMenu(hit);
+        return true;
     }
-    float y = L.help.y;
-    for (const std::string& line : renderer.wrapListText(tip.empty() ? lang("UILABEL_FACTION_RULES_HELP") : tip, L.help.w)) {
-        if (y + textH > L.help.y + L.help.h) break;
-        renderer.drawListText(line, L.help.x, y, dim);
-        y += textH + 2.0f;
+    return onButton || L.box.contains(e.button.x, e.button.y);
+}
+
+// A click in the Settings rows: an Edit button opens its menu (or, while the name is being typed, finishes it)
+bool App::pressOnFactionSettings(const UnitPanelLayout& fp, float x, float y) {
+    for (size_t i = 0; i < fp.settingRows.size(); ++i) {
+        if (!fp.settingRows[i].edit.contains(x, y)) continue;
+        if (i == 0 && factionRulesNaming) {
+            stopFactionRulesNaming();
+            playSfx(Sfx::UiClick);
+            return true;
+        }
+        stopFactionRulesNaming();
+        ruleMenu.open = true;
+        ruleMenu.row = (int)i;
+        playSfx(Sfx::UiMenuOpen);
+        return true;
     }
-    const FactionDef* f = findFaction(FACTION_PLAYER);
-    const bool changed = f && rules != f->rules;
-    renderer.drawButton(L.reset, lang("UILABEL_FACTION_RULES_RESET"), changed, L.reset.contains(mouseX, mouseY));
+    return false;
+}
+
+void App::drawRuleMenu() {
+    if (screen != Screen::Playing || !ruleMenu.open) return;
+    renderer.drawItemMenu(ruleMenuLayout(), ruleMenuLabels(), mouseX, mouseY);
 }

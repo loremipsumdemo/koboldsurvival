@@ -180,7 +180,7 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
         float contentH = 0.0f;
         if (L.sub == FACTION_SUB_SQUADS) contentH = m.pad * 0.5f + 3.0f * cellH + 2.0f * gridGap + 2.0f * (m.gap + m.toggleH);
         else if (L.sub == FACTION_SUB_REPUTATION) contentH = std::max(0.0f, (float)factionCount * (rowH + rowGap) - rowGap);
-        else contentH = m.toggleH;
+        else contentH = (float)FACTION_SETTING_ROWS * (rowH + rowGap) - rowGap;
         L.subContentH = contentH;
         L.subScrollMax = std::max(0.0f, contentH - L.view.h);
         L.subScroll = std::clamp(subScroll, 0.0f, L.subScrollMax);
@@ -214,7 +214,11 @@ UnitPanelLayout layoutUnitPanel(int W, int H, int unitCount, int scrollRow, bool
             }
             L.repVisible = (int)L.repRows.size();
         } else {
-            L.factionRulesButton = Rect{ x0, top, contentW, m.toggleH };
+            const float editW = std::min(64.0f * s, contentW * 0.3f);
+            for (int i = 0; i < FACTION_SETTING_ROWS; ++i) {
+                const Rect row{ x0, top + (float)i * (rowH + rowGap), contentW, rowH };
+                L.settingRows.push_back({ row, Rect{ row.x + row.w - editW, row.y, editW, row.h } });
+            }
         }
         return L;
     }

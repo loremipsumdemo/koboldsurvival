@@ -175,7 +175,8 @@ public:
 
     // renameText: the squad name being typed, or null when no squad is being renamed
     void drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vector<ObjectId>& units, bool running,
-                       int repView, const std::string* renameText = nullptr, int floorLevel = 0, bool floorManual = false, bool formOpen = false);
+                       int repView, const std::string* renameText = nullptr, int floorLevel = 0, bool floorManual = false, bool formOpen = false,
+                       const std::string* factionNameEdit = nullptr);
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
@@ -319,6 +320,8 @@ public:
     void drawCloseButton(const Rect& r);
     void drawReputationList(World& w, const UnitPanelLayout& L, int repView);
     void drawSquadGrid(World& w, const UnitPanelLayout& L, const std::string* renameText);
+    // The Faction tab's Settings: your faction's name and each rule, with an Edit button. factionNameEdit: the name being typed, or null.
+    void drawFactionSettings(World& w, const UnitPanelLayout& L, const std::string* factionNameEdit);
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
     void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);
@@ -786,6 +789,8 @@ private:
     float uiScale() const { return uiH_ / 720.0f; }
     float mouseX_ = 0.0f, mouseY_ = 0.0f;
     std::string tip_;
+    // Text that fitText cut to "..." this frame, by what it shows: hovering it where it is drawn shows the whole of it as the tip
+    std::unordered_map<std::string, std::string> truncated_;
     void drawTip();
 
     Mat4 viewProj_{};

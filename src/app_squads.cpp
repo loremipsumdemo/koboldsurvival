@@ -286,6 +286,10 @@ bool App::pressOnFactionGrid() {
     // A click anywhere else ends the renaming, keeping the name
     const bool onName = fp.renameButton.contains(tx, ty) || fp.squadCells[(size_t)world.resource<SquadBook>().current].contains(tx, ty);
     if (squadRenaming && (!onName || factionTab != FACTION_TAB_FACTION || squadCollapsed)) stopSquadRename(true);
+    // A click anywhere but the name's Edit button ends typing the faction's name
+    if (factionRulesNaming && (factionTab != FACTION_TAB_FACTION || squadCollapsed || fp.settingRows.empty() || !fp.settingRows[0].edit.contains(tx, ty))) {
+        stopFactionRulesNaming();
+    }
     if (factionTab != FACTION_TAB_FACTION || squadCollapsed || e.button.button != SDL_BUTTON_LEFT) return false;
     // Only what shows in the tab's view can be clicked
     if (!fp.view.contains(tx, ty)) return false;
@@ -293,10 +297,7 @@ bool App::pressOnFactionGrid() {
         openManageSquads();
         return true;
     }
-    if (fp.factionRulesButton.contains(tx, ty)) {
-        openFactionRules();
-        return true;
-    }
+    if (factionSub == FACTION_SUB_SETTINGS && pressOnFactionSettings(fp, tx, ty)) return true;
     if (fp.renameButton.contains(tx, ty)) {
         if (squadRenaming) stopSquadRename(true);
         else startSquadRename();

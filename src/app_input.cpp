@@ -41,12 +41,18 @@ void App::onTextInput() {
         appendUtf8Limited(rename.text, e.text.text, PARTY_NAME_CHARS);
         return;
     }
+    if (screen == Screen::Playing && factionRulesNaming) {
+        appendUtf8Limited(factionRulesName, e.text.text, PARTY_NAME_CHARS);
+        setPlayerFactionName(factionRulesName);
+        return;
+    }
     if (screen == Screen::Playing && squadRenaming) {
         appendUtf8Limited(squadRenameText, e.text.text, SQUAD_NAME_CHARS);
         return;
     }
     if (percentPrompt.open) {
-        const size_t most = std::to_string(percentRange(percentPrompt.kind).hi).size();
+        const size_t most = std::to_string(percentPrompt.faction ? ruleNumberMax((RuleRow)percentPrompt.ruleRow)
+                                                                  : percentRange(percentPrompt.kind).hi).size();
         for (const char* c = e.text.text; *c; ++c) {
             if (*c < '0' || *c > '9') continue;
             if (percentPrompt.text == "0") percentPrompt.text.clear();
@@ -85,6 +91,16 @@ void App::onTextInput() {
 
 void App::onKeyDown() {
     if (e.key.key == SDLK_ESCAPE && e.key.repeat) return;
+    // Typing your faction's name (the Faction tab's Settings, or Faction Info)
+    if (screen == Screen::Playing && factionRulesNaming) {
+        if (e.key.key == SDLK_BACKSPACE) {
+            popUtf8Char(factionRulesName);
+            setPlayerFactionName(factionRulesName);
+        } else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER || e.key.key == SDLK_ESCAPE) {
+            stopFactionRulesNaming();
+        }
+        return;
+    }
     if (percentPrompt.open) {
         if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) {
             answerPercentPrompt(true);
@@ -153,9 +169,9 @@ void App::onKeyDown() {
         }
         return;
     }
-    if (screen == Screen::Playing && factionRulesOpen) {
+    if (screen == Screen::Playing && ruleMenu.open) {
         if (e.key.key == SDLK_ESCAPE) {
-            factionRulesOpen = false;
+            ruleMenu.open = false;
             playSfx(Sfx::UiBack);
         }
         return;
@@ -475,9 +491,12 @@ void App::onMouseWheel() {
             partyUi.listScroll = std::clamp(std::min(partyUi.listScroll, maxScroll) - (int)e.wheel.y, 0, maxScroll);
         }
     } else if (screen == Screen::Settings) {
+        const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+        const SettingsLayout sl = layoutSettings(winW, winH, rows, settingsUi);
         if (settingsUi.openRow >= 0) {
-            const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
-            settingsScrollDropdown(settingsUi, layoutSettings(winW, winH, rows, settingsUi), (int)e.wheel.y);
+            settingsScrollDropdown(settingsUi, sl, (int)e.wheel.y);
+        } else if (sl.area.needed) {
+            settingsUi.scroll = scrollWheelOffset(sl.area, e.wheel.y, 44.0f * uiScaleFor((float)winH));
         }
     } else if (screen == Screen::Playing && !wheelOverMap && gameLogHovered(winW, winH)) {
         const int step = e.wheel.y > 0.0f ? 3 : e.wheel.y < 0.0f ? -3 : 0;
@@ -784,6 +803,7 @@ void App::onMouseButtonUp() {
         setGrabCursor(grabAt(winW, winH, e.button.x, e.button.y).second);
         return;
     }
+    if (e.button.button == SDL_BUTTON_LEFT) settingsUi.dragBar = false;
     if (e.button.button == SDL_BUTTON_LEFT && settingsUi.dragRow >= 0) {
         settingsUi.dragRow = -1;
         saveSettingsFile();
@@ -1015,6 +1035,15 @@ void App::onMouseMotion() {
     if (screen == Screen::Playing) {
         const bool onMap = mapOpen && worldMapFor(winW, winH).window.contains(e.motion.x, e.motion.y);
         setGrabCursor(onMap ? 0 : grabAt(winW, winH, e.motion.x, e.motion.y).second);
+    }
+    if (screen == Screen::Settings && settingsUi.dragBar) {
+        if (e.motion.state & SDL_BUTTON_LMASK) {
+            const std::vector<RowSpec> rows = settingsRows(settingsUi.tab, settings, displayInfo);
+            const SettingsLayout L = layoutSettings(winW, winH, rows, settingsUi);
+            settingsUi.scroll = scrollOffsetAt(L.area, e.motion.y - settingsUi.barGrab);
+        } else {
+            settingsUi.dragBar = false;
+        }
     }
     if (screen == Screen::Settings && settingsUi.dragRow >= 0) {
         if (e.motion.state & SDL_BUTTON_LMASK) {

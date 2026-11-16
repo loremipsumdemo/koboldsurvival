@@ -22,6 +22,7 @@ std::string hourText(int h) {
 std::vector<InfoRow> infoRows(World& w, int faction) {
     std::vector<InfoRow> rows;
     const bool yours = faction == FACTION_PLAYER;
+    if (yours) rows.push_back({ lang("UILABEL_FACTION_NAME"), factionName(faction), false });   // the first row: click it to rename
     rows.push_back({ lang("UILABEL_INFO_CONTROL"), lang(yours ? "UILABEL_INFO_PLAYER" : "UILABEL_INFO_AVATAR"), false });
     for (const Claim& c : claimsOf(w)) {
         if (c.owner == faction && !c.camp) {
@@ -96,6 +97,20 @@ bool App::pressOnFactionInfo() {
     if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
     const InfoLayout L = layoutInfo(winW, winH, (int)infoRows(world, factionInfoFaction).size(), renderer.listTextHeight("Ag"));
+    if (factionInfoFaction == FACTION_PLAYER) {
+        // Your faction's name is the first row: clicking it types a new one, and a click anywhere else finishes
+        const Rect nameRow{ L.box.x + L.pad, L.firstY, L.box.w - 2.0f * L.pad, L.rowH };
+        if (nameRow.contains(x, y)) {
+            if (!factionRulesNaming) {
+                factionRulesName = playerFactionName();
+                SDL_StartTextInput(window);
+                factionRulesNaming = true;
+                playSfx(Sfx::UiClick);
+            }
+            return true;
+        }
+        stopFactionRulesNaming();
+    }
     if (L.close.contains(x, y) || !L.box.contains(x, y)) {
         factionInfoOpen = false;
         playSfx(Sfx::UiBack);
@@ -111,13 +126,33 @@ void App::drawFactionInfo() {
     const float s = uiScaleFor((float)winH);
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f }, dim{ 0.80f, 0.72f, 0.64f, 1.0f };
     renderer.drawThemedPanel(L.box);
-    renderer.drawListText(renderer.fitListText(langf("UILABEL_FACTION_INFO_TITLE", { factionName(factionInfoFaction) }) + " (" + lang("UILABEL_VIEW_ONLY") + ")", L.title.w),
+    renderer.drawListText(renderer.fitListText(langf("UILABEL_FACTION_INFO_TITLE", { factionName(factionInfoFaction) }) +
+                                               (factionInfoFaction == FACTION_PLAYER ? std::string() : " (" + lang("UILABEL_VIEW_ONLY") + ")"), L.title.w),
                           L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
     renderer.drawCloseButton(L.close);
     float y = L.firstY;
     const float right = L.box.x + L.box.w - L.pad;
+    bool first = true;
     for (const InfoRow& r : rows) {
         if (y + L.rowH > L.note.y) break;
+        const bool nameRow = first && factionInfoFaction == FACTION_PLAYER;
+        first = false;
+        if (nameRow) {
+            // Typed as it goes; click to edit
+            const Rect box{ L.box.x + L.pad, y, L.box.w - 2.0f * L.pad, L.rowH };
+            renderer.drawRect(box, factionRulesNaming ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.16f, 0.07f, 0.085f, box.contains(mouseX, mouseY) ? 0.95f : 0.6f });
+            renderer.drawListText(renderer.fitListText(r.label, L.valueX - L.box.x - L.pad - 8.0f * s), L.box.x + L.pad + 6.0f * s, y + (L.rowH - textH) * 0.5f, white);
+            std::string v = factionRulesNaming ? factionRulesName + ((SDL_GetTicks() / 500) % 2 ? "|" : " ") : r.value;
+            if (factionRulesNaming) {
+                while (utf8Length(v) > 1 && renderer.listTextWidth(v) > right - L.valueX - 6.0f * s) v.erase(0, 1);
+            } else {
+                v = renderer.fitListText(v, right - L.valueX - 6.0f * s);
+            }
+            renderer.drawListText(v, L.valueX, y + (L.rowH - textH) * 0.5f, gold);
+            if (box.contains(mouseX, mouseY) && !factionRulesNaming) renderer.noteTip(lang("UILABEL_FACTION_NAME_TIP"), box);
+            y += L.rowH;
+            continue;
+        }
         if (r.heading) {
             renderer.drawRect(Rect{ L.box.x + L.pad, y, L.box.w - 2.0f * L.pad, L.rowH }, RGBA{ 0.30f, 0.20f, 0.08f, 0.8f });
             renderer.drawListText(r.label, L.box.x + L.pad + 6.0f * s, y + (L.rowH - textH) * 0.5f, gold);

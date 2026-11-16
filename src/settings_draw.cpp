@@ -54,10 +54,13 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }
 
+    // The rows are drawn inside their area: rows scrolled past its edges are cut off there, under the tabs and the buttons below
+    r.beginClip(L.area.view);
     for (size_t i = 0; i < rows.size() && i < L.rows.size(); ++i) {
         const RowSpec& row = rows[i];
         const RowLayout& R = L.rows[i];
         const int idx = static_cast<int>(i);
+        if (R.band.y + R.band.h < L.area.view.y || R.band.y > L.area.view.y + L.area.view.h) continue;
 
         if (row.kind == RowKind::Text) {
             r.drawUiText(row.label, R.band.x + 14.0f * u,
@@ -104,6 +107,9 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
             break;
         }
     }
+
+    r.endClip();
+    if (L.area.needed) r.drawScrollBar(L.area.track, L.area.thumb, st.dragBar || over(L.area.track, mx, my));
 
     r.drawButton(L.defaults, lang("UILABEL_RESTORE_DEFAULTS"), true, over(L.defaults, mx, my));
     r.drawButton(L.back, lang("UILABEL_BACK"), true, over(L.back, mx, my));

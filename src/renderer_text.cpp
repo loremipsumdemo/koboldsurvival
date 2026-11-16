@@ -103,6 +103,10 @@ void Renderer::drawBigText(const std::string& text, float cx, float cy, float h,
 void Renderer::drawFontText(TextFont& f, const std::string& s, float x, float y, RGBA tint) {
     const TextLine& hl = f.line(s);
     if (!hl.tex.tex) return;
+    // Cut-off text (fitText) tells its whole self when it is pointed at, wherever it is drawn, unless something has set a tip already
+    if (!truncated_.empty() && tip_.empty() && mouseX_ >= x && mouseX_ < x + hl.w && mouseY_ >= y && mouseY_ < y + hl.h) {
+        if (const auto cut = truncated_.find(s); cut != truncated_.end()) tip_ = cut->second;
+    }
     drawTexture(hl.tex.tex, x, y, hl.w, hl.h, tint);
 }
 
@@ -133,7 +137,10 @@ std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
     for (size_t n = words.size(); n > 0; --n) {
         std::string joined;
         for (size_t k = 0; k < n; ++k) joined += (k ? " " : "") + words[k];
-        if (width(joined + "...") <= maxW) return joined + "...";
+        if (width(joined + "...") <= maxW) {
+            truncated_[joined + "..."] = text;
+            return joined + "...";
+        }
     }
 
     std::string t = text;
@@ -142,6 +149,7 @@ std::string Renderer::fitText(const std::string& text, float maxW, bool ui) {
         while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
         if (!t.empty()) t.pop_back();
     }
+    truncated_[t + "..."] = text;
     return t + "...";
 }
 

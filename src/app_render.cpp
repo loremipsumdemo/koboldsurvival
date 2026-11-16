@@ -359,7 +359,12 @@ void App::drawSavePanel() {
 void App::drawFrameOverlays() {
     renderer.beginUi(winW, winH);
     if (percentPrompt.open) {
-        if (screen != Screen::Playing || !world.has<Behaviors>(percentPrompt.unit)) {
+        if (percentPrompt.faction) {
+            const RuleRow row = (RuleRow)percentPrompt.ruleRow;
+            renderer.drawPercentPrompt(layoutPercentPrompt(winW, winH), lang(ruleRowKey(row)), percentPrompt.text,
+                                       langf("UILABEL_BEHAVIOR_PROMPT_RANGE", { "0", std::to_string(ruleNumberMax(row)) }),
+                                       percentPrompt.error, mouseX, mouseY);
+        } else if (screen != Screen::Playing || !world.has<Behaviors>(percentPrompt.unit)) {
             answerPercentPrompt(false);
         } else {
             const char* title = percentPrompt.kind == BehaviorKind::Eat    ? "UILABEL_BEHAVIOR_PROMPT_EAT"

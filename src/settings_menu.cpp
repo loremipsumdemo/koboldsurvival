@@ -30,6 +30,7 @@ constexpr float DEFAULTS_W = 220.0f;
 constexpr float BACK_W = 200.0f;
 constexpr float DROP_EDGE = 8.0f;
 constexpr int DROP_MIN_ROWS = 4;
+constexpr float SQUEEZE_MIN = 0.78f;   // rows close up to this much of their height before the list scrolls instead
 
 DropOption sizeOption(int w, int h, const std::string& note = std::string()) {
     return DropOption{ std::to_string(w) + " x " + std::to_string(h) + note, 0, w, h, true };
@@ -304,22 +305,28 @@ SettingsLayout layoutSettings(int W, int H, const std::vector<RowSpec>& rows, co
     const float top = tabY + tabH + CONTENT_GAP * u;
     float rowStep = ROW_STEP * u, rowH = ROW_H * u, vpad = ROW_VPAD * u;
     // More rows of controls than fit above the footer: they close up to fit, rather than run under it
-    const bool hasText = std::any_of(rows.begin(), rows.end(), [](const RowSpec& r) { return r.kind == RowKind::Text; });
+    // A little too many controls close up to fit; more than that scroll instead of squeezing past reading
     const float room = footY - CONTENT_GAP * u - top;
-    if (!hasText && !rows.empty() && (float)rows.size() * rowStep > room) {
+    if (!rows.empty() && (float)rows.size() * rowStep > room) {
         const float fit = room / ((float)rows.size() * rowStep);
-        rowStep *= fit;
-        rowH *= fit;
-        vpad *= fit;
+        if (fit >= SQUEEZE_MIN) {
+            rowStep *= fit;
+            rowH *= fit;
+            vpad *= fit;
+        }
     }
-    const float colX = cx + cw * COL_SPLIT, colW = cw * (1.0f - COL_SPLIT) - COL_RIGHT * u;
+    // Rows that still don't fit scroll, with a bar that shows only then
+    const float contentH = rows.empty() ? 0.0f : (float)(rows.size() - 1) * rowStep + rowH;
+    L.area = layoutScrollArea(Rect{ cx, top, cw, std::max(0.0f, room) }, contentH, st.scroll, u);
+    const float areaW = L.area.view.w;
+    const float colX = cx + areaW * COL_SPLIT, colW = areaW * (1.0f - COL_SPLIT) - COL_RIGHT * u;
 
     L.rows.resize(rows.size());
     for (size_t i = 0; i < rows.size(); ++i) {
         RowLayout& R = L.rows[i];
-        const float by = top + static_cast<float>(i) * rowStep;
+        const float by = top - L.area.offset + static_cast<float>(i) * rowStep;
         const float cy = by + vpad, ch = rowH - 2.0f * vpad;
-        R.band = Rect{ cx, by, cw, rowH };
+        R.band = Rect{ cx, by, areaW, rowH };
         R.text = Rect{ colX, by, colW, rowH };
         switch (rows[i].kind) {
         case RowKind::Dropdown:
@@ -385,6 +392,8 @@ SettingsClick hitSettings(const SettingsLayout& L, const std::vector<RowSpec>& r
     }
     if (L.defaults.contains(x, y)) return { ClickKind::Defaults, -1, -1 };
     if (L.back.contains(x, y)) return { ClickKind::Back, -1, -1 };
+    if (L.area.needed && L.area.track.contains(x, y)) return { ClickKind::ScrollBar, -1, -1 };
+    if (!L.area.view.contains(x, y)) return {};   // rows scrolled out of the area aren't there to hit
 
     for (size_t i = 0; i < rows.size() && i < L.rows.size(); ++i) {
         const RowSpec& r = rows[i];
@@ -422,6 +431,8 @@ int levelAtX(const Rect& track, float x) {
 
 void settingsSelectTab(SettingsMenuState& st, SettingsTab tab) {
     st.tab = tab;
+    st.scroll = 0.0f;
+    st.dragBar = false;
     st.openRow = -1;
     st.dropFirst = 0;
     st.dragRow = -1;

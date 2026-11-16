@@ -45,8 +45,8 @@ const RuleWords& wordsOf(RuleRow row) {
         { "trespass", { "ignore", "warn", "attack" }, { "UILABEL_RULE_IGNORE", "UILABEL_RULE_WARN", "UILABEL_RULE_ATTACK" } },
         { "downed", { "leave", "cage", "carry_out", "finish_off" },
           { "UILABEL_RULE_LEAVE", "UILABEL_RULE_CAGE", "UILABEL_RULE_CARRY_OUT", "UILABEL_RULE_FINISH_OFF" } },
-        { "take", { "nothing", "food", "weapons", "everything" },
-          { "UILABEL_RULE_NOTHING", "UILABEL_RULE_FOOD", "UILABEL_RULE_WEAPONS", "UILABEL_RULE_EVERYTHING" } },
+        { "take", { "nothing", "food", "weapons", "everything", "all" },
+          { "UILABEL_RULE_NOTHING", "UILABEL_RULE_FOOD", "UILABEL_RULE_WEAPONS", "UILABEL_RULE_EVERYTHING", "UILABEL_RULE_LOOT_ALL" } },
         { "trade", { "nobody", "allies", "not_factionless", "anyone" },
           { "UILABEL_RULE_NOBODY", "UILABEL_RULE_ALLIES", "UILABEL_RULE_NOT_FACTIONLESS", "UILABEL_RULE_ANYONE" } },
         { "markup", {}, {} },
@@ -175,6 +175,27 @@ std::string ruleValueText(const FactionRules& r, RuleRow row) {
     if (numberRow(row)) return langf("UILABEL_RULE_PERCENT", { std::to_string(v) });
     const RuleWords& rw = wordsOf(row);
     return lang(rw.labels[(size_t)std::clamp(v, 0, (int)rw.labels.size() - 1)]);
+}
+
+bool ruleIsNumber(RuleRow row) { return numberRow(row); }
+
+int ruleNumberMax(RuleRow row) { return row == RuleRow::Markup ? TRADE_MARKUP_MAX : 100; }
+
+int ruleCurrent(const FactionRules& r, RuleRow row) { return ruleValue(r, row); }
+
+void setRule(FactionRules& r, RuleRow row, int value) { setRuleValue(r, row, value); }
+
+std::vector<RuleChoice> ruleChoices(RuleRow row) {
+    std::vector<RuleChoice> out;
+    if (numberRow(row)) {
+        const std::vector<int> presets = row == RuleRow::Markup ? std::vector<int>{ 0, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200 }
+                                                                : std::vector<int>{ 0, 10, 25, 50, 75, 100 };
+        for (int p : presets) out.push_back(RuleChoice{ langf("UILABEL_RULE_PERCENT", { std::to_string(p) }), p });
+        return out;
+    }
+    const RuleWords& rw = wordsOf(row);
+    for (size_t k = 0; k < rw.labels.size(); ++k) out.push_back(RuleChoice{ lang(rw.labels[k]), (int)k });
+    return out;
 }
 
 void stepRule(FactionRules& r, RuleRow row, int delta) {

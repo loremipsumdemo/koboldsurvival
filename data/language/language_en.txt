@@ -1226,7 +1226,14 @@ COLORNAME_VEIL	Veil
 COLORNAME_GARNET	Garnet
 COLORNAME_BLOSSOM	Blossom
 FACTION_FACTIONLESS	Factionless
-UILABEL_FACTION_COLOR_TITLE	Choose Your Faction Color
+UILABEL_FACTION_COLOR_TITLE	Faction Name and Color
+UILABEL_EDIT	Edit
+UILABEL_FACTION_NAME_RENAME	Rename...
+UILABEL_FACTION_NAME_DEFAULT	Use its color's name ({0})
+UILABEL_RULE_CUSTOM	Custom...
+UILABEL_FACTION_NAME	Faction Name
+UILABEL_FACTION_NAME_TIP	Click to rename your faction. Leave it empty for its color's name.
+UILABEL_FACTION_NAME_HINT	Name your faction (empty: {0})
 UILABEL_FACTION_COLOR_BUTTON	Faction: {0}
 UILABEL_FACTION_COLOR_RANDOM	Random
 UILABEL_FACTION_COLOR_ALLIES	Allies: {0}
@@ -1776,7 +1783,7 @@ UILABEL_RULES_TRESPASS_TIP	An outsider, neither ally nor enemy, standing in your
 UILABEL_RULES_DOWNED_BODY	Downed enemies
 UILABEL_RULES_DOWNED_BODY_TIP	What Deal with Downed does with an enemy lying knocked out: leaves them; locks them in your nearest free Prisoner Cage (out of your claim if none is free); carries them past the edge of your claim; or finishes them off
 UILABEL_RULES_DOWNED_TAKE	Take from them
-UILABEL_RULES_DOWNED_TAKE_TIP	What is taken from them first. Food: what in their pack eases hunger. Weapons: that, and what they hold in main hand and off hand. Everything: their weapons and whole pack, not their armor. What won't fit is dropped beside them.
+UILABEL_RULES_DOWNED_TAKE_TIP	What is taken from them first. Food: what in their pack eases hunger. Weapons: that, and what they hold in main hand and off hand. Everything: their weapons and whole pack, not their armor. Loot All: all of that and their armor too. What won't fit is dropped beside them.
 UILABEL_RULES_TRADE	Trade with
 UILABEL_RULES_TRADE_TIP	Whom your faction trades with. A trade needs both sides' rules to allow it.
 UILABEL_RULES_MARKUP	Markup
@@ -1813,6 +1820,7 @@ UILABEL_RULE_NOTHING	Nothing
 UILABEL_RULE_FOOD	Food
 UILABEL_RULE_WEAPONS	Food and weapons
 UILABEL_RULE_EVERYTHING	Everything but armor
+UILABEL_RULE_LOOT_ALL	Loot All
 UILABEL_RULE_NOBODY	Nobody
 UILABEL_RULE_ALLIES	Allies
 UILABEL_RULE_NOT_FACTIONLESS	Anyone but Factionless

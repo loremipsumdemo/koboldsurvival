@@ -805,6 +805,7 @@ void Renderer::beginUi(int winW, int winH) {
     constexpr size_t TEXT_CACHE_LIMIT = 512;
     text_.ui.trim(TEXT_CACHE_LIMIT);
     text_.list.trim(TEXT_CACHE_LIMIT);
+    truncated_.clear();
     presentScene();
     uiW_ = winW;
     uiH_ = winH;

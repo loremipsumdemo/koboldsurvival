@@ -42,7 +42,7 @@ enum class TrespassRule : int { Ignore = 0, Warn, Attack, Count };
 enum class DownedBodyRule : int { Leave = 0, Cage, CarryOut, FinishOff, Count };
 // What it takes from that unit first, each taking what the one before it does: nothing, its food, its weapons too (main
 // hand and off hand), or its whole pack too. What the taker can't hold is dropped beside it.
-enum class DownedTakeRule : int { Nothing = 0, Food, Weapons, Everything, Count };
+enum class DownedTakeRule : int { Nothing = 0, Food, Weapons, Everything, All, Count };   // All: Loot All, their worn armor too
 // Whom it trades with: no one, its allies, anyone not hostile but the Factionless, or anyone not hostile
 enum class TradeRule : int { Nobody = 0, Allies, NotFactionless, Anyone, Count };
 // Whom it takes in: no one, an outsider it rescued that wakes in its bed, a Factionless unit that lingers in its claim, or both
@@ -84,10 +84,21 @@ std::string factionRulesText(const FactionRules& r);
 // Reads such words into r, leaving the rules not named as they are. False on a word it does not know.
 bool parseFactionRules(const std::string& text, FactionRules& r, std::string& err);
 
+// What the Faction tab's menu offers for a row: each value with its label (a number row: the usual percents), whether the row is a
+// number a Custom entry can set exactly (and its largest), and a row's value read and set by number
+struct RuleChoice {
+    std::string label;
+    int value = 0;
+};
 // The rows of the Faction Rules window, and the language keys of each one's values
 enum class RuleRow : int { Factionless = 0, Trespass, DownedBody, DownedTake, Trade, Markup, Recruit, Aid, Fortified, Military, Build, Gates, Count };
 // The rows of the Faction Rules window (yours): those for outsiders. The rest are for the factions that run themselves (data/factions.txt).
 inline constexpr int PLAYER_RULE_ROWS = (int)RuleRow::Fortified;
+std::vector<RuleChoice> ruleChoices(RuleRow row);
+bool ruleIsNumber(RuleRow row);
+int ruleNumberMax(RuleRow row);
+int ruleCurrent(const FactionRules& r, RuleRow row);
+void setRule(FactionRules& r, RuleRow row, int value);
 const char* ruleRowKey(RuleRow row);
 const char* ruleRowTipKey(RuleRow row);
 // The value of one row of r as text for the window

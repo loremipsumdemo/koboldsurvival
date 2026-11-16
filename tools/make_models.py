@@ -12,6 +12,8 @@ Things the game does with a model:
   - The largest side of the model is scaled to the prop's size in src/props.h. Models are built at that size, in game units,
     where a unit is about 1.2 tall.
   - A sleeper lies at half a bed's height, so the top of a bed or bedroll should be about twice the height of its mattress.
+  - A prop's fire (and any other particle origin, such as smoke) is a spot in data/props.txt (the fire: flag), measured on its model. When a
+    model is made or replaced, update that origin as well, and record beside the row how it was found.
   - A click has to land on one of the model's triangles, so the gaps in an open prop like the cage can't be clicked.
 
 Running this overwrites the model of every prop, including any replaced by hand.
