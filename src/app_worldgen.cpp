@@ -262,7 +262,7 @@ void App::drawThemePanel(const Rect& area) {
             renderer.drawButton(c, lang(theme.*row.number ? "UILABEL_THEME_ON" : "UILABEL_THEME_OFF"), true, c.contains(mouseX, mouseY));
             break;
         case ThemeRowKind::Choice:
-            renderer.drawButton(c, lang(skyKindLabelKey(theme.*row.number)), true, c.contains(mouseX, mouseY));
+            renderer.drawButton(c, lang(themeChoiceLabelKey(row, theme.*row.number)), true, c.contains(mouseX, mouseY));
             break;
         case ThemeRowKind::Color: {
             float rgb[3];

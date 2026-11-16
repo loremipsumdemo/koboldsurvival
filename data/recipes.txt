@@ -14,6 +14,7 @@
 # Weapons, at the Weapon Workbench (92 Iron Ingot, 88 Wood Log)
 recipe Knife        WeaponBench 81  1 1.0 0 92:1
 recipe Dagger       WeaponBench 80  1 1.5 0 92:1,88:1
+recipe Torch        WeaponBench 164 1 0.5 0 88:1
 recipe ShortSword   WeaponBench 74  1 2.0 1 92:2,88:1
 recipe Axe          WeaponBench 76  1 2.0 1 92:2,88:2
 recipe Buckler      WeaponBench 83  1 2.0 1 88:3,92:1

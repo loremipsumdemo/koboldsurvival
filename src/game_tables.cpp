@@ -396,6 +396,17 @@ bool readPropFlags(const std::string& text, PropInfo& p, std::string& why) {
                 return false;
             }
         }
+        else if (flag.rfind("wall_mount:", 0) == 0) {
+            // wall_mount:height or wall_mount:height:depth, hung on the side of a wall this high above the floor, its model reaching this far
+            // out from it (0.3 if left out). It is a small thing: its footprint is a hand's width.
+            const int got = std::sscanf(flag.c_str(), "wall_mount:%f:%f", &p.mountY, &p.mountDepth);
+            if (got < 1 || p.mountY < 0.0f || p.mountDepth <= 0.0f) {
+                why = "a wall_mount flag that is not wall_mount:height or wall_mount:height:depth";
+                return false;
+            }
+            p.wallDecor = true;
+            p.foot.halfW = p.foot.halfD = 0.12f;
+        }
         else if (flag == "moves") p.moves = true;
         else if (flag == "foundation") p.foundation = true;
         else if (flag == "on_foundation") p.onFoundation = true;

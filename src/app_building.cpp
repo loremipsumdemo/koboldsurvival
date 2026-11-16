@@ -204,6 +204,10 @@ std::optional<std::pair<float, float>> App::pickFloor(float mx, float my, int& s
 // so the tiles dragged over are the ones seen there. A foundation or something that claims land: the ground. Anything
 // else: on the highest finished floor seen under the pointer (passing over what the cutaway leaves out), or the ground,
 // and buildLevel says which.
+std::optional<WallSidePick> App::wallSideAt(float mx, float my) {
+    return pickWallSide(world, terrain, cam, mx, my, winW, winH, [&](int x, int z, int level) { return renderer.tileCutAway(x, z, level); });
+}
+
 std::optional<std::pair<float, float>> App::buildPickAt(float mx, float my) {
     auto hit = pickGround(cam, terrain, mx, my, winW, winH);
     session.buildLevel = session.floorLevel;

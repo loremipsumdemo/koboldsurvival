@@ -307,6 +307,15 @@ UILABEL_THEME_SHADOWS	Shadow harshness
 UILABEL_THEME_MODEL_LIGHT	Light on props, units
 UILABEL_THEME_FOG	Fog
 UILABEL_THEME_FOG_COLOR	Fog color
+UILABEL_THEME_WEATHER_HEADING	Weather
+UILABEL_THEME_WEATHER	Weather
+UILABEL_THEME_WEATHER_AMOUNT	Weather strength
+UILABEL_THEME_WIND	Wind
+UILABEL_THEME_WEATHER_CLEAR	Clear
+UILABEL_THEME_WEATHER_OVERCAST	Overcast
+UILABEL_THEME_WEATHER_RAIN	Rain
+UILABEL_THEME_WEATHER_DUST	Dust storm
+UILABEL_THEME_WEATHER_SNOW	Snow
 UILABEL_THEME_WATER	Water
 UILABEL_THEME_WATER_SHOWN	Water (off: void)
 UILABEL_THEME_WATER_COLOR	Water color
@@ -900,6 +909,8 @@ UILABEL_UPKEEP_HINT	Burns one {0} an hour as upkeep. Put them in here.
 MISC_BUILD_BLOCKED	No room to build here
 MISC_BUILD_NEAR_PERIMETER	A foundation can't touch a Perimeter Wall or Gate
 MISC_BUILD_NEAR_FOUNDATION	A Perimeter Wall or Gate can't touch a foundation
+MISC_BUILD_NEEDS_WALL	A Wall Torch hangs on a finished wall
+MISC_BUILD_WALL_BETWEEN	That side of the wall joins another wall: hang it on a bare side
 MISC_BUILD_UNWALKABLE	The ground here can't be built on
 UILABEL_BUILD_DESTROY	Destroy
 UILABEL_BUILD_DESTROY_HINT	Left-click any prop to take it down: what it holds falls to the ground and Debris is left in its place. Left-click Debris to clear it away. Right-click or Escape cancels.
@@ -907,6 +918,7 @@ UILABEL_BUILD_GROUP_CLAIMS	Claims
 UILABEL_BUILD_GROUP_CRAFTING	Crafting
 UILABEL_BUILD_GROUP_STORAGE	Storage
 UILABEL_BUILD_GROUP_SETTLEMENT	Settlement
+UILABEL_BUILD_GROUP_DECORATIONS	Decorations
 UILABEL_BUILD_GROUP_FURNITURE	Furniture
 UILABEL_BUILD_GROUP_CAGES	Cages
 UILABEL_BUILD_GROUP_VEHICLES	Vehicles
@@ -1304,6 +1316,11 @@ PROP_TABLE	Table
 PROP_END_TABLE	End Table
 PROP_ROUND_TABLE	Round Table
 PROP_STANDING_TORCH	Standing Torch
+PROP_WALL_TORCH	Wall Torch
+PROP_PAINTING	Painting
+PROP_WALL_BANNER	Wall Banner
+PROP_ANTLER_MOUNT	Antler Mount
+PROP_CROSSED_SWORDS	Crossed Swords
 PROP_SUPPORT_BEAM	Support Beam
 PROP_TRAINING_DUMMY	Training Dummy
 PROP_RAW_FOOD_STORAGE	Raw Food Storage

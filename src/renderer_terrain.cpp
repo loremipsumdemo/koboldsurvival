@@ -506,7 +506,7 @@ void Renderer::updateSurfaceFrame(const Camera& cam, const SkyLight& sky) {
     F.macro[1] = wrapShift(oz, MACRO_SIZE);
     F.macro[2] = (float)(1.0 / MACRO_SIZE);
 
-    const double now = SecondsSinceStartExact();
+    const double now = cloudClock_;
     for (int k = 0; k < 2; ++k) {
         F.cloudShift[2 * k] = wrapShift(ox - CLOUD_WIND[k][0] * now, CLOUD_SCALE[k]);
         F.cloudShift[2 * k + 1] = wrapShift(oz - CLOUD_WIND[k][1] * now, CLOUD_SCALE[k]);
@@ -819,6 +819,7 @@ void Renderer::uploadTerrain(const Terrain& t) {
     overviewSize_ = 0.0f;
     const std::shared_ptr<const ChunkSource> source = t.source();
     hasTheme_ = source->theme() != nullptr;
+    weatherSnap_ = true;
     seaBounded_ = source->walledIn();
     if (hasTheme_) setMapTheme(*source->theme());
     overview_.start(t.size(), [source](int cx, int cz, ChunkData& c) { return source->fill(cx, cz, c); },
@@ -866,7 +867,18 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
-    const SkyLight sky = skyLightFor(hasTheme_ ? themeLook_ : t.surface().look, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    {
+        const double clockNow = SecondsSinceStartExact();
+        const float dtW = (float)std::clamp(clockNow - weatherAt_, 0.0, 0.25);
+        weatherAt_ = clockNow;
+        const WeatherLook target = hasTheme_ ? weatherLookOf(theme_) : WeatherLook{};
+        weatherShown_ = weatherSnap_ ? target : weatherApproach(weatherShown_, target, dtW / 8.0f);
+        weatherSnap_ = false;
+        cloudClock_ += (double)dtW * (double)weatherShown_.wind;
+    }
+    Look shownLook = hasTheme_ ? themeLook_ : t.surface().look;
+    applyWeather(shownLook, weatherShown_);
+    const SkyLight sky = skyLightFor(shownLook, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
     updateSurfaceFrame(cam, sky);
     const SurfaceFrame& frame = surfaceFrame_;
     const bool hasWater = !hasTheme_ || theme_.waterShown;

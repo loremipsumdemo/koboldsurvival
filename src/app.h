@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 #include "loading.h"
+#include "wall_pick.h"
 #include "language.h"
 #include "build_info.h"
 #include "camera.h"
@@ -446,6 +447,8 @@ struct App : AppSession {
     void drawStall();
     void scrollStall(float mx, float my, float wheel);
     std::optional<std::pair<float, float>> buildPickAt(float mx, float my);
+    // The side of a wall under the pointer, where a wall decoration is put (wall_pick.h)
+    std::optional<WallSidePick> wallSideAt(float mx, float my);
     void markFloorTiles(BuildPreview& bp, int tx, int tz);
     bool pressOnStoreFilter();
     void drawStoreFilter();

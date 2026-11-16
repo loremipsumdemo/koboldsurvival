@@ -1685,6 +1685,16 @@ def dragon_crystal(c):
     c.line(p[1], 0.7, (13, 13), (16, 26))
 
 
+def torch(c):
+    """A torch: a wooden handle leaning to the right, a cloth-wrapped head and a flame over it."""
+    c.line(WOOD[2], 4.4, (8, 29), (19, 13))
+    c.line(WOOD[0], 3.0, (8, 29), (19, 13))
+    c.line(IRON[1], 4.8, (17, 16), (20, 12))
+    c.poly((88, 66, 50), (16, 17), (22, 11), (24, 14), (19, 19))
+    c.poly(ORANGE, (21, 12), (17, 6), (21, 1), (23, 6), (26, 8), (24, 12))
+    c.poly(YELLOW, (22, 11), (20, 7), (22, 4), (24, 8), (23, 11))
+
+
 def gizmo(c):
     """A small device of springs and cogs: a big brass cog, a small steel one meshed with it, and a coil spring."""
     import math
@@ -1711,7 +1721,7 @@ def gizmo(c):
 
 
 PLAIN = {
-    'Gizmo': gizmo,
+    'Gizmo': gizmo, 'Torch': torch,
     'Iron Ore': ore, 'Oak Log': oak_log, 'Healing Herb': healing_herb, 'Gold Coin': gold_coin, 'Wolf Pelt': wolf_pelt,
     'Ancient Relic': relic, 'Health Potion': health_potion, 'Mana Potion': mana_potion, 'Elixir of Might': elixir, 'Bread': bread,
     'Antidote': antidote, 'Apple': apple, 'Wild Berries': berries, 'Hard Biscuit': biscuit, 'Cheese Wedge': cheese,

@@ -263,6 +263,21 @@ bool App::mouseDownOnPanels() {
                 } else {
                     refuse(lang("MISC_DESTROY_NOTHING"));
                 }
+            } else if (propInfo(session.buildPick.kind).wallDecor) {
+                // A wall decoration goes on the side of a wall that the pointer is on, not on a tile of ground
+                if (const auto side = wallSideAt(mx, my)) {
+                    const PropKind kind = session.buildPick.kind;
+                    const float wx = (float)side->tx + 0.5f, wz = (float)side->tz + 0.5f, wyaw = (float)side->side * 1.5707963f;
+                    const BuildCheck why = checkBuildSpot(world, terrain, kind, wx, wz, side->storey, FACTION_PLAYER, nullptr, wyaw);
+                    if (why == BuildCheck::Ok) {
+                        placeCostedProp(world, terrain, kind, wx, wz, wyaw, FACTION_PLAYER, side->storey);
+                        playSfx(Sfx::UiClick);
+                    } else {
+                        refuse(lang(buildRefusalKey(why)));
+                    }
+                } else {
+                    refuse(lang("MISC_BUILD_NEEDS_WALL"));
+                }
             } else if (auto hit = buildPickAt(mx, my)) {
                 if (buildPressAt(hit->first, hit->second)) return true;
                 float bx = 0.0f, bz = 0.0f;

@@ -46,7 +46,31 @@ float snapCoord(float g, float halfExtent) {
 }
 }
 
+float wallDecorOut(const PropInfo& info) { return 0.15f + info.mountDepth * 0.5f + 0.005f; }
+
+ObjectId wallTileAt(World& w, int tx, int tz, int storey) {
+    const BuildingMap& m = cachedBuildingMap(w);
+    const auto it = m.piece.find(levelKey(tx, tz, storey));
+    if (it == m.piece.end()) return NO_OBJECT;
+    const Prop* p = w.get<Prop>(it->second);
+    return p && propInfo(p->kind).wallRule ? it->second : NO_OBJECT;
+}
+
+bool wallSideBare(World& w, int tx, int tz, int storey, int side) {
+    const BuildingMap& m = cachedBuildingMap(w);
+    const auto it = m.piece.find(levelKey(tx + SIDE_DX[side & 3], tz + SIDE_DZ[side & 3], storey));
+    if (it == m.piece.end()) return true;
+    const Prop* p = w.get<Prop>(it->second);
+    return !p || !(propInfo(p->kind).wallRule || propInfo(p->kind).door);
+}
+
 void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
+    if (propInfo(kind).wallDecor) {
+        // The middle of the tile under the pointer: onPropSpawned moves it out to the side it faces
+        x = std::floor(gx) + 0.5f;
+        z = std::floor(gz) + 0.5f;
+        return;
+    }
     const float h = snapExtent(propInfo(kind).foot);
     x = snapCoord(gx, h);
     z = snapCoord(gz, h);
@@ -55,6 +79,27 @@ void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z) {
 BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, float z, int storey, int builder,
                           const std::vector<Claim>* given, float yaw, const std::vector<ObjectId>* nearby) {
     const Footprint& f = propInfo(kind).foot;
+
+    if (propInfo(kind).wallDecor) {
+        // Hung on a wall: a finished wall of the same floor on this tile, and no other prop of the kind on the same side of it
+        const int tx = tileOf(x), tz = tileOf(z);
+        const ObjectId wall = wallTileAt(w, tx, tz, storey);
+        if (wall == NO_OBJECT || w.has<Blueprint>(wall)) return BuildCheck::NoWall;
+        if (!wallSideBare(w, tx, tz, storey, dirOfYaw(yaw))) return BuildCheck::WallBetween;
+        if (const Claim* held = claimAt(given ? *given : claimsOf(w), x, z); held && held->owner != builder) return BuildCheck::EnemySealed;
+        std::vector<ObjectId> found;
+        if (!nearby) {
+            propsNear(w, x, z, 1.5f, found);
+            nearby = &found;
+        }
+        for (ObjectId e : *nearby) {
+            const Prop* p = w.get<Prop>(e);
+            const Transform* tr = w.get<Transform>(e);
+            if (!p || !tr || !propInfo(p->kind).wallDecor || tileOf(tr->x) != tx || tileOf(tr->z) != tz) continue;
+            if (storeyOf(w, e) == storey && dirOfYaw(p->yaw) == dirOfYaw(yaw)) return BuildCheck::Blocked;
+        }
+        return BuildCheck::Ok;
+    }
 
     // On an upper floor, every bit of it must stand on a finished floor of yours on that level
     const bool ground = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
@@ -147,6 +192,8 @@ const char* buildRefusalKey(BuildCheck c) {
     case BuildCheck::NoFloor: return "MISC_BUILD_NO_FLOOR";
     case BuildCheck::Indoors: return "MISC_BUILD_OUTDOORS_ONLY";
     case BuildCheck::BesideFoundation: return "MISC_BUILD_NEAR_FOUNDATION";
+    case BuildCheck::NoWall: return "MISC_BUILD_NEEDS_WALL";
+    case BuildCheck::WallBetween: return "MISC_BUILD_WALL_BETWEEN";
     case BuildCheck::Ok: break;
     }
     return "";
@@ -154,9 +201,15 @@ const char* buildRefusalKey(BuildCheck c) {
 
 void onPropSpawned(World& w, ObjectId e) {
     Prop* p = w.get<Prop>(e);
-    const Transform* at = w.get<Transform>(e);
+    Transform* at = w.get<Transform>(e);
     if (!p || !at) return;
     const PropInfo& info = propInfo(p->kind);
+    if (info.wallDecor) {
+        // Out to the side of its tile that it faces, against the wall's face (the same wherever it is placed from)
+        p->yaw = (float)dirOfYaw(p->yaw) * 1.5707963f;
+        at->x = std::floor(at->x) + 0.5f + std::sin(p->yaw) * wallDecorOut(info);
+        at->z = std::floor(at->z) + 0.5f + std::cos(p->yaw) * wallDecorOut(info);
+    }
     if (info.randomYaw) {
         // A way of its own to face, the same each time for the spot it stands on
         std::uint32_t h = (std::uint32_t)(std::int32_t)std::floor(at->x * 4.0f) * 73856093u ^
@@ -204,6 +257,10 @@ ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, floa
     const bool piece = info.foundation || info.onFoundation;
     float y = piece ? t.heightAt(x, z) : t.standHeight(x, z);
     if (storey > 0) y = t.heightAt(x, z) + storeyBaseHeight(storey);
+    // A wall decoration hangs from the wall it is on: its base is the wall's
+    if (info.wallDecor) {
+        if (const ObjectId wall = wallTileAt(w, tileOf(x), tileOf(z), storey); wall != NO_OBJECT) y = w.get<Transform>(wall)->y;
+    }
     const ObjectId e = makeProp(w, kind, Transform{ x, y, z }, yaw);
     if (storey > 0) w.add(e, Storey{ storey });
     // One that needs a camp is its placer's, so it is known whose camp it must stay in

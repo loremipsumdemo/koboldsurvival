@@ -103,6 +103,13 @@ EndTable	PROP_END_TABLE	end_table.glb	0.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none
 RoundTable	PROP_ROUND_TABLE	round_table.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	3	15	12	0	furniture
 ResearchTable	PROP_RESEARCH_TABLE	research_table.glb	1.5	storage	none	0	0	0	0	gizmo	1	0	0	1	0	0	none	ItemMove	none	built	4	40	12	0	crafting
 StandingTorch	PROP_STANDING_TORCH	standing_torch.glb	1.2	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter,fire:0:1.2:0:0.3	1	5	12	0	furniture
+# Wall Torch: wall_torch.glb is 0.5 tall, 0.12 wide and reaches 0.31 out from the wall (z 0 to 0.31, so drawn at k = 1 about the middle of its base, z middle 0.155).
+# Its torch head's top is at y 0.46 and z 0.25 in the model, which is x 0, y 0.47, z 0.095 from the base's middle here. wall_mount:1.55 hangs it that high up a wall.
+WallTorch	PROP_WALL_TORCH	wall_torch.glb	0.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	wall_mount:1.55:0.31,fire:0:0.47:0.095:0.25	1	5	12	0	decorations
+Painting	PROP_PAINTING	wall_painting.glb	0.7	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	wall_mount:1.15:0.064	2	5	12	0	decorations
+WallBanner	PROP_WALL_BANNER	wall_banner.glb	0.83	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	wall_mount:0.95:0.04	1	5	12	0	decorations
+AntlerMount	PROP_ANTLER_MOUNT	wall_antlers.glb	0.651	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	wall_mount:1.2:0.12	2	5	12	0	decorations
+CrossedSwords	PROP_CROSSED_SWORDS	wall_swords.glb	0.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	wall_mount:1.3:0.13	2	5	12	0	decorations
 SupportBeam	PROP_SUPPORT_BEAM	support_beam.glb	2.5	none	none	0	0	0	0	any	1	0	0	1	0	0	none	ItemMove	none	scatter	2	10	12	0	furniture
 TrainingDummy	PROP_TRAINING_DUMMY	training_dummy.glb	1.6	crafting	Melee	0	0	1	0	any	1	0	0	1	0	0	WorkTraining	ItemMove	Training	scatter	4	20	12	0	crafting
 RawFoodStorage	PROP_RAW_FOOD_STORAGE	raw_food_storage.glb	1.0	storage	none	0	0	0	0	raw_food	1	0	0	1	0	0	none	ItemMove	none	scatter	4	20	32	0	storage

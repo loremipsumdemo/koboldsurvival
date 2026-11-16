@@ -17,6 +17,7 @@
 #include "faction_rules.h"
 #include "recipes.h"
 #include "combat.h"
+#include "light.h"
 #include "factions.h"
 #include "hostility.h"
 #include "need_behaviors.h"
@@ -123,6 +124,7 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("craftJobSystem", craftJobSystem(w, t, dt));
     PROFILED("factionRulesSystem", factionRulesSystem(w, dt));
     campPropSystem(w, dt);
+    lightSystem(w, t, gs.clockSeconds, dt);
     PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
     PROFILED("npcCampSystem", npcCampSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));

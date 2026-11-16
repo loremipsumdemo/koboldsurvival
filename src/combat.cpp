@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include "equip.h"
 #include "inventory.h"
+#include "light.h"
 #include "items.h"
 #include "mobs.h"
 #include "systems.h"
@@ -202,6 +203,8 @@ void strike(World& w, Rng& rng, ObjectId a, ObjectId d) {
             an.accuracy = std::min(ACCURACY_CAP, ACCURACY_BASE + ACCURACY_PER_LEVEL * levelOf(st, StatId::Melee));
         }
     }
+    // In the dark, a swing is harder to land unless there is a light at either end of it
+    an.accuracy *= 1.0f - darkAccuracyPenalty(w, a, d);
     const SwingResult r = resolveSwing(an, dn, downed, rng.unit(), rng.unit(), rng.unit());
     onAttacked(w, a, d);
 

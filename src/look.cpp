@@ -105,15 +105,17 @@ SkyLight skyLightFor(const Look& l, Vec3 sunDir) {
     const Vec3 horizon = mix(mix(rgb(l.nightHorizon), rgb(l.skyHorizon), daylight), rgb(l.horizonWarmRgb),
                              warm * 0.35f * opacity(l, LookColor::HorizonWarm));
 
-    s.fog = l.fogEnabled >= 0.5f ? l.fog : 0.0f;
-    s.ambientLight = sunTint * (l.ambient * (0.3f + 0.7f * daylight));
-    s.sunLight = sunTint * (l.sunStrength * daylight);
+    s.fog = (l.fogEnabled >= 0.5f ? l.fog : 0.0f) + l.weatherFog;
+    s.ambientLight = sunTint * (l.ambient * l.weatherAmbient * (0.3f + 0.7f * daylight));
+    s.sunLight = sunTint * (l.sunStrength * l.weatherSun * daylight);
     s.rockRgb = rgb(l.rockRgb);
     s.rockSlope = l.rockSlope;
     s.waterOpacity = l.waterOpacity * opacity(l, LookColor::Water);
     s.waterPattern = l.waterPattern;
     s.waterSpeed = l.waterSpeed;
     s.fogColor = mix(horizon, rgb(l.fogRgb), opacity(l, LookColor::Fog));
+    // Weather's tint is as dark as the sky is: a dust storm's haze is no brighter than the night
+    if (l.weatherTintAmount > 0.0f) s.fogColor = mix(s.fogColor, rgb(l.weatherTint) * (0.15f + 0.85f * daylight), l.weatherTintAmount);
     s.underwaterRgb = rgb(l.underwaterRgb);
     s.waterRgb = rgb(l.waterRgb);
     return s;

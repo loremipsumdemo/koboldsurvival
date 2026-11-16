@@ -29,6 +29,12 @@ struct Look {
     float fogRgb[3] = {0.72f, 0.84f, 0.94f};
     float underwaterRgb[3] = {0.05f, 0.22f, 0.34f};
     float waterRgb[3] = {0.10f, 0.30f, 0.50f};
+    // The weather over the map (map_theme.h's weatherLook): added fog, a tint the fog is drawn toward, and what it takes from the light
+    float weatherFog = 0.0f;
+    float weatherTint[3] = {0.5f, 0.5f, 0.5f};
+    float weatherTintAmount = 0.0f;
+    float weatherSun = 1.0f;
+    float weatherAmbient = 1.0f;
     float colorOpacity[LOOK_COLOR_COUNT] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
 };
 

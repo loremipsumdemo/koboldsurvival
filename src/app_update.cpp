@@ -582,6 +582,22 @@ void App::updateHover() {
                     }
                 }
             }
+        } else if (placing && !mouseOverPanels() && propInfo(session.buildPick.kind).wallDecor) {
+            // A wall decoration: the shape of its model on the side of the wall under the pointer, green where it may hang and red where not
+            if (const auto side = wallSideAt(bmx, bmy)) {
+                const PropKind kind = session.buildPick.kind;
+                const PropInfo& wi = propInfo(kind);
+                const float wyaw = (float)side->side * 1.5707963f;
+                const ObjectId wall = wallTileAt(world, side->tx, side->tz, side->storey);
+                bp.mount = true;
+                bp.kind = kind;
+                bp.yaw = wyaw;
+                bp.x = (float)side->tx + 0.5f + std::sin(wyaw) * wallDecorOut(wi);
+                bp.z = (float)side->tz + 0.5f + std::cos(wyaw) * wallDecorOut(wi);
+                bp.mountY = (wall != NO_OBJECT ? world.get<Transform>(wall)->y : terrain.heightAt(bp.x, bp.z)) + wi.mountY;
+                bp.valid = checkBuildSpot(world, terrain, kind, (float)side->tx + 0.5f, (float)side->tz + 0.5f, side->storey, FACTION_PLAYER,
+                                          &claims, wyaw) == BuildCheck::Ok;
+            }
         } else if (placing && !mouseOverPanels()) {
             if (auto hit = buildPickAt(bmx, bmy); hit && !previewBuilding(bp, hit->first, hit->second)) {
                 bp.on = true;

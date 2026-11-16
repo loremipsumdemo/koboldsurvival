@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include "airship.h"
 #include "building.h"
+#include "light.h"
 #include "prop_index.h"
 #include "wheelbarrow.h"
 #include "frustum.h"
@@ -687,6 +688,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             pz -= std::sin(along) * 0.42f;
         }
         float py = baseY;
+        if (info.wallDecor) py += info.mountY;   // hung on a wall this high
         if (auto pu = info.wheelbarrow ? pushers.find(e) : pushers.end(); pu != pushers.end()) {
             const Transform* ut = w.get<Transform>(pu->second);
             const auto facing = unitFacing_.find(pu->second);
@@ -726,6 +728,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
                 f.y += visual->dy;
                 f.z += visual->dz;
             }
+            if (info.wallDecor) f.floorY = baseY;
             if (info.claimsLand) {
                 const Owner* fo = w.get<Owner>(e);
                 const double v = motivationOf(w, fo ? fo->faction : FACTION_PLAYER);
@@ -870,6 +873,22 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         glUseProgram(glyphProgram_);
         glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
     }
+    // A unit holding a torch carries a fire in its hand, out to the side and a little ahead of it
+    for (ObjectId u : w.view<Equipment, Transform>()) {
+        const Equipment* q = w.get<Equipment>(u);
+        if (!isTorchItem(q->items[GearSlot::MainHand]) && !isTorchItem(q->items[GearSlot::OffHand])) continue;
+        const Transform* tr = w.get<Transform>(u);
+        const Needs* nd = w.get<Needs>(u);
+        if ((nd && nd->hp <= 0) || !withinDetail(cam, tr->x, tr->y, tr->z) || pickHidden(w, u)) continue;
+        const auto facing = unitFacing_.find(u);
+        const float fy = facing != unitFacing_.end() ? facing->second.yaw : std::atan2(billX_ - tr->x, billZ_ - tr->z);
+        const float side = isTorchItem(q->items[GearSlot::MainHand]) ? 1.0f : -1.0f;   // the main hand is the right
+        const float hand = std::max(1.0f, unitHeight(w, u)) * 0.62f;
+        FireSpot f{ tr->x + std::sin(fy) * 0.28f + std::cos(fy) * 0.3f * side, tr->y + unitHover(w, u) + hand,
+                    tr->z + std::cos(fy) * 0.28f - std::sin(fy) * 0.3f * side, 0.16f, (float)(u % 97u) * 0.37f };
+        f.floorY = tr->y;
+        fires_.push_back(f);
+    }
     drawFires(cam);
     drawBuildPreview(t);
     drawNavmesh(w, t, cam);
@@ -1003,7 +1022,7 @@ void Renderer::drawFrameTop(bool dragging, const float* corners, const std::vect
 }
 
 void Renderer::drawBuildPreview(const Terrain& t) {
-    if (!buildPreview_.on && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty() && !buildPreview_.arrow) return;
+    if (!buildPreview_.on && !buildPreview_.mount && !buildPreview_.rect && buildPreview_.ringR <= 0.0f && buildPreview_.marks.empty() && !buildPreview_.arrow) return;
     const float lift = 0.04f;
     auto hgt = [&](float x, float z) { return t.heightAt(x, z) + lift + buildPreview_.lift; };
     Batch b;
@@ -1029,6 +1048,24 @@ void Renderer::drawBuildPreview(const Terrain& t) {
             continue;
         }
         b.quad(V3{ m.x + a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + a }, V3{ m.x + 1 - a, y, m.z + 1 - a }, V3{ m.x + a, y, m.z + 1 - a }, tone);
+    }
+    if (buildPreview_.mount) {
+        // A wall decoration: its own shape, so what it will look like on the wall is what is seen
+        const Model& m = propModel(buildPreview_.kind);
+        const ModelPlacement p = placeModel(m, buildPreview_.x, buildPreview_.mountY, buildPreview_.z, propInfo(buildPreview_.kind).size,
+                                            buildPreview_.yaw);
+        if (p.ok && !m.positions.empty()) {
+            const RGBA fill = buildPreview_.valid ? RGBA{ 0.25f, 1.0f, 0.35f, 0.5f } : RGBA{ 1.0f, 0.2f, 0.2f, 0.5f };
+            const size_t vcount = m.positions.size() / 3;
+            auto at = [&](GLuint i) {
+                const float* v = &m.positions[(size_t)i * 3];
+                return V3{ p.ox + p.k * (p.cs * v[0] + p.sn * v[2]), p.oy + p.k * v[1], p.oz + p.k * (-p.sn * v[0] + p.cs * v[2]) };
+            };
+            for (size_t i = 0; i + 2 < m.triangles.size(); i += 3) {
+                if (m.triangles[i] >= vcount || m.triangles[i + 1] >= vcount || m.triangles[i + 2] >= vcount) continue;
+                b.tri(at(m.triangles[i]), at(m.triangles[i + 1]), at(m.triangles[i + 2]), fill);
+            }
+        }
     }
     if (buildPreview_.rect) {
         // A foundation being dragged out: its tiles, green if it may be laid there
@@ -1386,7 +1423,7 @@ void Renderer::drawFires(const Camera& cam) {
         // The glow on the ground under it
         const float e = f.energy;
         const float reach = (2.0f + f.size * 5.0f) * flicker * (1.0f + 0.5f * e);
-        const float gy = f.y - std::min(f.y, 0.0f) * 0.0f;
+        const float gy = f.floorY > -1e8f ? f.floorY : f.y;
         const float ground[4 * 5] = {
             f.x - reach, gy + 0.03f, f.z - reach, 0.0f, 0.0f,
             f.x + reach, gy + 0.03f, f.z - reach, 1.0f, 0.0f,

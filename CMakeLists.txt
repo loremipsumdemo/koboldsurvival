@@ -127,6 +127,8 @@ set(SIM_SOURCES
     src/build.cpp
     src/claims.cpp
     src/prop_index.cpp
+    src/light.cpp
+    src/wall_pick.cpp
     src/camp_kit.cpp
     src/prop_info.cpp
     src/save_world.cpp

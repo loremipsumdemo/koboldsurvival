@@ -2859,3 +2859,21 @@ material =
 tier = 0
 equip_slot = 
 tags = gizmo
+
+[164]
+type = weapon
+max_stack_size = 1
+name = Torch
+picture = torch.png
+description = Held in either hand. Its flame lights the ground around the one who holds it, so a swing is no harder to land in the dark near it. Fits the main hand or the off hand.
+weight = 0.8
+buy_value = 6
+sell_value = 3
+required_level = 1
+attack_value = 2
+defense_value = 0
+on_use = 
+material = 
+tier = 0
+equip_slot = either_hand
+tags = torch

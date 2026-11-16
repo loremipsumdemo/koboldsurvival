@@ -101,11 +101,12 @@ enum class PropUse { None, Storage, Occupy, Resource, Crafting, PassiveCrafting 
 
 // The Build tab's headings, in the order listed. props.txt's group column names one for each prop; Tools (Destroy and
 // Adjust Position) and Developer (the spawn panel) are the tab's own and hold no prop.
-enum class BuildGroup : int { Tools = 0, Claims, Crafting, Storage, Settlement, Furniture, Cages, Vehicles, Nature, Developer, Count };
-inline constexpr const char* BUILD_GROUP_KEYS[] = { "tools", "claims", "crafting", "storage", "settlement", "furniture", "cages",
+enum class BuildGroup : int { Tools = 0, Claims, Crafting, Storage, Settlement, Decorations, Furniture, Cages, Vehicles, Nature, Developer, Count };
+inline constexpr const char* BUILD_GROUP_KEYS[] = { "tools", "claims", "crafting", "storage", "settlement", "decorations", "furniture", "cages",
                                                     "vehicles", "nature", "developer" };
 inline constexpr const char* BUILD_GROUP_LABELS[] = { "UILABEL_BUILD_GROUP_TOOLS", "UILABEL_BUILD_GROUP_CLAIMS", "UILABEL_BUILD_GROUP_CRAFTING",
                                                       "UILABEL_BUILD_GROUP_STORAGE", "UILABEL_BUILD_GROUP_SETTLEMENT",
+                                                      "UILABEL_BUILD_GROUP_DECORATIONS",
                                                       "UILABEL_BUILD_GROUP_FURNITURE", "UILABEL_BUILD_GROUP_CAGES",
                                                       "UILABEL_BUILD_GROUP_VEHICLES", "UILABEL_BUILD_GROUP_NATURE",
                                                       "UILABEL_BUILD_GROUP_DEVELOPER" };
@@ -222,6 +223,10 @@ struct PropInfo {
     bool needsCamp = false;      // placed only by a Campfire or in an Altar's claim of its faction; it falls to Debris outside one
     bool fire = false;           // a fire burns on it: drawn as flames and a glow, at this spot from its base, this big
     float fireX = 0.0f, fireY = 0.0f, fireZ = 0.0f, fireSize = 0.4f;
+    bool wallDecor = false;      // hangs on the side of a finished wall (props.txt's wall_mount:height:depth flag): one prop to a side of a wall tile,
+                                 // on a side that no other wall touches. It is put there by pointing at the wall's side, not at a tile.
+    float mountY = 0.0f;         // how high above the floor its model's base hangs (wall_mount's height)
+    float mountDepth = 0.3f;     // how far its model reaches out from the wall, from its back to its front (wall_mount's depth)
     double materials = 0.0;      // building material a blueprint needs (Wood Logs, or the material picked); 0: placed finished
     double buildSeconds = 0.0;   // building it needs at Carpentry 1 (per tile for a foundation)
     double health = 0.0;         // damage it takes to break it, from the optional health column or its size; 0: none (nature, debris, pieces)

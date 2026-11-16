@@ -239,6 +239,9 @@ struct WorldMapMarks {
 
 struct BuildPreview {
     bool on = false;
+    // A wall decoration being placed: its model's shape at (x, mountY, z), turned by yaw, green if it may hang there and red if not
+    bool mount = false;
+    float mountY = 0.0f;
     PropKind kind = PropKind::Wagon;
     float x = 0.0f, z = 0.0f;
     float yaw = 0.0f;   // a Perimeter piece's turn

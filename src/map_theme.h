@@ -8,6 +8,21 @@
 // the ground itself, so it can be edited at any time. All whole numbers, so a map file stays short and exact.
 
 enum class SkyKind : int { Gradient = 0, Solid, Cave, Galaxy, Count };
+// What the weather does to a map's light and air. No streaks are drawn yet: it thickens and tints the fog, takes light from the sun and
+// the ambient, and blows the clouds harder. It also darkens the night's fights (light.h).
+enum class WeatherKind : int { Clear = 0, Overcast, Rain, DustStorm, Snow, Count };
+struct WeatherLook {
+    float fog = 0.0f;
+    float tint[3] = {0.5f, 0.5f, 0.5f};
+    float tintAmount = 0.0f;
+    float sun = 1.0f;
+    float ambient = 1.0f;
+    float wind = 1.0f;   // times the theme's own wind
+};
+struct MapTheme;
+WeatherLook weatherLookOf(const MapTheme& theme);
+// Every number of a toward b by this much (0 to 1): weather changes over seconds, never in a jump
+WeatherLook weatherApproach(const WeatherLook& from, const WeatherLook& to, float k);
 
 using ThemeColor = uint32_t;   // 0xRRGGBB
 
@@ -33,6 +48,10 @@ struct MapTheme {
 
     int fog = 0;
     ThemeColor fogColor = 0xB8D6F0;
+
+    int weather = 0;         // WeatherKind: what the sky is doing over the map
+    int weatherAmount = 60;  // how much of it, 0 to 100
+    int wind = 100;          // how fast the clouds go, in percent of their usual drift
 
     int waterShown = 1;   // 0: no water and no sea bed, and ground far below sea level isn't drawn: a void
     ThemeColor waterColor = 0x1A4D80, waterDeepColor = 0x0D3857;
@@ -78,5 +97,7 @@ bool themeLineFromText(const std::string& key, const std::string& value, MapThem
 
 // What the theme means to the renderer
 Look themeLook(const MapTheme& theme);
+void applyWeather(Look& look, const WeatherLook& weather);
+const char* themeChoiceLabelKey(const ThemeRow& row, int value);
 SkyColors themeSkyColors(const MapTheme& theme);
 void themeRgb(ThemeColor c, float out[3]);

@@ -302,6 +302,7 @@ public:
     struct FireSpot {
         float x, y, z, size, seed;
         float energy = 0.0f;   // 0 to 1: a motivated faction's Altar burns bigger, brighter and quicker
+        float floorY = -1e9f;  // the ground its glow lies on when that is not at the flames' own height (a torch hung high on a wall, or carried)
         bool lit = false;      // over the Motivation threshold: its flames rise much higher
     };
     std::vector<FireSpot> fires_;
@@ -804,6 +805,11 @@ private:
     bool seaBounded_ = false;
     MapTheme theme_;
     Look themeLook_;
+    // The weather as it is shown now, which goes to the theme's over some seconds (a theme edited, or a map changed, never jumps), and
+    // the clouds' own clock, which runs as fast as the wind blows so a gust never makes them leap
+    WeatherLook weatherShown_;
+    double weatherAt_ = 0.0, cloudClock_ = 0.0;
+    bool weatherSnap_ = true;
     SkyColors themeSky_;
     float worldTint_[3] = { 1.0f, 1.0f, 1.0f };   // the light on props and units
     GLint uSkyKind_ = -1, uSkyBaked_ = -1, uSkyUseBaked_ = -1, uTintInst_ = -1;

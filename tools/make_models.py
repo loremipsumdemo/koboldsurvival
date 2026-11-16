@@ -428,6 +428,62 @@ def standing_torch():
     return parts + [cyl(0, 1.14, 0, 0.14, 0.05, 0.14, (58, 44, 40))]   # the game draws its fire
 
 
+def wall_torch():
+    """A torch in an iron bracket that hangs on the side of a wall: a strap against the wall (the back of the model, z 0), an arm out from it
+    and a cup holding a wooden torch whose head is for the game's fire. It is 0.5 tall and reaches 0.31 out, so it is drawn at its own size.
+    Nothing shares a plane: the arm starts inside the strap, the torch inside the cup and the head wider than the torch."""
+    return [box(0, 0, 0.02, 0.12, 0.5, 0.04, IRON),                                    # the strap on the wall
+            box(0, 0.14, 0.14, 0.06, 0.05, 0.22, IRON),                                # the arm
+            cyl(0, 0.19, 0.25, 0.12, 0.05, 0.12, IRON),                                # the cup
+            cyl(0, 0.22, 0.25, 0.05, 0.22, 0.05, DARK_WOOD),                           # the torch
+            cyl(0, 0.40, 0.25, 0.09, 0.06, 0.09, (58, 44, 40))]                        # its head, where the game draws the fire
+
+
+# Wall decorations hang on the side of a wall: the back of each model is its z 0, and the game puts that against the wall's face. Each is
+# drawn at its own size (props.txt's size is its largest side) and says how far out it reaches in its wall_mount flag. As with the Wall
+# Torch, no two faces share a plane: every front part stands a little out of the one behind it.
+def wall_painting():
+    """A painting in a wooden frame: a landscape of sky, hills and a sun, on a canvas a little proud of the frame."""
+    return [box(0, 0, 0.025, 0.7, 0.5, 0.05, DARK_WOOD),                                # the frame
+            box(0, 0.05, 0.045, 0.6, 0.2, 0.02, (120, 170, 220)),                       # the sky's lower half...
+            box(0, 0.25, 0.045, 0.6, 0.2, 0.02, (150, 196, 236)),                       # ...and its upper
+            pyramid(-0.12, 0.05, 0.056, 0.34, 0.2, 0.012, (86, 140, 80)),               # a green hill
+            pyramid(0.14, 0.05, 0.057, 0.3, 0.14, 0.012, (70, 112, 70)),                # one behind it
+            box(0.2, 0.33, 0.058, 0.07, 0.07, 0.012, (250, 220, 90))]                   # the sun
+
+
+def wall_banner():
+    """A banner: a red cloth with a gold band and a gold emblem, hung from a wooden rod by two cords."""
+    return [box(0, 0.85, 0.03, 0.5, 0.04, 0.04, DARK_WOOD),                             # the rod
+            box(0, 0.1, 0.02, 0.4, 0.76, 0.015, RED),                                   # the cloth
+            box(0, 0.7, 0.032, 0.4, 0.05, 0.012, BRASS),                                # the band across its top
+            box(0, 0.38, 0.032, 0.12, 0.12, 0.012, BRASS),                              # the emblem
+            box(-0.18, 0.89, 0.03, 0.03, 0.04, 0.03, BRASS), box(0.18, 0.89, 0.03, 0.03, 0.04, 0.03, BRASS)]   # the rod's ends
+
+
+def wall_antlers():
+    """A trophy: a bleached skull on a wooden plaque with a branching antler on each side."""
+    parts = [box(0, 0, 0.02, 0.34, 0.36, 0.04, DARK_WOOD),                              # the plaque
+             box(0, 0.08, 0.075, 0.14, 0.2, 0.07, BONE),                                # the skull
+             box(-0.04, 0.17, 0.115, 0.035, 0.035, 0.01, (40, 30, 28)),                 # its eyes
+             box(0.04, 0.17, 0.115, 0.035, 0.035, 0.01, (40, 30, 28))]
+    for s in (-1, 1):
+        parts += [rod((s * 0.05, 0.26, 0.07), (s * 0.2, 0.6, 0.07), 0.035, BONE),      # the beam
+                  rod((s * 0.12, 0.42, 0.07), (s * 0.06, 0.63, 0.07), 0.03, BONE),     # its tines
+                  rod((s * 0.17, 0.52, 0.07), (s * 0.32, 0.58, 0.07), 0.03, BONE)]
+    return parts
+
+
+def wall_swords():
+    """Two swords crossed over a brass boss on a wooden board, the second a little in front of the first."""
+    return [box(0, 0, 0.015, 0.5, 0.4, 0.03, DARK_WOOD),                                # the board
+            rod((-0.2, 0.02, 0.05), (-0.14, 0.1, 0.05), 0.045, BRASS),                  # the first sword's hilt...
+            rod((-0.14, 0.1, 0.05), (0.2, 0.38, 0.05), 0.032, STEEL),                   # ...and its blade
+            rod((0.2, 0.02, 0.075), (0.14, 0.1, 0.075), 0.045, BRASS),                  # the second's
+            rod((0.14, 0.1, 0.075), (-0.2, 0.38, 0.075), 0.032, STEEL),
+            cyl(0, 0.205, 0.1, 0.1, 0.03, 0.1, BRASS, 90, 90)]                          # the boss where they cross
+
+
 def guard_post():
     """A guard's post: a stone footing under a tall timber post with a crossbar, a red pennant and a lantern hung from it. No two parts
     share a plane: the crossbar and the pennant's edge are clear of the post's faces and of each other."""
@@ -1210,7 +1266,7 @@ BUILDERS = {
     'Wagon': wagon, 'Campfire': campfire, 'Bedroll': bedroll, 'Bed': bed, 'Barrel': barrel, 'Ore': ore, 'Tree': tree,
     'Boulder': boulder, 'Mushroom': mushroom, 'Boneheap': bones, 'Stall': stall, 'LockedChest': locked_chest,
     'PrisonerCage': prisoner_cage, 'Chair': chair, 'Bench': bench, 'Stool': stool, 'Table': table, 'GameTable': game_table, 'EndTable': end_table,
-    'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'SupportBeam': support_beam, 'GuardPost': guard_post,
+    'RoundTable': round_table, 'ResearchTable': research_table, 'StandingTorch': standing_torch, 'WallTorch': wall_torch, 'Painting': wall_painting, 'WallBanner': wall_banner, 'AntlerMount': wall_antlers, 'CrossedSwords': wall_swords, 'SupportBeam': support_beam, 'GuardPost': guard_post,
     'TrainingDummy': training_dummy, 'RawFoodStorage': raw_food_storage, 'FoodStorage': food_storage, 'WeaponRack': weapon_rack,
     'ArmorStand': armor_stand, 'WaterTank': water_tank, 'WaterPump': water_pump, 'Forge': forge, 'Altar': altar, 'Debris': debris,
     'Farm': farm, 'Turbine': turbine, 'Stove': stove, 'WeaponBench': weapon_workbench, 'ArmorBench': armor_workbench, 'AmmoBench': ammunition_workbench, 'Airship': airship, 'Foundation': foundation,

@@ -155,6 +155,11 @@ const ThemeRow ROWS[] = {
     number("fog", "UILABEL_THEME_FOG", &MapTheme::fog, 0, 100),
     color("fog_color", "UILABEL_THEME_FOG_COLOR", &MapTheme::fogColor),
 
+    heading("UILABEL_THEME_WEATHER_HEADING"),
+    { ThemeRowKind::Choice, "weather", "UILABEL_THEME_WEATHER", &MapTheme::weather, nullptr, 0, (int)WeatherKind::Count - 1 },
+    number("weather_amount", "UILABEL_THEME_WEATHER_AMOUNT", &MapTheme::weatherAmount, 0, 100),
+    number("wind", "UILABEL_THEME_WIND", &MapTheme::wind, 0, 300),
+
     heading("UILABEL_THEME_WATER"),
     toggle("water_shown", "UILABEL_THEME_WATER_SHOWN", &MapTheme::waterShown),
     color("water_color", "UILABEL_THEME_WATER_COLOR", &MapTheme::waterColor),
@@ -201,6 +206,62 @@ const char* skyKindLabelKey(int kind) {
     case SkyKind::Galaxy: return "UILABEL_THEME_SKY_GALAXY";
     default: return "UILABEL_THEME_SKY_GRADIENT";
     }
+}
+
+const char* themeChoiceLabelKey(const ThemeRow& row, int value) {
+    if (row.number != &MapTheme::weather) return skyKindLabelKey(value);
+    switch ((WeatherKind)value) {
+    case WeatherKind::Overcast: return "UILABEL_THEME_WEATHER_OVERCAST";
+    case WeatherKind::Rain: return "UILABEL_THEME_WEATHER_RAIN";
+    case WeatherKind::DustStorm: return "UILABEL_THEME_WEATHER_DUST";
+    case WeatherKind::Snow: return "UILABEL_THEME_WEATHER_SNOW";
+    default: return "UILABEL_THEME_WEATHER_CLEAR";
+    }
+}
+
+WeatherLook weatherLookOf(const MapTheme& theme) {
+    WeatherLook out;
+    out.wind = (float)theme.wind / 100.0f;
+    const float a = std::clamp((float)theme.weatherAmount / 100.0f, 0.0f, 1.0f);
+    // The weather at full strength, then as much of it as the theme says
+    struct Full { float fog; float tint[3]; float tintAmount, sun, ambient, wind; };
+    Full f{ 0.0f, { 0.5f, 0.5f, 0.5f }, 0.0f, 1.0f, 1.0f, 1.0f };
+    switch ((WeatherKind)theme.weather) {
+    case WeatherKind::Overcast: f = { 0.5f, { 0.62f, 0.65f, 0.70f }, 0.45f, 0.55f, 0.92f, 1.4f }; break;
+    case WeatherKind::Rain:     f = { 1.1f, { 0.42f, 0.50f, 0.60f }, 0.65f, 0.40f, 0.88f, 1.9f }; break;
+    case WeatherKind::DustStorm: f = { 2.6f, { 0.74f, 0.55f, 0.33f }, 0.80f, 0.50f, 0.90f, 2.6f }; break;
+    case WeatherKind::Snow:     f = { 0.9f, { 0.86f, 0.91f, 0.96f }, 0.60f, 0.65f, 1.05f, 0.8f }; break;
+    default: return out;
+    }
+    out.fog = f.fog * a;
+    for (int i = 0; i < 3; ++i) out.tint[i] = f.tint[i];
+    out.tintAmount = f.tintAmount * a;
+    out.sun = 1.0f + (f.sun - 1.0f) * a;
+    out.ambient = 1.0f + (f.ambient - 1.0f) * a;
+    out.wind *= 1.0f + (f.wind - 1.0f) * a;
+    return out;
+}
+
+WeatherLook weatherApproach(const WeatherLook& from, const WeatherLook& to, float k) {
+    k = std::clamp(k, 0.0f, 1.0f);
+    const auto step = [k](float a, float b) { return a + (b - a) * k; };
+    WeatherLook out;
+    out.fog = step(from.fog, to.fog);
+    out.tintAmount = step(from.tintAmount, to.tintAmount);
+    // The tint's own color only moves while there is some of it to see: no color sliding when the weather has cleared
+    for (int i = 0; i < 3; ++i) out.tint[i] = to.tintAmount > 0.0f ? step(from.tint[i], to.tint[i]) : from.tint[i];
+    out.sun = step(from.sun, to.sun);
+    out.ambient = step(from.ambient, to.ambient);
+    out.wind = step(from.wind, to.wind);
+    return out;
+}
+
+void applyWeather(Look& look, const WeatherLook& weather) {
+    look.weatherFog = weather.fog;
+    for (int i = 0; i < 3; ++i) look.weatherTint[i] = weather.tint[i];
+    look.weatherTintAmount = weather.tintAmount;
+    look.weatherSun = weather.sun;
+    look.weatherAmbient = weather.ambient;
 }
 
 std::string themeFileText(const MapTheme& theme, int preset) {

@@ -16,7 +16,19 @@ enum class BuildCheck {
     NoFloor,
     Indoors,
     BesideFoundation,   // a Perimeter Wall or Gate may not touch a foundation
+    NoWall,             // a wall decoration (a Wall Torch, a Painting) needs a finished wall on its tile, on its floor
+    WallBetween,        // ...and on a side of it that no other wall touches: a wall's end, where the next wall joins, has no face
 };
+
+// Wall decorations (props.txt's wall_mount flag) hang on the side of a wall tile: side 0 faces +z, 1 +x, 2 -z, 3 -x (a prop's yaw is the side
+// times a quarter turn). The wall in a tile on this floor (finished or not), or NO_OBJECT; it is a wall only if its kind's wallRule says so.
+inline constexpr int SIDE_DX[4] = { 0, 1, 0, -1 };
+inline constexpr int SIDE_DZ[4] = { 1, 0, -1, 0 };
+ObjectId wallTileAt(World& w, int tx, int tz, int storey);
+// Whether this side of the wall tile is bare: no wall or door on the tile it faces (their arms would join this one's there)
+bool wallSideBare(World& w, int tx, int tz, int storey, int side);
+// How far from the middle of its tile a decoration's own middle is, toward its side: the wall's face is 0.15 out
+float wallDecorOut(const PropInfo& info);
 
 void snapBuildSpot(PropKind kind, float gx, float gz, float& x, float& z);
 
