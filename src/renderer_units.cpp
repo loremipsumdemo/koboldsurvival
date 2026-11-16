@@ -917,7 +917,7 @@ float Renderer::unitHue(World& w, ObjectId e) const {
 
 RGBA Renderer::unitFactionTint(World& w, ObjectId e) const {
     const Faction* f = w.get<Faction>(e);
-    if (!f || f->id == FACTION_PLAYER || w.has<Mob>(e)) return RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
+    if (!f || w.has<Mob>(e)) return RGBA{ 0.0f, 0.0f, 0.0f, 0.0f };
     const FactionColor c = factionColor(f->id);
     return RGBA{ c.r, c.g, c.b, FACTION_TINT };
 }

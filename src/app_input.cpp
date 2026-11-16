@@ -69,6 +69,10 @@ void App::onTextInput() {
         appendUtf8Limited(editor.name, e.text.text, EDITOR_NAME_CHARS);
         return;
     }
+    if (screen == Screen::PartySetup && factionNameEditing) {
+        appendUtf8Limited(factionNameText, e.text.text, PARTY_NAME_CHARS);
+        return;
+    }
     if (screen == Screen::PartySetup) {
         partyUi.composition.clear();
         if (partyUi.editingName) appendUtf8Limited(pickedMember(party, partyUi).name, e.text.text, PARTY_NAME_CHARS);
@@ -216,6 +220,11 @@ void App::onKeyDown() {
         return;
     }
     if (screen == Screen::Playing && editing && !panelOpen && editorKeyDown()) return;
+    if (screen == Screen::PartySetup && factionNameEditing) {
+        if (e.key.key == SDLK_BACKSPACE) popUtf8Char(factionNameText);
+        else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER || e.key.key == SDLK_ESCAPE) stopFactionNameEdit();
+        return;
+    }
     if (screen == Screen::PartySetup) {
         if (e.key.key == SDLK_ESCAPE) {
             if (partyUi.dropKind != DropKind::None) {

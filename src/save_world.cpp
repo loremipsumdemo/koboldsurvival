@@ -274,7 +274,10 @@ void captureUnit(World& w, ObjectId u, SaveUnit& su, const IdMap& propIds, const
     if (const SpawnHome* h = w.get<SpawnHome>(u)) su.home = *h;
     if (const Occupying* oc = w.get<Occupying>(u)) su.occupying = idOf(propIds, oc->prop);
     if (const Pushing* pu = w.get<Pushing>(u)) su.pushing = idOf(propIds, pu->barrow);
-    if (const Upstairs* up = w.get<Upstairs>(u)) su.upstairs = idOf(propIds, up->foundation);
+    if (const Upstairs* up = w.get<Upstairs>(u)) {
+        su.upstairs = idOf(propIds, up->foundation);
+        su.upLevel = std::max(1, up->level);
+    }
     if (const Unconscious* un = w.get<Unconscious>(u)) su.down = *un;
     if (const Corpse* c = w.get<Corpse>(u)) su.corpseHours = c->hours;
     if (const Retreating* r = w.get<Retreating>(u)) su.retreat = *r;
@@ -457,8 +460,11 @@ void restoreLinks(World& world, const SaveData& d, const std::vector<ObjectId>& 
             startPushing(world, e, props[(size_t)u.pushing]);
         }
         if (u.workProp >= 0 && u.workProp < (int)props.size()) world.add(e, Working{ props[(size_t)u.workProp], u.workUnlocking });
-        if (u.upstairs >= 0 && u.upstairs < (int)props.size() && world.has<Foundation>(props[(size_t)u.upstairs])) {
-            world.add(e, Upstairs{ props[(size_t)u.upstairs] });
+        // Up on a floor: a building's (its foundation), or a Perimeter Wall's or Gate's walkway, which has none. A save from before the level was
+        // kept has the foundation only, and the first floor.
+        const bool hasFoundation = u.upstairs >= 0 && u.upstairs < (int)props.size() && world.has<Foundation>(props[(size_t)u.upstairs]);
+        if (hasFoundation || u.upLevel > 0) {
+            world.add(e, Upstairs{ hasFoundation ? props[(size_t)u.upstairs] : NO_OBJECT, std::max(1, u.upLevel) });
         }
         if (u.stepKind >= 0) {
             Behaviors& b = *world.get<Behaviors>(e);
@@ -525,6 +531,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, c
     // Which color you are comes first: the factions in play, and how they stand with you, follow from it. A save from before the colors
     // is given the default one.
     if (!setPlayerSlot(d.playerSlot)) setPlayerSlot(PALETTE_DEFAULT_SLOT);
+    setPlayerFactionName(d.playerFactionName);
     setPlayerReputation(world, d.reputation);
     setChangedFactionRules(world, d.factionRules);
     for (const auto& [faction, key] : d.researched) setResearched(world, faction, key);
@@ -593,6 +600,7 @@ SaveData captureWorld(World& w, const GameState& gs, const Camera& cam, const Rn
     d.squadNames = w.resource<SquadBook>().names;
     d.currentSquad = w.resource<SquadBook>().current;
     d.playerSlot = playerSlot();
+    d.playerFactionName = playerFactionName();
     d.ghosts = w.resource<Graveyard>().ghosts;
     d.stallHaulListed = true;
     d.cam = SaveCamera{ cam.focusX, cam.focusY, cam.focusZ, cam.yaw, cam.pitch, cam.distance };

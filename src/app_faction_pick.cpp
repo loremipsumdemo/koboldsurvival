@@ -11,7 +11,7 @@ using namespace play;
 
 namespace {
 struct FactionPickLayout {
-    Rect box, title, close, hint, random;
+    Rect box, title, close, field, hint, random;
     std::vector<Rect> cells;
 };
 
@@ -19,7 +19,7 @@ FactionPickLayout layoutFactionPick(int W, int H) {
     const float s = uiScaleFor((float)H);
     const int cols = 4, rows = PALETTE_COUNT / cols;
     const float pad = 14.0f * s, gap = 8.0f * s, line = 30.0f * s, btnH = 34.0f * s, hintH = 78.0f * s;
-    const float fixedH = pad + line + gap + hintH + gap + btnH + pad;
+    const float fixedH = pad + line + gap + line + gap + hintH + gap + btnH + pad;
     const float cellH = std::min(64.0f * s, std::max(32.0f * s, ((float)H - 20.0f * s - fixedH - (rows - 1) * gap) / rows));
     const float cellW = std::min(140.0f * s, std::max(80.0f * s, ((float)W - 20.0f * s - 2.0f * pad - (cols - 1) * gap) / cols));
     FactionPickLayout L;
@@ -28,7 +28,8 @@ FactionPickLayout layoutFactionPick(int W, int H) {
     L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
     L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad - line, line };
     L.close = Rect{ L.box.x + w - pad - line, L.box.y + pad, line, line };
-    const float top = L.title.y + line + gap;
+    L.field = Rect{ L.box.x + pad, L.title.y + line + gap, w - 2.0f * pad, line };
+    const float top = L.field.y + line + gap;
     for (int i = 0; i < PALETTE_COUNT; ++i) {
         L.cells.push_back(Rect{ L.box.x + pad + (float)(i % cols) * (cellW + gap), top + (float)(i / cols) * (cellH + gap), cellW, cellH });
     }
@@ -43,6 +44,12 @@ std::string colorName(const FactionDef& f) {
     return lang(f.nameKey.compare(0, prefix.size(), prefix) == 0 ? "COLORNAME_" + f.nameKey.substr(prefix.size()) : f.nameKey);
 }
 
+void popFrontUtf8(std::string& s) {
+    size_t n = 1;
+    while (n < s.size() && (static_cast<unsigned char>(s[n]) & 0xC0) == 0x80) ++n;
+    s.erase(0, n);
+}
+
 // Dark text on a light color, light on a dark one
 RGBA textOn(const FactionColor& c) {
     const float lum = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
@@ -52,7 +59,14 @@ RGBA textOn(const FactionColor& c) {
 
 std::string App::factionButtonText() {
     const FactionDef* f = factionPick >= 0 ? paletteFaction(factionPick) : nullptr;
-    return langf("UILABEL_FACTION_COLOR_BUTTON", { f ? lang(f->nameKey) : lang("UILABEL_FACTION_COLOR_RANDOM") });
+    const std::string typed = cleanName(factionNameText);
+    return langf("UILABEL_FACTION_COLOR_BUTTON", { !typed.empty() ? typed : f ? lang(f->nameKey) : lang("UILABEL_FACTION_COLOR_RANDOM") });
+}
+
+void App::stopFactionNameEdit() {
+    if (factionNameEditing) SDL_StopTextInput(window);
+    factionNameEditing = false;
+    factionNameText = cleanName(factionNameText);
 }
 
 void App::openFactionPick() {
@@ -76,6 +90,12 @@ bool App::pressOnFactionPick() {
     if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
     const FactionPickLayout L = layoutFactionPick(winW, winH);
+    if (L.field.contains(x, y)) {
+        if (!factionNameEditing) SDL_StartTextInput(window);
+        factionNameEditing = true;
+        return true;
+    }
+    stopFactionNameEdit();
     if (L.close.contains(x, y) || !L.box.contains(x, y)) {
         factionPickOpen = false;
         playSfx(Sfx::UiBack);
@@ -105,6 +125,17 @@ void App::drawFactionPick() {
     renderer.drawThemedPanel(L.box);
     renderer.drawListText(renderer.fitListText(lang("UILABEL_FACTION_COLOR_TITLE"), L.title.w), L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
     renderer.drawCloseButton(L.close);
+    renderer.drawRect(L.field, factionNameEditing ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+    const float fieldPad = 8.0f * s;
+    if (factionNameText.empty() && !factionNameEditing) {
+        const FactionDef* mine = factionPick >= 0 ? paletteFaction(factionPick) : nullptr;
+        const std::string shown = renderer.fitListText(mine ? lang(mine->nameKey) : lang("UILABEL_FACTION_COLOR_RANDOM"), L.field.w - 2.0f * fieldPad);
+        renderer.drawListText(shown, L.field.x + fieldPad, L.field.y + (L.field.h - textH) * 0.5f, dim);
+    } else {
+        std::string shown = factionNameText + (factionNameEditing && (SDL_GetTicks() / 500) % 2 ? "|" : "");
+        while (utf8Length(shown) > 1 && renderer.listTextWidth(shown) > L.field.w - 2.0f * fieldPad) popFrontUtf8(shown);   // the end being typed stays in view
+        renderer.drawListText(shown, L.field.x + fieldPad, L.field.y + (L.field.h - textH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    }
     const float mx = (float)mouseX, my = (float)mouseY;
     int hover = -1;
     for (size_t i = 0; i < L.cells.size(); ++i) {

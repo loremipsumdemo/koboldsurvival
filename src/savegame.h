@@ -45,7 +45,8 @@ struct SaveUnit {
     std::optional<SpawnHome> home;
     int occupying = -1;
     int pushing = -1;    // the Wheelbarrow (a prop index) it pushes
-    int upstairs = -1;   // the foundation (a prop index) of the building whose upper floor it stands on
+    int upLevel = 0;     // which upper floor it stands on (0: the ground); a walkway on a wall or gate has no foundation but is a floor too
+    int upstairs = -1;  // the foundation (a prop index) of the building whose upper floor it stands on
     std::optional<Unconscious> down;
     std::optional<double> corpseHours;
     std::optional<Retreating> retreat;   // from version 15
@@ -166,7 +167,8 @@ struct SaveData {
     std::vector<std::pair<int, std::string>> researched;   // a faction and the key of a recipe it has researched
     std::array<std::string, SQUAD_COUNT> squadNames{};
     int currentSquad = 0;
-    int playerSlot = -1;   // the color you are, a slot of the loop (factions.h); -1 in a file from before the colors
+    std::string playerFactionName;   // what you named your faction; empty takes its color's name
+    int playerSlot = -1;  // the color you are, a slot of the loop (factions.h); -1 in a file from before the colors
     std::vector<Ghost> ghosts;
     std::vector<SaveGroup> groups;   // empty in a file from before behavior groups: the defaults are used
     std::vector<std::pair<int, int>> patrons;   // each faction's patron (patrons.h)

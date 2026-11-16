@@ -66,20 +66,34 @@ void App::drawPanelSide(const PanelGeometry& g) {
     const Rect& p = g.preview;
     const int i = pickedIndex();
     const SaveSummary* picked = i >= 0 ? &saves[(size_t)i] : nullptr;
+    // Saving under a name that a save already has overwrites it: its picture and details are shown, so you know what you are replacing
+    const SaveSummary* overwrite = nullptr;
+    if (panelSaveMode && !panelLevels) {
+        const std::string typed = trimmedName(saveName);
+        if (picked && picked->name == typed) {
+            overwrite = picked;
+        } else {
+            for (const SaveSummary& sv : saves) {
+                if (!typed.empty() && sv.name == typed) overwrite = &sv;
+            }
+        }
+    }
+    const bool live = panelSaveMode && !overwrite;   // the world as it is now, for a new name
+    if (overwrite) picked = overwrite;
     renderer.drawRect(p, theme::WELL);
     bool shown = false;
-    if (panelSaveMode) shown = renderer.previewFromGrab();
+    if (live) shown = renderer.previewFromGrab();
     else if (picked) shown = renderer.previewFromFile(savePreviewPath(picked->path));
     const float inset = 2.0f * s;
     if (shown) {
         renderer.drawSavePreview(Rect{ p.x + inset, p.y + inset, p.w - 2.0f * inset, p.h - 2.0f * inset });
     } else {
-        const char* key = panelSaveMode || picked ? "UILABEL_SAVE_NO_PICTURE" : panelLevels ? "UILABEL_LEVEL_PICK" : "UILABEL_SAVE_PICK";
+        const char* key = live || picked ? "UILABEL_SAVE_NO_PICTURE" : panelLevels ? "UILABEL_LEVEL_PICK" : "UILABEL_SAVE_PICK";
         const std::string text = renderer.fitListText(lang(key), p.w - 16.0f * s);
         renderer.drawListText(text, p.x + (p.w - renderer.listTextWidth(text)) * 0.5f,
                               p.y + (p.h - renderer.listTextHeight("Ag")) * 0.5f, LIST_GRAY);
     }
-    if (!panelSaveMode && !picked) return;
+    if (!live && !picked) return;
 
     float y = g.detailsY;
     const float lineH = renderer.listTextHeight("Ag") + 8.0f * s;
@@ -97,7 +111,7 @@ void App::drawPanelSide(const PanelGeometry& g) {
         line(lang(spawn ? "UILABEL_LEVEL_SPAWN_SET" : "UILABEL_LEVEL_SPAWN_UNSET"), LIST_GRAY);
     };
 
-    if (panelSaveMode) {
+    if (live) {
         const std::string name = trimmedName(saveName);
         line(name.empty() ? lang("UILABEL_SAVE_TYPE_NAME") : name, name.empty() ? LIST_GRAY : theme::GOLD);
         line(langf("UILABEL_SAVE_MAP", { currentMap.name }), LIST_WHITE);

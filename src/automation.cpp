@@ -935,6 +935,7 @@ namespace {
 bool tryStep(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, Behaviors& b, BehaviorRule& r, Rng& rng) {
     if (!isAutoStep(r.kind) || !r.on || r.cooldown > 0.0f) return false;
     if (!scheduleAllows(w, u, r.kind)) return false;   // not at this hour of its schedule
+    if (w.has<TaskFailures>(u) && taskBanned(w, u, behaviorName(r))) return false;   // failed it twice in a row: waits out the ban
     if (r.kind == BehaviorKind::Socialize) {
         // Rested and comfortable (90% of each): it would rather dance, if it can
         const Needs* n = w.get<Needs>(u);

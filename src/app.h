@@ -667,6 +667,9 @@ struct App : AppSession {
     // Character creation's faction color (app_faction_pick.cpp): the window of the 16, and the slot of the loop you pick (factions.h), -1 a random one
     bool factionPickOpen = false;
     int factionPick = -1;
+    std::string factionNameText;   // what you name your faction (empty: its color's name), typed in that window
+    bool factionNameEditing = false;
+    void stopFactionNameEdit();
     std::string factionButtonText();
     void openFactionPick();
     int resolveFactionPick();

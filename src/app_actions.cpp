@@ -63,6 +63,7 @@ void App::startMapLevel(const MapChoice& choice) {
     audio::stopTracks();
     // Which color you are: the one picked in character creation, or a random one. The other 15 factions are the rest.
     setPlayerSlot(resolveFactionPick());
+    setPlayerFactionName(factionNameText);   // empty keeps the color's own name
     if (!pendingLevel.empty()) {
         LevelData level;
         if (!readLevelFile(levelFilePath(pendingLevel), level, err)) {

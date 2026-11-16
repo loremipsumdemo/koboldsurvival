@@ -1809,6 +1809,18 @@ void settleBuildingsAfterLoad(World& w, Terrain& t) {
             tr->y = ground + storeyBaseHeight(level);
         }
     }
+    // A unit standing high on a floor without a record of it (a save from before a walkway's floor was kept, or one made mid-climb) is put back
+    // on that floor from its height, rather than being found inside a wall or gate and moved off it
+    {
+        const BuildingMap& m = cachedBuildingMap(w);
+        for (ObjectId u : w.view<Entity, Transform>()) {
+            if (w.has<Upstairs>(u) || w.has<Occupying>(u) || w.has<Carried>(u) || w.has<Climbing>(u) || w.has<Mob>(u)) continue;
+            const Transform* tr = w.get<Transform>(u);
+            const int level = storeyAtHeight(tr->y - t.heightAt(tr->x, tr->z));
+            if (level <= 0 || !mapFloorSurface(w, m, tileOf(tr->x), tileOf(tr->z), level, -1)) continue;
+            w.add(u, Upstairs{ NO_OBJECT, level });
+        }
+    }
     for (ObjectId u : w.view<Upstairs, Transform>()) {
         const Transform* tr = w.get<Transform>(u);
         Upstairs& up = *w.get<Upstairs>(u);

@@ -80,6 +80,7 @@ void writeUnit(Writer& w, size_t i, const SaveUnit& u) {
     if (u.occupying >= 0) w.line("occupy", i, u.occupying);
     if (u.pushing >= 0) w.line("push", i, u.pushing);
     if (u.upstairs >= 0) w.line("upstairs", i, u.upstairs);
+    if (u.upLevel > 0) w.line("uplevel", i, u.upLevel);
     if (u.down) w.line("down", i, u.down->dying, u.down->koFaction, u.down->conscious, u.down->tickPart);
     if (u.corpseHours) w.line("corpse", i, *u.corpseHours);
     if (u.retreat) {
@@ -174,6 +175,7 @@ void writeSaveLines(std::ostream& out, const SaveData& d) {
     }
     w.line("squadat", d.currentSquad);
     w.line("playerslot", d.playerSlot);
+    if (!d.playerFactionName.empty()) w.line("factionname", d.playerFactionName);
     for (const Ghost& g : d.ghosts) w.line("ghost", g.appeased, g.hours, g.sprite, g.name);
     // Behavior groups: a bgroup line, then its tasks. A Group task's ref goes where a haul's prop does.
     for (const SaveGroup& g : d.groups) {
@@ -510,6 +512,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         } },
         { "squadat", [](Line& l) { return l.read(l.d.currentSquad); } },
         { "playerslot", [](Line& l) { return l.read(l.d.playerSlot); } },
+        { "factionname", [](Line& l) { return l.rest(l.d.playerFactionName); } },
         { "ghost", [](Line& l) {
             Ghost g;
             if (!l.read(g.appeased, g.hours, g.sprite)) return false;
@@ -555,6 +558,7 @@ const std::unordered_map<std::string, Handler>& handlers() {
         { "occupy", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->occupying); } },
         { "push", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->pushing); } },
         { "upstairs", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->upstairs); } },
+        { "uplevel", [](Line& l) { SaveUnit* u = l.unit(); return u && l.read(u->upLevel); } },
         { "foundation", [](Line& l) {
             SaveProp* p = l.prop();
             Foundation f;

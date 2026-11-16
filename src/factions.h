@@ -120,7 +120,11 @@ int loopReputation(int slotA, int slotB);
 // The factions in play: yours (id 0, as the slot you picked), the other colored ones, the Factionless and the mobs
 const std::vector<FactionDef>& factions();
 const FactionDef* findFaction(int id);
+// A faction's name; yours is the one you typed in character creation, else its color's ("Ember Faction")
 std::string factionName(int id);
+// The name you gave your faction, sanitized like a unit's name (party.h cleanName); empty is the color's name
+const std::string& playerFactionName();
+void setPlayerFactionName(const std::string& name);
 FactionColor factionColor(int id);
 bool factionPlayerControlled(int id);
 

@@ -16,7 +16,12 @@ std::vector<int> sortedByName(std::vector<int> ids) {
 }
 }
 
-std::string cleanName(const std::string& s) {
+std::string cleanName(const std::string& raw) {
+    // Control characters (a tab, a newline) would break the save's lines and have no glyph; every other script passes through
+    std::string s;
+    for (unsigned char c : raw) {
+        if (c >= 0x20 && c != 0x7f) s += (char)c;
+    }
     const size_t a = s.find_first_not_of(' ');
     if (a == std::string::npos) return "";
     const size_t b = s.find_last_not_of(' ');

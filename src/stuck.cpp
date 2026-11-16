@@ -145,6 +145,15 @@ bool deferPath(World& w, ObjectId u, Vec2 target, int storey, bool whole) {
     return true;
 }
 
+bool taskBanned(World& w, ObjectId u, const std::string& task) {
+    const TaskFailures* tf = w.get<TaskFailures>(u);
+    if (!tf) return false;
+    for (const TaskFailRecord& r : tf->records) {
+        if (r.ban > 0.0f && r.task == task) return true;
+    }
+    return false;
+}
+
 void notePathFailed(World& w, ObjectId u, Vec2 target) {
     if (!w.has<Entity>(u)) return;
     PathPace* p = w.get<PathPace>(u);
@@ -165,6 +174,21 @@ void notePathResult(World& w, const Terrain& t, ObjectId u, Vec2 from, Vec2 targ
 void noteTaskFailed(World& w, ObjectId u, const std::string& task) {
     if (!w.has<Entity>(u)) return;
     queueLog(w, langf("MISC_TASK_FAILED", { nameOf(w, u), task }), LogKind::TaskFail, npcOnly(w, u));
+    // The second failure of the same task inside the window bans it for a while
+    TaskFailures* tf = w.get<TaskFailures>(u);
+    if (!tf) tf = &w.add(u, TaskFailures{});
+    TaskFailRecord* rec = nullptr;
+    for (TaskFailRecord& r : tf->records) {
+        if (r.task == task) rec = &r;
+    }
+    if (!rec) rec = &tf->records.emplace_back(TaskFailRecord{ task });
+    if (rec->window > 0.0f) ++rec->fails;
+    else rec->fails = 1;
+    rec->window = TASK_FAIL_WINDOW_SECONDS;
+    if (rec->fails >= 2) {
+        rec->ban = TASK_FAIL_BAN_SECONDS;
+        rec->fails = 0;
+    }
     // The unit shows an X over its head for a second, and your own units are heard too. Failing again while it shows keeps it showing,
     // without another sound.
     if (TaskFailedEmote* e = w.get<TaskFailedEmote>(u)) {
@@ -572,6 +596,15 @@ void moveWatchSystem(World& w, Terrain& t, float dt) {
 void stuckSystem(World& w, Terrain& t, Rng& rng, float dt) {
     for (ObjectId u : w.view<TaskFailedEmote>()) {
         if ((w.get<TaskFailedEmote>(u)->left -= dt) <= 0.0f) w.remove<TaskFailedEmote>(u);
+    }
+    for (ObjectId u : w.view<TaskFailures>()) {
+        std::vector<TaskFailRecord>& recs = w.get<TaskFailures>(u)->records;
+        for (TaskFailRecord& r : recs) {
+            r.window -= dt;
+            r.ban -= dt;
+        }
+        recs.erase(std::remove_if(recs.begin(), recs.end(), [](const TaskFailRecord& r) { return r.window <= 0.0f && r.ban <= 0.0f; }), recs.end());
+        if (recs.empty()) w.remove<TaskFailures>(u);
     }
     freeTrappedSystem(w, t, dt);
     moveWatchSystem(w, t, dt);

@@ -2,6 +2,7 @@
 #include "factions.h"
 #include "ecs.h"
 #include "mobs.h"
+#include "party.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -291,6 +292,7 @@ Table& table() {
 }
 
 int g_playerSlot = PALETTE_DEFAULT_SLOT;
+std::string g_playerName;   // what you named your faction; empty takes its color's name
 std::vector<FactionDef> g_active;
 bool g_activeBuilt = false;
 
@@ -390,10 +392,15 @@ const FactionDef* findFaction(int id) {
 std::string factionName(int id) {
     // A wild animal's faction is its own kind's, but it is shown as one of the Factionless
     if (isMobFaction(id)) return lang("FACTION_FACTIONLESS");
+    if (id == FACTION_PLAYER && !g_playerName.empty()) return g_playerName;
     const FactionDef* f = findFaction(id);
     if (!f) return lang("FACTION_PLAYER");
     return lang(f->nameKey);
 }
+
+const std::string& playerFactionName() { return g_playerName; }
+
+void setPlayerFactionName(const std::string& name) { g_playerName = cleanName(name); }
 
 FactionColor factionColor(int id) {
     const FactionDef* f = findFaction(id);

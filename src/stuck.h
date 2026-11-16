@@ -73,6 +73,22 @@ struct TaskFailedEmote {
     float left = TASK_FAILED_EMOTE_SECONDS;
 };
 
+// A unit that fails the same task twice within TASK_FAIL_WINDOW_SECONDS may not try that task on its own for TASK_FAIL_BAN_SECONDS
+// (taskBanned; the automatic tasks check it). Not saved.
+inline constexpr float TASK_FAIL_WINDOW_SECONDS = 10.0f;
+inline constexpr float TASK_FAIL_BAN_SECONDS = 10.0f;
+struct TaskFailRecord {
+    std::string task;
+    float window = 0.0f;   // seconds left in which another failure counts with the last ones
+    int fails = 0;
+    float ban = 0.0f;      // seconds left of the wait
+};
+struct TaskFailures {
+    std::vector<TaskFailRecord> records;
+};
+// Whether the unit is waiting out a ban on this task (named as noteTaskFailed was given it)
+bool taskBanned(World& w, ObjectId u, const std::string& task);
+
 // Notes where a unit set out for
 void setPathGoal(World& w, ObjectId u, Vec2 goal);
 // Whether the goal can be walked to from here over open ground (and doors), looking no further than a large area: more open ground
