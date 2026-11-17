@@ -612,8 +612,7 @@ void claimGrowthSystem(World& w, float dt) {
     bool anyAltar = false;
     for (const Claim& c : claims) anyAltar = anyAltar || !c.camp;
     if (!anyAltar) return;
-    const BuildingMap map = buildingMap(w);
-    const std::vector<BuildingCluster> buildings = buildingClusters(w, map);
+    const std::vector<BuildingCluster> buildings = buildingClusters(w, cachedBuildingMap(w));
     std::vector<ObjectId> altars;
     for (const Claim& c : claims) {
         if (!c.camp) altars.push_back(c.altar);

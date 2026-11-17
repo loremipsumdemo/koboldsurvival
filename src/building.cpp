@@ -558,22 +558,43 @@ bool rectsTouch(int qx0, int qz0, int qx1, int qz1, int rx0, int rz0, int rx1, i
     };
     return overlap(qx0, qz0, qx1, qz1, rx0 - 1, rz0, rx1 + 1, rz1) || overlap(qx0, qz0, qx1, qz1, rx0, rz0 - 1, rx1, rz1 + 1);
 }
+
+// The props round a rectangle of tiles whose footprint could reach into it or beside it (prop_index.h): a superset, the caller measures
+void propsRoundRect(World& w, int x0, int z0, int x1, int z1, std::vector<ObjectId>& out) {
+    const float cx = (float)(x0 + x1 + 1) * 0.5f, cz = (float)(z0 + z1 + 1) * 0.5f;
+    const float half = (float)std::max(x1 - x0 + 1, z1 - z0 + 1) * 0.5f;
+    propsNear(w, cx, cz, half + propIndex(w).widestReach + 2.0f, out);
+}
 }
 
 bool touchesPerimeterPiece(World& w, int x0, int z0, int x1, int z1) {
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).perimeter || storeyOf(w, e) != 0) continue;
+    if (x1 < x0) std::swap(x0, x1);
+    if (z1 < z0) std::swap(z0, z1);
+    // Only the props round the rectangle can touch it, not every prop in the world
+    std::vector<ObjectId> nearby;
+    propsRoundRect(w, x0, z0, x1, z1, nearby);
+    for (ObjectId e : nearby) {
+        const Prop* p = w.get<Prop>(e);
+        if (!p || !propInfo(p->kind).perimeter || storeyOf(w, e) != 0) continue;
         int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
         pieceTiles(w, e, px0, pz0, px1, pz1);
-        if (rectsTouch(std::min(x0, x1), std::min(z0, z1), std::max(x0, x1), std::max(z0, z1), px0, pz0, px1, pz1)) return true;
+        if (rectsTouch(x0, z0, x1, z1, px0, pz0, px1, pz1)) return true;
     }
     return false;
 }
 
 bool touchesFoundation(World& w, int x0, int z0, int x1, int z1) {
-    for (ObjectId e : w.view<Foundation>()) {
-        const Foundation* f = w.get<Foundation>(e);
-        if (rectsTouch(x0, z0, x1, z1, f->x0, f->z0, f->x0 + f->w - 1, f->z0 + f->h - 1)) return true;
+    if (x1 < x0) std::swap(x0, x1);
+    if (z1 < z0) std::swap(z0, z1);
+    // The rectangle's tiles and those beside its sides (not its corners), looked up in the building map
+    const BuildingMap& m = cachedBuildingMap(w);
+    if (m.foundation.empty()) return false;
+    for (int z = z0 - 1; z <= z1 + 1; ++z) {
+        const bool rowOut = z < z0 || z > z1;
+        for (int x = x0 - 1; x <= x1 + 1; ++x) {
+            if (rowOut && (x < x0 || x > x1)) continue;   // a corner
+            if (m.foundation.count(tileKey(x, z))) return true;
+        }
     }
     return false;
 }
@@ -662,8 +683,33 @@ void notePerimeterGround(World& w, const Terrain& t, ObjectId piece) {
     }
 }
 
+namespace {
+// Every prop of the kinds the test passes, from the prop index's lists by kind (prop_index.h), so the thousands of trees and boulders
+// on a map are never looked at. fn must not add or remove props.
+template <typename Test, typename Fn>
+void forPropsOfKinds(World& w, Test test, Fn fn) {
+    const PropIndex& ix = propIndex(w);
+    for (size_t k = 0; k < ix.byKind.size(); ++k) {
+        if (ix.byKind[k].empty() || !test(propInfo((PropKind)k))) continue;
+        for (ObjectId e : ix.byKind[k]) {
+            if (w.has<Prop>(e) && w.has<Transform>(e)) fn(e);
+        }
+    }
+}
+
+// What a building map is made from: foundations, the pieces on them, Slopes and Perimeter pieces
+bool buildingMapKind(const PropInfo& pi) { return pi.foundation || pi.onFoundation || pi.slope || pi.perimeter; }
+// What can close ground or deck it (blockFootprint, and a foundation's deck)
+bool closesGroundKind(const PropInfo& pi) { return pi.foundation || pi.wallRule || pi.perimeter || pi.tower || pi.stairs; }
+}
+
 BuildingMap buildingMap(World& w) {
+    PROFILE_SCOPE("build: buildingMap");
     BuildingMap m;
+    // Only the building kinds are gathered: a map's trees and boulders are never looked at
+    std::vector<ObjectId> pieces;
+    forPropsOfKinds(w, buildingMapKind, [&](ObjectId e) { pieces.push_back(e); });
+    std::sort(pieces.begin(), pieces.end());   // by id, so a tile two pieces share (ghosts laid with no rules) always keeps the same one
     // The Perimeter pieces' walkways: each piece's tiles but its spike rows (the open sides but the one behind it)
     struct PerimPiece {
         ObjectId e;
@@ -671,7 +717,7 @@ BuildingMap buildingMap(World& w) {
     };
     std::vector<PerimPiece> perim;
     std::unordered_set<long long> perimTiles;
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    for (ObjectId e : pieces) {
         const PropInfo& pi = propInfo(w.get<Prop>(e)->kind);
         if (!pi.perimeter) continue;
         const Transform* tr = w.get<Transform>(e);
@@ -694,7 +740,7 @@ BuildingMap buildingMap(World& w) {
             }
         }
     }
-    for (ObjectId e : w.view<Prop, Transform>()) {
+    for (ObjectId e : pieces) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
         if (const Foundation* f = w.get<Foundation>(e)) {
             for (int z = f->z0; z < f->z0 + f->h; ++z) {
@@ -729,7 +775,7 @@ struct MapCache {
     bool filled = false;
     BuildingMap map;
     std::unordered_map<long long, size_t> clusterOf;   // tileKey of a foundation tile -> its building in clusters
-    std::vector<std::vector<long long>> clusters;
+    std::deque<std::vector<long long>> clusters;       // a deque: what cachedBuildingTiles gave stays put as more are added
 };
 MapCache& mapCache() {
     static thread_local MapCache c;
@@ -783,30 +829,21 @@ int stairsStepAt(World& w, const BuildingMap& m, int x, int z, int level, Object
     return -1;
 }
 
+// The tile lookups below read the cached building map (one hash lookup each), not every prop in the world: they are asked for
+// every sample of a footprint, every wall's neighbours and every tile of a preview
 ObjectId foundationAt(World& w, int x, int z) {
-    for (ObjectId e : w.view<Foundation>()) {
-        if (w.get<Foundation>(e)->contains(x, z)) return e;
-    }
-    return NO_OBJECT;
+    return mapGet(cachedBuildingMap(w).foundation, tileKey(x, z));
 }
 
 ObjectId groundPieceAt(World& w, int x, int z, int level) {
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (!info.onFoundation || info.upperFloor) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (tileOf(tr->x) == x && tileOf(tr->z) == z && storeyOf(w, e) == level) return e;
-    }
-    return NO_OBJECT;
+    const ObjectId e = mapGet(cachedBuildingMap(w).piece, levelKey(x, z, level));
+    const PropInfo* info = e != NO_OBJECT ? infoOf(w, e) : nullptr;
+    return info && info->onFoundation && !info->upperFloor ? e : NO_OBJECT;
 }
 
 ObjectId upperFloorAt(World& w, int x, int z, int level) {
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!propInfo(w.get<Prop>(e)->kind).upperFloor || w.has<Blueprint>(e)) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (tileOf(tr->x) == x && tileOf(tr->z) == z && storeyOf(w, e) == level) return e;
-    }
-    return NO_OBJECT;
+    const ObjectId e = mapGet(cachedBuildingMap(w).floor, levelKey(x, z, level));
+    return e != NO_OBJECT && !w.has<Blueprint>(e) ? e : NO_OBJECT;
 }
 
 bool floorSurfaceAt(World& w, int x, int z, int level, int owner) {
@@ -882,24 +919,37 @@ PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, i
     if (z1 < z0) std::swap(z0, z1);
     const int fw = x1 - x0 + 1, fh = z1 - z0 + 1;
     if (fw > FOUNDATION_MAX || fh > FOUNDATION_MAX) return PieceCheck::TooBig;
-    const BuildingMap m = buildingMap(w);
-    // Props in the way, on the ground
+    // The cached map (not one made afresh from every prop): this is asked every frame a foundation is dragged out, and for every
+    // corner an NPC faction or the plan preview tries
+    const BuildingMap& m = cachedBuildingMap(w);
+    // Props in the way, on the ground: only those round the rectangle can be, and only the tiles of the rectangle matter. A
+    // Perimeter Wall or Gate touching it at all says so, beside it too.
     std::unordered_set<long long> propTiles;
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (info.airship || info.foundation || storeyOf(w, e) != 0) continue;
-        const Transform* tr = w.get<Transform>(e);
-        if (info.perimeter || info.tower) {
-            int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
-            pieceTiles(w, e, px0, pz0, px1, pz1);
-            for (int z = pz0; z <= pz1; ++z) {
-                for (int x = px0; x <= px1; ++x) propTiles.insert(tileKey(x, z));
+    bool nearPerimeter = false;
+    {
+        std::vector<ObjectId> nearby;
+        propsRoundRect(w, x0, z0, x1, z1, nearby);
+        auto inRect = [&](int x, int z) { return x >= x0 && x <= x1 && z >= z0 && z <= z1; };
+        for (ObjectId e : nearby) {
+            const Prop* p = w.get<Prop>(e);
+            const Transform* tr = w.get<Transform>(e);
+            if (!p || !tr) continue;
+            const PropInfo& info = propInfo(p->kind);
+            if (info.airship || info.foundation || storeyOf(w, e) != 0) continue;
+            if (info.perimeter || info.tower) {
+                int px0 = 0, pz0 = 0, px1 = 0, pz1 = 0;
+                pieceTiles(w, e, px0, pz0, px1, pz1);
+                if (info.perimeter && rectsTouch(x0, z0, x1, z1, px0, pz0, px1, pz1)) nearPerimeter = true;
+                for (int z = std::max(pz0, z0); z <= std::min(pz1, z1); ++z) {
+                    for (int x = std::max(px0, x0); x <= std::min(px1, x1); ++x) propTiles.insert(tileKey(x, z));
+                }
+                continue;
             }
-            continue;
+            const int tx = tileOf(tr->x), tz = tileOf(tr->z);
+            if (inRect(tx, tz)) propTiles.insert(tileKey(tx, tz));
         }
-        propTiles.insert(tileKey(tileOf(tr->x), tileOf(tr->z)));
     }
-    if (touchesPerimeterPiece(w, x0, z0, x1, z1)) return PieceCheck::NearPerimeter;
+    if (nearPerimeter) return PieceCheck::NearPerimeter;
     const std::vector<Claim> claims = claimsOf(w);
     bool touches = false;
     int fresh = 0;
@@ -939,7 +989,8 @@ PieceCheck checkFoundation(World& w, const Terrain& t, int x0, int z0, int x1, i
                 const long long k = tileKey(x, z);
                 const ObjectId f = mapGet(m.foundation, k);
                 if (f == NO_OBJECT || ownerOf(w, f) != owner || seen.count(k)) continue;
-                for (long long bk : buildingTiles(m, x, z)) {
+                // The building's tiles, flooded once and kept until the buildings change (not again for every check)
+                for (long long bk : cachedBuildingTiles(w, x, z)) {
                     if (!seen.insert(bk).second) continue;
                     const int bx = keyX(bk), bz = keyZ(bk);
                     if (!w.has<Blueprint>(mapGet(m.foundation, bk))) {
@@ -965,8 +1016,8 @@ void editGroundCorner(World& w, Terrain& t, int x, int z, float h) {
 void levelFoundationGround(World& w, Terrain& t, ObjectId foundation) {
     const Foundation* fd = w.get<Foundation>(foundation);
     if (!fd) return;
-    const BuildingMap m = buildingMap(w);
-    const std::vector<long long> tiles = buildingTiles(m, fd->x0, fd->z0);
+    const BuildingMap& m = cachedBuildingMap(w);   // only looked up in: the ground is reshaped below, no prop is added or taken away
+    const std::vector<long long> tiles = cachedBuildingTiles(w, fd->x0, fd->z0);
     if (tiles.empty()) return;
     // The level: a finished tile's, else the average of the building's ground at its corners
     bool haveLevel = false;
@@ -1029,11 +1080,18 @@ void levelFoundationGround(World& w, Terrain& t, ObjectId foundation) {
 ObjectId placeFoundation(World& w, const Terrain& t, int x0, int z0, int x1, int z1, int owner, BuildMaterial material) {
     if (x1 < x0) std::swap(x0, x1);
     if (z1 < z0) std::swap(z0, z1);
-    const BuildingMap m = buildingMap(w);
+    // Which tiles have a foundation already, read off the cached map before any is laid (laying one changes the map)
+    std::vector<char> had((size_t)(x1 - x0 + 1) * (size_t)(z1 - z0 + 1), 0);
+    {
+        const BuildingMap& m = cachedBuildingMap(w);
+        for (int z = z0; z <= z1; ++z) {
+            for (int x = x0; x <= x1; ++x) had[(size_t)(x - x0) + (size_t)(z - z0) * (size_t)(x1 - x0 + 1)] = m.foundation.count(tileKey(x, z)) ? 1 : 0;
+        }
+    }
     ObjectId first = NO_OBJECT;
     for (int z = z0; z <= z1; ++z) {
         for (int x = x0; x <= x1; ++x) {
-            if (m.foundation.count(tileKey(x, z))) continue;
+            if (had[(size_t)(x - x0) + (size_t)(z - z0) * (size_t)(x1 - x0 + 1)]) continue;
             const ObjectId e = placeBuiltProp(w, t, PropKind::Foundation, x + 0.5f, z + 0.5f, 0.0f, owner);
             w.add(e, Foundation{ x, z, 1, 1 });
             w.add(e, Blueprint{});
@@ -1096,7 +1154,7 @@ PieceCheck checkPiece(World& w, PropKind kind, int x, int z, int owner, int leve
 }
 
 void collapseCheck(World& w) {
-    const BuildingMap m = buildingMap(w);
+    const BuildingMap& m = cachedBuildingMap(w);   // nothing is taken away until it has been read through
     std::unordered_set<long long> seen;
     std::vector<ObjectId> doomed;
     std::vector<std::pair<ObjectId, int>> drop;   // props on fallen floors, and the floor they were on
@@ -1247,8 +1305,8 @@ ObjectId layPiece(World& w, const Terrain& t, PropKind kind, int x, int z, int o
     if (ghostStage >= 0 && (info.materials <= 0.0 || level < 0 || level > STOREY_MAX)) return NO_OBJECT;
     float yaw = info.stairs ? (float)(((dir % 4) + 4) % 4) * 1.5707963f : 0.0f;
     if (info.door) {
-        // Only a door needs the map of the buildings (it goes over every prop in the world, so it is not made for each piece laid)
-        const BuildingMap m = buildingMap(w);
+        // Only a door needs the map of the buildings (read before the door is laid, which changes it)
+        const BuildingMap& m = cachedBuildingMap(w);
         // Across the doorway: in line with the walls beside it, or along the building's edge
         // Its two ends go to walls: the line (north-south or east-west) with the walls beside it, a wall counting for more than another
         // door. With as many on both lines, or none, it lies along the building's edge.
@@ -1340,7 +1398,7 @@ bool finishBlueprint(World& w, Terrain& t, ObjectId prop) {
         }
     }
     if (!inTheWay.empty()) {
-        const BuildingMap m = buildingMap(w);
+        const BuildingMap& m = cachedBuildingMap(w);
         for (ObjectId u : inTheWay) {
             if (walking(w, u)) continue;
             const Transform* ut = w.get<Transform>(u);
@@ -1461,20 +1519,21 @@ void rebuildBlocking(World& w, Terrain& t) {
     t.clearBlocked();
     t.clearDecks();
     BlockFootprint fp;
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (w.has<Blueprint>(e)) continue;
+    // Only the kinds that deck or close ground (blockFootprint says no for every other)
+    forPropsOfKinds(w, closesGroundKind, [&](ObjectId e) {
+        if (w.has<Blueprint>(e)) return;
         if (const Foundation* f = w.get<Foundation>(e)) {
             for (int z = f->z0; z < f->z0 + f->h; ++z) {
                 for (int x = f->x0; x < f->x0 + f->w; ++x) t.setDeck(x, z, true);
             }
-            continue;
+            return;
         }
-        if (!blockFootprint(w, e, fp)) continue;
+        if (!blockFootprint(w, e, fp)) return;
         for (const auto& [x, z] : fp.tiles) {
             t.setBlocked(x, z, true);
             if (fp.sight > 0.0f) t.setSightBlock(x, z, fp.sight);
         }
-    }
+    });
     t.settleBlocked();   // the navigation regions redo only the clusters where a tile ended up different
     t.prepareNav();
     w.resource<BuildingsChanged>().dirty = false;
@@ -1533,27 +1592,22 @@ void refreshBuildingTiles(World& w, Terrain& t) {
     // Only the changed tiles are worked out again: a finished ground-floor wall closes its tile, a finished foundation
     // tile decks its own. Only the kinds that can close ground are looked at (a map has thousands of trees and boulders).
     BlockFootprint fp;
-    auto closesGround = [&](ObjectId e) {
-        const PropInfo& pi = propInfo(w.get<Prop>(e)->kind);
-        return pi.wallRule || pi.perimeter || pi.tower || pi.stairs;
-    };
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (w.has<Blueprint>(e)) continue;
+    forPropsOfKinds(w, closesGroundKind, [&](ObjectId e) {
+        if (w.has<Blueprint>(e)) return;
         if (const Foundation* f = w.get<Foundation>(e)) {
-            if (f->x0 > x1 || f->x0 + f->w - 1 < x0 || f->z0 > z1 || f->z0 + f->h - 1 < z0) continue;
+            if (f->x0 > x1 || f->x0 + f->w - 1 < x0 || f->z0 > z1 || f->z0 + f->h - 1 < z0) return;
             for (const auto& [x, z] : tiles) {
                 if (f->contains(x, z)) t.setDeck(x, z, true);
             }
-            continue;
+            return;
         }
-        if (!closesGround(e)) continue;
-        if (!blockFootprint(w, e, fp)) continue;
+        if (!blockFootprint(w, e, fp)) return;
         for (const auto& [x, z] : fp.tiles) {
             if (!changed.count(tileKey(x, z))) continue;
             t.setBlocked(x, z, true);
             if (fp.sight > 0.0f) t.setSightBlock(x, z, fp.sight);
         }
-    }
+    });
     // Walks that pass near a changed tile are planned again, around a new wall or through a gap left by a lost one
     for (ObjectId u : w.view<SoloMove, Transform>()) {
         if (w.has<Upstairs>(u) || w.has<Climbing>(u)) continue;
@@ -1581,12 +1635,26 @@ void refreshBuildingTiles(World& w, Terrain& t) {
         if (changed.count(tileKey(tileOf(ut->x), tileOf(ut->z)))) ut->y = t.standHeight(ut->x, ut->z);
     }
     // So do the ground floor's props: one laid as a blueprint before its foundation was built stands on the deck once it is, and
-    // comes down with it
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
-        if (info.foundation || info.onFoundation || w.has<Storey>(e) || w.has<Carried>(e)) continue;
-        Transform* pt = w.get<Transform>(e);
-        if (changed.count(tileKey(tileOf(pt->x), tileOf(pt->z)))) pt->y = t.standHeight(pt->x, pt->z);
+    // comes down with it. Only the props in the prop index's cells that the changed tiles are in (and the vehicles) can be on one.
+    {
+        const PropIndex& ix = propIndex(w);
+        std::unordered_set<long long> cellsSeen;
+        auto settle = [&](ObjectId e) {
+            const Prop* p = w.get<Prop>(e);
+            Transform* pt = w.get<Transform>(e);
+            if (!p || !pt) return;
+            const PropInfo& info = propInfo(p->kind);
+            if (info.foundation || info.onFoundation || w.has<Storey>(e) || w.has<Carried>(e)) return;
+            if (changed.count(tileKey(tileOf(pt->x), tileOf(pt->z)))) pt->y = t.standHeight(pt->x, pt->z);
+        };
+        for (ObjectId e : ix.movers) settle(e);
+        for (const auto& [x, z] : tiles) {
+            const int cx = PropIndex::cellOf((float)x + 0.5f), cz = PropIndex::cellOf((float)z + 0.5f);
+            if (!cellsSeen.insert(PropIndex::cellKey(cx, cz)).second) continue;
+            if (const PropIndex::Cell* c = ix.cell(cx, cz)) {
+                for (ObjectId e : c->props) settle(e);
+            }
+        }
     }
     collapseCheck(w);
 }
@@ -2192,23 +2260,43 @@ std::vector<ObjectId> connectedBlueprints(World& w, ObjectId start) {
         if (e == start) first = nodes.size();
         nodes.push_back(std::move(n));
     }
-    auto joined = [&](const Node& a, const Node& b) {
-        for (long long c : a.clusters) {
-            if (std::find(b.clusters.begin(), b.clusters.end(), c) != b.clusters.end()) return true;
+    // Indexed both ways a blueprint is joined to another, so each one only looks at those it could be joined to (not every other
+    // blueprint, which a big plan's hundreds of ghosts made slow): the buildings it touches, and the tiles it covers
+    std::unordered_map<long long, std::vector<size_t>> byCluster, byTile;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        for (long long c : nodes[i].clusters) byCluster[c].push_back(i);
+        for (int z = nodes[i].z0; z <= nodes[i].z1; ++z) {
+            for (int x = nodes[i].x0; x <= nodes[i].x1; ++x) byTile[tileKey(x, z)].push_back(i);
         }
-        return std::abs(a.level - b.level) <= 1 && a.x0 - 1 <= b.x1 && b.x0 - 1 <= a.x1 && a.z0 - 1 <= b.z1 && b.z0 - 1 <= a.z1;
-    };
+    }
     std::vector<char> seen(nodes.size(), 0);
     std::vector<size_t> open{ first };
     seen[first] = 1;
+    auto reach = [&](size_t j) {
+        if (seen[j]) return;
+        seen[j] = 1;
+        open.push_back(j);
+    };
+    std::unordered_set<long long> clustersDone;
     while (!open.empty()) {
         const size_t i = open.back();
         open.pop_back();
         out.push_back(nodes[i].e);
-        for (size_t j = 0; j < nodes.size(); ++j) {
-            if (seen[j] || !joined(nodes[i], nodes[j])) continue;
-            seen[j] = 1;
-            open.push_back(j);
+        const Node& a = nodes[i];
+        // The same building: every blueprint of it at once, and each building only once
+        for (long long c : a.clusters) {
+            if (!clustersDone.insert(c).second) continue;
+            for (size_t j : byCluster[c]) reach(j);
+        }
+        // Side by side or corner to corner, on the same floor or the one above or below
+        for (int z = a.z0 - 1; z <= a.z1 + 1; ++z) {
+            for (int x = a.x0 - 1; x <= a.x1 + 1; ++x) {
+                const auto it = byTile.find(tileKey(x, z));
+                if (it == byTile.end()) continue;
+                for (size_t j : it->second) {
+                    if (std::abs(a.level - nodes[j].level) <= 1) reach(j);
+                }
+            }
         }
     }
     return out;

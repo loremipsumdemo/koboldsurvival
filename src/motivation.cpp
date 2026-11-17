@@ -49,7 +49,7 @@ void motivationSystem(World& w, float dt, double gameSeconds) {
         m.lookIn = MOTIVATION_LOOK_SECONDS;
         m.claims = claimsOf(w);
         m.buildings.clear();
-        for (const BuildingCluster& b : buildingClusters(w, buildingMap(w))) {
+        for (const BuildingCluster& b : buildingClusters(w, cachedBuildingMap(w))) {
             if (b.complete) ++m.buildings[b.owner];
         }
     }

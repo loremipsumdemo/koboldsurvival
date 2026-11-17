@@ -739,8 +739,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         if (site.demolishHours >= 0.0) {
             site.demolishHours += hours;
             const Transform* at = w.get<Transform>(e);
-            const BuildingMap map = buildingMap(w);
-            const std::vector<long long> tiles = buildingTiles(map, (int)std::floor(at->x), (int)std::floor(at->z));
+            const std::vector<long long> tiles = cachedBuildingTiles(w, (int)std::floor(at->x), (int)std::floor(at->z));   // a copy: it is pulled down
             const bool inside = evacuateBuilding(w, t, tiles);
             if (site.demolishHours >= NPC_DEMOLISH_HOURS && !inside) pullDownBuilding(w, t, tiles);
             continue;
@@ -798,8 +797,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         }
         if (faction != FACTION_PLAYER && site.idleHours >= NPC_STALL_HOURS) {
             const Transform* at = w.get<Transform>(e);
-            const BuildingMap map = buildingMap(w);
-            const std::vector<long long> tiles = buildingTiles(map, (int)std::floor(at->x), (int)std::floor(at->z));
+            const std::vector<long long> tiles = cachedBuildingTiles(w, (int)std::floor(at->x), (int)std::floor(at->z));   // a copy: it is pulled down
             const std::unordered_set<long long> in(tiles.begin(), tiles.end());
             for (ObjectId p : w.view<Prop, Transform>()) {
                 const Transform* pt = w.get<Transform>(p);
@@ -836,7 +834,7 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
         }
         if (!mapped) {
             PROFILE_SCOPE("sites: buildingMap+clusters");
-            map = buildingMap(w);
+            map = cachedBuildingMap(w);   // a copy: the houses laid below change the world
             clusters = buildingClusters(w, map);
             mapped = true;
         }
