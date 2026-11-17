@@ -50,6 +50,7 @@ void drawSettingsMenu(Renderer& r, const SettingsLayout& L, const std::vector<Ro
         else if (over(t, mx, my)) fill = kTabHover;
         if (over(t, mx, my)) r.noteHover(t);
         r.drawRect(t, fill);
+        r.drawBevel(t);
         if (static_cast<int>(i) == static_cast<int>(st.tab)) r.drawRect(Rect{ t.x, t.y + t.h - 2.0f * u, t.w, 2.0f * u }, theme::GOLD);
         r.drawIconLabel(t, settingsTabIcon(static_cast<int>(i)), name, kText, true);
     }

@@ -13,8 +13,7 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 3>& counts, const st
     L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
     float y = L.box.y + pad;
-    L.title = Rect{ x, y, w - line, line };
-    L.close = Rect{ x + w - line, y, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     y += line + 2.0f * s;
     L.totals = Rect{ x, y, w, line };
     y += line + gap;
@@ -28,10 +27,12 @@ AltarLayout layoutAltar(int W, int H, const std::array<int, 3>& counts, const st
         const int visible = std::max(0, (int)std::floor((list.h + rowGap) / (rowH + rowGap) + 0.001f));
         L.visible[(size_t)c] = visible;
         L.first[(size_t)c] = std::clamp(scroll[(size_t)c], 0, std::max(0, counts[(size_t)c] - visible));
+        L.bars[(size_t)c] = layoutRowBar(list.x + list.w - 8.0f * s, list.y, visible * (rowH + rowGap) - rowGap, s, counts[(size_t)c], visible, L.first[(size_t)c]);
+        const float rowW = list.w - (L.bars[(size_t)c].on() ? 12.0f * s : 0.0f);
         for (int i = L.first[(size_t)c]; i < counts[(size_t)c] && i < L.first[(size_t)c] + visible; ++i) {
             AltarRow r;
             r.index = i;
-            r.row = Rect{ list.x, list.y + (i - L.first[(size_t)c]) * (rowH + rowGap), list.w, rowH };
+            r.row = Rect{ list.x, list.y + (i - L.first[(size_t)c]) * (rowH + rowGap), rowW, rowH };
             r.portrait = Rect{ r.row.x + 3.0f * s, r.row.y + 3.0f * s, rowH - 6.0f * s, rowH - 6.0f * s };
             const float mw = 34.0f * s;
             r.move = Rect{ r.row.x + r.row.w - mw - 4.0f * s, r.row.y + 6.0f * s, mw, rowH - 12.0f * s };

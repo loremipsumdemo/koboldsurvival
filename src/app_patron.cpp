@@ -28,8 +28,7 @@ PatronLayout layoutPatron(int W, int H, int count, bool pick) {
     const float w = cols * cell + (cols - 1) * gap + 2.0f * pad;
     const float h = fixedH + rows * cell + (rows - 1) * gap;
     L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
-    L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad - line, line };
-    L.close = Rect{ L.box.x + w - pad - line, L.box.y + pad, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     const float top = L.title.y + line + gap;
     for (int i = 0; i < count; ++i) {
         L.cells.push_back(Rect{ L.box.x + pad + (float)(i % cols) * (cell + gap), top + (float)(i / cols) * (cell + gap), cell, cell });
@@ -58,7 +57,7 @@ bool App::pressOnPatrons() {
     if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
     const PatronLayout L = layoutPatron(winW, winH, (int)patrons().size(), patronPicking);
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    if (dismissAt(L.box, L.close, x, y)) {
         patronOpen = false;
         playSfx(Sfx::UiBack);
         return true;
@@ -86,10 +85,8 @@ void App::drawPatrons() {
     const std::vector<PatronInfo>& list = patrons();
     const PatronLayout L = layoutPatron(winW, winH, (int)list.size(), patronPicking);
     const float s = uiScaleFor((float)winH), textH = renderer.listTextHeight("Ag");
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f }, dim{ 0.80f, 0.72f, 0.64f, 1.0f };
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(renderer.fitListText(lang("UILABEL_PATRONS_TITLE"), L.title.w), L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
+    const RGBA white = theme::TEXT, gold = theme::GOLD, dim = theme::TEXT_DIM;
+    renderer.drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_PATRONS_TITLE"));
     // The one lit: the Altar's faction's patron, or the one picked
     const int lit = patronPicking ? patronPick : patronOf(world, patronFaction);
     const float mx = (float)mouseX, my = (float)mouseY;
@@ -103,7 +100,7 @@ void App::drawPatrons() {
         if (hover == (int)i && !on) renderer.drawRect(c, RGBA{ 1.0f, 1.0f, 1.0f, 0.12f });
     }
     if (patronPicking) {
-        renderer.drawButton(L.random, lang("UILABEL_PATRON_RANDOM"), true, patronPick < 0 || L.random.contains(mx, my));
+        renderer.drawToggleButton(L.random, lang("UILABEL_PATRON_RANDOM"), patronPick < 0);
     }
     if (hover < 0) return;
     // The details of the one under the pointer

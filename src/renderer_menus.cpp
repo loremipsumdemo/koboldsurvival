@@ -415,6 +415,11 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
         drawRectGradientH(Rect{ r.x + r.w - gw, r.y, gw, r.h }, A(rgb255(245, 201, 117, 0.0f)), A(rgb255(245, 201, 117, 0.16f)));
         drawRect(Rect{ r.x - 4.0f * s, r.y - 3.0f * s, r.w + 8.0f * s, r.h + 6.0f * s }, A(rgb255(245, 201, 117, 0.05f)));
     }
+    {
+        const float px = std::max(1.0f, std::round(s));
+        drawRectGradientH(Rect{ r.x, r.y, r.w, px }, A(RGBA{ 1.0f, 1.0f, 1.0f, 0.0f }), A(RGBA{ 1.0f, 1.0f, 1.0f, enabled ? 0.20f : 0.08f }));
+        drawRectGradientH(Rect{ r.x, r.y + r.h - px, r.w, px }, A(RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }), A(RGBA{ 0.0f, 0.0f, 0.0f, 0.45f }));
+    }
     const RGBA edge = selected ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, A(edge));
     if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GOLD));
@@ -471,6 +476,10 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         if (on) return plateOn;
         return hot ? plateHot : plate;
     };
+    auto plateButton = [&](const Rect& r, RGBA fill, bool enabled) {
+        drawRect(r, fill);
+        drawBevel(r, enabled ? 1.0f : 0.4f);
+    };
     auto centered = [&](const Rect& r, const std::string& text, RGBA tint) {
         const std::string t = fitText(text, r.w - 8.0f * s, false);
         drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - lineH) * 0.5f, tint);
@@ -514,7 +523,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyTabPick: {
             const bool on = b.param == (int)ui.tab;
-            drawRect(b.rect, plateFor(hot, on, true));
+            plateButton(b.rect, plateFor(hot, on, true), true);
             drawIconLabel(b.rect, partyTabIcon(b.param), b.label, on ? theme::GOLD : WHITE, false);
             break;
         }
@@ -543,14 +552,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
 
         case Action::PartyRandomUnit:
-            drawRect(b.rect, plateFor(hot, false, true));
+            plateButton(b.rect, plateFor(hot, false, true), true);
             centered(b.rect, b.label, WHITE);
             break;
 
         case Action::PartyAddUnit:
         case Action::PartyRemoveUnit:
         case Action::PartyAddMob:
-            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
@@ -581,7 +590,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartyStep:
-            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
@@ -627,7 +636,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartyCount:
-            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
@@ -640,10 +649,11 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             drawRect(b.rect, theme::alpha(theme::MENU_FILL, 0.98f));
             break;
 
-        case Action::PartyDropScroll:
-            drawRect(b.rect, plateFor(hot, false, b.enabled));
-            centered(b.rect, b.label, b.enabled ? (hot ? theme::GOLD : WHITE) : faint);
+        case Action::PartyDropBar: {
+            const RowBar dropBar = layoutRowBar(b.rect.x, b.rect.y, b.rect.h, b.rect.w / 8.0f, b.extra, DROP_VISIBLE_ROWS, b.param);
+            if (dropBar.on()) drawScrollBar(dropBar.track, dropBar.thumb, hot);
             break;
+        }
 
         case Action::PartyDropPick:
             if (hot) drawRect(b.rect, plateHot);
@@ -655,7 +665,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyFaction:
         case Action::PartyConfirm:
         case Action::Back:
-            drawRect(b.rect, plateFor(hot, false, b.enabled));
+            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 

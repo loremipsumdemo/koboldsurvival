@@ -56,17 +56,18 @@ MapPickLayout layoutMapPick(int W, int H, int maps, int levels, int mapScroll, i
     const float listX = L.box.x + pad;
     // Maps take the top half of the column and levels the bottom half
     const float half = (bottom - top - gap) * 0.5f;
-    auto column = [&](float y, float h, int count, int scroll, Rect& heading, std::vector<Rect>& rows, int& first) {
+    auto column = [&](float y, float h, int count, int scroll, Rect& heading, std::vector<Rect>& rows, int& first, RowBar& bar) {
         heading = Rect{ listX, y, listW, head };
         const float listTop = y + head + 4.0f * s;
         const int visible = std::max(1, (int)std::floor((h - head - 4.0f * s + rowGap) / (rowH + rowGap)));
         first = std::clamp(scroll, 0, std::max(0, count - visible));
+        bar = layoutRowBar(listX + listW - 8.0f * s, listTop, visible * (rowH + rowGap) - rowGap, s, count, visible, first);
         for (int i = first; i < count && i < first + visible; ++i) {
-            rows.push_back(Rect{ listX, listTop + (i - first) * (rowH + rowGap), listW, rowH });
+            rows.push_back(Rect{ listX, listTop + (i - first) * (rowH + rowGap), listW - (bar.on() ? 12.0f * s : 0.0f), rowH });
         }
     };
-    column(top, half, maps, mapScroll, L.mapsHead, L.mapRows, L.mapFirst);
-    column(top + half + gap, half, levels, levelScroll, L.levelsHead, L.levelRows, L.levelFirst);
+    column(top, half, maps, mapScroll, L.mapsHead, L.mapRows, L.mapFirst, L.mapBar);
+    column(top + half + gap, half, levels, levelScroll, L.levelsHead, L.levelRows, L.levelFirst, L.levelBar);
     L.mapsArea = Rect{ listX, top, listW, half };
     L.levelsArea = Rect{ listX, top + half + gap, listW, half };
 
@@ -148,6 +149,14 @@ bool App::mapPickMouseDown() {
     if (screen != Screen::MapSelect || e.button.button != SDL_BUTTON_LEFT) return false;
     const float mx = e.button.x, my = e.button.y;
     const MapPickLayout L = mapPickLayout();
+    if (pressListBar(L.mapBar, mx, my, [this](float top) {
+            const MapPickLayout M = mapPickLayout();
+            mapPick.mapScroll = rowBarFirst(M.mapBar, (int)mapPick.maps.size(), (int)M.mapRows.size(), top);
+        })) return true;
+    if (pressListBar(L.levelBar, mx, my, [this](float top) {
+            const MapPickLayout M = mapPickLayout();
+            mapPick.levelScroll = rowBarFirst(M.levelBar, (int)mapPick.levels.size(), (int)M.levelRows.size(), top);
+        })) return true;
     for (size_t i = 0; i < L.mapRows.size(); ++i) {
         if (!L.mapRows[i].contains(mx, my)) continue;
         if (L.mapFirst + (int)i != mapPick.map) pickMap(L.mapFirst + (int)i);
@@ -200,15 +209,17 @@ void App::drawMapPickScreen() {
         const int at = L.mapFirst + (int)i;
         const bool picked = at == mapPick.map;
         const Rect& r = L.mapRows[i];
-        renderer.drawButton(r, (picked ? "> " : "") + mapPick.maps[(size_t)at].name, true, picked || r.contains(mouseX, mouseY));
+        renderer.drawToggleButton(r, mapPick.maps[(size_t)at].name, picked);
     }
+    drawListBar(L.mapBar);
+    drawListBar(L.levelBar);
     renderer.drawListText(lang("UILABEL_MAP_PICK_LEVELS"), L.levelsHead.x, L.levelsHead.y, gray);
     for (size_t i = 0; i < L.levelRows.size(); ++i) {
         const int at = L.levelFirst + (int)i;
         const bool picked = at == mapPick.level;
         const Rect& r = L.levelRows[i];
         const std::string& name = mapPick.levels[(size_t)at];
-        renderer.drawButton(r, (picked ? "> " : "") + (name.empty() ? lang("UILABEL_LEVEL_RANDOM") : name), true, picked || r.contains(mouseX, mouseY));
+        renderer.drawToggleButton(r, (name.empty() ? lang("UILABEL_LEVEL_RANDOM") : name), picked);
     }
 
     renderer.drawListText(lang("UILABEL_GEN_PREVIEW"), L.previewHead.x, L.previewHead.y, gray);
@@ -259,8 +270,8 @@ void App::drawMapPickScreen() {
         noteY += th;
     }
 
-    renderer.drawButton(L.back, lang("UILABEL_BACK"), true, L.back.contains(mouseX, mouseY));
-    renderer.drawButton(L.next, lang("UILABEL_NEXT"), !mapPick.maps.empty(), L.next.contains(mouseX, mouseY));
+    renderer.drawButton(L.back, lang("UILABEL_BACK"), true);
+    renderer.drawButton(L.next, lang("UILABEL_NEXT"), !mapPick.maps.empty());
     (void)white;
     renderer.endUi();
 }

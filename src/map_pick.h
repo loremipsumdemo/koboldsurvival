@@ -50,6 +50,7 @@ struct MapPickLayout {
     Rect mapsHead, levelsHead, mapsArea, levelsArea;
     std::vector<Rect> mapRows, levelRows;
     int mapFirst = 0, levelFirst = 0;
+    RowBar mapBar, levelBar;
     Rect previewHead, preview, note;
 };
 MapPickLayout layoutMapPick(int W, int H, int maps, int levels, int mapScroll, int levelScroll);

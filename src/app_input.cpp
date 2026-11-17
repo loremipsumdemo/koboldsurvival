@@ -117,17 +117,16 @@ void App::onKeyDown() {
         playSfx(Sfx::UiBack);
         return;
     }
-    if (screen == Screen::Playing && session.askMaterial) {
-        if (e.key.key == SDLK_ESCAPE) session.askMaterial = false;
-        return;
-    }
-    if (screen == Screen::Playing && session.askCancel) {
+    const auto closesOnEscape = [&](bool open, const std::function<void()>& close) {
+        if (screen != Screen::Playing || !open) return false;
         if (e.key.key == SDLK_ESCAPE) {
-            session.askCancel = false;
-            session.cancelList.clear();
+            close();
+            playSfx(Sfx::UiBack);
         }
-        return;
-    }
+        return true;
+    };
+    if (closesOnEscape(session.askMaterial, [&] { session.askMaterial = false; })) return;
+    if (closesOnEscape(session.askCancel, [&] { session.askCancel = false; session.cancelList.clear(); })) return;
     if (screen == Screen::Playing && rename.open) {
         if (e.key.key == SDLK_BACKSPACE) popUtf8Char(rename.text);
         else if (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) finishRename(true);
@@ -155,69 +154,16 @@ void App::onKeyDown() {
         }
         return;
     }
-    if (screen == Screen::Playing && squadsUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            squadsUi = SquadsUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && factionInfoOpen) {
-        if (e.key.key == SDLK_ESCAPE) {
-            factionInfoOpen = false;
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && ruleMenu.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            ruleMenu.open = false;
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && craftUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            craftUi = CraftUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && altar.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            altar = AltarUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && storeFilterUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            storeFilterUi = StoreFilterUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && stallUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            stallUi = StallUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && groupsUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            groupsUi = BehaviorGroupsUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
-    if (screen == Screen::Playing && ghostsUi.open) {
-        if (e.key.key == SDLK_ESCAPE) {
-            ghostsUi = GhostsUi{};
-            playSfx(Sfx::UiBack);
-        }
-        return;
-    }
+    // The same, for the windows below
+    if (closesOnEscape(squadsUi.open, [&] { squadsUi = SquadsUi{}; })) return;
+    if (closesOnEscape(factionInfoOpen, [&] { factionInfoOpen = false; })) return;
+    if (closesOnEscape(ruleMenu.open, [&] { ruleMenu.open = false; })) return;
+    if (closesOnEscape(craftUi.open, [&] { craftUi = CraftUi{}; })) return;
+    if (closesOnEscape(altar.open, [&] { altar = AltarUi{}; })) return;
+    if (closesOnEscape(storeFilterUi.open, [&] { storeFilterUi = StoreFilterUi{}; })) return;
+    if (closesOnEscape(stallUi.open, [&] { stallUi = StallUi{}; })) return;
+    if (closesOnEscape(groupsUi.open, [&] { groupsUi = BehaviorGroupsUi{}; })) return;
+    if (closesOnEscape(ghostsUi.open, [&] { ghostsUi = GhostsUi{}; })) return;
     if (screen == Screen::WorldGen) {
         if (!worldGenUi.deleteMap.empty()) {
             if (e.key.key == SDLK_ESCAPE) cancelMapDelete();
@@ -400,6 +346,15 @@ void App::onKeyDown() {
 }
 
 void App::onMouseWheel() {
+    // The blueprint editor's list of plans
+    if (screen == Screen::Playing && bpEdit.active && bpEdit.listOpen && !bpEdit.folded) {
+        const BlueprintLayout bl = layoutBlueprint(winW, winH, bpEdit);
+        if (bl.list.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
+            const int step = e.wheel.y > 0.0f ? -1 : e.wheel.y < 0.0f ? 1 : 0;
+            bpEdit.listScroll = std::clamp(bpEdit.listScroll + step, 0, std::max(0, (int)bpEdit.plans.size() - bl.listShown));
+            return;
+        }
+    }
     if (screen == Screen::Playing && planPopup.open) {
         scrollPlanPopup(e.wheel.y);
         return;
@@ -562,6 +517,11 @@ void App::onMouseButtonDown() {
     }
     if (panelOpen) {
         if (e.button.button == SDL_BUTTON_LEFT) {
+            const RowBar listBar = saveListBar(winW, winH, saves.size(), listOffset);
+            if (ask == Ask::None && listBar.on() && listBar.track.contains(e.button.x, e.button.y)) {
+                startBarDrag(BarDrag::Saves, listBar, e.button.y, nullptr);
+                return;
+            }
             for (const Button& b : layoutPanel(winW, winH, panelSaveMode, ask, saves, listOffset,
                                                panelFrom == Screen::Title, panelCanConfirm())) {
                 if (b.enabled && b.rect.contains(e.button.x, e.button.y)) {
@@ -591,6 +551,10 @@ void App::onMouseButtonDown() {
             const float mx = e.button.x, my = e.button.y;
             const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
             scenarioScroll = sl.first;
+            if (pressListBar(sl.bar, mx, my, [this](float top) {
+                    const ScenarioLayout S = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
+                    scenarioScroll = rowBarFirst(S.bar, (int)ScenarioId::Count, S.visible, top);
+                })) return;
             for (size_t i = 0; i < sl.rows.size(); ++i) {
                 if (sl.rows[i].contains(mx, my)) {
                     scenarioPick = (ScenarioId)(sl.first + (int)i);
@@ -637,10 +601,15 @@ void App::onMouseButtonDown() {
                 }
             }
             const bool onDropdown = hit && (hit->action == Action::PartyDropPick
-                                            || hit->action == Action::PartyDropScroll
+                                            || hit->action == Action::PartyDropBar
                                             || hit->action == Action::PartyDropBack);
             if (partyUi.dropKind != DropKind::None && !onDropdown) {
                 closeDropdown();
+            } else if (hit && hit->action == Action::PartyDropBar) {
+                // The list's scrollbar: param is the first row shown, extra how many rows there are
+                const RowBar dropBar = layoutRowBar(hit->rect.x, hit->rect.y, hit->rect.h, hit->rect.w / 8.0f, hit->extra, DROP_VISIBLE_ROWS, hit->param);
+                const int total = hit->extra;
+                pressListBar(dropBar, mx, my, [this, dropBar, total](float top) { partyUi.dropScroll = clampDropScroll(rowBarFirst(dropBar, total, DROP_VISIBLE_ROWS, top), total); });
             } else if (hit) {
                 if (partyUi.editingName && hit->action != Action::PartyNameField) stopNameEdit();
                 performAction(hit->action, hit->param);
@@ -755,6 +724,7 @@ if (mouseDownOnPanels()) return;
 
 void App::onMouseButtonUp() {
     themeUi.dragRow = -1;
+    barDrag = BarDrag{};
     if (screen == Screen::WorldGen) {
         worldGenUi.dragRow = -1;
         return;
@@ -954,6 +924,11 @@ void App::onMouseButtonUp() {
 }
 
 void App::onMouseMotion() {
+    if (barDrag.kind != BarDrag::None) {
+        if (e.motion.state & SDL_BUTTON_LMASK) moveBarDrag(e.motion.y);
+        else barDrag = BarDrag{};
+        return;
+    }
     if (screen == Screen::Playing && groupsUi.open && groupsUi.tab == 1 && (e.motion.state & SDL_BUTTON_LMASK)) {
         scheduleClick((float)e.motion.x, (float)e.motion.y, false);
         return;

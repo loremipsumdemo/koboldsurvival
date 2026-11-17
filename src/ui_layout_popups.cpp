@@ -126,7 +126,10 @@ StorageLayout layoutStorage(int W, int H, bool output, bool lockToggle, int slot
     const int cols = STORAGE_COLUMNS, rows = (shown + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
     const float gridW = cols * cell + (cols - 1) * cellGap + 2.0f * inset;
     const float gridH = rows * cell + (rows - 1) * cellGap + 2.0f * inset;
-    const float panelW = std::max(gridW, 260.0f * s) + 2.0f * pad;
+    const int totalRows = (std::max(1, slotCount) + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
+    const int scrollMax = std::max(0, totalRows - STORAGE_VISIBLE_ROWS);
+    const float barRoom = scrollMax > 0 ? 12.0f * s : 0.0f;
+    const float panelW = std::max(gridW + barRoom, 260.0f * s) + 2.0f * pad;
     const float hintH = 6.0f * line;
     const float outH = output ? line + gridH + line : 0.0f;
     const float panelH = bar + pad + 2.0f * line + gridH + outH + gap + hintH + gap + btnH + pad;
@@ -138,7 +141,9 @@ StorageLayout layoutStorage(int W, int H, bool output, bool lockToggle, int slot
     L.bar = Rect{ x0, y0, panelW, bar };
     L.name = Rect{ x0 + pad, y0 + bar + pad, panelW - 2.0f * pad, line };
     L.heading = Rect{ x0 + pad, L.name.y + line, panelW - 2.0f * pad, line };
-    L.grid = Rect{ x0 + (panelW - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
+    L.grid = Rect{ x0 + (panelW - barRoom - gridW) * 0.5f, L.heading.y + line, gridW, gridH };
+    L.scrollMax = scrollMax;
+    if (scrollMax > 0) L.barTrack = Rect{ L.grid.x + gridW + 4.0f * s, L.grid.y + inset, 8.0f * s, gridH - 2.0f * inset };
     auto cells = [&](const Rect& grid, std::vector<Rect>& out, int count) {
         for (int i = 0; i < count; ++i) {
             const int col = i % cols, row = i / cols;

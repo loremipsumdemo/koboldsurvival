@@ -141,6 +141,7 @@ void Renderer::drawHoldButton(const Rect& r, const std::string& label, float fil
     drawRectGradientH(r, theme::alpha(theme::PINK_INK, 0.85f), theme::alpha(theme::PINK_DARK, 0.95f));
     if (fill > 0.0f) drawRect(Rect{ r.x, r.y, r.w * fill, r.h }, theme::alpha(theme::PINK, 0.9f));
     drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, theme::PINK);
+    drawBevel(r);
     drawUiTextInBox(label, r, theme::BONE);
 }
 
@@ -150,15 +151,14 @@ void Renderer::drawListButton(const Rect& r, const std::string& label, bool hove
     drawRectGradientH(r, hovered ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.9f),
                       hovered ? theme::alpha(theme::PINK, 0.95f) : theme::alpha(theme::PINK_DARK, 0.95f));
     drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, hovered ? theme::BONE : theme::PINK);
+    drawBevel(r);
     const float tw = listLine(label).w;
     const float th = listTextHeight(label);
     drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, theme::BONE);
 }
 
-void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
-    const float s = uiScale();
-    const bool lit = enabled && hovered;
-    if (lit) noteHover(r);
+void Renderer::drawButtonPlate(const Rect& r, bool enabled, bool lit, float stripeW, bool hot) {
+    if (hot) noteHover(r);
     if (!enabled) {
         drawRect(r, theme::alpha(theme::NIGHT, 0.6f));
     } else if (lit) {
@@ -166,9 +166,83 @@ void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled,
     } else {
         drawRectGradientH(r, rgb255(32, 14, 18, 0.85f), rgb255(22, 10, 12, 0.95f));
     }
-    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
-    const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
-    drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, fg);
+    drawRect(Rect{ r.x, r.y, stripeW, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
+    drawBevel(r, enabled ? 1.0f : 0.4f);
+}
+
+RGBA Renderer::buttonInk(bool enabled, bool lit, bool on) {
+    if (!enabled) return theme::alpha(theme::ASH, 0.5f);
+    if (on) return theme::GOLD;
+    return lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
+}
+
+void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
+    const float s = uiScale();
+    const bool lit = enabled && hovered;
+    drawButtonPlate(r, enabled, lit, 3.0f * s, lit);
+    drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, buttonInk(enabled, lit, false));
+}
+
+void Renderer::drawButton(const Rect& r, const std::string& label, bool enabled) {
+    drawButton(r, label, enabled, mouseOver(r));
+}
+
+void Renderer::drawToggleButton(const Rect& r, const std::string& label, bool on, bool enabled) {
+    const float s = uiScale();
+    const bool hot = enabled && mouseOver(r);
+    const bool lit = enabled && (on || hot);
+    drawButtonPlate(r, enabled, lit, 3.0f * s, hot);
+    drawUiTextInBox(label, Rect{ r.x + 6.0f * s, r.y + 2.0f * s, r.w - 10.0f * s, r.h - 4.0f * s }, buttonInk(enabled, lit, on && enabled));
+}
+
+void Renderer::drawTextIn(const Rect& r, const std::string& text, RGBA tint, TextAlign align, float inset) {
+    const std::string shown = fitTextTip(text, std::max(0.0f, r.w - 2.0f * inset), r);
+    const float tw = listTextWidth(shown), th = listTextHeight("Ag");
+    float x = r.x + inset;
+    if (align == TextAlign::Center) x = r.x + (r.w - tw) * 0.5f;
+    else if (align == TextAlign::Right) x = r.x + r.w - inset - tw;
+    drawListText(shown, x, r.y + (r.h - th) * 0.5f, tint);
+}
+
+void Renderer::drawWindowFrame(const Rect& box, const Rect& title, const Rect& close, const std::string& text, bool scrim) {
+    if (scrim) drawScrim();
+    drawThemedPanel(box);
+    drawTextIn(title, text, theme::GOLD);
+    if (close.w > 0.0f) drawCloseButton(close);
+}
+
+void Renderer::drawRow(const Rect& r, bool hot, bool on) {
+    if (hot) noteHover(r);
+    drawRect(r, on ? theme::ROW_ON : hot ? theme::ROW_HOT : theme::ROW);
+}
+
+void Renderer::drawCheckRow(const Rect& r, const std::string& label, bool on) {
+    const float s = uiScale();
+    const bool hot = mouseOver(r);
+    drawRow(r, hot);
+    const float b = r.h - 6.0f * s;
+    const Rect box{ r.x + 3.0f * s, r.y + 3.0f * s, b, b };
+    drawBorderedBox(box, hot ? RGBA{ 0.42f, 0.28f, 0.13f, 1.0f } : RGBA{ 0.48f, 0.24f, 0.27f, 1.0f }, on ? theme::GOLD : theme::BOX_FILL);
+    drawBevel(box, 0.8f);
+    drawTextIn(Rect{ box.x + box.w + 8.0f * s, r.y, r.x + r.w - (box.x + box.w + 8.0f * s), r.h }, label, on ? theme::TEXT : theme::TEXT_DIM);
+}
+
+void Renderer::drawField(const Rect& r, bool active) {
+    drawRect(r, active ? theme::FIELD_ON : theme::FIELD);
+}
+
+void Renderer::drawBevel(const Rect& r, float k) {
+    const float px = std::max(1.0f, std::round(uiScale()));
+    if (r.w < 4.0f * px || r.h < 4.0f * px || k <= 0.0f) return;
+    drawRectGradient(Rect{ r.x, r.y, r.w, r.h * 0.5f }, RGBA{ 1.0f, 1.0f, 1.0f, 0.10f * k }, RGBA{ 1.0f, 1.0f, 1.0f, 0.0f });
+    drawRectGradient(Rect{ r.x, r.y + r.h * 0.5f, r.w, r.h * 0.5f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }, RGBA{ 0.0f, 0.0f, 0.0f, 0.18f * k });
+    drawRect(Rect{ r.x, r.y, r.w, px }, RGBA{ 1.0f, 1.0f, 1.0f, 0.20f * k });
+    drawRect(Rect{ r.x, r.y + r.h - px, r.w, px }, RGBA{ 0.0f, 0.0f, 0.0f, 0.45f * k });
+}
+
+void Renderer::drawBorderedBox(const Rect& r, RGBA border, RGBA fill) {
+    drawRect(r, border);
+    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f }, fill);
 }
 
 float Renderer::tipWidth(const std::vector<TipRow>& rows) {
@@ -299,9 +373,8 @@ void Renderer::drawCloseButton(const Rect& r) {
     const float s = uiScale();
     const bool hot = r.contains(mouseX_, mouseY_);
     if (hot) noteHover(r);
-    drawRect(r, theme::alpha(theme::PINK, 0.9f));
-    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
-             hot ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.95f));
+    drawBorderedBox(r, theme::alpha(theme::PINK, 0.9f), hot ? theme::alpha(theme::PINK_DEEP, 0.95f) : theme::alpha(theme::PINK_INK, 0.95f));
+    drawBevel(r);
     const float m = r.w * 0.3f, lw = std::max(1.5f, 1.5f * s);
     const float x0 = r.x + m, y0 = r.y + m, x1 = r.x + r.w - m, y1 = r.y + r.h - m;
     auto line = [&](float ax, float ay, float bx, float by) {
@@ -401,7 +474,7 @@ void Renderer::drawFormationMenu(const FormationMenuLayout& L, const std::vector
         const Rect& row = L.rows[r];
         const bool hot = !entry.dots.empty() && row.contains(mx, my);
         if (hot) noteHover(row);
-        drawRect(row, entry.current ? RGBA{ 0.45f, 0.30f, 0.14f, 0.9f } : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.6f });
+        drawRow(row, hot, entry.current);
         if (!entry.dots.empty()) {
             float lowX = entry.dots[0].x, highX = lowX, lowZ = entry.dots[0].z, highZ = lowZ;
             for (const Vec2& d : entry.dots) {
@@ -449,9 +522,9 @@ void Renderer::drawScrim() {
 void Renderer::drawLockButton(const Rect& r, bool locked) {
     const float s = uiScale();
     if (r.contains(mouseX_, mouseY_)) noteHover(r);
-    drawRect(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GOLD);
-    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f },
-             locked ? theme::alpha(theme::PINK_INK, 0.95f) : theme::alpha(theme::SLOT_HOT, 0.95f));
+    drawBorderedBox(r, locked ? theme::alpha(theme::PINK, 0.9f) : theme::GOLD,
+                    locked ? theme::alpha(theme::PINK_INK, 0.95f) : theme::alpha(theme::SLOT_HOT, 0.95f));
+    drawBevel(r);
     const float bw = r.w * 0.52f, bh = r.h * 0.34f;
     const float bx = r.x + (r.w - bw) * 0.5f, by = r.y + r.h * 0.50f;
     drawRect(Rect{ bx, by, bw, bh }, WHITE);
@@ -467,14 +540,9 @@ void Renderer::drawLockButton(const Rect& r, bool locked) {
 void Renderer::drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered) {
     const float s = uiScale();
     const bool lit = enabled && hovered;
-    if (lit) noteHover(r);
-    if (!enabled) drawRect(r, theme::alpha(theme::NIGHT, 0.6f));
-    else if (lit) drawRectGradientH(r, rgb255(52, 30, 16, 0.85f), rgb255(96, 58, 30, 0.95f));
-    else drawRectGradientH(r, rgb255(32, 14, 18, 0.85f), rgb255(22, 10, 12, 0.95f));
-    drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, lit ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.45f : 0.15f));
-    const RGBA fg = !enabled ? theme::alpha(theme::ASH, 0.5f) : lit ? theme::BONE : rgb255(232, 214, 190, 1.0f);
+    drawButtonPlate(r, enabled, lit, 2.0f * s, lit);
     const float tw = listTextWidth(label), th = listTextHeight(label);
-    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, fg);
+    drawListText(label, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, buttonInk(enabled, lit, false));
 }
 
 void Renderer::drawDraggedStack(float mx, float my, int item, int count) {
@@ -539,8 +607,8 @@ void Renderer::drawTitleBar(const Rect& bar, int icon, const std::string& title)
 
 void Renderer::drawCollapseButton(const Rect& r, bool collapsed) {
     if (r.contains(mouseX_, mouseY_)) noteHover(r);
-    drawRect(r, theme::alpha(theme::PINK, 0.9f));
-    drawRect(Rect{ r.x + 1.0f, r.y + 1.0f, r.w - 2.0f, r.h - 2.0f }, theme::alpha(theme::PINK_INK, 0.95f));
+    drawBorderedBox(r, theme::alpha(theme::PINK, 0.9f), theme::alpha(theme::PINK_INK, 0.95f));
+    drawBevel(r);
     const char* sign = collapsed ? "+" : "-";
     const float tw = listTextWidth(sign), th = listTextHeight("Ag");
     drawListText(sign, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);

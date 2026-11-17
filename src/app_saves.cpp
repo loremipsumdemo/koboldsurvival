@@ -326,12 +326,6 @@ bool App::savePanelAction(Action action, int param) {
         pendingDelete.reset();
         deleteHolding = false;
         return true;
-    case Action::ScrollUp:
-        pageUp(listOffset, visibleSaveRows(viewH));
-        return true;
-    case Action::ScrollDown:
-        pageDown(listOffset, saves.size(), visibleSaveRows(viewH));
-        return true;
     case Action::SortName:
     case Action::SortTime: {
         pickSortColumn(sortKey, action == Action::SortName ? SortKey::Name : SortKey::Time, sortAsc);

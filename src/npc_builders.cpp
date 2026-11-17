@@ -2,6 +2,7 @@
 #include "npc_builders.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <unordered_set>
 #include "behavior.h"
 #include "behavior_groups.h"
@@ -570,6 +571,45 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                 ++laid;
                 return true;
             };
+            // Whether a walk from (sx, sz) gets to where goal says, over ground that is open (not closed by a built piece, nor on the
+            // ring, which will be). Out past the claim is far from its middle; in is the Altar's side.
+            auto walkReaches = [&](int sx, int sz, const std::function<bool(int, int)>& goal) {
+                if (!t.walkable(sx, sz) || ringTiles.count(tileKey(sx, sz)) || closed.count(tileKey(sx, sz))) return false;
+                std::unordered_set<long long> seen{ tileKey(sx, sz) };
+                std::queue<std::pair<int, int>> q;
+                q.push({ sx, sz });
+                while (!q.empty()) {
+                    const auto [x, z] = q.front();
+                    q.pop();
+                    if (goal(x, z)) return true;
+                    if (seen.size() > 20000) return true;   // a wide open land: no doubt
+                    const int step[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+                    for (const auto& d : step) {
+                        const int nx = x + d[0], nz = z + d[1];
+                        const long long k = tileKey(nx, nz);
+                        if (seen.count(k) || ringTiles.count(k) || closed.count(k) || !t.walkable(nx, nz)) continue;
+                        seen.insert(k);
+                        q.push({ nx, nz });
+                    }
+                }
+                return false;
+            };
+            // A Gate is worth laying where it can be walked out through: its inner side joins the Altar, its outer side the land beyond
+            auto gateLeads = [&](float gx, float gz, int fx, int fz) {
+                const float far = c.radius + 10.0f;
+                for (float s : { -0.5f, 0.5f }) {
+                    const int ox = (int)std::floor(gx + fx * 1.5f + (fx == 0 ? s : 0.0f)), oz = (int)std::floor(gz + fz * 1.5f + (fz == 0 ? s : 0.0f));
+                    const int ix = (int)std::floor(gx - fx * 1.5f + (fx == 0 ? s : 0.0f)), iz = (int)std::floor(gz - fz * 1.5f + (fz == 0 ? s : 0.0f));
+                    const bool out = walkReaches(ox, oz, [&](int x, int z) {
+                        const float dx = x + 0.5f - c.x, dz = z + 0.5f - c.z;
+                        return dx * dx + dz * dz > far * far;
+                    });
+                    if (!out) continue;
+                    const int ax0 = (int)std::floor(c.x), az0 = (int)std::floor(c.z);
+                    if (walkReaches(ix, iz, [&](int x, int z) { return x == ax0 && z == az0; })) return true;
+                }
+                return false;
+            };
             if (housed && missing > 0 && laidBefore < PERIMETER_MOST_PENDING) {
                 PROFILE_SCOPE("perimeter: laying");
                 // The Gate first: two cells beside each other on a straight run facing the same way, nearest the middle of that side
@@ -592,6 +632,7 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                             cellSpot(wallKind, ax, az, *pr.second.first, x1, z1);
                             cellSpot(wallKind, ax, az, *pr.second.second, x2, z2);
                             snapBuildSpot(gateKind, (x1 + x2) * 0.5f, (z1 + z2) * 0.5f, gx, gz);
+                            if (!gateLeads(gx, gz, f[0], f[1])) continue;   // not where it would get out
                             if (place(gateKind, gx, gz, facingYaw(f[0], f[1]))) {
                                 ++gatesIn;
                                 break;
@@ -599,7 +640,9 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
                         }
                     }
                 }
+                // No walls before a Gate that can be walked out of: they would only wall the faction in
                 for (const RingCell& cell : ring) {
+                    if (gatesIn == 0) break;
                     if (laid >= PERIMETER_MOST_LAID || laidBefore + laid >= PERIMETER_MOST_PENDING) break;
                     float x = 0.0f, z = 0.0f;
                     cellSpot(wallKind, ax, az, cell, x, z);

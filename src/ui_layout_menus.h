@@ -20,8 +20,7 @@ struct ScenarioLayout {
     std::vector<Rect> rows;
     int first = 0;
     int visible = 0;
-    Rect track;
-    Rect thumb;
+    RowBar bar;
     Rect back;
     Rect next;
 };
@@ -48,12 +47,7 @@ inline ScenarioLayout layoutScenario(int W, int H, int count, int scroll) {
     for (int i = L.first; i < count && i < L.first + L.visible; ++i) {
         L.rows.push_back(Rect{ L.list.x, listTop + (i - L.first) * (rowH + rowGap), rowW, rowH });
     }
-    if (scrolls) {
-        const float shownH = L.visible * (rowH + rowGap) - rowGap;
-        L.track = Rect{ L.list.x + L.list.w - scrollW, listTop, scrollW, shownH };
-        const int maxFirst = count - L.visible;
-        L.thumb = scrollThumb(L.track, (float)L.visible / (float)count, 16.0f * s, (float)L.first / (float)std::max(1, maxFirst));
-    }
+    if (scrolls) L.bar = layoutRowBar(L.list.x + L.list.w - scrollW, listTop, L.visible * (rowH + rowGap) - rowGap, s, count, L.visible, L.first);
     return L;
 }
 

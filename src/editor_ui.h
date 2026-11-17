@@ -27,6 +27,7 @@ inline constexpr int WORLD_GEN_ROW_COUNT = (int)(sizeof(WORLD_GEN_ROWS) / sizeof
 // The Theme tab, the same on the World Generation screen and in the level editor
 struct ThemeUi {
     int scroll = 0;
+    float dragX = 0.0f, dragW = 1.0f;   // the control being dragged: where it starts and how wide it is
     int openColor = -1;   // the color row showing its red, green and blue bars
     int dragRow = -1;
     int dragChannel = -1;
@@ -40,6 +41,7 @@ struct ThemeLayout {
     Rect presetDown, presetBox, presetUp;
     std::vector<ThemeLine> lines;
     int total = 0, shown = 0, first = 0;
+    RowBar bar;
 };
 ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float scale);
 
@@ -66,6 +68,7 @@ struct WorldGenLayout {
     std::vector<Rect> bars, stepDown, stepUp;
     Rect preview, previewLabel, mapsBox, generate, proceed, back;
     std::vector<Rect> mapRows, mapDelete;  // a map's row, and the X beside it that asks to delete it
+    RowBar mapBar;
 };
 
 // The question asked before a map is deleted: its box, the Delete button held down to delete, and Cancel
@@ -108,6 +111,7 @@ struct SpawnPickerLayout {
     Rect stackLabel, stackDown, stackBox, stackUp, stackOne, stackMax;
     Rect listArea;
     std::vector<Rect> rows;
+    RowBar bar;   // set by App::pickerView, which knows how many entries the tab has
 };
 SpawnPickerLayout layoutSpawnPicker(const Rect& area, float scale);
 
@@ -216,6 +220,8 @@ struct BlueprintLayout {
     Rect save, load, clear, exit, status;
     Rect list;                      // the plans to open, under the panel
     std::vector<Rect> rows, rowToggle, rowDelete;
+    RowBar listBar;
+    int listShown = 0;
     Rect confirm, confirmText, hold, cancel;   // asking whether to overwrite a saved plan, under the panel
 };
 BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui);
@@ -223,9 +229,10 @@ BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui);
 // The Build tab's Building Blueprint popout (app_plan_popup.cpp): the saved plans in a scrolling list on the left, and on the right
 // the selected one drawn as a model, what it is and costs, what to make it of, and the button that takes it up to be laid.
 struct PlanPopupLayout {
-    Rect panel, title, close, list, track, thumb, preview, info, place;
+    Rect panel, title, close, list, preview, info, place;
     Rect mats[4];
     std::vector<Rect> rows;
     int shown = 0, first = 0, total = 0;
+    RowBar bar;
 };
 PlanPopupLayout layoutPlanPopup(int W, int H, int count, int scroll);

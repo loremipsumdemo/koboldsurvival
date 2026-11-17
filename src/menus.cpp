@@ -68,7 +68,7 @@ std::optional<MapChoice> findMap(const std::vector<MapChoice>& maps, const std::
 
 size_t visibleSaveRows(int H) {
     const float s = uiScaleFor(H);
-    const float fixed = 246.0f * s;
+    const float fixed = 202.0f * s;
     const float pitch = 32.0f * s;
     const float space = H - 16.0f * s - fixed;
     size_t rows = space > 0.0f ? (size_t)(space / pitch) : 0;
@@ -78,7 +78,7 @@ size_t visibleSaveRows(int H) {
 PanelGeometry panelGeometry(int W, int H) {
     const float s = uiScaleFor(H);
     const float btnH = 44.0f * s, gap = 8.0f * s, rowGap = 4.0f * s;
-    const float pad = 16.0f * s, hdrH = 30.0f * s, band = 24.0f * s;
+    const float pad = 16.0f * s, hdrH = 30.0f * s;
     const float rowH = 28.0f * s, pitch = rowH + rowGap;
     const float pw = std::min(1240.0f * s, (float)W - 16.0f * s);
     const float innerX = (W - pw) * 0.5f + pad, innerW = pw - 2.0f * pad;
@@ -86,15 +86,13 @@ PanelGeometry panelGeometry(int W, int H) {
     const float sideX = innerX + listW + colGap, sideW = innerW - listW - colGap;
     // The picture is 16:9, and below it a name line and five detail lines
     const float previewH = sideW * 9.0f / 16.0f, detailsH = 7.0f * 26.0f * s;
-    const float listH = hdrH + band + (float)visibleSaveRows(H) * pitch + band;
+    const float listH = hdrH + 4.0f * s + (float)visibleSaveRows(H) * pitch;
     const float contentH = std::max(listH, previewH + gap + detailsH);
     const float panelH = 56.0f * s + btnH + gap + contentH + btnH + pad;
     const float px = (W - pw) * 0.5f, py = std::max(8.0f * s, (H - panelH) * 0.5f);
     const float nameY = py + 56.0f * s;
     const float headerY = nameY + btnH + gap;
-    const float aboveY = headerY + hdrH;
-    const float listTop = aboveY + band;
-    const float belowY = listTop + (float)visibleSaveRows(H) * pitch;
+    const float listTop = headerY + hdrH + 4.0f * s;
     const float closeY = headerY + contentH;
     const float bottom = closeY + btnH + pad;
 
@@ -110,9 +108,7 @@ PanelGeometry panelGeometry(int W, int H) {
     g.detailsW = sideW;
     g.headerY = headerY;
     g.headerH = hdrH;
-    g.aboveBand = Rect{ innerX, aboveY, listW, band };
     g.listTop = listTop;
-    g.belowBand = Rect{ innerX, belowY, listW, band };
     g.closeY = closeY;
     g.btnH = btnH;
     g.rowH = rowH;
@@ -134,6 +130,14 @@ DialogGeometry questionGeometry(int W, int H) {
     return d;
 }
 
+RowBar saveListBar(int W, int H, size_t count, size_t offset) {
+    const PanelGeometry g = panelGeometry(W, H);
+    const float s = uiScaleFor(H);
+    const size_t rows = visibleSaveRows(H);
+    const size_t first = std::min(offset, count > rows ? count - rows : 0);
+    return layoutRowBar(g.listX + g.listW - 8.0f * s, g.listTop, (float)rows * g.rowPitch - (g.rowPitch - g.rowH), s, (int)count, (int)rows, (int)first);
+}
+
 std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
                                 const std::vector<SaveSummary>& saves, size_t listOffset, bool fromTitle, bool canConfirm) {
     std::vector<Button> out;
@@ -153,7 +157,8 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     }
 
     PanelGeometry g = panelGeometry(W, H);
-    const float x = g.listX, w = g.listW;
+    const RowBar bar = saveListBar(W, H, saves.size(), listOffset);
+    const float x = g.listX, w = g.listW - (bar.on() ? 12.0f * uiScaleFor(H) : 0.0f);
 
     out.push_back(saveMode ? Button{ lang("UILABEL_SAVE"), g.sideBtn, Action::ConfirmName, canConfirm }
                            : Button{ lang("UILABEL_LOAD"), g.sideBtn, Action::LoadPicked, canConfirm });
@@ -165,7 +170,6 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
     size_t first = std::min(listOffset, saves.size());
     size_t last = std::min(first + rows, saves.size());
 
-    if (first > 0) out.push_back(Button{ "", g.aboveBand, Action::ScrollUp });
     const float uiScale = H / 720.0f;
     const float delW = 84.0f * uiScale, delGap = 8.0f * uiScale;
     float y = g.listTop;
@@ -174,7 +178,6 @@ std::vector<Button> layoutPanel(int W, int H, bool saveMode, Ask ask,
         out.push_back(Button{ lang("UILABEL_DELETE"), Rect{ x + w - delW, y, delW, g.rowH }, Action::DeleteSave, true, (int)i });
         y += g.rowPitch;
     }
-    if (last < saves.size()) out.push_back(Button{ "", g.belowBand, Action::ScrollDown });
 
     out.push_back(Button{ fromTitle ? lang("UILABEL_RETURN_TO_TITLE") : lang("UILABEL_CLOSE"),
                           Rect{ g.box.x + g.pad, g.closeY, g.box.w - 2.0f * g.pad, g.btnH },

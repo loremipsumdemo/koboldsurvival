@@ -49,6 +49,7 @@ struct GroupsLayout {
     Rect head, rules, addTask;
     std::vector<GroupsRow> rows;
     int firstRow = 0, ruleRows = 0;
+    RowBar entryBar, ruleBar;
 };
 
 // The refs down the left list: the two Default Behaviors, then every group
@@ -68,8 +69,7 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
     L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
     float y = L.box.y + pad;
-    L.title = Rect{ x, y, w - line, line };
-    L.close = Rect{ x + w - line, y, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     const float tabW = 120.0f * s;
     L.tabSchedule = Rect{ L.close.x - gap - tabW, y, tabW, line };
     L.tabBehavior = Rect{ L.tabSchedule.x - gap - tabW, y, tabW, line };
@@ -84,8 +84,9 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
     L.list = Rect{ x, y, leftW, std::max(0.0f, bottom - btnH - gap - y) };
     L.entryRows = std::max(0, (int)std::floor((L.list.h + rowGap) / (rowH + rowGap) + 0.001f));
     L.firstEntry = std::clamp(refScroll, 0, std::max(0, refCount - L.entryRows));
+    L.entryBar = layoutRowBar(L.list.x + L.list.w - 8.0f * s, L.list.y, L.entryRows * (rowH + rowGap) - rowGap, s, refCount, L.entryRows, L.firstEntry);
     for (int i = L.firstEntry; i < refCount && i < L.firstEntry + L.entryRows; ++i) {
-        L.entries.push_back(Rect{ L.list.x, L.list.y + (i - L.firstEntry) * (rowH + rowGap), L.list.w, rowH });
+        L.entries.push_back(Rect{ L.list.x, L.list.y + (i - L.firstEntry) * (rowH + rowGap), L.list.w - (L.entryBar.on() ? 12.0f * s : 0.0f), rowH });
     }
 
     // Right: the picked list's name, its tasks (or the tasks that may be added), and Add Task
@@ -96,9 +97,11 @@ GroupsLayout layoutGroups(int W, int H, int refCount, int refScroll, int rowCoun
     L.ruleRows = std::max(0, (int)std::floor((L.rules.h + rowGap) / (rowH + rowGap) + 0.001f));
     L.firstRow = std::clamp(rowScroll, 0, std::max(0, rowCount - L.ruleRows));
     const float b = rowH - 6.0f * s;
+    L.ruleBar = layoutRowBar(L.rules.x + L.rules.w - 8.0f * s, L.rules.y, L.ruleRows * (rowH + rowGap) - rowGap, s, rowCount, L.ruleRows, L.firstRow);
+    const float ruleW = L.rules.w - (L.ruleBar.on() ? 12.0f * s : 0.0f);
     for (int i = L.firstRow; i < rowCount && i < L.firstRow + L.ruleRows; ++i) {
         GroupsRow r;
-        r.row = Rect{ L.rules.x, L.rules.y + (i - L.firstRow) * (rowH + rowGap), L.rules.w, rowH };
+        r.row = Rect{ L.rules.x, L.rules.y + (i - L.firstRow) * (rowH + rowGap), ruleW, rowH };
         r.toggle = Rect{ r.row.x + 3.0f * s, r.row.y + 3.0f * s, b, b };
         r.remove = Rect{ r.row.x + r.row.w - b - 3.0f * s, r.row.y + 3.0f * s, b, b };
         r.down = Rect{ r.remove.x - b - 3.0f * s, r.remove.y, b, b };
@@ -117,15 +120,25 @@ struct SchedLayout {
     float labelW = 0.0f, cellW = 0.0f, rowH = 0.0f, rowGap = 0.0f, top = 0.0f, x = 0.0f, gridX = 0.0f;
     Rect area;
     int first = 0, rows = 0;
+    RowBar bar;
 };
 
 SchedLayout layoutSchedule(const GroupsLayout& L, float s, int rowCount, int scroll) {
     SchedLayout S;
     const float btnH = 34.0f * s, gap = 8.0f * s;
     S.x = L.list.x;
-    const float w = L.box.x + L.box.w - 14.0f * s - S.x;
+    float w = L.box.x + L.box.w - 14.0f * s - S.x;
     const float y0 = L.list.y;
+    const float fullW = w;
     for (int a = 0; a < ACTIVITY_COUNT; ++a) S.paint[a] = Rect{ S.x + a * (130.0f * s + gap), y0, 130.0f * s, btnH };
+    S.rowH = 44.0f * s;
+    S.rowGap = 4.0f * s;
+    {
+        // Whether the rows fit decides whether the bar takes room from the hours
+        const float top0 = y0 + btnH + gap * 1.5f + 22.0f * s + gap, bottom0 = L.box.y + L.box.h - 14.0f * s;
+        const int rows0 = std::max(1, (int)std::floor((std::max(0.0f, bottom0 - top0) + S.rowGap) / (S.rowH + S.rowGap)));
+        if (rowCount > rows0) w -= 12.0f * s;
+    }
     S.labelW = std::min(250.0f * s, w * 0.3f);
     S.gridX = S.x + S.labelW + gap;
     S.cellW = std::floor((S.x + w - S.gridX) / (float)SCHEDULE_HOURS);
@@ -139,6 +152,7 @@ SchedLayout layoutSchedule(const GroupsLayout& L, float s, int rowCount, int scr
     S.area = Rect{ S.x, S.top, w, std::max(0.0f, bottom - S.top) };
     S.rows = std::max(1, (int)std::floor((S.area.h + S.rowGap) / (S.rowH + S.rowGap)));
     S.first = std::clamp(scroll, 0, std::max(0, rowCount - S.rows));
+    S.bar = layoutRowBar(S.x + fullW - 8.0f * s, S.top, S.rows * (S.rowH + S.rowGap) - S.rowGap, s, rowCount, S.rows, S.first);
     return S;
 }
 Rect schedRow(const SchedLayout& S, int visible) {
@@ -263,15 +277,37 @@ bool App::pressOnBehaviorGroups() {
     const std::vector<AddRow> adds = addRows(options);
     const int rowCount = groupsUi.adding ? (int)adds.size() : (int)list.size();
     const GroupsLayout L = layoutGroups(winW, winH, (int)refs.size(), groupsUi.refScroll, rowCount, groupsUi.rowScroll);
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    if (dismissAt(L.box, L.close, x, y)) {
         groupsUi = BehaviorGroupsUi{};
         playSfx(Sfx::UiBack);
         return true;
     }
+    // The lists as they are now, for a scrollbar being dragged
+    const auto lists = [this]() {
+        BehaviorGroups& gg = groupsShown();
+        if (!validGroupRef(gg, groupsUi.ref)) groupsUi.ref = 0;
+        const int refCount = (int)groupRefs(gg).size();
+        const int rows = groupsUi.adding ? (int)addRows(groupTaskOptions()).size() : (int)groupList(gg, groupsUi.ref)->size();
+        return std::make_pair(layoutGroups(winW, winH, refCount, groupsUi.refScroll, rows, groupsUi.rowScroll), std::make_pair(refCount, rows));
+    };
     if (groupsUi.tab == 1) {
+        const int rowTotal = 2 + (int)g.groups.size();
+        const SchedLayout S = layoutSchedule(L, uiScaleFor((float)winH), rowTotal, groupsUi.schedScroll);
+        if (pressListBar(S.bar, x, y, [this, lists](float top) {
+                const SchedLayout T = layoutSchedule(lists().first, uiScaleFor((float)winH), 2 + (int)groupsShown().groups.size(), groupsUi.schedScroll);
+                groupsUi.schedScroll = rowBarFirst(T.bar, 2 + (int)groupsShown().groups.size(), T.rows, top);
+            })) return true;
         if (!groupsUi.readOnly) scheduleClick(x, y, true);
         return true;
     }
+    if (pressListBar(L.entryBar, x, y, [this, lists](float top) {
+            const auto [M, counts] = lists();
+            groupsUi.refScroll = rowBarFirst(M.entryBar, counts.first, M.entryRows, top);
+        })) return true;
+    if (pressListBar(L.ruleBar, x, y, [this, lists](float top) {
+            const auto [M, counts] = lists();
+            groupsUi.rowScroll = rowBarFirst(M.ruleBar, counts.second, M.ruleRows, top);
+        })) return true;
     for (size_t i = 0; i < L.entries.size(); ++i) {
         if (!L.entries[i].contains(x, y)) continue;
         groupsUi.ref = refs[(size_t)L.firstEntry + i];
@@ -410,22 +446,20 @@ void App::drawBehaviorGroups() {
     const float s = uiScaleFor((float)winH);
     const float th = renderer.listTextHeight("Ag");
     auto mid = [&](const Rect& r) { return r.y + (r.h - th) * 0.5f; };
-    const RGBA rowBg{ 0.20f, 0.08f, 0.10f, 0.9f }, rowHot{ 0.32f, 0.13f, 0.16f, 0.95f }, picked = theme::alpha(theme::GOLD_DEEP, 0.9f);
+    const RGBA rowBg = theme::ROW, rowHot = theme::ROW_HOT, picked = theme::ROW_ON;
 
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
     std::string windowTitle = lang(groupsUi.scheduleOnly ? "UILABEL_GROUPS_TAB_SCHEDULE" : "UILABEL_GROUPS_TITLE");
     if (groupsUi.readOnly) windowTitle += ": " + factionName(groupsUi.faction) + " (" + lang("UILABEL_VIEW_ONLY") + ")";
-    renderer.drawListText(fitTo(renderer, windowTitle, L.title.w), L.title.x, mid(L.title), theme::GOLD);
+    renderer.drawWindowFrame(L.box, L.title, L.close, windowTitle);
     auto refName = [&](int ref) {
         if (!groupsUi.readOnly || ref < 0) return groupRefName(ref);
         return ref == 0 ? std::string(lang("UILABEL_NPC_GROUP_DEFAULT")) : langf("UILABEL_NPC_GROUP_IRREGULAR", { std::to_string(ref) });
     };
-    renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
     if (groupsUi.tab == 1) {
         const int rowTotal = 2 + (int)g.groups.size();   // the global schedule, each group, then the Perimeter Closed hours
         const SchedLayout S = layoutSchedule(L, s, rowTotal, groupsUi.schedScroll);
         groupsUi.schedScroll = S.first;
+        drawListBar(S.bar);
         for (int a = 0; a < ACTIVITY_COUNT; ++a) {
             const bool picked = groupsUi.paint == a;
             renderer.drawRect(Rect{ S.paint[a].x - 3.0f * s, S.paint[a].y - 3.0f * s, S.paint[a].w + 6.0f * s, S.paint[a].h + 6.0f * s },
@@ -454,7 +488,7 @@ void App::drawBehaviorGroups() {
                 const Rect tg = schedToggle(S, i, s);
                 renderer.drawRect(tg, own ? RGBA{ 0.30f, 0.70f, 0.32f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.32f, 1.0f });
                 const float kn = tg.h - 6.0f * s;
-                renderer.drawRect(Rect{ own ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+                renderer.drawRect(Rect{ own ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, theme::TEXT);
                 renderer.noteTip(lang("UILABEL_SCHEDULE_PERIMETER_TIP"), Rect{ row.x, row.y, S.labelW, row.h });
                 for (int h = 0; h < SCHEDULE_HOURS; ++h) {
                     const Rect c = schedCell(S, i, h);
@@ -479,7 +513,7 @@ void App::drawBehaviorGroups() {
                 const Rect tg = schedToggle(S, i, s);
                 renderer.drawRect(tg, sch.override ? RGBA{ 0.30f, 0.70f, 0.32f, 1.0f } : RGBA{ 0.30f, 0.30f, 0.32f, 1.0f });
                 const float kn = tg.h - 6.0f * s;
-                renderer.drawRect(Rect{ sch.override ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+                renderer.drawRect(Rect{ sch.override ? tg.x + tg.w - kn - 3.0f * s : tg.x + 3.0f * s, tg.y + 3.0f * s, kn, kn }, theme::TEXT);
                 renderer.noteTip(lang("UILABEL_SCHEDULE_OVERRIDE"), tg);
             }
             const Schedule& shown = live ? sch : g.schedule;
@@ -494,6 +528,7 @@ void App::drawBehaviorGroups() {
 
     // The lists to pick from
     renderer.drawRect(L.list, theme::alpha(theme::WELL, 0.6f));
+    drawListBar(L.entryBar);
     for (size_t i = 0; i < L.entries.size(); ++i) {
         const Rect& r = L.entries[i];
         const int ref = refs[(size_t)L.firstEntry + i];
@@ -506,8 +541,8 @@ void App::drawBehaviorGroups() {
         if (isDefault) renderer.noteTip(lang(ref == GROUP_REF_MILITARY ? "UILABEL_GROUP_MILITARY_TIP" : "UILABEL_GROUP_CITIZEN_TIP"), r);
     }
     if (!groupsUi.readOnly) {
-        renderer.drawButton(L.addGroup, lang("UILABEL_GROUP_ADD"), (int)g.groups.size() < BEHAVIOR_GROUP_MAX, L.addGroup.contains(mouseX, mouseY));
-        renderer.drawButton(L.removeGroup, lang("UILABEL_GROUP_REMOVE"), groupsUi.ref > 0, L.removeGroup.contains(mouseX, mouseY));
+        renderer.drawButton(L.addGroup, lang("UILABEL_GROUP_ADD"), (int)g.groups.size() < BEHAVIOR_GROUP_MAX);
+        renderer.drawButton(L.removeGroup, lang("UILABEL_GROUP_REMOVE"), groupsUi.ref > 0);
     }
 
     // The picked list
@@ -515,6 +550,7 @@ void App::drawBehaviorGroups() {
     if (groupsUi.adding) head = langf("UILABEL_GROUP_ADDING", { head });
     renderer.drawListText(fitTo(renderer, head, L.head.w), L.head.x, mid(L.head), theme::GOLD);
     renderer.drawRect(L.rules, theme::alpha(theme::WELL, 0.6f));
+    drawListBar(L.ruleBar);
     for (size_t i = 0; i < L.rows.size(); ++i) {
         const GroupsRow& r = L.rows[i];
         const size_t row = (size_t)L.firstRow + i;
@@ -526,7 +562,7 @@ void App::drawBehaviorGroups() {
             renderer.drawListText(lang(TASK_CATEGORY_KEYS[(int)c]), r.row.x + 6.0f * s, mid(r.row), theme::GOLD);
             bool missing = false;
             for (const AddRow& o : adds) missing = missing || (o.option >= 0 && o.category == c && !options[(size_t)o.option].have);
-            renderer.drawButton(r.addAll, lang("UILABEL_GROUP_ADD_ALL"), missing, r.addAll.contains(mouseX, mouseY));
+            renderer.drawButton(r.addAll, lang("UILABEL_GROUP_ADD_ALL"), missing);
             renderer.noteTip(langf("UILABEL_GROUP_ADD_ALL_TIP", { lang(TASK_CATEGORY_KEYS[(int)c]) }), r.addAll);
             continue;
         }
@@ -539,14 +575,14 @@ void App::drawBehaviorGroups() {
             continue;
         }
         const BehaviorRule& rule = list[row];
-        renderer.drawButton(r.toggle, rule.on ? "+" : "", true, r.toggle.contains(mouseX, mouseY));
+        renderer.drawButton(r.toggle, rule.on ? "+" : "", true);
         const float tx = r.toggle.x + r.toggle.w + 6.0f * s;
         const RGBA tint = !rule.on ? theme::TEXT_DIM : rule.kind == BehaviorKind::Group ? theme::GOLD : PLAIN;
         renderer.drawListText(fitTo(renderer, behaviorName(rule), r.up.x - 6.0f * s - tx), tx, mid(r.row), tint);
         if (!groupsUi.readOnly) {
-            renderer.drawButton(r.up, "^", row > 0, r.up.contains(mouseX, mouseY));
-            renderer.drawButton(r.down, "v", row + 1 < list.size(), r.down.contains(mouseX, mouseY));
-            renderer.drawButton(r.remove, "x", true, r.remove.contains(mouseX, mouseY));
+            renderer.drawButton(r.up, "^", row > 0);
+            renderer.drawButton(r.down, "v", row + 1 < list.size());
+            renderer.drawButton(r.remove, "x", true);
         }
         renderer.noteTip(describeBehavior(rule), Rect{ tx, r.row.y, r.up.x - tx, r.row.h });
     }

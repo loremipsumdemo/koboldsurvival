@@ -56,16 +56,12 @@ bool App::pressOnMaterialAsk() {
 void App::drawMaterialAsk() {
     if (!session.askMaterial) return;
     const MaterialAskLayout L = layoutMaterialAsk(winW, winH);
-    const float th = renderer.listTextHeight("Ag");
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(langf("UILABEL_MATERIAL_TITLE", { lang(propInfo(session.askKind).nameKey) }), L.title.x,
-                          L.title.y + (L.title.h - th) * 0.5f, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
+    renderer.drawWindowFrame(L.box, L.title, Rect{}, langf("UILABEL_MATERIAL_TITLE", { lang(propInfo(session.askKind).nameKey) }));
     for (int i = 0; i < (int)BuildMaterial::Count; ++i) {
         const BuildMaterial m = MATERIAL_TIERS[i];
-        renderer.drawButton(L.choice[i], lang(materialNameKey(m)), true, L.choice[i].contains(mouseX, mouseY));
+        renderer.drawButton(L.choice[i], lang(materialNameKey(m)), true);
     }
-    renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
+    renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true);
 }
 
 // The floor looked at. Auto: the floor of the unit the camera follows, and with the camera moved by hand, no higher than
@@ -581,14 +577,10 @@ bool App::pressOnCancelAsk() {
 void App::drawCancelAsk() {
     if (!session.askCancel) return;
     const CancelAskLayout L = layoutCancelAsk(winW, winH, cancelAskTextWidth());
-    const float th = renderer.listTextHeight("Ag");
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(langf("UILABEL_CANCEL_ALL_TITLE", { std::to_string(session.cancelList.size()) }), L.title.x,
-                          L.title.y + (L.title.h - th) * 0.5f, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
-    renderer.drawListText(lang("UILABEL_CANCEL_ALL_NOTE"), L.note.x, L.note.y + (L.note.h - th) * 0.5f, RGBA{ 0.8f, 0.8f, 0.8f, 1.0f });
-    renderer.drawButton(L.yes, lang("UILABEL_CANCEL_ALL_YES"), true, L.yes.contains(mouseX, mouseY));
-    renderer.drawButton(L.no, lang("UILABEL_CANCEL_ALL_NO"), true, L.no.contains(mouseX, mouseY));
+    renderer.drawWindowFrame(L.box, L.title, Rect{}, langf("UILABEL_CANCEL_ALL_TITLE", { std::to_string(session.cancelList.size()) }));
+    renderer.drawTextIn(L.note, lang("UILABEL_CANCEL_ALL_NOTE"), theme::TEXT_DIM);
+    renderer.drawButton(L.yes, lang("UILABEL_CANCEL_ALL_YES"), true);
+    renderer.drawButton(L.no, lang("UILABEL_CANCEL_ALL_NO"), true);
 }
 
 // Deconstruct and Cancel Construction: what is on the tiles of the dragged area, on every floor

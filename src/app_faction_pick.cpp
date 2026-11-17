@@ -26,8 +26,7 @@ FactionPickLayout layoutFactionPick(int W, int H) {
     const float w = cols * cellW + (cols - 1) * gap + 2.0f * pad;
     const float h = fixedH + rows * cellH + (rows - 1) * gap;
     L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
-    L.title = Rect{ L.box.x + pad, L.box.y + pad, w - 2.0f * pad - line, line };
-    L.close = Rect{ L.box.x + w - pad - line, L.box.y + pad, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     L.field = Rect{ L.box.x + pad, L.title.y + line + gap, w - 2.0f * pad, line };
     const float top = L.field.y + line + gap;
     for (int i = 0; i < PALETTE_COUNT; ++i) {
@@ -53,7 +52,7 @@ void popFrontUtf8(std::string& s) {
 // Dark text on a light color, light on a dark one
 RGBA textOn(const FactionColor& c) {
     const float lum = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
-    return lum > 0.58f ? RGBA{ 0.07f, 0.07f, 0.07f, 1.0f } : RGBA{ 1.0f, 1.0f, 1.0f, 1.0f };
+    return lum > 0.58f ? RGBA{ 0.07f, 0.07f, 0.07f, 1.0f } : theme::TEXT;
 }
 }
 
@@ -96,7 +95,7 @@ bool App::pressOnFactionPick() {
         return true;
     }
     stopFactionNameEdit();
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    if (dismissAt(L.box, L.close, x, y)) {
         factionPickOpen = false;
         playSfx(Sfx::UiBack);
         return true;
@@ -121,11 +120,9 @@ void App::drawFactionPick() {
     if (!factionPickOpen || screen != Screen::PartySetup) return;
     const FactionPickLayout L = layoutFactionPick(winW, winH);
     const float s = uiScaleFor((float)winH), textH = renderer.listTextHeight("Ag");
-    const RGBA gold{ 1.0f, 0.78f, 0.30f, 1.0f }, dim{ 0.80f, 0.72f, 0.64f, 1.0f };
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(renderer.fitListText(lang("UILABEL_FACTION_COLOR_TITLE"), L.title.w), L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
-    renderer.drawRect(L.field, factionNameEditing ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+    const RGBA gold = theme::GOLD, dim = theme::TEXT_DIM;
+    renderer.drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_FACTION_COLOR_TITLE"));
+    renderer.drawField(L.field, factionNameEditing);
     const float fieldPad = 8.0f * s;
     if (factionNameText.empty() && !factionNameEditing) {
         const FactionDef* mine = factionPick >= 0 ? paletteFaction(factionPick) : nullptr;
@@ -134,7 +131,7 @@ void App::drawFactionPick() {
     } else {
         std::string shown = factionNameText + (factionNameEditing && (SDL_GetTicks() / 500) % 2 ? "|" : "");
         while (utf8Length(shown) > 1 && renderer.listTextWidth(shown) > L.field.w - 2.0f * fieldPad) popFrontUtf8(shown);   // the end being typed stays in view
-        renderer.drawListText(shown, L.field.x + fieldPad, L.field.y + (L.field.h - textH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        renderer.drawListText(shown, L.field.x + fieldPad, L.field.y + (L.field.h - textH) * 0.5f, theme::TEXT);
     }
     const float mx = (float)mouseX, my = (float)mouseY;
     int hover = -1;
@@ -156,7 +153,7 @@ void App::drawFactionPick() {
         renderer.drawListText(ln, L.hint.x, hy, dim);
         hy += textH;
     }
-    renderer.drawButton(L.random, lang("UILABEL_FACTION_COLOR_RANDOM"), true, factionPick < 0 || L.random.contains(mx, my));
+    renderer.drawToggleButton(L.random, lang("UILABEL_FACTION_COLOR_RANDOM"), factionPick < 0);
     if (hover < 0) return;
 
     // Who the one under the pointer is allied with, and who it is at war with, from its place on the loop
@@ -172,8 +169,8 @@ void App::drawFactionPick() {
     std::vector<std::pair<std::string, RGBA>> lines;
     lines.push_back({ lang(f->nameKey), gold });
     const float textW = 260.0f * s;
-    for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ALLIES", { allies }), textW)) lines.push_back({ ln, RGBA{ 0.5f, 0.95f, 0.5f, 1.0f } });
-    for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ENEMIES", { enemies }), textW)) lines.push_back({ ln, RGBA{ 1.0f, 0.42f, 0.42f, 1.0f } });
+    for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ALLIES", { allies }), textW)) lines.push_back({ ln, theme::OK_TEXT });
+    for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ENEMIES", { enemies }), textW)) lines.push_back({ ln, theme::BAD });
     const float pad = 8.0f * s;
     const float bw = textW + 2.0f * pad, bh = (float)lines.size() * textH + 2.0f * pad;
     const float bx = std::clamp(mx + 18.0f * s, 4.0f, std::max(4.0f, (float)winW - bw - 4.0f));

@@ -58,6 +58,15 @@ bool App::pressOnAltar() {
     const float x = e.button.x, y = e.button.y;
     const std::array<std::vector<ObjectId>, 3> cols = altarColumns();
     const AltarLayout L = layoutAltar(winW, winH, { (int)cols[0].size(), (int)cols[1].size(), (int)cols[2].size() }, altar.scroll, 3);
+    if (e.button.button == SDL_BUTTON_LEFT && altar.menuUnit == NO_OBJECT) {
+        for (int c = 0; c < 3; ++c) {
+            if (pressListBar(L.bars[(size_t)c], x, y, [this, c](float top) {
+                    const std::array<std::vector<ObjectId>, 3> now = altarColumns();
+                    const AltarLayout M = layoutAltar(winW, winH, { (int)now[0].size(), (int)now[1].size(), (int)now[2].size() }, altar.scroll, 3);
+                    altar.scroll[(size_t)c] = rowBarFirst(M.bars[(size_t)c], (int)now[(size_t)c].size(), M.visible[(size_t)c], top);
+                })) return true;
+        }
+    }
     if (altar.readOnly) {
         if (e.button.button == SDL_BUTTON_LEFT && (L.close.contains(x, y) || L.cancel.contains(x, y) || !L.box.contains(x, y))) {
             altar = AltarUi{};
@@ -276,6 +285,15 @@ bool App::pressOnManageSquads() {
     const std::array<std::vector<ObjectId>, 2> cols = squadsColumns();
     const SquadsLayout SL = layoutSquads(winW, winH, { (int)cols[0].size(), (int)cols[1].size() }, squadsUi.scroll);
     const AltarLayout& L = SL.roster;
+    if (e.button.button == SDL_BUTTON_LEFT) {
+        for (int c = 0; c < 2; ++c) {
+            if (pressListBar(L.bars[(size_t)c], x, y, [this, c](float top) {
+                    const std::array<std::vector<ObjectId>, 2> now = squadsColumns();
+                    const SquadsLayout M = layoutSquads(winW, winH, { (int)now[0].size(), (int)now[1].size() }, squadsUi.scroll);
+                    squadsUi.scroll[(size_t)c] = rowBarFirst(M.roster.bars[(size_t)c], (int)now[(size_t)c].size(), M.roster.visible[(size_t)c], top);
+                })) return true;
+        }
+    }
     if (e.button.button == SDL_BUTTON_RIGHT) {
         // A right-click on a portrait renames that unit, as in the roster
         for (int c = 0; c < 2; ++c) {
@@ -475,6 +493,14 @@ bool App::pressOnGhosts() {
     const std::vector<ItemStack> bones = ghostBones();
     const std::vector<size_t> order = ghostOrder();
     const AltarLayout L = layoutAltar(winW, winH, { (int)bones.size(), (int)order.size() }, ghostsUi.scroll);
+    for (int c = 0; c < 2; ++c) {
+        if (pressListBar(L.bars[(size_t)c], x, y, [this, c](float top) {
+                const std::vector<ItemStack> b = ghostBones();
+                const std::vector<size_t> o = ghostOrder();
+                const AltarLayout M = layoutAltar(winW, winH, { (int)b.size(), (int)o.size() }, ghostsUi.scroll);
+                ghostsUi.scroll[(size_t)c] = rowBarFirst(M.bars[(size_t)c], c == 0 ? (int)b.size() : (int)o.size(), M.visible[(size_t)c], top);
+            })) return true;
+    }
     if (L.close.contains(x, y) || L.cancel.contains(x, y)) {
         ghostsUi = GhostsUi{};
         playSfx(Sfx::UiBack);
@@ -507,5 +533,5 @@ void App::drawGhosts() {
     const std::vector<size_t> order = ghostOrder();
     const AltarLayout L = layoutAltar(winW, winH, { (int)bones.size(), (int)order.size() }, ghostsUi.scroll);
     ghostsUi.scroll = L.first;
-    renderer.drawGhostsWindow(world, L, bones, order, bonesIn(world, ghostsUi.altar), mouseX, mouseY);
+    renderer.drawGhostsWindow(world, L, bones, order, bonesIn(world, ghostsUi.altar));
 }

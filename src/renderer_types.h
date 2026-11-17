@@ -112,6 +112,14 @@ inline constexpr RGBA AMBER{ 0.91f, 0.65f, 0.24f, 1.0f };
 inline constexpr RGBA HEALTH_BAR{ 0.80f, 0.26f, 0.26f, 1.0f };
 inline constexpr RGBA LEVEL_BAR{ 0.45f, 0.65f, 0.88f, 1.0f };
 inline constexpr RGBA HURT{ 0.85f, 0.10f, 0.10f, 1.0f };
+// Text: white for what is named or typed, TEXT_DIM for notes, GOLD for titles and headings, OK_TEXT and BAD for good and bad news
+inline constexpr RGBA TEXT{ 1.0f, 1.0f, 1.0f, 1.0f };
+// A row of a list (and a text field): at rest, under the pointer, and the one picked
+inline constexpr RGBA ROW{ 0.17f, 0.075f, 0.09f, 0.80f };
+inline constexpr RGBA ROW_HOT{ 0.32f, 0.13f, 0.16f, 0.95f };
+inline constexpr RGBA ROW_ON{ 0.45f, 0.30f, 0.14f, 0.95f };
+inline constexpr RGBA FIELD{ 0.14f, 0.09f, 0.08f, 1.0f };
+inline constexpr RGBA FIELD_ON{ 0.30f, 0.20f, 0.12f, 1.0f };
 inline constexpr RGBA alpha(RGBA c, float a) { return RGBA{ c.r, c.g, c.b, a }; }
 }
 

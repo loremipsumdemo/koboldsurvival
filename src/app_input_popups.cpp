@@ -212,7 +212,10 @@ bool App::pressOnStorage() {
         const StorageLayout stl = storageLayout(world, winW, winH);
         const float x = e.button.x, y = e.button.y;
         if (stl.panel.contains(x, y)) {
-            if (e.button.button == SDL_BUTTON_LEFT && stl.lockToggle && stl.lockBtn.contains(x, y)) {
+            const RowBar bar = storageBar(stl, session.storageScroll);
+            if (e.button.button == SDL_BUTTON_LEFT && bar.on() && bar.track.contains(x, y)) {
+                startBarDrag(BarDrag::Storage, bar, y, nullptr);
+            } else if (e.button.button == SDL_BUTTON_LEFT && stl.lockToggle && stl.lockBtn.contains(x, y)) {
                 if (Lock* l = world.get<Lock>(session.storageProp)) l->locked = !l->locked;
                 playSfx(Sfx::UiToggle);
             } else if (e.button.button == SDL_BUTTON_LEFT && stl.closeBtn.contains(x, y)) {

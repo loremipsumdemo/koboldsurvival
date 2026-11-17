@@ -102,11 +102,14 @@ BuildCheck checkBuildSpot(World& w, const Terrain& t, PropKind kind, float x, fl
     }
 
     // On an upper floor, every bit of it must stand on a finished floor of yours on that level
-    const bool ground = allFootSamples(f, x, z, yaw, [&](float px, float pz) {
+    auto standable = [&](float px, float pz) {
         const int tx = (int)std::floor(px), tz = (int)std::floor(pz);
         if (storey > 0) return floorSurfaceAt(w, tx, tz, storey, builder);
         return t.walkable(tx, tz);
-    });
+    };
+    // A Perimeter piece may span gaps in the ground (water): one tile of it on ground is enough
+    const bool ground = propInfo(kind).perimeter && storey == 0 ? anyFootSample(f, x, z, yaw, standable)
+                                                                : allFootSamples(f, x, z, yaw, standable);
     if (!ground) return storey > 0 ? BuildCheck::NoFloor : BuildCheck::Unwalkable;
     if (storey > 0 && propInfo(kind).claimsLand) return BuildCheck::NoFloor;
     // An outdoor prop: on the ground, off every building's foundation
@@ -262,6 +265,7 @@ ObjectId placeBuiltProp(World& w, const Terrain& t, PropKind kind, float x, floa
         if (const ObjectId wall = wallTileAt(w, tileOf(x), tileOf(z), storey); wall != NO_OBJECT) y = w.get<Transform>(wall)->y;
     }
     const ObjectId e = makeProp(w, kind, Transform{ x, y, z }, yaw);
+    if (info.perimeter) notePerimeterGround(w, t, e);
     if (storey > 0) w.add(e, Storey{ storey });
     // One that needs a camp is its placer's, so it is known whose camp it must stay in
     if (info.needsCamp) w.add(e, Owner{ owner });

@@ -231,20 +231,35 @@ bool App::spawnPickerKey(SpawnPicker& p) {
     return true;   // every key goes to the box while it is typed into
 }
 
-void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
+// The list's rows and scrollbar: the rows give way to the bar when the tab has more entries than they hold
+SpawnPickerLayout App::pickerView(const SpawnPicker& p, SpawnPickerLayout L) {
+    if (p.tab == EditorTab::Theme || L.rows.empty()) return L;
+    const float s = uiScaleFor((float)winH);
+    const int total = (int)spawnEntries(p.tab).size(), shown = (int)L.rows.size();
+    const int first = std::clamp(p.listScroll, 0, std::max(0, total - shown));
+    const float h = L.rows.back().y + L.rows.back().h - L.rows.front().y;
+    L.bar = layoutRowBar(L.listArea.x + L.listArea.w - 8.0f * s, L.rows.front().y, h, s, total, shown, first);
+    if (L.bar.on()) {
+        for (Rect& r : L.rows) r.w -= 12.0f * s;
+    }
+    return L;
+}
+
+void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& baseLayout) {
+    const SpawnPickerLayout L = pickerView(p, baseLayout);
     const float s = uiScaleFor((float)winH);
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
     const float textH = renderer.listTextHeight("Ag");
     static const char* const TAB_KEYS[3] = { "UILABEL_EDITOR_ENTITIES", "UILABEL_EDITOR_PROPS", "UILABEL_EDITOR_ITEMS" };
     for (int i = 0; i < 3; ++i) {
         const bool on = p.tab == (EditorTab)i;
-        renderer.drawButton(L.tabs[i], (on ? "> " : "") + lang(TAB_KEYS[i]), true, L.tabs[i].contains(mouseX, mouseY));
+        renderer.drawToggleButton(L.tabs[i], lang(TAB_KEYS[i]), on);
     }
     if (p.tab != EditorTab::Items) {
         renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_FACTION"), L.factionLabel.w), L.factionLabel.x,
                               L.factionLabel.y + (L.factionLabel.h - textH) * 0.5f, white);
-        renderer.drawButton(L.factionDown, "<", true, L.factionDown.contains(mouseX, mouseY));
-        renderer.drawRect(L.factionBox, RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        renderer.drawButton(L.factionDown, "<", true);
+        renderer.drawField(L.factionBox, false);
         {
             const FactionColor c = factionColor(p.faction);
             const float d = 10.0f * s;
@@ -252,14 +267,14 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
         }
         const std::string name = renderer.fitListText(spawnFactionName(p.faction), L.factionBox.w - 26.0f * s);
         renderer.drawListText(name, L.factionBox.x + 20.0f * s, L.factionBox.y + (L.factionBox.h - textH) * 0.5f, gold);
-        renderer.drawButton(L.factionUp, ">", true, L.factionUp.contains(mouseX, mouseY));
+        renderer.drawButton(L.factionUp, ">", true);
         if (L.factionBox.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_FACTION_TIP"), L.factionBox);
     }
     renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_CLUSTER"), L.clusterLabel.w), L.clusterLabel.x,
                           L.clusterLabel.y + (L.clusterLabel.h - textH) * 0.5f, white);
     // A count's box: click it and type a number, Enter to keep it
     auto countBox = [&](const Rect& r, int value, bool typing) {
-        renderer.drawRect(r, typing ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        renderer.drawField(r, typing);
         const std::string text = typing ? p.typed + "|" : std::to_string(value);
         renderer.drawListText(text, r.x + (r.w - renderer.listTextWidth(text)) * 0.5f, r.y + (r.h - textH) * 0.5f, gold);
         if (!typing && r.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_TYPE_TIP"), r);
@@ -270,17 +285,17 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
         p.stack = std::clamp(p.stack, 1, limit);
         renderer.drawListText(renderer.fitListText(langf("UILABEL_SPAWN_STACK", { std::to_string(limit) }), L.stackLabel.w), L.stackLabel.x,
                               L.stackLabel.y + (L.stackLabel.h - textH) * 0.5f, white);
-        renderer.drawButton(L.stackDown, "-", p.stack > 1, L.stackDown.contains(mouseX, mouseY));
+        renderer.drawButton(L.stackDown, "-", p.stack > 1);
         countBox(L.stackBox, p.stack, p.typing == SpawnPicker::Typing::Stack);
-        renderer.drawButton(L.stackUp, "+", p.stack < limit, L.stackUp.contains(mouseX, mouseY));
-        renderer.drawButton(L.stackOne, std::string(!p.stackMax && p.stack == 1 ? ">1" : "1"), true, L.stackOne.contains(mouseX, mouseY));
-        renderer.drawButton(L.stackMax, (p.stackMax ? ">" : "") + lang("UILABEL_SPAWN_STACK_MAX"), true, L.stackMax.contains(mouseX, mouseY));
+        renderer.drawButton(L.stackUp, "+", p.stack < limit);
+        renderer.drawButton(L.stackOne, std::string(!p.stackMax && p.stack == 1 ? ">1" : "1"), true);
+        renderer.drawButton(L.stackMax, (p.stackMax ? ">" : "") + lang("UILABEL_SPAWN_STACK_MAX"), true);
         if (L.stackOne.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_STACK_ONE_TIP"), L.stackOne);
         if (L.stackMax.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_STACK_MAX_TIP"), L.stackMax);
     }
-    renderer.drawButton(L.clusterDown, "-", p.cluster > 1, L.clusterDown.contains(mouseX, mouseY));
+    renderer.drawButton(L.clusterDown, "-", p.cluster > 1);
     countBox(L.clusterBox, p.cluster, p.typing == SpawnPicker::Typing::Cluster);
-    renderer.drawButton(L.clusterUp, "+", p.cluster < SPAWN_CLUSTER_MAX, L.clusterUp.contains(mouseX, mouseY));
+    renderer.drawButton(L.clusterUp, "+", p.cluster < SPAWN_CLUSTER_MAX);
     if (p.tab == EditorTab::Theme) return;   // the level editor's theme panel takes the list's place
     const std::vector<EditorEntry> entries = spawnEntries(p.tab);
     p.listScroll = std::clamp(p.listScroll, 0, std::max(0, (int)entries.size() - (int)L.rows.size()));
@@ -293,12 +308,19 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& L) {
         }
         const bool on = p.tool == entry.tool && p.picked == entry.value;
         const bool hot = r.contains(mouseX, mouseY);
-        if (on || hot) renderer.drawRect(r, on ? RGBA{ 0.45f, 0.30f, 0.14f, 1.0f } : RGBA{ 0.28f, 0.18f, 0.12f, 1.0f });
+        if (on || hot) renderer.drawRow(r, hot, on);
         renderer.drawListText(renderer.fitListText(entry.label, r.w - 12.0f * s), r.x + 6.0f * s, r.y + (r.h - textH) * 0.5f, on ? gold : white);
     }
+    if (L.bar.on()) renderer.drawScrollBar(L.bar.track, L.bar.thumb, (barDrag.kind == BarDrag::Picker && barDrag.picker == &p) || renderer.mouseOver(L.bar.track));
 }
 
-bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& L, float x, float y) {
+bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& baseLayout, float x, float y) {
+    const SpawnPickerLayout L = pickerView(p, baseLayout);
+    if (L.bar.on() && L.bar.track.contains(x, y)) {
+        spawnPickerCommit(p, true);
+        startBarDrag(BarDrag::Picker, L.bar, y, &p);
+        return false;
+    }
     // A click anywhere keeps what was typed; one on a count's box starts typing into it
     spawnPickerCommit(p, true);
     if (L.clusterBox.contains(x, y) || (p.tab == EditorTab::Items && L.stackBox.contains(x, y))) {
@@ -378,6 +400,8 @@ void App::spawnPickerWheel(SpawnPicker& p, const SpawnPickerLayout& L, float x, 
     }
     p.listScroll = std::max(0, p.listScroll - (int)notches);
 }
+
+
 
 int App::spawnAt(SpawnPicker& p, float x, float z, bool levelIds, int storey) {
     spawnPickerCommit(p, true);
@@ -566,17 +590,14 @@ void App::drawDeveloper() {
     const DeveloperLayout L = layoutDeveloper(winW, winH, devSpawn.tab);
     const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
     const float textH = renderer.listTextHeight("Ag");
-    renderer.drawThemedPanel(L.panel);
-    renderer.drawListText(renderer.fitListText(lang("UILABEL_BUILD_DEVELOPER"), L.title.w), L.title.x,
-                          L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
-    renderer.drawButton(L.navToggle, (devShowNavmesh ? "> " : "") + lang("UILABEL_DEV_SHOW_NAVMESH"), true, L.navToggle.contains(mouseX, mouseY));
+    renderer.drawWindowFrame(L.panel, L.title, L.close, lang("UILABEL_BUILD_DEVELOPER"), false);
+    renderer.drawToggleButton(L.navToggle, lang("UILABEL_DEV_SHOW_NAVMESH"), devShowNavmesh);
     if (L.navToggle.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_DEV_SHOW_NAVMESH_TIP"), L.navToggle);
-    renderer.drawButton(L.spawnTab, (themeTab || killTab || cleanTab || destroyTab ? "" : "> ") + lang("UILABEL_DEV_TAB_SPAWN"), true, L.spawnTab.contains(mouseX, mouseY));
-    renderer.drawButton(L.themeTab, (themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_THEME"), true, L.themeTab.contains(mouseX, mouseY));
-    renderer.drawButton(L.killTab, (killTab ? "> " : "") + lang("UILABEL_DEV_TAB_KILL"), true, L.killTab.contains(mouseX, mouseY));
-    renderer.drawButton(L.cleanTab, (cleanTab ? "> " : "") + lang("UILABEL_DEV_TAB_CLEAN"), true, L.cleanTab.contains(mouseX, mouseY));
-    renderer.drawButton(L.destroyTab, (destroyTab ? "> " : "") + lang("UILABEL_DEV_TAB_DESTROY"), true, L.destroyTab.contains(mouseX, mouseY));
+    renderer.drawToggleButton(L.spawnTab, lang("UILABEL_DEV_TAB_SPAWN"), !(themeTab || killTab || cleanTab || destroyTab));
+    renderer.drawToggleButton(L.themeTab, lang("UILABEL_GEN_TAB_THEME"), themeTab);
+    renderer.drawToggleButton(L.killTab, lang("UILABEL_DEV_TAB_KILL"), killTab);
+    renderer.drawToggleButton(L.cleanTab, lang("UILABEL_DEV_TAB_CLEAN"), cleanTab);
+    renderer.drawToggleButton(L.destroyTab, lang("UILABEL_DEV_TAB_DESTROY"), destroyTab);
     if (killTab || cleanTab || destroyTab) {
         drawSweepTab(L);
         return;
@@ -586,12 +607,12 @@ void App::drawDeveloper() {
         const bool confirm = devThemeConfirm;
         renderer.drawListText(renderer.fitListText(lang(confirm ? "UILABEL_DEV_THEME_CONFIRM" : "UILABEL_DEV_THEME_TEMP"), L.status.w),
                               L.status.x, L.status.y + (L.status.h - textH) * 0.5f, confirm ? gold : gray);
-        renderer.drawButton(L.revert, lang("UILABEL_DEV_REVERT"), true, L.revert.contains(mouseX, mouseY));
-        renderer.drawButton(L.makePermanent, lang("UILABEL_DEV_MAKE_PERMANENT"), true, L.makePermanent.contains(mouseX, mouseY));
+        renderer.drawButton(L.revert, lang("UILABEL_DEV_REVERT"), true);
+        renderer.drawButton(L.makePermanent, lang("UILABEL_DEV_MAKE_PERMANENT"), true);
         return;
     }
     drawSpawnPicker(devSpawn, L.picker);
-    renderer.drawButton(L.gather, lang("UILABEL_DEV_GATHER"), true, L.gather.contains(mouseX, mouseY));
+    renderer.drawButton(L.gather, lang("UILABEL_DEV_GATHER"), true);
     if (L.gather.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_DEV_GATHER_TIP"), L.gather);
     float y = L.help.y;
     for (const std::string& line : renderer.wrapListText(lang("UILABEL_DEVELOPER_HELP"), L.help.w)) {
@@ -688,7 +709,10 @@ int App::cleanAll() {
 // Destroy breaks a prop the way the game does (breakBuilding), so what it held is put on the ground and its Debris is
 // left, unless the toggles say otherwise
 bool App::destroyProp(ObjectId e) {
-    if (!world.has<Prop>(e)) return false;
+    const Prop* prop = world.get<Prop>(e);
+    if (!prop) return false;
+    // The blueprint editor's Altar is what the Build tab builds from: it can't be destroyed there
+    if (bpEdit.active && prop->kind == PropKind::Altar) return false;
     if (devDestroy.deleteItems) {
         // What it holds, of every kind there is: its store, its output, a pile of bones, the logs brought to a blueprint
         if (Storage* st = world.get<Storage>(e)) {
@@ -831,7 +855,7 @@ void App::drawSweepTab(const DeveloperLayout& L) {
     const char* const* modeKeys = MODE_KEYS[kind];
     renderer.drawListText(renderer.fitListText(lang("UILABEL_DEV_KILL_MODE"), L.modeLabel.w), L.modeLabel.x,
                           L.modeLabel.y + (L.modeLabel.h - textH) * 0.5f, gray);
-    renderer.drawButton(L.modeBox, lang(modeKeys[(int)k.mode]) + (k.dropOpen ? "  ^" : "  v"), true, L.modeBox.contains(mouseX, mouseY));
+    renderer.drawButton(L.modeBox, lang(modeKeys[(int)k.mode]) + (k.dropOpen ? "  ^" : "  v"), true);
     auto wrapped = [&](const std::string& text, const Rect& area, const RGBA& color) {
         float y = area.y;
         for (const std::string& line : renderer.wrapListText(text, area.w)) {
@@ -853,21 +877,21 @@ void App::drawSweepTab(const DeveloperLayout& L) {
     if (k.mode == SweepMode::Radius) {
         renderer.drawListText(renderer.fitListText(lang("UILABEL_DEV_KILL_RADIUS"), L.radiusLabel.w), L.radiusLabel.x,
                               L.radiusLabel.y + (L.radiusLabel.h - textH) * 0.5f, gray);
-        renderer.drawButton(L.radiusDown, "-", k.radius > SWEEP_RADIUS_MIN, L.radiusDown.contains(mouseX, mouseY));
+        renderer.drawButton(L.radiusDown, "-", k.radius > SWEEP_RADIUS_MIN);
         renderer.drawButton(L.radiusBox, std::to_string(k.radius), true, false);
-        renderer.drawButton(L.radiusUp, "+", k.radius < SWEEP_RADIUS_MAX, L.radiusUp.contains(mouseX, mouseY));
+        renderer.drawButton(L.radiusUp, "+", k.radius < SWEEP_RADIUS_MAX);
         wrapped(lang(HELP_RADIUS[kind]), L.help, gray);
     } else if (k.mode == SweepMode::All) {
         wrapped(langf(WARN[kind], { std::to_string(SWEEP_ALL_HOLD_MS / 1000) }), L.sweepText, gold);
         const float fill = k.holding ? std::min(1.0f, (float)(SDL_GetTicks() - k.holdStart) / (float)SWEEP_ALL_HOLD_MS) : 0.0f;
         renderer.drawHoldButton(L.sweepHold, lang(HOLD[kind]), fill);
-        renderer.drawButton(L.sweepCancel, lang("UILABEL_CANCEL"), true, L.sweepCancel.contains(mouseX, mouseY));
+        renderer.drawButton(L.sweepCancel, lang("UILABEL_CANCEL"), true);
     } else {
         wrapped(lang(HELP_SINGLE[kind]), L.help, gray);
     }
     if (k.dropOpen) {
         for (int i = 0; i < SWEEP_MODE_COUNT; ++i) {
-            renderer.drawButton(L.modeRows[i], ((int)k.mode == i ? "> " : "") + lang(modeKeys[i]), true, L.modeRows[i].contains(mouseX, mouseY));
+            renderer.drawToggleButton(L.modeRows[i], lang(modeKeys[i]), (int)k.mode == i);
         }
     }
 }

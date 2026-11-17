@@ -20,18 +20,6 @@ void drawListHeaders(Renderer& r, const PanelGeometry& g, float s, const std::st
     r.drawListText(label(timeLabel, !byName), innerX + COL_TIME * innerW, y, !byName ? LIST_WHITE : LIST_GRAY);
 }
 
-void drawListMoreRows(Renderer& r, const PanelGeometry& g, float s, size_t offset, size_t total, int winH, float mx, float my) {
-    const float x = g.box.x + g.pad + 12.0f * s, listH = r.listTextHeight("Ag");
-    const size_t first = std::min(offset, total);
-    const size_t last = std::min(first + visibleSaveRows(winH), total);
-    auto row = [&](const Rect& band, const char* key, size_t count) {
-        r.drawListText(langf(key, { std::to_string(count) }), x, band.y + (band.h - listH) * 0.5f,
-                       band.contains(mx, my) ? LIST_HOVER : LIST_HINT);
-    };
-    if (first > 0) row(g.aboveBand, "UILABEL_LIST_MORE_ABOVE", first);
-    if (last < total) row(g.belowBand, "UILABEL_LIST_MORE_BELOW", total - last);
-}
-
 // picked: the row the right side shows, drawn lit like a hovered one
 void drawListRow(Renderer& r, const Rect& rect, bool hot, bool picked, float s, const std::string& name, const std::string& type,
                  RGBA typeTint, const std::string& time) {
@@ -143,7 +131,7 @@ void App::drawPanelSide(const PanelGeometry& g) {
 
 void App::drawScreenButtons(const std::vector<Button>& buttons) {
     for (const Button& b : buttons) {
-        renderer.drawButton(b.rect, b.label, b.enabled, b.rect.contains(mouseX, mouseY));
+        renderer.drawButton(b.rect, b.label, b.enabled);
     }
 }
 
@@ -226,7 +214,7 @@ void App::drawScenarioScreen() {
     for (size_t i = 0; i < sl.rows.size(); ++i) {
         const ScenarioId id = (ScenarioId)(sl.first + (int)i);
         const Rect& r = sl.rows[i];
-        renderer.drawButton(r, lang(scenarioNameKey(id)), true, r.contains(mouseX, mouseY));
+        renderer.drawButton(r, lang(scenarioNameKey(id)), true);
         if (id == scenarioPick) {
             renderer.drawRect(Rect{ r.x, r.y, 5.0f * s, r.h }, accent);
             renderer.drawRect(Rect{ r.x, r.y, r.w, 2.0f * s }, accent);
@@ -234,12 +222,9 @@ void App::drawScenarioScreen() {
             renderer.drawRect(Rect{ r.x + r.w - 2.0f * s, r.y, 2.0f * s, r.h }, accent);
         }
     }
-    if (sl.track.h > 0.0f) {
-        renderer.drawRect(sl.track, RGBA{ 0.20f, 0.09f, 0.11f, 0.9f });
-        renderer.drawRect(sl.thumb, RGBA{ 0.910f, 0.376f, 0.431f, 0.9f });
-    }
-    renderer.drawButton(sl.back, lang("UILABEL_BACK"), true, sl.back.contains(mouseX, mouseY));
-    renderer.drawButton(sl.next, lang("UILABEL_CONTINUE"), true, sl.next.contains(mouseX, mouseY));
+    drawListBar(sl.bar);
+    renderer.drawButton(sl.back, lang("UILABEL_BACK"), true);
+    renderer.drawButton(sl.next, lang("UILABEL_CONTINUE"), true);
     renderer.endUi();
 }
 
@@ -332,7 +317,8 @@ void App::drawSavePanel() {
         }
         drawPanelSide(g);
 
-        drawListMoreRows(renderer, g, s, listOffset, saves.size(), winH, mouseX, mouseY);
+        const RowBar listBar = saveListBar(winW, winH, saves.size(), listOffset);
+        if (listBar.on()) renderer.drawScrollBar(listBar.track, listBar.thumb, barDrag.kind == BarDrag::Saves || renderer.mouseOver(listBar.track));
 
         for (const Button& b : layoutPanel(winW, winH, panelSaveMode, Ask::None, saves, listOffset,
                                            panelFrom == Screen::Title, panelCanConfirm())) {
@@ -343,8 +329,7 @@ void App::drawSavePanel() {
                                                      : sv.autosave ? lang("UILABEL_AUTO") : lang("UILABEL_MANUAL");
                 drawListRow(renderer, b.rect, isHover, sv.path == pickedPath, s, sv.name, type,
                             sv.autosave ? LIST_MARKED : LIST_WHITE, savedAtText(sv.timestamp));
-            } else if (b.action == Action::ScrollUp || b.action == Action::ScrollDown
-                       || b.action == Action::SortName || b.action == Action::SortTime) {
+            } else if (b.action == Action::SortName || b.action == Action::SortTime) {
                 continue;
             } else if (b.action == Action::DeleteSave) {
                 renderer.drawListButton(b.rect, lang("UILABEL_DELETE"), isHover);
@@ -417,7 +402,7 @@ void App::drawFrameOverlays() {
         const float pad = 4.0f, tw = renderer.uiTextWidth(fpsText), th = renderer.uiTextHeight(fpsText);
         const float bx = 6.0f, by = (float)winH - th - 2.0f * pad - 6.0f;
         renderer.drawRect(Rect{ bx, by, tw + 2.0f * pad, th + 2.0f * pad }, RGBA{ 0.0f, 0.0f, 0.0f, 0.85f });
-        renderer.drawUiText(fpsText, bx + pad, by + pad, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        renderer.drawUiText(fpsText, bx + pad, by + pad, theme::TEXT);
     }
     renderer.endUi();
 

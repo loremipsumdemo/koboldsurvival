@@ -3,6 +3,7 @@
 #include <cmath>
 #include <functional>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "behavior.h"
 #include "build.h"
@@ -183,6 +184,13 @@ struct BuildingMap {
     std::unordered_map<long long, ObjectId> stairTop;     // levelKey: the top step of stairs, a tile of the floor above them
     std::unordered_map<long long, ObjectId> perimTop;     // levelKey (level 1): the walkway on top of a Perimeter Wall or Gate (not its spike rows)
 };
+// The tiles under Perimeter pieces whose ground cannot be walked (water, say): a piece may stand across such a gap as long as one of its
+// tiles is on ground, but the walkway on top of it is closed over those tiles too
+struct PerimGaps {
+    std::unordered_set<long long> tiles;   // tileKey
+};
+// Notes which of a Perimeter piece's tiles are on unwalkable ground (done when it is placed or loaded)
+void notePerimeterGround(World& w, const Terrain& t, ObjectId piece);
 BuildingMap buildingMap(World& w);
 // The same map kept until the props, foundations or floors change (their component revisions say so), and the foundation tiles
 // joined to a tile kept with it, so a check made many times in a frame (the placement preview) works the world out once. Only

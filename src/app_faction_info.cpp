@@ -75,8 +75,7 @@ InfoLayout layoutInfo(int W, int H, int rowCount, float textH) {
     const float w = std::min((float)W - 20.0f * s, 560.0f * s);
     const float h = std::min((float)H - 20.0f * s, L.pad + line + gap + rowCount * L.rowH + gap + noteH + L.pad);
     L.box = Rect{ std::floor((W - w) * 0.5f), std::floor((H - h) * 0.5f), w, h };
-    L.title = Rect{ L.box.x + L.pad, L.box.y + L.pad, w - 2.0f * L.pad - line, line };
-    L.close = Rect{ L.box.x + w - L.pad - line, L.box.y + L.pad, line, line };
+    layoutTitleClose(L.box, L.pad, line, L.title, L.close);
     L.firstY = L.title.y + line + gap;
     L.valueX = L.box.x + L.pad + (w - 2.0f * L.pad) * 0.5f;
     L.note = Rect{ L.box.x + L.pad, L.box.y + h - L.pad - noteH, w - 2.0f * L.pad, noteH };
@@ -111,7 +110,7 @@ bool App::pressOnFactionInfo() {
         }
         stopFactionRulesNaming();
     }
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    if (dismissAt(L.box, L.close, x, y)) {
         factionInfoOpen = false;
         playSfx(Sfx::UiBack);
     }
@@ -124,12 +123,10 @@ void App::drawFactionInfo() {
     const float textH = renderer.listTextHeight("Ag");
     const InfoLayout L = layoutInfo(winW, winH, (int)rows.size(), textH);
     const float s = uiScaleFor((float)winH);
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f }, dim{ 0.80f, 0.72f, 0.64f, 1.0f };
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(renderer.fitListText(langf("UILABEL_FACTION_INFO_TITLE", { factionName(factionInfoFaction) }) +
-                                               (factionInfoFaction == FACTION_PLAYER ? std::string() : " (" + lang("UILABEL_VIEW_ONLY") + ")"), L.title.w),
-                          L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
+    const RGBA white = theme::TEXT, gold = theme::GOLD, dim = theme::TEXT_DIM;
+    renderer.drawWindowFrame(L.box, L.title, L.close,
+                             langf("UILABEL_FACTION_INFO_TITLE", { factionName(factionInfoFaction) }) +
+                                 (factionInfoFaction == FACTION_PLAYER ? std::string() : " (" + lang("UILABEL_VIEW_ONLY") + ")"));
     float y = L.firstY;
     const float right = L.box.x + L.box.w - L.pad;
     bool first = true;
@@ -140,7 +137,8 @@ void App::drawFactionInfo() {
         if (nameRow) {
             // Typed as it goes; click to edit
             const Rect box{ L.box.x + L.pad, y, L.box.w - 2.0f * L.pad, L.rowH };
-            renderer.drawRect(box, factionRulesNaming ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.16f, 0.07f, 0.085f, box.contains(mouseX, mouseY) ? 0.95f : 0.6f });
+            if (factionRulesNaming) renderer.drawField(box, true);
+            else renderer.drawRow(box, box.contains(mouseX, mouseY));
             renderer.drawListText(renderer.fitListText(r.label, L.valueX - L.box.x - L.pad - 8.0f * s), L.box.x + L.pad + 6.0f * s, y + (L.rowH - textH) * 0.5f, white);
             std::string v = factionRulesNaming ? factionRulesName + ((SDL_GetTicks() / 500) % 2 ? "|" : " ") : r.value;
             if (factionRulesNaming) {

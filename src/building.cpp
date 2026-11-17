@@ -645,6 +645,23 @@ int perimeterOpenSides(const std::function<bool(int, int)>& has, int x0, int z0,
     return 15 & ~beside;
 }
 
+void notePerimeterGround(World& w, const Terrain& t, ObjectId piece) {
+    const Prop* p = w.get<Prop>(piece);
+    const Transform* tr = w.get<Transform>(piece);
+    if (!p || !tr || !propInfo(p->kind).perimeter) return;
+    int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+    propTileRect(propInfo(p->kind), tr->x, tr->z, p->yaw, x0, z0, x1, z1);
+    PerimGaps& gaps = w.resource<PerimGaps>();
+    for (int z = z0; z <= z1; ++z) {
+        for (int x = x0; x <= x1; ++x) {
+            bool walk = false;
+            float h = 0.0f;
+            if (t.tileGround(x, z, walk, h) && walk) gaps.tiles.erase(tileKey(x, z));
+            else gaps.tiles.insert(tileKey(x, z));
+        }
+    }
+}
+
 BuildingMap buildingMap(World& w) {
     BuildingMap m;
     // The Perimeter pieces' walkways: each piece's tiles but its spike rows (the open sides but the one behind it)
@@ -665,12 +682,14 @@ BuildingMap buildingMap(World& w) {
         }
         perim.push_back(p);
     }
+    const PerimGaps& gaps = w.resource<PerimGaps>();
     for (const PerimPiece& p : perim) {
         const int spikes = perimeterSpikeSides(perimeterOpenSides([&](int x, int z) { return perimTiles.count(tileKey(x, z)) > 0; },
                                                                   p.x0, p.z0, p.x1, p.z1), p.facing);
         for (int z = p.z0; z <= p.z1; ++z) {
             for (int x = p.x0; x <= p.x1; ++x) {
                 if (((spikes & 1) && z == p.z0) || ((spikes & 2) && x == p.x1) || ((spikes & 4) && z == p.z1) || ((spikes & 8) && x == p.x0)) continue;
+                if (gaps.tiles.count(tileKey(x, z))) continue;   // over ground that cannot be walked: no walkway either
                 m.perimTop[levelKey(x, z, 1)] = p.e;
             }
         }
@@ -1785,6 +1804,8 @@ void settleBuildingsAfterLoad(World& w, Terrain& t) {
         releasePropLinks(w, e);
         w.destroy(e);
     }
+    // Where a Perimeter piece stands over ground that cannot be walked
+    for (ObjectId e : w.view<Prop, Transform>()) notePerimeterGround(w, t, e);
     // The floor everything above the ground stands on, from its height
     for (ObjectId e : w.view<Prop, Transform>()) {
         const PropInfo& info = propInfo(w.get<Prop>(e)->kind);

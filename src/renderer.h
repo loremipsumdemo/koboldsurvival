@@ -180,7 +180,7 @@ public:
     void drawWorldMap(const WorldMapLayout& L, const std::vector<MapDot>& dots, float cx, float cz, float span,
                       const WorldMapMarks& marks);
     void drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
-                      const std::vector<DialogueOption>& options, float mx, float my);
+                      const std::vector<DialogueOption>& options);
     // Kept for a text and width asked about again (a panel's help text is wrapped every frame it shows), until the font changes
     std::vector<std::string> wrapListText(const std::string& text, float maxW);
     std::vector<std::string> wrapListTextUncached(const std::string& text, float maxW);
@@ -232,14 +232,12 @@ public:
     void drawUnitCard(World& w, ObjectId u, const UnitCardLayout& C);
     // Appease Ghosts. ghosts: the Graveyard's ghosts in the order shown
     void drawGhostsWindow(World& w, const AltarLayout& L, const std::vector<ItemStack>& bones, const std::vector<size_t>& ghosts,
-                          int bonesTotal, float mx, float my);
+                          int bonesTotal);
     // Arrows over the units a box would select, while it is dragged
     void drawSelectArrows(World& w, const Camera& cam, const std::vector<ObjectId>& units, int winW, int winH);
-    void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
-                         float mx, float my);
-    void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
-                            float mx, float my);
-    void drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held, float mx, float my);
+    void drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles);
+    void drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available);
+    void drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held);
     void drawNotice(const std::string& text, int winW, int winH);
     // With the labels, the menu is as wide as the longest needs
     ItemMenuLayout itemMenuLayout(float x, float y, int buttonCount, int winW, int winH, const std::vector<std::string>& labels = {});
@@ -325,6 +323,26 @@ public:
     void drawFactionSettings(World& w, const UnitPanelLayout& L, const std::string* factionNameEdit);
     void drawLockButton(const Rect& r, bool locked);
     void drawButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
+    // The same, lit by the pointer being over it (what nearly every button wants)
+    void drawButton(const Rect& r, const std::string& label, bool enabled = true);
+    // A button that stays lit while on (a tool or tab that is picked), as well as when the pointer is over it
+    void drawToggleButton(const Rect& r, const std::string& label, bool on, bool enabled = true);
+    bool mouseOver(const Rect& r) const { return r.contains(mouseX_, mouseY_); }
+    enum class TextAlign { Left, Center, Right };
+    // Text in the middle of a box's height, cut to fit with the whole of it as the tip when the pointer is over it
+    void drawTextIn(const Rect& r, const std::string& text, RGBA tint, TextAlign align = TextAlign::Left, float inset = 0.0f);
+    // A window's chrome: a scrim over the game, the panel, the gold title and the close button (none when close is empty)
+    void drawWindowFrame(const Rect& box, const Rect& title, const Rect& close, const std::string& text, bool scrim = true);
+    // A list row at rest, under the pointer (hot) or picked (on)
+    void drawRow(const Rect& r, bool hot, bool on = false);
+    // A row with a check box and its label
+    void drawCheckRow(const Rect& r, const std::string& label, bool on);
+    // The background of a place to type, lit while being typed in
+    void drawField(const Rect& r, bool active);
+    // The depth every button has: a sheen over its top half, a lighter top edge and a darker bottom edge. Drawn over the button's fill.
+    void drawBevel(const Rect& r, float strength = 1.0f);
+    // A box with a 1 pixel border
+    void drawBorderedBox(const Rect& r, RGBA border, RGBA fill);
     void drawScrollBar(const Rect& track, const Rect& thumb, bool hot = false);
     void drawScrim();
     void drawUiText(const std::string& s, float x, float y, RGBA tint);
@@ -401,6 +419,8 @@ private:
                       int skip, float mx, float my, CellLight light = CellLight::UnderMouse);
     void drawInteractionHeader(const Rect& bar, const Rect& nameBox, const std::string& name);
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
+    void drawButtonPlate(const Rect& r, bool enabled, bool lit, float stripeW, bool hot);
+    RGBA buttonInk(bool enabled, bool lit, bool on);
     void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
     float digitCellWidth();
     float clockTextWidth(const std::string& s);

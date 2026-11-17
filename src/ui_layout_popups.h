@@ -57,6 +57,8 @@ struct StorageLayout {
     Rect closeBtn;
     bool lockToggle = false;
     Rect lockBtn;
+    Rect barTrack;     // where the scrollbar goes, when the store has more rows than show
+    int scrollMax = 0;   // rows the window can scroll down
 };
 struct LootLayout {
     Rect panel;
@@ -78,6 +80,12 @@ LootLayout layoutLoot(int W, int H);
 inline constexpr int STORAGE_VISIBLE_ROWS = 6;
 inline int visibleStorageSlots(int slotCount) { return std::min(slotCount, STORAGE_VISIBLE_ROWS * STORAGE_COLUMNS); }
 StorageLayout layoutStorage(int W, int H, bool output = false, bool lockToggle = false, int slotCount = STORAGE_SLOTS);
+// The store window's scrollbar, with the window scrolled down by first rows
+inline RowBar storageBar(const StorageLayout& L, int first) {
+    if (L.scrollMax <= 0) return RowBar{};
+    const int shown = ((int)L.slots.size() + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
+    return layoutRowBar(L.barTrack.x, L.barTrack.y, L.barTrack.h, L.barTrack.w / 8.0f, shown + L.scrollMax, shown, first);
+}
 
 struct TradeStatus {
     bool ok = false;

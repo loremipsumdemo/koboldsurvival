@@ -267,16 +267,11 @@ bool App::pressOnRename() {
 void App::drawRename() {
     if (!rename.open) return;
     const RenameLayout L = layoutRename(winW, winH);
-    const float th = renderer.listTextHeight("Ag");
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(langf("UILABEL_RENAME_UNIT", { nameOf(world, rename.unit) }), L.title.x, L.title.y + (L.title.h - th) * 0.5f,
-                          RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    renderer.drawRect(L.field, RGBA{ 0.10f, 0.04f, 0.05f, 1.0f });
-    const std::string shown = rename.text + ((SDL_GetTicks() / 500) % 2 ? "|" : "");
-    renderer.drawListText(shown, L.field.x + 8.0f, L.field.y + (L.field.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    renderer.drawButton(L.ok, lang("UILABEL_CONFIRM"), !cleanName(rename.text).empty(), L.ok.contains(mouseX, mouseY));
-    renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
+    renderer.drawWindowFrame(L.box, L.title, Rect{}, langf("UILABEL_RENAME_UNIT", { nameOf(world, rename.unit) }));
+    renderer.drawField(L.field, true);
+    renderer.drawTextIn(L.field, rename.text + ((SDL_GetTicks() / 500) % 2 ? "|" : ""), theme::TEXT, Renderer::TextAlign::Left, 8.0f);
+    renderer.drawButton(L.ok, lang("UILABEL_CONFIRM"), !cleanName(rename.text).empty());
+    renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true);
 }
 
 bool App::pressOnFactionGrid() {

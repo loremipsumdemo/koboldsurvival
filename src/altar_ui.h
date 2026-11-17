@@ -119,6 +119,7 @@ struct AltarLayout {
     std::array<Rect, 3> heads{}, lists{};
     std::array<std::vector<AltarRow>, 3> rows;
     std::array<int, 3> first{}, visible{};
+    std::array<RowBar, 3> bars{};   // each column's scrollbar, when it has more rows than show
     Rect apply, cancel;
 };
 // A Graveyard row's Appease button

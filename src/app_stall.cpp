@@ -21,7 +21,8 @@ struct StallLayout {
     Rect orders, clearOrders;
     Rect payTitle;
     std::vector<Rect> pay;
-    int rowsShown = 0, cellsShown = 0, cols = 1;
+    int rowsShown = 0, cellsShown = 0, cols = 1, cellRows = 1;
+    RowBar listBar, itemBar;
 };
 
 StallLayout layoutStall(int W, int H) {
@@ -33,8 +34,7 @@ StallLayout layoutStall(int W, int H) {
     L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor((H - boxH) * 0.5f), boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
     float y = L.box.y + pad;
-    L.title = Rect{ x, y, w - line, line };
-    L.close = Rect{ x + w - line, y, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     y += line + gap;
     const float third = (w * 0.4f - 2.0f * gap) / 3.0f;
     L.sortKind = Rect{ x, y, third, btnH };
@@ -51,8 +51,9 @@ StallLayout layoutStall(int W, int H) {
     for (int i = 0; i < L.rowsShown; ++i) L.rows.push_back(Rect{ L.list.x, L.list.y + i * (rowH + 2.0f * s), L.list.w, rowH });
     L.items = Rect{ x + w * 0.4f + gap, y, w * 0.6f - gap, bottom - y };
     const float cell = ITEM_CELL_PX, cellGap = 4.0f * s;
-    L.cols = std::max(1, (int)((L.items.w - 8.0f * s) / (cell + cellGap)));
+    L.cols = std::max(1, (int)((L.items.w - 8.0f * s - 12.0f * s) / (cell + cellGap)));
     const int rowsOfCells = std::max(1, (int)((L.items.h - 8.0f * s) / (cell + cellGap)));
+    L.cellRows = rowsOfCells;
     L.cellsShown = L.cols * rowsOfCells;
     for (int i = 0; i < L.cellsShown; ++i) {
         L.cells.push_back(Rect{ L.items.x + 4.0f * s + (i % L.cols) * (cell + cellGap), L.items.y + 4.0f * s + (i / L.cols) * (cell + cellGap), cell, cell });
@@ -140,6 +141,23 @@ void App::scrollStall(float mx, float my, float wheel) {
     }
 }
 
+// The layout with the scrollbars of the store list and of the stacks shown: the list's rows give way to its bar
+static StallLayout stallView(World& world, const StallUi& ui, StallLayout L, int H) {
+    const float s = uiScaleFor((float)H);
+    const int n = (int)stallSources(world, ui.stall, ui.sort).size();
+    L.listBar = layoutRowBar(L.list.x + L.list.w - 8.0f * s, L.list.y, L.rows.empty() ? 0.0f : L.rows.back().y + L.rows.back().h - L.list.y, s, n, L.rowsShown,
+                             std::clamp(ui.listScroll, 0, std::max(0, n - L.rowsShown)));
+    if (L.listBar.on()) {
+        for (Rect& r : L.rows) r.w -= 12.0f * s;
+    }
+    const Storage* st = world.get<Storage>(ui.store);
+    const int filled = st ? (int)filledSlots(*st).size() : 0;
+    const int rows = (filled + L.cols - 1) / L.cols;
+    L.itemBar = layoutRowBar(L.items.x + L.items.w - 8.0f * s - 2.0f * s, L.items.y + 4.0f * s, L.cellRows * (ITEM_CELL_PX + 4.0f * s) - 4.0f * s, s, rows, L.cellRows,
+                             std::clamp(ui.itemScroll, 0, std::max(0, rows - L.cellRows)));
+    return L;
+}
+
 bool App::pressOnStall() {
     if (!stallUi.open) return false;
     StallStock* ss = world.get<StallStock>(stallUi.stall);
@@ -148,12 +166,22 @@ bool App::pressOnStall() {
         return true;
     }
     const float x = mouseX, y = mouseY;
-    const StallLayout L = layoutStall(winW, winH);
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    const StallLayout L = stallView(world, stallUi, layoutStall(winW, winH), winH);
+    if (dismissAt(L.box, L.close, x, y)) {
         stallUi = StallUi{};
         playSfx(Sfx::UiBack);
         return true;
     }
+    if (pressListBar(L.listBar, x, y, [this](float top) {
+            const StallLayout M = stallView(world, stallUi, layoutStall(winW, winH), winH);
+            stallUi.listScroll = rowBarFirst(M.listBar, (int)stallSources(world, stallUi.stall, stallUi.sort).size(), M.rowsShown, top);
+        })) return true;
+    if (pressListBar(L.itemBar, x, y, [this](float top) {
+            const StallLayout M = stallView(world, stallUi, layoutStall(winW, winH), winH);
+            const Storage* st = world.get<Storage>(stallUi.store);
+            const int rows = st ? ((int)filledSlots(*st).size() + M.cols - 1) / M.cols : 0;
+            stallUi.itemScroll = rowBarFirst(M.itemBar, rows, M.cellRows, top);
+        })) return true;
     const Rect sorts[3] = { L.sortKind, L.sortFull, L.sortRatio };
     for (int i = 0; i < 3; ++i) {
         if (!sorts[i].contains(x, y)) continue;
@@ -208,20 +236,18 @@ void App::drawStall() {
         stallUi = StallUi{};
         return;
     }
-    const StallLayout L = layoutStall(winW, winH);
+    const StallLayout L = stallView(world, stallUi, layoutStall(winW, winH), winH);
     const float s = uiScaleFor((float)winH);
     const float th = renderer.listTextHeight("Ag");
     auto mid = [&](const Rect& r) { return r.y + (r.h - th) * 0.5f; };
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(langf("UILABEL_STOCK_STALL_TITLE", { propDisplayName(world, stallUi.stall) }), L.title.x, mid(L.title), theme::GOLD);
-    renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
+    renderer.drawWindowFrame(L.box, L.title, L.close, langf("UILABEL_STOCK_STALL_TITLE", { propDisplayName(world, stallUi.stall) }));
     const Rect sorts[3] = { L.sortKind, L.sortFull, L.sortRatio };
     const char* sortKeys[3] = { "UILABEL_SORT_KIND", "UILABEL_SORT_FULLEST", "UILABEL_SORT_RATIO" };
-    for (int i = 0; i < 3; ++i) renderer.drawButton(sorts[i], lang(sortKeys[i]), stallUi.sort != i, sorts[i].contains(mouseX, mouseY));
+    for (int i = 0; i < 3; ++i) renderer.drawButton(sorts[i], lang(sortKeys[i]), stallUi.sort != i);
 
     // The stores
     renderer.drawRect(L.list, RGBA{ 0.0f, 0.0f, 0.0f, 0.35f });
+    drawListBar(L.listBar);
     const std::vector<ObjectId> sources = stallSources(world, stallUi.stall, stallUi.sort);
     stallUi.listScroll = std::clamp(stallUi.listScroll, 0, std::max(0, (int)sources.size() - L.rowsShown));
     if (sources.empty()) renderer.drawListText(lang("UILABEL_STALL_NO_STORES"), L.list.x + 6.0f * s, L.list.y + 6.0f * s, theme::TEXT_DIM);
@@ -231,16 +257,17 @@ void App::drawStall() {
         const ObjectId p = sources[at];
         const Rect& r = L.rows[i];
         const bool picked = p == stallUi.store, hot = r.contains(mouseX, mouseY);
-        renderer.drawRect(r, picked ? RGBA{ 0.45f, 0.18f, 0.20f, 0.95f } : hot ? RGBA{ 0.32f, 0.13f, 0.16f, 0.95f } : RGBA{ 0.20f, 0.08f, 0.10f, 0.9f });
+        renderer.drawRow(r, hot, picked);
         const Storage& st = *world.get<Storage>(p);
         const std::string fill = st.capacity > 0 ? std::to_string(storedCount(st)) + "/" + std::to_string(st.capacity)
                                                  : std::to_string((int)std::lround(fillRatio(st) * 100.0)) + "%";
-        renderer.drawListText(propDisplayName(world, p), r.x + 6.0f * s, mid(r), RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+        renderer.drawListText(propDisplayName(world, p), r.x + 6.0f * s, mid(r), theme::TEXT);
         renderer.drawListText(fill, r.x + r.w - renderer.listTextWidth(fill) - 6.0f * s, mid(r), theme::TEXT_DIM);
     }
 
     // What the picked store holds: click to order it to the Stall
     renderer.drawRect(L.items, RGBA{ 0.0f, 0.0f, 0.0f, 0.35f });
+    drawListBar(L.itemBar);
     int hoverItem = 0, hoverCount = 0;
     if (const Storage* st = world.get<Storage>(stallUi.store)) {
         const std::vector<int> filled = filledSlots(*st);
@@ -261,7 +288,7 @@ void App::drawStall() {
     const std::string orders = langf("UILABEL_STALL_ORDERS", { std::to_string(ss->requests.size()) }) +
                                (stallManned(world, stallUi.stall) != NO_OBJECT ? "  " + lang("MISC_STALL_MANNED") : "  " + lang("MISC_STALL_UNMANNED"));
     renderer.drawListText(orders, L.orders.x, mid(L.orders), theme::TEXT_DIM);
-    renderer.drawButton(L.clearOrders, lang("UILABEL_STALL_CLEAR_ORDERS"), !ss->requests.empty(), L.clearOrders.contains(mouseX, mouseY));
+    renderer.drawButton(L.clearOrders, lang("UILABEL_STALL_CLEAR_ORDERS"), !ss->requests.empty());
 
     // Payment it takes
     renderer.drawListText(lang("UILABEL_STALL_PAYMENT"), L.payTitle.x, mid(L.payTitle), theme::GOLD);
@@ -269,7 +296,7 @@ void App::drawStall() {
         const bool on = (ss->payment & storeBit((StoreCategory)i)) != 0;
         const Rect& r = L.pay[i];
         renderer.drawRect(r, on ? RGBA{ 0.25f, 0.45f, 0.22f, 0.95f } : RGBA{ 0.20f, 0.08f, 0.10f, 0.9f });
-        renderer.drawListText(lang(STORE_CATEGORY_KEYS[i]), r.x + 6.0f * s, mid(r), on ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : theme::TEXT_DIM);
+        renderer.drawListText(lang(STORE_CATEGORY_KEYS[i]), r.x + 6.0f * s, mid(r), on ? theme::TEXT : theme::TEXT_DIM);
     }
     if (hoverItem != 0) renderer.showItemTooltip(hoverItem, hoverCount, (float)mouseX, (float)mouseY);
 }

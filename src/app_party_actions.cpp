@@ -144,11 +144,7 @@ bool App::partyAction(Action action, int param) {
     case Action::PartyDropPick:
         partyDropPick(param);
         return true;
-    case Action::PartyDropScroll: {
-        const int count = (int)dropdownEntries(party, partyUi).size();
-        partyUi.dropScroll = clampDropScroll(partyUi.dropScroll + param, count);
-        return true;
-    }
+    case Action::PartyDropBar:
     case Action::PartyDropBack:
     case Action::PartyHeading:
     case Action::PartyNote:

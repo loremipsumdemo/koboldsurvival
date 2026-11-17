@@ -63,13 +63,16 @@ BlueprintLayout layoutBlueprint(int W, int H, const BlueprintUi& ui) {
     L.cancel = Rect{ L.hold.x + half + gap, L.hold.y, half, btnH };
     L.list = Rect{ L.panel.x, L.panel.y + L.panel.h + gap, w, 2.0f * pad + shown * rowH };
     const int top = std::clamp(ui.listScroll, 0, std::max(0, count - shown));
+    L.listShown = shown;
+    L.listBar = layoutRowBar(L.list.x + pad + inner - 8.0f * s, L.list.y + pad, shown * rowH, s, count, shown, top);
+    const float innerW = inner - (L.listBar.on() ? 12.0f * s : 0.0f);
     // Each plan's row, its toggle for whether NPCs may build it, and its X to delete it at the right
     const float toggleW = 74.0f * s;
     for (int i = 0; i < shown && top + i < count; ++i) {
         const float ry = L.list.y + pad + i * rowH;
-        L.rows.push_back(Rect{ L.list.x + pad, ry, inner - rowH - toggleW - 2.0f * gap, rowH });
-        L.rowToggle.push_back(Rect{ L.list.x + pad + inner - rowH - gap - toggleW, ry, toggleW, rowH });
-        L.rowDelete.push_back(Rect{ L.list.x + pad + inner - rowH, ry, rowH, rowH });
+        L.rows.push_back(Rect{ L.list.x + pad, ry, innerW - rowH - toggleW - 2.0f * gap, rowH });
+        L.rowToggle.push_back(Rect{ L.list.x + pad + innerW - rowH - gap - toggleW, ry, toggleW, rowH });
+        L.rowDelete.push_back(Rect{ L.list.x + pad + innerW - rowH, ry, rowH, rowH });
     }
     return L;
 }
@@ -370,6 +373,10 @@ bool App::pressOnBlueprint() {
     }
     if (!bpEdit.folded && bpEdit.listOpen && L.list.contains(x, y)) {
         if (e.button.button != SDL_BUTTON_LEFT) return true;
+        if (pressListBar(L.listBar, x, y, [this](float top) {
+                const BlueprintLayout M = layoutBlueprint(winW, winH, bpEdit);
+                bpEdit.listScroll = rowBarFirst(M.listBar, (int)bpEdit.plans.size(), M.listShown, top);
+            })) return true;
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
             if (L.rowToggle[i].contains(x, y)) {
@@ -460,25 +467,25 @@ void App::drawBlueprintPanel() {
     const float textH = renderer.listTextHeight("Ag");
     renderer.drawThemedPanel(L.panel);
     renderer.drawListText(renderer.fitListText(lang("UILABEL_BLUEPRINT_TITLE"), L.title.w), L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawButton(L.fold, bpEdit.folded ? "+" : "-", true, L.fold.contains(mouseX, mouseY));
+    renderer.drawButton(L.fold, bpEdit.folded ? "+" : "-", true);
     if (bpEdit.folded) return;
-    renderer.drawRect(L.nameBox, bpEdit.editingName ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+    renderer.drawField(L.nameBox, bpEdit.editingName);
     const std::string shown = bpEdit.name.empty() && !bpEdit.editingName ? lang("UILABEL_BLUEPRINT_NAME") : bpEdit.name + (bpEdit.editingName ? "|" : "");
     renderer.drawListText(shown, L.nameBox.x + 8.0f * s, L.nameBox.y + (L.nameBox.h - textH) * 0.5f, bpEdit.name.empty() && !bpEdit.editingName ? gray : white);
     auto stepper = [&](const char* key, int value, int lo, int hi, const Rect& label, const Rect& down, const Rect& box, const Rect& up) {
         renderer.drawListText(renderer.fitListText(lang(key), label.w), label.x, label.y + (label.h - textH) * 0.5f, gray);
-        renderer.drawButton(down, "-", value > lo, down.contains(mouseX, mouseY));
+        renderer.drawButton(down, "-", value > lo);
         renderer.drawButton(box, std::to_string(value), true, false);
-        renderer.drawButton(up, "+", value < hi, up.contains(mouseX, mouseY));
+        renderer.drawButton(up, "+", value < hi);
     };
     stepper("UILABEL_BLUEPRINT_WIDTH", bpEdit.w, PLAN_SIZE_MIN, PLAN_SIZE_MAX, L.widthLabel, L.widthDown, L.widthBox, L.widthUp);
     stepper("UILABEL_BLUEPRINT_DEPTH", bpEdit.d, PLAN_SIZE_MIN, PLAN_SIZE_MAX, L.depthLabel, L.depthDown, L.depthBox, L.depthUp);
     stepper("UILABEL_BLUEPRINT_FLOORS", bpEdit.floors, 1, PLAN_FLOORS_MAX, L.floorsLabel, L.floorsDown, L.floorsBox, L.floorsUp);
     const bool dirty = bpEdit.dirty;
-    renderer.drawButton(L.save, lang("UILABEL_SAVE") + (dirty ? " *" : ""), true, L.save.contains(mouseX, mouseY));
-    renderer.drawButton(L.load, (bpEdit.listOpen ? "> " : "") + lang("UILABEL_LOAD"), true, L.load.contains(mouseX, mouseY));
-    renderer.drawButton(L.clear, lang("UILABEL_BLUEPRINT_CLEAR"), true, L.clear.contains(mouseX, mouseY));
-    renderer.drawButton(L.exit, lang(bpEdit.exitWarned ? "UILABEL_BLUEPRINT_EXIT_SURE" : "UILABEL_BLUEPRINT_EXIT"), true, L.exit.contains(mouseX, mouseY));
+    renderer.drawButton(L.save, lang("UILABEL_SAVE") + (dirty ? " *" : ""), true);
+    renderer.drawToggleButton(L.load, lang("UILABEL_LOAD"), bpEdit.listOpen);
+    renderer.drawButton(L.clear, lang("UILABEL_BLUEPRINT_CLEAR"), true);
+    renderer.drawButton(L.exit, lang(bpEdit.exitWarned ? "UILABEL_BLUEPRINT_EXIT_SURE" : "UILABEL_BLUEPRINT_EXIT"), true);
     float y = L.status.y;
     for (const std::string& text : renderer.wrapListText(lang("UILABEL_BLUEPRINT_HELP"), L.status.w)) {
         renderer.drawListText(text, L.status.x, y, gray);
@@ -496,14 +503,15 @@ void App::drawBlueprintPanel() {
         }
         const float fill = bpEdit.holding ? std::min(1.0f, (float)(SDL_GetTicks() - bpEdit.holdStart) / (float)BLUEPRINT_HOLD_MS) : 0.0f;
         renderer.drawHoldButton(L.hold, lang(deleting ? "UILABEL_BLUEPRINT_DELETE_HOLD" : "UILABEL_BLUEPRINT_OVERWRITE_HOLD"), fill);
-        renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mouseX, mouseY));
+        renderer.drawButton(L.cancel, lang("UILABEL_CANCEL"), true);
     }
     // The plans to open, each with an X to delete it; while one is asked about, its question takes the list's place
     if (bpEdit.listOpen && !deleting) {
         renderer.drawThemedPanel(L.list);
+        drawListBar(L.listBar);
         const int top = std::clamp(bpEdit.listScroll, 0, std::max(0, (int)bpEdit.plans.size() - 8));
         for (size_t i = 0; i < L.rows.size(); ++i) {
-            renderer.drawButton(L.rows[i], renderer.fitListText(bpEdit.plans[(size_t)top + i], L.rows[i].w - 12.0f * s), true, L.rows[i].contains(mouseX, mouseY));
+            renderer.drawButton(L.rows[i], renderer.fitListText(bpEdit.plans[(size_t)top + i], L.rows[i].w - 12.0f * s), true);
             const bool sound = bpEdit.planSound[(size_t)top + i] != 0;
             renderer.drawButton(L.rowToggle[i], std::string(bpEdit.planNpc[(size_t)top + i] ? "[x] " : "[ ] ") + lang("UILABEL_BLUEPRINT_NPC"), sound,
                                 L.rowToggle[i].contains(mouseX, mouseY));
@@ -511,7 +519,7 @@ void App::drawBlueprintPanel() {
                 renderer.noteTip(lang(!sound ? "MISC_BLUEPRINT_NPC_UNSOUND" : bpEdit.planNpc[(size_t)top + i] ? "UILABEL_BLUEPRINT_NPC_TIP_ON" : "UILABEL_BLUEPRINT_NPC_TIP_OFF"),
                                  L.rowToggle[i]);
             }
-            renderer.drawButton(L.rowDelete[i], "X", true, L.rowDelete[i].contains(mouseX, mouseY));
+            renderer.drawButton(L.rowDelete[i], "X", true);
         }
     }
 }

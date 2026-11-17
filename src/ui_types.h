@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 struct PanelPlace {
@@ -19,7 +20,6 @@ enum class Action {
     LeaveYes, LeaveNo,
     DefaultWorldYes, DefaultWorldNo,
     SortName, SortTime,
-    ScrollUp, ScrollDown,
     DeleteSave,
     DeleteHold,
     DeleteNo,
@@ -40,7 +40,7 @@ enum class Action {
     PartyInvSlot,
     PartyCount,
     PartyDropPick,
-    PartyDropScroll,
+    PartyDropBar,
     PartyDropBack,
     PartyRandomAll,
     PartyPatron,
@@ -62,6 +62,41 @@ struct Rect {
 };
 
 inline float uiScaleFor(float H) { return H / 720.0f; }
+
+// A window's title line along the top of its box, with the close button at its right end. Every window lays these out the same way.
+inline void layoutTitleClose(const Rect& box, float pad, float line, Rect& title, Rect& close) {
+    title = Rect{ box.x + pad, box.y + pad, box.w - 2.0f * pad - line, line };
+    close = Rect{ box.x + box.w - pad - line, box.y + pad, line, line };
+}
+
+// A click that dismisses a window: on its close button, or anywhere outside it
+inline bool dismissAt(const Rect& box, const Rect& close, float x, float y) { return close.contains(x, y) || !box.contains(x, y); }
+
+// A window that is moved by holding its title bar. A window's state derives from this, keeping x and y (-1: not placed yet).
+// grab() when the title is pressed; follow() every frame, with whether the left button is still down and where the pointer is.
+struct WindowDrag {
+    float x = -1.0f, y = -1.0f;
+    bool moving = false;
+    float grabX = 0.0f, grabY = 0.0f;
+    void grab(const Rect& panel, float px, float py) {
+        moving = true;
+        x = panel.x;
+        y = panel.y;
+        grabX = px - panel.x;
+        grabY = py - panel.y;
+    }
+    // True while it is being moved
+    bool follow(bool leftDown, float mx, float my) {
+        if (!moving) return false;
+        if (!leftDown) {
+            moving = false;
+            return false;
+        }
+        x = mx - grabX;
+        y = my - grabY;
+        return true;
+    }
+};
 
 inline Rect scrollThumb(const Rect& track, float shownShare, float minH, float frac) {
     const float h = std::max(minH, track.h * shownShare);
@@ -101,6 +136,25 @@ inline ScrollArea layoutScrollArea(const Rect& full, float contentH, float offse
 
 inline float scrollOffsetAt(const ScrollArea& a, float thumbTop) { return scrollFracAt(a.track, a.thumb, thumbTop) * a.maxOffset; }
 
+// A scrollbar for a list that scrolls a row at a time: the first row shown is what moves. Empty (on() false) when every row fits.
+struct RowBar {
+    Rect track, thumb;
+    bool on() const { return track.h > 0.0f; }
+};
+
+inline RowBar layoutRowBar(float x, float y, float h, float s, int total, int shown, int first) {
+    RowBar b;
+    if (total <= shown || shown <= 0 || h <= 0.0f) return b;
+    b.track = Rect{ x, y, 8.0f * s, h };
+    b.thumb = scrollThumb(b.track, (float)shown / (float)total, std::min(16.0f * s, h), (float)first / (float)(total - shown));
+    return b;
+}
+
+// The first row to show with the thumb's top at thumbTop
+inline int rowBarFirst(const RowBar& b, int total, int shown, float thumbTop) {
+    return (int)std::lround(scrollFracAt(b.track, b.thumb, thumbTop) * (float)std::max(0, total - shown));
+}
+
 // A wheel notch scrolls by this many pixels (positive wheel is up)
 inline float scrollWheelOffset(const ScrollArea& a, float wheel, float notchPx) {
     return std::clamp(a.offset - wheel * notchPx, 0.0f, a.maxOffset);
@@ -115,4 +169,5 @@ struct Button {
     Action action;
     bool enabled = true;
     int param = 0;
+    int extra = 0;   // a second number for the few buttons that need one
 };

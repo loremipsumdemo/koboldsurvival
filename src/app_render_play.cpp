@@ -156,11 +156,10 @@ void App::drawStoragePanel() {
         } else {
             hint = lang("UILABEL_STORAGE_HINT");
         }
-        // A store with a capacity, or more slots than fit: how full it is, and that it scrolls
+        // A store with a capacity, or more slots than fit: how full it is
         if (st && (st->capacity > 0 || storageScrollMax(world) > 0)) {
             const int cap = st->capacity > 0 ? st->capacity : 0;
             hint = langf("UILABEL_STORE_HOLDS", { std::to_string(storedCount(*st)), cap > 0 ? std::to_string(cap) : std::string("-") }) + " " + hint;
-            if (storageScrollMax(world) > 0) hint += " " + lang("UILABEL_STORE_SCROLL");
         }
         session.storageScroll = std::clamp(session.storageScroll, 0, storageScrollMax(world));
         const Lock* ownLock = ownedLockOf(world, session.storageProp) ? world.get<Lock>(session.storageProp) : nullptr;
@@ -173,7 +172,7 @@ void App::drawStoragePanel() {
         }
         if (session.quantity.open && session.quantity.toStorage) {
             renderer.drawQuantityPrompt(layoutQuantity(winW, winH), session.quantity.name, session.quantity.chosen,
-                                        session.quantity.available, mouseX, mouseY);
+                                        session.quantity.available);
         }
     }
 }
@@ -262,12 +261,12 @@ void App::drawTalkOrTrade() {
                 }
                 if (session.quantity.open) {
                     renderer.drawQuantityPrompt(layoutQuantity(winW, winH), session.quantity.name, session.quantity.chosen,
-                                                session.quantity.available, mouseX, mouseY);
+                                                session.quantity.available);
                 }
             } else {
                 const Dialogue* dg = world.get<Dialogue>(session.dialogueUnit);
                 renderer.drawDialogue(dialogueBox(winW, winH), session.dialogueConvo,
-                                      dg ? dg->options : std::vector<DialogueOption>{}, mouseX, mouseY);
+                                      dg ? dg->options : std::vector<DialogueOption>{});
             }
         }
     }
@@ -321,12 +320,11 @@ void App::drawPlayingScreen() {
     }
     if (squadMenu == 1 || squadMenu == 2) renderer.drawItemMenu(squadMenuLayout(), squadMenuLabels(), mouseX, mouseY);
     if (session.disbandTarget != NO_OBJECT) {
-        renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare(), mouseX, mouseY);
+        renderer.drawDisband(world, layoutDisband(winW, winH), session.disbandTarget, disbandHeldShare());
     }
     if (optimizeAllOpen) {
         renderer.drawOptimizeAll(layoutOptimizeAll(winW, winH), (int)ownUnitList().size(), settings.optimizeAttackShare,
-                                 { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies },
-                                 mouseX, mouseY);
+                                 { settings.optimizeAccessories, settings.optimizeTwoHanded, settings.optimizeValueTies });
     }
     if (mapOpen) drawWorldMapPopup();
     drawPropAdjust();

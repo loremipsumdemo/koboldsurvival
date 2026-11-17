@@ -49,15 +49,15 @@ struct PanelGeometry {
     float detailsW;
     float headerY;
     float headerH;
-    Rect aboveBand;
     float listTop;
-    Rect belowBand;
     float closeY;
     float btnH;
     float rowH;
     float rowPitch;
 };
 PanelGeometry panelGeometry(int W, int H);
+// The scrollbar of the save list, when there are more saves than rows
+RowBar saveListBar(int W, int H, size_t count, size_t offset);
 
 struct DialogGeometry {
     Rect box;

@@ -50,7 +50,7 @@ void Renderer::drawInteractionHeader(const Rect& bar, const Rect& nameBox, const
 }
 
 void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLine>& convo,
-                            const std::vector<DialogueOption>& options, float mx, float my) {
+                            const std::vector<DialogueOption>& options) {
     const float s = uiScale();
     const RGBA playerTint{ 0.72f, 0.88f, 1.0f, 1.0f };
     const RGBA rowBg = theme::alpha(theme::SLOT, 0.92f);
@@ -80,9 +80,9 @@ void Renderer::drawDialogue(const DialogueLayout& L, const std::vector<SpokenLin
 
     for (size_t i = 0; i < L.options.size() && i < options.size(); ++i) {
         const Rect& r = L.options[i];
-        drawButton(r, fitText(options[i].prompt, r.w - 16.0f * s, false), true, r.contains(mx, my));
+        drawButton(r, fitText(options[i].prompt, r.w - 16.0f * s, false), true);
     }
-    drawButton(L.end, lang("UILABEL_END_DIALOGUE"), true, L.end.contains(mx, my));
+    drawButton(L.end, lang("UILABEL_END_DIALOGUE"), true);
 }
 
 void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const std::string& yourName,
@@ -146,8 +146,8 @@ void Renderer::drawTrade(const TradeLayout& L, const std::string& npcName, const
     drawListText(fitText(status.text, L.statusLine.w, false), L.statusLine.x, L.statusLine.y,
                  status.ok ? theme::OK_TEXT : theme::WARN_TEXT);
 
-    drawButton(L.cancelBtn, lang("UILABEL_CANCEL"), true, L.cancelBtn.contains(mx, my));
-    drawButton(L.tradeBtn, lang("UILABEL_TRADE"), status.ok, status.ok && L.tradeBtn.contains(mx, my));
+    drawButton(L.cancelBtn, lang("UILABEL_CANCEL"), true);
+    drawButton(L.tradeBtn, lang("UILABEL_TRADE"), status.ok);
 
     if (hoverNpc >= 0 && npcInv) {
         const ItemStack& st = npcInv->slots[hoverNpc];
@@ -177,6 +177,7 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
     const size_t inCount = storage ? std::min((size_t)shown, storage->slots.size() - first) : 0;
     const int hotIn = drawStackGrid(L.grid, L.slots, in, inCount, dragFrom < shown ? dragFrom : -1, mx, my);
     if (hotIn >= 0) hoverStack = in[hotIn];
+    if (const RowBar bar = storageBar(L, scroll); bar.on()) drawScrollBar(bar.track, bar.thumb, mouseOver(bar.track));
     if (L.output) {
         drawListText(fitText(lang("UILABEL_OUTPUT"), L.outHeading.w, false), L.outHeading.x, L.outHeading.y, theme::GOLD);
         const ItemStack* out = output ? output->slots.data() : nullptr;
@@ -186,8 +187,8 @@ void Renderer::drawStorage(const StorageLayout& L, const std::string& propName, 
         drawListText(line, L.status.x, L.status.y + (L.status.h - th) * 0.5f, theme::AMBER);
     }
     drawWrappedText(hint, L.hint, theme::TEXT_QUIET);
-    if (L.lockToggle && !toggleLabel.empty()) drawButton(L.lockBtn, toggleLabel, true, L.lockBtn.contains(mx, my));
-    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
+    if (L.lockToggle && !toggleLabel.empty()) drawButton(L.lockBtn, toggleLabel, true);
+    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true);
     if (hoverStack.item != 0 && dragFrom < 0) drawItemTooltip(hoverStack.item, hoverStack.count, mx, my);
 }
 
@@ -216,51 +217,31 @@ void Renderer::drawLoot(const LootLayout& L, const std::string& name, const Equi
                                      mx, my, CellLight::WhenFilled);
     if (hotInv >= 0) { hoverItem = inv->slots[hotInv].item; hoverCount = inv->slots[hotInv].count; }
     drawWrappedText(lang("UILABEL_LOOT_HINT"), L.hint, theme::TEXT_QUIET);
-    drawButton(L.takeAllBtn, lang("UILABEL_TAKE_ALL"), true, L.takeAllBtn.contains(mx, my));
-    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true, L.closeBtn.contains(mx, my));
+    drawButton(L.takeAllBtn, lang("UILABEL_TAKE_ALL"), true);
+    drawButton(L.closeBtn, lang("UILABEL_CLOSE"), true);
     if (hoverItem != 0) drawItemTooltip(hoverItem, hoverCount, mx, my);
 }
 
-void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles,
-                               float mx, float my) {
+void Renderer::drawOptimizeAll(const OptimizeAllLayout& L, int unitCount, int attackShare, const std::array<bool, 3>& toggles) {
     const float s = uiScale();
-    const float th = listTextHeight("Ag");
-    drawScrim();
-    drawThemedPanel(L.box);
-    drawListText(fitText(lang("UILABEL_OPTIMIZE_ALL"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
+    drawWindowFrame(L.box, L.title, Rect{}, lang("UILABEL_OPTIMIZE_ALL"));
     drawWrappedText(langf("MISC_OPTIMIZE_ALL_ASK", { std::to_string(unitCount) }), L.text, theme::TEXT_DIM);
     const int share = std::clamp(attackShare, 0, 100);
-    const std::string sl = langf("UILABEL_OPTIMIZE_BALANCE", { std::to_string(share), std::to_string(100 - share) });
-    drawListText(fitText(sl, L.sliderLabel.w, false), L.sliderLabel.x, L.sliderLabel.y + (L.sliderLabel.h - th) * 0.5f, WHITE);
+    drawTextIn(L.sliderLabel, langf("UILABEL_OPTIMIZE_BALANCE", { std::to_string(share), std::to_string(100 - share) }), WHITE);
     drawRect(L.track, RGBA{ 0.24f, 0.10f, 0.12f, 1.0f });
     drawRect(Rect{ L.track.x, L.track.y, L.track.w * share / 100.0f, L.track.h }, theme::GOLD);
     const float kx = L.track.x + L.track.w * share / 100.0f, kw = 8.0f * s, kh = L.track.h + 8.0f * s;
     drawRect(Rect{ kx - kw * 0.5f, L.track.y + (L.track.h - kh) * 0.5f, kw, kh }, WHITE);
     const char* keys[3] = { "UILABEL_OPTIMIZE_ACCESSORIES", "UILABEL_OPTIMIZE_TWO_HANDED", "UILABEL_OPTIMIZE_VALUE_TIES" };
-    for (int i = 0; i < 3; ++i) {
-        const Rect& r = L.toggles[(size_t)i];
-        const float box = r.h - 6.0f * s;
-        const Rect b{ r.x, r.y + 3.0f * s, box, box };
-        const bool hot = r.contains(mx, my);
-        if (hot) noteHover(r);
-        drawRect(b, hot ? RGBA{ 0.42f, 0.28f, 0.13f, 1.0f } : RGBA{ 0.48f, 0.24f, 0.27f, 1.0f });
-        drawRect(Rect{ b.x + 2.0f * s, b.y + 2.0f * s, b.w - 4.0f * s, b.h - 4.0f * s },
-                 toggles[(size_t)i] ? theme::GOLD : theme::BOX_FILL);
-        const std::string label = lang(keys[i]);
-        const float lx = b.x + box + 8.0f * s;
-        const std::string shown = fitTextTip(label, r.x + r.w - lx, r);
-        drawListText(shown, lx, r.y + (r.h - th) * 0.5f, WHITE);
-    }
-    drawButton(L.confirm, lang("UILABEL_CONFIRM"), unitCount > 0, unitCount > 0 && L.confirm.contains(mx, my));
-    drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
+    for (int i = 0; i < 3; ++i) drawCheckRow(L.toggles[(size_t)i], lang(keys[i]), toggles[(size_t)i]);
+    drawButton(L.confirm, lang("UILABEL_CONFIRM"), unitCount > 0);
+    drawButton(L.cancel, lang("UILABEL_CANCEL"), true);
 }
 
-void Renderer::drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held, float mx, float my) {
+void Renderer::drawDisband(World& w, const DisbandLayout& L, ObjectId unit, float held) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
-    drawScrim();
-    drawThemedPanel(L.box);
-    drawListText(fitText(lang("UILABEL_DISBAND"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
+    drawWindowFrame(L.box, L.title, Rect{}, lang("UILABEL_DISBAND"));
 
     drawRect(L.portrait, theme::TAB_OFF);
     const TextTex& g = unitPortrait(w, unit);
@@ -290,30 +271,23 @@ void Renderer::drawDisband(World& w, const DisbandLayout& L, ObjectId unit, floa
     drawListText(fitText(hint, L.hint.w, false), L.hint.x + (L.hint.w - std::min(L.hint.w, listTextWidth(hint))) * 0.5f,
                  L.hint.y + (L.hint.h - th) * 0.5f, WHITE);
 
-    drawButton(L.disband, lang("UILABEL_DISBAND"), true, L.disband.contains(mx, my));
+    drawButton(L.disband, lang("UILABEL_DISBAND"), true);
     const float f = std::clamp(held, 0.0f, 1.0f);
     if (f > 0.0f) {
         drawRect(Rect{ L.disband.x, L.disband.y, L.disband.w * f, L.disband.h }, RGBA{ 0.85f, 0.12f, 0.12f, 0.55f });
         const std::string label = lang("UILABEL_DISBAND");
         drawListText(label, L.disband.x + (L.disband.w - listTextWidth(label)) * 0.5f, L.disband.y + (L.disband.h - th) * 0.5f, WHITE);
     }
-    drawButton(L.cancel, lang("UILABEL_CANCEL"), true, L.cancel.contains(mx, my));
+    drawButton(L.cancel, lang("UILABEL_CANCEL"), true);
     (void)s;
 }
 
-void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available,
-                                  float mx, float my) {
-    const float s = uiScale();
-    const float th = listTextHeight("Ag");
-    drawThemedPanel(L.box);
-    const std::string title = langf("UILABEL_CHOOSE_HOW_MANY", { itemName, std::to_string(available) });
-    drawListText(fitText(title, L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
+void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& itemName, int chosen, int available) {
+    drawWindowFrame(L.box, L.title, Rect{}, langf("UILABEL_CHOOSE_HOW_MANY", { itemName, std::to_string(available) }));
     drawRect(L.countBox, theme::WELL);
-    const std::string num = std::to_string(chosen);
-    drawListText(num, L.countBox.x + (L.countBox.w - listTextWidth(num)) * 0.5f,
-                 L.countBox.y + (L.countBox.h - th) * 0.5f, WHITE);
+    drawTextIn(L.countBox, std::to_string(chosen), WHITE, TextAlign::Center);
     auto btn = [&](const Rect& r, const std::string& label, bool enabled) {
-        drawButton(r, label, enabled, enabled && r.contains(mx, my));
+        drawButton(r, label, enabled);
     };
     btn(L.minus100, "-100", chosen > 1);
     btn(L.minus10, "-10", chosen > 1);
@@ -325,7 +299,6 @@ void Renderer::drawQuantityPrompt(const QuantityLayout& L, const std::string& it
     btn(L.max, lang("UILABEL_MAX"), chosen != available);
     btn(L.confirm, lang("UILABEL_CONFIRM"), true);
     btn(L.cancel, lang("UILABEL_CANCEL"), true);
-    (void)s;
 }
 
 ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int winW, int winH, const std::vector<std::string>& labels) {
@@ -336,13 +309,15 @@ ItemMenuLayout Renderer::itemMenuLayout(float x, float y, int buttonCount, int w
 
 void Renderer::drawItemMenu(const ItemMenuLayout& L, const std::vector<std::string>& labels, float mx, float my) {
     const float s = uiScale();
-    drawRect(L.box, theme::alpha(theme::PINK, 0.8f));
-    drawRect(Rect{ L.box.x + 1.0f, L.box.y + 1.0f, L.box.w - 2.0f, L.box.h - 2.0f }, theme::alpha(theme::NIGHT, 0.92f));
+    drawBorderedBox(L.box, theme::alpha(theme::PINK, 0.8f), theme::alpha(theme::NIGHT, 0.92f));
     for (size_t i = 0; i < L.buttons.size() && i < labels.size(); ++i) {
         const Rect& r = L.buttons[i];
         const bool hot = r.contains(mx, my);
         if (hot) noteHover(r);
-        if (hot) drawRectGradientH(r, rgb255(52, 30, 16, 0.85f), rgb255(96, 58, 30, 0.95f));
+        if (hot) {
+            drawRectGradientH(r, rgb255(52, 30, 16, 0.85f), rgb255(96, 58, 30, 0.95f));
+            drawBevel(r);
+        }
         drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, hot ? theme::GOLD : theme::alpha(theme::ASH, 0.35f));
         const float tw = listTextWidth(labels[i]), th = listTextHeight(labels[i]);
         drawListText(labels[i], r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, hot ? theme::BONE : rgb255(232, 214, 190, 1.0f));

@@ -29,16 +29,9 @@ PlanPopupLayout layoutPlanPopup(int W, int H, int count, int scroll) {
     L.shown = std::max(1, (int)(L.list.h / rowH));
     L.total = count;
     L.first = std::clamp(scroll, 0, std::max(0, count - L.shown));
-    const bool bar = count > L.shown;
-    const float barW = 12.0f * s;
-    if (bar) {
-        L.track = Rect{ L.list.x + L.list.w - barW, L.list.y, barW, L.list.h };
-        const float thumbH = std::max(24.0f * s, L.track.h * (float)L.shown / (float)count);
-        const float travel = L.track.h - thumbH;
-        L.thumb = Rect{ L.track.x, L.track.y + travel * (float)L.first / (float)(count - L.shown), barW, thumbH };
-    }
+    L.bar = layoutRowBar(L.list.x + L.list.w - 8.0f * s, L.list.y, L.shown * rowH, s, count, L.shown, L.first);
     for (int i = 0; i < L.shown && L.first + i < count; ++i) {
-        L.rows.push_back(Rect{ L.list.x, L.list.y + (float)i * rowH, L.list.w - (bar ? barW + 2.0f * s : 0.0f), rowH });
+        L.rows.push_back(Rect{ L.list.x, L.list.y + (float)i * rowH, L.list.w - (L.bar.on() ? 12.0f * s : 0.0f), rowH });
     }
     const float rx = L.list.x + listW + pad, rw = L.panel.x + w - pad - rx;
     const float previewH = L.list.h * 0.5f;
@@ -122,12 +115,11 @@ bool App::pressOnPlanPopup() {
         playSfx(Sfx::UiClick);
         return true;
     }
-    if (L.total > L.shown && L.track.contains(x, y)) {
-        // The scroll bar's track: the list goes to where it was pressed
-        const float along = std::clamp((y - L.track.y) / std::max(1.0f, L.track.h), 0.0f, 1.0f);
-        planPopup.scroll = (int)std::lround(along * (float)(L.total - L.shown));
-        return true;
-    }
+    if (pressListBar(L.bar, x, y, [this](float top) {
+            const int n = (int)planLibrary().size();
+            const PlanPopupLayout P = layoutPlanPopup(winW, winH, n, planPopup.scroll);
+            planPopup.scroll = rowBarFirst(P.bar, n, P.shown, top);
+        })) return true;
     if (count == 0) return true;
     for (int i = 0; i < (int)BuildMaterial::Count; ++i) {
         if (!L.mats[i].contains(x, y)) continue;
@@ -147,13 +139,10 @@ void App::drawPlanPopup() {
     const PlanPopupLayout L = layoutPlanPopup(winW, winH, count, planPopup.scroll);
     planPopup.scroll = L.first;
     const float s = uiScaleFor((float)winH);
-    const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
-    const RGBA well{ 0.14f, 0.09f, 0.08f, 1.0f };
+    const RGBA white = theme::TEXT, gray = theme::TEXT_DIM, gold = theme::GOLD;
+    const RGBA well = theme::FIELD;
     const float textH = renderer.listTextHeight("Ag");
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.panel);
-    renderer.drawListText(renderer.fitListText(lang("UILABEL_PLAN_TITLE"), L.title.w), L.title.x, L.title.y + (L.title.h - textH) * 0.5f, gold);
-    renderer.drawCloseButton(L.close);
+    renderer.drawWindowFrame(L.panel, L.title, L.close, lang("UILABEL_PLAN_TITLE"));
 
     renderer.drawRect(L.list, well);
     if (count == 0) {
@@ -175,10 +164,7 @@ void App::drawPlanPopup() {
         renderer.drawListText(renderer.fitListText(lib[(size_t)at].name, row.w - 12.0f * s), row.x + 6.0f * s, row.y + (row.h - textH) * 0.5f,
                               picked ? white : gray);
     }
-    if (L.total > L.shown) {
-        renderer.drawRect(L.track, RGBA{ 0.0f, 0.0f, 0.0f, 0.35f });
-        renderer.drawRect(L.thumb, theme::alpha(theme::GOLD_DEEP, 0.9f));
-    }
+    drawListBar(L.bar);
 
     const BuildPlan& plan = lib[(size_t)planPopup.selected];
     renderer.drawRect(L.preview, well);
@@ -194,9 +180,9 @@ void App::drawPlanPopup() {
     info(3, lang(plan.npcAllowed ? "UILABEL_PLAN_NPCS_ON" : "UILABEL_PLAN_NPCS_OFF"), gray);
     for (int i = 0; i < (int)BuildMaterial::Count; ++i) {
         const bool on = planPopup.material == (int)MATERIAL_TIERS[i];
-        renderer.drawButton(L.mats[i], (on ? "> " : "") + lang(materialNameKey(MATERIAL_TIERS[i])), true, L.mats[i].contains(mouseX, mouseY));
+        renderer.drawToggleButton(L.mats[i], lang(materialNameKey(MATERIAL_TIERS[i])), on);
     }
-    renderer.drawButton(L.place, lang("UILABEL_PLAN_PLACE"), true, L.place.contains(mouseX, mouseY));
+    renderer.drawButton(L.place, lang("UILABEL_PLAN_PLACE"), true);
 }
 
 // ---- Laying one

@@ -88,6 +88,7 @@ void Renderer::drawInventorySidebar(const SidebarLayout& L, World& w, ObjectId u
             if (t.w <= 0.0f) continue;
             const bool on = unitTabEnabled(w, unit, (UnitTab)i);
             drawRect(t, i == idx(L.tab) ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, on ? 0.9f : 0.45f });
+            drawBevel(t, on ? 1.0f : 0.4f);
             if (i == idx(L.tab)) drawRect(Rect{ t.x, t.y + t.h - 2.0f, t.w, 2.0f }, theme::GOLD);
             if (on && t.contains(mx, my)) noteHover(t);
             const float tw = listTextWidth(names[i]), th = listTextHeight("Ag");

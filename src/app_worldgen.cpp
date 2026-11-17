@@ -56,9 +56,12 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     const float listRow = 30.0f * s;
     const int shown = std::max(0, (int)((L.mapsBox.h - 56.0f * s) / (listRow + 4.0f * s)));
     const int first = std::clamp(mapScroll, 0, std::max(0, mapCount - shown));
+    const RowBar bar = layoutRowBar(L.mapsBox.x + rightW - 10.0f * s - 8.0f * s, L.mapsBox.y + 44.0f * s,
+                                    std::max(0.0f, shown * (listRow + 4.0f * s) - 4.0f * s), s, mapCount, shown, first);
+    L.mapBar = bar;
     for (int i = first; i < mapCount && i < first + shown; ++i) {
         const float rowY = L.mapsBox.y + 44.0f * s + (i - first) * (listRow + 4.0f * s);
-        const float rowW = rightW - 20.0f * s - listRow - 4.0f * s;
+        const float rowW = rightW - 20.0f * s - listRow - 4.0f * s - (bar.on() ? 12.0f * s : 0.0f);
         L.mapRows.push_back(Rect{ L.mapsBox.x + 10.0f * s, rowY, rowW, listRow });
         L.mapDelete.push_back(Rect{ L.mapsBox.x + 10.0f * s + rowW + 4.0f * s, rowY, listRow, listRow });
     }
@@ -109,7 +112,8 @@ EditorLayout layoutEditor(int W, int H, bool ownUi) {
     return L;
 }
 
-ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float s) {
+ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float scale) {
+    const float s = scale;
     const float rowH = 25.0f * s, gap = 3.0f * s, labelW = area.w * 0.52f;
     ThemeLayout L;
     L.presetDown = Rect{ area.x + labelW, area.y, rowH, rowH };
@@ -127,12 +131,15 @@ ThemeLayout layoutThemePanel(const Rect& area, const ThemeUi& ui, float s) {
     L.total = (int)entries.size();
     L.shown = std::max(1, (int)((area.y + area.h - top) / (rowH + gap)));
     L.first = std::clamp(ui.scroll, 0, std::max(0, L.total - L.shown));
+    const float listH = L.shown * (rowH + gap) - gap;
+    L.bar = layoutRowBar(area.x + area.w - 8.0f * scale, top, listH, scale, L.total, L.shown, L.first);
+    const float lineW = L.bar.on() ? area.w - 8.0f * scale - 4.0f * scale : area.w;
     for (int i = L.first; i < L.total && i < L.first + L.shown; ++i) {
         ThemeLine line;
         line.row = entries[(size_t)i].row;
         line.channel = entries[(size_t)i].channel;
-        line.box = Rect{ area.x, top + (i - L.first) * (rowH + gap), area.w, rowH };
-        line.control = Rect{ area.x + labelW, line.box.y, area.w - labelW, rowH };
+        line.box = Rect{ area.x, top + (i - L.first) * (rowH + gap), lineW, rowH };
+        line.control = Rect{ area.x + labelW, line.box.y, lineW - labelW, rowH };
         L.lines.push_back(line);
     }
     return L;
@@ -229,11 +236,12 @@ void App::drawThemePanel(const Rect& area) {
     const float textH = renderer.listTextHeight("Ag");
     const auto middle = [&](const Rect& r) { return r.y + (r.h - textH) * 0.5f; };
     renderer.drawListText(lang("UILABEL_THEME_PRESET"), area.x, middle(L.presetBox), gray);
-    renderer.drawButton(L.presetDown, "<", true, L.presetDown.contains(mouseX, mouseY));
+    renderer.drawButton(L.presetDown, "<", true);
     renderer.drawRect(L.presetBox, well);
     const std::string presetName = lang(themePresets()[themePresetBeingEdited()].labelKey);
     renderer.drawListText(renderer.fitListText(presetName, L.presetBox.w - 8.0f * s), L.presetBox.x + 4.0f * s, middle(L.presetBox), white);
-    renderer.drawButton(L.presetUp, ">", true, L.presetUp.contains(mouseX, mouseY));
+    renderer.drawButton(L.presetUp, ">", true);
+    if (L.bar.on()) renderer.drawScrollBar(L.bar.track, L.bar.thumb, barDrag.kind == BarDrag::Theme || renderer.mouseOver(L.bar.track));
 
     for (const ThemeLine& line : L.lines) {
         const ThemeRow& row = themeRows()[line.row];
@@ -259,10 +267,10 @@ void App::drawThemePanel(const Rect& area) {
             bar(theme.*row.number, row.low, row.high);
             break;
         case ThemeRowKind::Toggle:
-            renderer.drawButton(c, lang(theme.*row.number ? "UILABEL_THEME_ON" : "UILABEL_THEME_OFF"), true, c.contains(mouseX, mouseY));
+            renderer.drawButton(c, lang(theme.*row.number ? "UILABEL_THEME_ON" : "UILABEL_THEME_OFF"), true);
             break;
         case ThemeRowKind::Choice:
-            renderer.drawButton(c, lang(themeChoiceLabelKey(row, theme.*row.number)), true, c.contains(mouseX, mouseY));
+            renderer.drawButton(c, lang(themeChoiceLabelKey(row, theme.*row.number)), true);
             break;
         case ThemeRowKind::Color: {
             float rgb[3];
@@ -277,14 +285,79 @@ void App::drawThemePanel(const Rect& area) {
     }
 }
 
+Rect App::themeAreaNow() {
+    return editing ? layoutEditor(winW, winH, true).themeArea
+         : devThemeShown() ? layoutDeveloper(winW, winH, EditorTab::Theme).themeArea
+         : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
+}
+
+// Taking a list's scrollbar: the thumb is held where it was taken, a click on the track outside it takes it by its middle
+void App::startBarDrag(BarDrag::Kind kind, const RowBar& bar, float y, SpawnPicker* picker) {
+    barDrag.kind = kind;
+    barDrag.picker = picker;
+    barDrag.grab = bar.thumb.contains(bar.thumb.x, y) ? y - bar.thumb.y : bar.thumb.h * 0.5f;
+    playSfx(Sfx::UiClick);
+    moveBarDrag(y);
+}
+
+bool App::pressListBar(const RowBar& bar, float x, float y, std::function<void(float)> apply) {
+    if (!bar.on() || !bar.track.contains(x, y)) return false;
+    startBarDrag(BarDrag::Custom, bar, y, nullptr);
+    barDrag.track = bar.track;
+    barDrag.apply = std::move(apply);
+    moveBarDrag(y);
+    return true;
+}
+
+void App::drawListBar(const RowBar& bar) {
+    if (!bar.on()) return;
+    const bool held = barDrag.kind == BarDrag::Custom && barDrag.track.x == bar.track.x && barDrag.track.y == bar.track.y;
+    renderer.drawScrollBar(bar.track, bar.thumb, held || renderer.mouseOver(bar.track));
+}
+
+void App::moveBarDrag(float y) {
+    const float top = y - barDrag.grab;
+    switch (barDrag.kind) {
+    case BarDrag::Custom:
+        if (barDrag.apply) barDrag.apply(top);
+        break;
+    case BarDrag::Theme: {
+        const ThemeLayout L = layoutThemePanel(themeAreaNow(), themeUi, uiScaleFor(winH));
+        if (L.bar.on()) themeUi.scroll = rowBarFirst(L.bar, L.total, L.shown, top);
+        break;
+    }
+    case BarDrag::Maps: {
+        const WorldGenLayout L = layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll);
+        if (L.mapBar.on()) worldGenUi.mapScroll = rowBarFirst(L.mapBar, (int)worldGenUi.maps.size(), (int)L.mapRows.size(), top);
+        break;
+    }
+    case BarDrag::Picker: {
+        SpawnPicker* p = barDrag.picker;
+        if (!p) break;
+        const SpawnPickerLayout base = p == &devSpawn ? layoutDeveloper(winW, winH, devSpawn.tab).picker : layoutEditor(winW, winH, true).picker;
+        const SpawnPickerLayout L = pickerView(*p, base);
+        if (L.bar.on()) p->listScroll = rowBarFirst(L.bar, (int)spawnEntries(p->tab).size(), (int)L.rows.size(), top);
+        break;
+    }
+    case BarDrag::Saves: {
+        const RowBar bar = saveListBar(winW, winH, saves.size(), listOffset);
+        if (bar.on()) listOffset = (size_t)std::max(0, rowBarFirst(bar, (int)saves.size(), (int)visibleSaveRows(winH), top));
+        break;
+    }
+    case BarDrag::Storage: {
+        const StorageLayout L = storageLayout(world, winW, winH);
+        const RowBar bar = storageBar(L, session.storageScroll);
+        const int shown = ((int)L.slots.size() + STORAGE_COLUMNS - 1) / STORAGE_COLUMNS;
+        if (bar.on()) session.storageScroll = std::clamp(rowBarFirst(bar, shown + L.scrollMax, shown, top), 0, L.scrollMax);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void App::themeDragAt(float x) {
-    const float s = uiScaleFor(winH);
-    const Rect area = editing ? layoutEditor(winW, winH, true).themeArea
-                    : devThemeShown() ? layoutDeveloper(winW, winH, EditorTab::Theme).themeArea
-                    : layoutWorldGen(winW, winH, (int)worldGenUi.maps.size(), worldGenUi.mapScroll).themeArea;
-    const float labelW = area.w * 0.52f, controlX = area.x + labelW, controlW = area.w - labelW;
-    (void)s;
-    const float share = std::clamp((x - controlX) / controlW, 0.0f, 1.0f);
+    const float share = std::clamp((x - themeUi.dragX) / std::max(1.0f, themeUi.dragW), 0.0f, 1.0f);
     const ThemeRow& row = themeRows()[themeUi.dragRow];
     MapTheme& theme = themeBeingEdited();
     if (themeUi.dragChannel >= 0) {
@@ -303,6 +376,10 @@ void App::themeDragAt(float x) {
 
 bool App::themeClick(const Rect& area, float x, float y) {
     const ThemeLayout L = layoutThemePanel(area, themeUi, uiScaleFor(winH));
+    if (L.bar.on() && L.bar.track.contains(x, y)) {
+        startBarDrag(BarDrag::Theme, L.bar, y, nullptr);
+        return true;
+    }
     if (L.presetDown.contains(x, y) || L.presetUp.contains(x, y)) {
         int& preset = themePresetBeingEdited();
         preset = (preset + (L.presetUp.contains(x, y) ? 1 : themePresetCount() - 1)) % themePresetCount();
@@ -325,6 +402,8 @@ bool App::themeClick(const Rect& area, float x, float y) {
         } else if (line.channel >= 0 || row.kind == ThemeRowKind::Number) {
             themeUi.dragRow = line.row;
             themeUi.dragChannel = line.channel;
+            themeUi.dragX = line.control.x;
+            themeUi.dragW = line.control.w;
             themeDragAt(x);
         }
         return true;
@@ -366,12 +445,12 @@ int App::worldSaveCount(const std::string& name) const {
 std::vector<std::pair<std::string, RGBA>> App::mapDeleteLines() {
     const std::string& name = worldGenUi.deleteMap;
     std::vector<std::pair<std::string, RGBA>> lines;
-    lines.push_back({ langf("MISC_DELETE_MAP_Q", { name }), RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } });
+    lines.push_back({ langf("MISC_DELETE_MAP_Q", { name }), theme::TEXT });
     const int saves = worldSaveCount(name);
     if (saves > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_SAVES", { std::to_string(saves) }), RGBA{ 1.0f, 0.45f, 0.38f, 1.0f } });
     const int levels = worldGenUi.deleteLevels;
-    if (levels > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_LEVELS", { std::to_string(levels) }), RGBA{ 0.80f, 0.72f, 0.64f, 1.0f } });
-    lines.push_back({ lang("UILABEL_HOLD_DELETE"), RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } });
+    if (levels > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_LEVELS", { std::to_string(levels) }), theme::TEXT_DIM });
+    lines.push_back({ lang("UILABEL_HOLD_DELETE"), theme::TEXT });
     return lines;
 }
 
@@ -479,51 +558,52 @@ void App::drawWorldGenScreen() {
         renderer.drawListText(text, L.panel.x + 14.0f * s, row.y + (row.h - textH) * 0.5f, gray);
     };
     const auto field = [&](const Rect& r, const std::string& text, bool active) {
-        renderer.drawRect(r, active ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        renderer.drawField(r, active);
         renderer.drawListText(text, r.x + 8.0f * s, r.y + (r.h - textH) * 0.5f, white);
     };
-    renderer.drawButton(L.tabWorld, (!ui.themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_WORLD"), true, L.tabWorld.contains(mouseX, mouseY));
-    renderer.drawButton(L.tabTheme, (ui.themeTab ? "> " : "") + lang("UILABEL_GEN_TAB_THEME"), true, L.tabTheme.contains(mouseX, mouseY));
+    renderer.drawToggleButton(L.tabWorld, lang("UILABEL_GEN_TAB_WORLD"), !ui.themeTab);
+    renderer.drawToggleButton(L.tabTheme, lang("UILABEL_GEN_TAB_THEME"), ui.themeTab);
     if (ui.themeTab) drawThemePanel(L.themeArea);
     if (!ui.themeTab) {
     label(lang("UILABEL_NAME"), L.nameBox);
     field(L.nameBox, ui.name + (ui.editingName ? "|" : ""), ui.editingName);
     label(lang("UILABEL_GEN_SEED"), L.seedBox);
     field(L.seedBox, std::to_string(ui.settings.seed), false);
-    renderer.drawButton(L.seedRandom, lang("UILABEL_GEN_RANDOM"), true, L.seedRandom.contains(mouseX, mouseY));
+    renderer.drawButton(L.seedRandom, lang("UILABEL_GEN_RANDOM"), true);
     label(lang("UILABEL_GEN_SIZE"), L.sizeBox);
-    renderer.drawButton(L.sizeDown, "-", true, L.sizeDown.contains(mouseX, mouseY));
+    renderer.drawButton(L.sizeDown, "-", true);
     field(L.sizeBox, std::to_string(ui.settings.size) + " x " + std::to_string(ui.settings.size), false);
-    renderer.drawButton(L.sizeUp, "+", true, L.sizeUp.contains(mouseX, mouseY));
+    renderer.drawButton(L.sizeUp, "+", true);
     const MapStyleInfo& style = mapStyleInfo(ui.settings.style);
     label(lang("UILABEL_GEN_STYLE"), L.styleBox);
-    renderer.drawButton(L.styleDown, "<", true, L.styleDown.contains(mouseX, mouseY));
+    renderer.drawButton(L.styleDown, "<", true);
     field(L.styleBox, renderer.fitListText(lang(style.labelKey), L.styleBox.w - 16.0f * s), false);
-    renderer.drawButton(L.styleUp, ">", true, L.styleUp.contains(mouseX, mouseY));
+    renderer.drawButton(L.styleUp, ">", true);
     renderer.drawListText(renderer.fitListText(lang(style.aboutKey), L.styleAbout.w), L.styleAbout.x, L.styleAbout.y, gray);
     for (int i = 0; i < WORLD_GEN_ROW_COUNT; ++i) {
         const int value = ui.settings.*WORLD_GEN_ROWS[i].value;
         label(lang(WORLD_GEN_ROWS[i].labelKey), L.bars[(size_t)i]);
-        renderer.drawButton(L.stepDown[(size_t)i], "-", true, L.stepDown[(size_t)i].contains(mouseX, mouseY));
+        renderer.drawButton(L.stepDown[(size_t)i], "-", true);
         const Rect& bar = L.bars[(size_t)i];
-        renderer.drawRect(bar, RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+        renderer.drawField(bar, false);
         renderer.drawRect(Rect{ bar.x, bar.y, bar.w * (float)value / 100.0f, bar.h }, RGBA{ 0.55f, 0.36f, 0.16f, 1.0f });
         renderer.drawListText(std::to_string(value), bar.x + 8.0f * s, bar.y + (bar.h - textH) * 0.5f, white);
-        renderer.drawButton(L.stepUp[(size_t)i], "+", true, L.stepUp[(size_t)i].contains(mouseX, mouseY));
+        renderer.drawButton(L.stepUp[(size_t)i], "+", true);
     }
     }
-    renderer.drawButton(L.back, lang("UILABEL_RETURN_TO_TITLE"), true, L.back.contains(mouseX, mouseY));
+    renderer.drawButton(L.back, lang("UILABEL_RETURN_TO_TITLE"), true);
 
     renderer.drawListText(ui.generated ? langf("UILABEL_GEN_DONE", { ui.generatedName, std::to_string(mapFileText(ui.settings).size()) })
                                        : lang("UILABEL_GEN_PREVIEW"), L.previewLabel.x, L.previewLabel.y, gray);
     renderer.drawWorldPreview(L.preview);
-    renderer.drawButton(L.generate, lang("UILABEL_GEN_GENERATE"), !safeFileName(ui.name).empty(), L.generate.contains(mouseX, mouseY));
-    renderer.drawButton(L.proceed, lang("UILABEL_GEN_CONTINUE"), ui.generated, L.proceed.contains(mouseX, mouseY));
+    renderer.drawButton(L.generate, lang("UILABEL_GEN_GENERATE"), !safeFileName(ui.name).empty());
+    renderer.drawButton(L.proceed, lang("UILABEL_GEN_CONTINUE"), ui.generated);
 
     renderer.drawThemedPanel(L.mapsBox);
     renderer.drawListText(lang("UILABEL_GEN_MAPS"), L.mapsBox.x + 10.0f * s, L.mapsBox.y + 12.0f * s, gray);
     const int first = std::clamp(ui.mapScroll, 0, std::max(0, (int)ui.maps.size() - (int)L.mapRows.size()));
     const bool asking = !ui.deleteMap.empty();
+    if (L.mapBar.on()) renderer.drawScrollBar(L.mapBar.track, L.mapBar.thumb, barDrag.kind == BarDrag::Maps || renderer.mouseOver(L.mapBar.track));
     const float hoverX = asking ? -1.0f : mouseX, hoverY = asking ? -1.0f : mouseY;
     for (size_t i = 0; i < L.mapRows.size(); ++i) {
         const Rect& row = L.mapRows[i];
@@ -586,6 +666,10 @@ void App::worldGenClick(float x, float y) {
         } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
             cancelMapDelete();
         }
+        return;
+    }
+    if (L.mapBar.on() && L.mapBar.track.contains(x, y)) {
+        startBarDrag(BarDrag::Maps, L.mapBar, y, nullptr);
         return;
     }
     {
@@ -808,14 +892,14 @@ void App::drawEditorPanel() {
     const float s = uiScaleFor(winH);
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
     const float textH = renderer.listTextHeight("Ag");
-    renderer.drawButton(L.uiToggle, lang(editor.useOwnUi ? "UILABEL_EDITOR_USE_GAME_UI" : "UILABEL_EDITOR_USE_OWN_UI"), true, L.uiToggle.contains(mouseX, mouseY));
+    renderer.drawButton(L.uiToggle, lang(editor.useOwnUi ? "UILABEL_EDITOR_USE_GAME_UI" : "UILABEL_EDITOR_USE_OWN_UI"), true);
     if (!editor.useOwnUi) return;
     renderer.drawThemedPanel(L.panel);
     renderer.drawListText(langf("UILABEL_EDITOR_TITLE", { currentMap.stem }), L.panel.x + 10.0f * s, L.panel.y + 12.0f * s, gold);
-    renderer.drawRect(L.nameBox, editor.editingName ? RGBA{ 0.30f, 0.20f, 0.12f, 1.0f } : RGBA{ 0.14f, 0.09f, 0.08f, 1.0f });
+    renderer.drawField(L.nameBox, editor.editingName);
     renderer.drawListText(editor.name + (editor.editingName ? "|" : ""), L.nameBox.x + 8.0f * s, L.nameBox.y + (L.nameBox.h - textH) * 0.5f, white);
     const auto button = [&](const Rect& r, const std::string& text, bool on) {
-        renderer.drawButton(r, (on ? "> " : "") + text, true, r.contains(mouseX, mouseY));
+        renderer.drawToggleButton(r, text, on);
     };
     button(L.save, lang("UILABEL_SAVE"), false);
     button(L.load, lang("UILABEL_LOAD"), false);

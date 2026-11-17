@@ -65,11 +65,7 @@ bool App::pressOnPerimeter() {
     if (L.panel.contains(x, y)) {
         if (e.button.button != SDL_BUTTON_LEFT) return true;
         if (L.title.contains(x, y)) {
-            perim.moving = true;
-            perim.x = L.panel.x;
-            perim.y = L.panel.y;
-            perim.grabX = x - L.panel.x;
-            perim.grabY = y - L.panel.y;
+            perim.grab(L.panel, x, y);
             return true;
         } else if (L.draw.contains(x, y)) {
             perim.erase = false;
@@ -114,12 +110,8 @@ bool App::pressOnPerimeter() {
 void App::updatePerimeter() {
     if (!perim.active || !perim.moving) return;
     float mx = 0.0f, my = 0.0f;
-    if (SDL_GetMouseState(&mx, &my) & SDL_BUTTON_LMASK) {
-        perim.x = mx - perim.grabX;
-        perim.y = my - perim.grabY;
-    } else {
-        perim.moving = false;
-    }
+    const bool down = (SDL_GetMouseState(&mx, &my) & SDL_BUTTON_LMASK) != 0;
+    perim.follow(down, mx, my);
 }
 
 bool App::releasePerimeter() {
@@ -162,13 +154,10 @@ void App::perimeterPreview(BuildPreview& bp, float mx, float my) {
 void App::drawPerimeterPanel() {
     if (!perim.active) return;
     const PerimeterLayout L = layoutPerimeter(winW, winH, perim.x, perim.y);
-    const float th = renderer.listTextHeight("Ag");
-    renderer.drawThemedPanel(L.panel);
-    renderer.drawListText(lang("UILABEL_PERIMETER_TITLE"), L.title.x, L.title.y + (L.title.h - th) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
-    const float mx = (float)mouseX, my = (float)mouseY;
-    renderer.drawButton(L.draw, lang("UILABEL_PERIMETER_DRAW"), true, !perim.erase || L.draw.contains(mx, my));
-    renderer.drawButton(L.erase, lang("UILABEL_PERIMETER_ERASE"), true, perim.erase || L.erase.contains(mx, my));
-    renderer.drawButton(L.reset, lang("UILABEL_PERIMETER_RESET"), true, !perim.manual || L.reset.contains(mx, my));
-    renderer.drawButton(L.confirm, lang("UILABEL_PERIMETER_CONFIRM"), true, L.confirm.contains(mx, my));
-    renderer.drawButton(L.cancel, lang("UILABEL_PERIMETER_CANCEL"), true, L.cancel.contains(mx, my));
+    renderer.drawWindowFrame(L.panel, L.title, Rect{}, lang("UILABEL_PERIMETER_TITLE"), false);
+    renderer.drawToggleButton(L.draw, lang("UILABEL_PERIMETER_DRAW"), !perim.erase);
+    renderer.drawToggleButton(L.erase, lang("UILABEL_PERIMETER_ERASE"), perim.erase);
+    renderer.drawToggleButton(L.reset, lang("UILABEL_PERIMETER_RESET"), !perim.manual);
+    renderer.drawButton(L.confirm, lang("UILABEL_PERIMETER_CONFIRM"), true);
+    renderer.drawButton(L.cancel, lang("UILABEL_PERIMETER_CANCEL"), true);
 }

@@ -23,8 +23,7 @@ StoreFilterLayout layoutStoreFilter(int W, int H) {
     L.box = Rect{ std::floor((W - boxW) * 0.5f), std::floor(std::max(16.0f * s, (H - boxH) * 0.5f)), boxW, boxH };
     const float x = L.box.x + pad, w = boxW - 2.0f * pad;
     float y = L.box.y + pad;
-    L.title = Rect{ x, y, w - line, line };
-    L.close = Rect{ x + w - line, y, line, line };
+    layoutTitleClose(L.box, pad, line, L.title, L.close);
     y += line + gap;
     for (int i = 0; i < n; ++i) L.rows.push_back(Rect{ x, y + i * (rowH + rowGap), w, rowH });
     y += n * (rowH + rowGap) + gap;
@@ -54,7 +53,7 @@ bool App::pressOnStoreFilter() {
     }
     const float x = mouseX, y = mouseY;
     const StoreFilterLayout L = layoutStoreFilter(winW, winH);
-    if (L.close.contains(x, y) || !L.box.contains(x, y)) {
+    if (dismissAt(L.box, L.close, x, y)) {
         storeFilterUi = StoreFilterUi{};
         playSfx(Sfx::UiBack);
         return true;
@@ -83,26 +82,13 @@ void App::drawStoreFilter() {
         return;
     }
     const StoreFilterLayout L = layoutStoreFilter(winW, winH);
-    const float s = uiScaleFor((float)winH);
-    const float th = renderer.listTextHeight("Ag");
-    auto mid = [&](const Rect& r) { return r.y + (r.h - th) * 0.5f; };
     const std::uint32_t allowed = storeFilterOf(world, storeFilterUi.prop);
-    renderer.drawScrim();
-    renderer.drawThemedPanel(L.box);
-    renderer.drawListText(langf("UILABEL_STORE_FILTER_TITLE", { lang(propInfo(p->kind).nameKey) }), L.title.x, mid(L.title), theme::GOLD);
-    renderer.drawButton(L.close, "X", true, L.close.contains(mouseX, mouseY));
+    renderer.drawWindowFrame(L.box, L.title, L.close, langf("UILABEL_STORE_FILTER_TITLE", { lang(propInfo(p->kind).nameKey) }));
     for (size_t i = 0; i < L.rows.size(); ++i) {
-        const Rect& r = L.rows[i];
-        const bool on = (allowed & storeBit((StoreCategory)i)) != 0;
-        const bool hot = r.contains(mouseX, mouseY);
-        renderer.drawRect(r, hot ? RGBA{ 0.32f, 0.13f, 0.16f, 0.95f } : RGBA{ 0.20f, 0.08f, 0.10f, 0.9f });
-        const float b = r.h - 6.0f * s;
-        const Rect box{ r.x + 3.0f * s, r.y + 3.0f * s, b, b };
-        renderer.drawButton(box, on ? "+" : "", true, hot);
-        renderer.drawListText(lang(STORE_CATEGORY_KEYS[i]), box.x + box.w + 8.0f * s, mid(r), on ? RGBA{ 1.0f, 1.0f, 1.0f, 1.0f } : theme::TEXT_DIM);
+        renderer.drawCheckRow(L.rows[i], lang(STORE_CATEGORY_KEYS[i]), (allowed & storeBit((StoreCategory)i)) != 0);
     }
-    renderer.drawButton(L.useDefault, lang("UILABEL_STORE_DEFAULT"), allowed != STORE_DEFAULT, L.useDefault.contains(mouseX, mouseY));
+    renderer.drawButton(L.useDefault, lang("UILABEL_STORE_DEFAULT"), allowed != STORE_DEFAULT);
     renderer.noteTip(lang("UILABEL_STORE_DEFAULT_TIP"), L.useDefault);
-    renderer.drawButton(L.all, lang("UILABEL_STORE_ALL"), allowed != STORE_ALL, L.all.contains(mouseX, mouseY));
-    renderer.drawButton(L.none, lang("UILABEL_STORE_NONE"), allowed != 0, L.none.contains(mouseX, mouseY));
+    renderer.drawButton(L.all, lang("UILABEL_STORE_ALL"), allowed != STORE_ALL);
+    renderer.drawButton(L.none, lang("UILABEL_STORE_NONE"), allowed != 0);
 }

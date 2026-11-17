@@ -346,12 +346,13 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         const int firstRow = clampDropScroll(ui.dropScroll, total);
         const int shown = std::min(DROP_VISIBLE_ROWS, total - firstRow);
         const bool scrollable = total > DROP_VISIBLE_ROWS;
-        const float rowH = 26.0f * s, scrollH = 22.0f * s, pad = 4.0f * s;
+        const float rowH = 26.0f * s, pad = 4.0f * s;
         const float listW = std::min(std::max(anchor.w, 240.0f * s), W - 32.0f * s);
         float listX = anchor.x;
         if (listX + listW > W - 16.0f * s) listX = W - 16.0f * s - listW;
         if (listX < 16.0f * s) listX = 16.0f * s;
-        const float listH = 2.0f * pad + (scrollable ? 2.0f * scrollH : 0.0f) + shown * rowH;
+        const float listH = 2.0f * pad + shown * rowH;
+        const float rowW = listW - (scrollable ? 12.0f * s : 0.0f);
         float listY = anchor.y + anchor.h + 4.0f * s;
         if (listY + listH > P.bottom.y - 4.0f * s) listY = anchor.y - 4.0f * s - listH;
         if (listY < P.topH) listY = P.topH;
@@ -359,8 +360,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         dropGroup.push_back(Button{ "", Rect{ listX, listY, listW, listH }, Action::PartyDropBack, true, 0 });
         float ry = listY + pad;
         if (scrollable) {
-            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_UP"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll, firstRow > 0, -1 });
-            ry += scrollH;
+            Button bar{ "", Rect{ listX + listW - pad - 8.0f * s, ry, 8.0f * s, shown * rowH }, Action::PartyDropBar, true, firstRow };
+            bar.extra = total;
+            dropGroup.push_back(bar);
         }
         int current = 0;
         if (ui.dropKind == DropKind::Body) current = idx(m.body);
@@ -369,13 +371,9 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
         if (ui.dropKind == DropKind::MobKind) current = ui.dropSlot < 0 ? -1 : idx(m.mob);
         for (int i = firstRow; i < firstRow + shown; ++i) {
             const bool isCurrent = drop[i].value == current;
-            dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, listW, rowH },
+            dropGroup.push_back(Button{ (isCurrent ? "> " : "  ") + drop[i].label, Rect{ listX, ry, rowW, rowH },
                                         Action::PartyDropPick, true, i });
             ry += rowH;
-        }
-        if (scrollable) {
-            dropGroup.push_back(Button{ lang("UILABEL_SCROLL_DOWN"), Rect{ listX, ry, listW, scrollH }, Action::PartyDropScroll,
-                                        firstRow + shown < total, 1 });
         }
     }
     out.insert(out.end(), dropGroup.begin(), dropGroup.end());

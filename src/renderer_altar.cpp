@@ -29,11 +29,7 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
                                float mx, float my) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
-    drawScrim();
-    drawThemedPanel(L.box);
-    drawListText(fitText(lang("UILABEL_ALTAR_ROSTER"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
-    if (L.close.contains(mx, my)) noteHover(L.close);
-    drawCloseButton(L.close);
+    drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_ALTAR_ROSTER"));
 
     {
         const bool overSoft = totals.citizens > totals.softCap;
@@ -78,22 +74,12 @@ void Renderer::drawAltarRoster(World& w, const AltarLayout& L, const std::array<
             const Rect& list = L.lists[(size_t)c];
             drawListText(none, list.x + (list.w - listTextWidth(none)) * 0.5f, list.y + 12.0f * s, theme::TEXT_DIM);
         }
-        const int count = (int)cols[(size_t)c].size();
-        if (count > L.visible[(size_t)c] && L.visible[(size_t)c] > 0) {
-            const Rect& list = L.lists[(size_t)c];
-            const float barW = 4.0f * s;
-            const Rect track{ list.x + list.w - barW, list.y, barW, list.h };
-            const float share = (float)L.visible[(size_t)c] / (float)count;
-            const float at = (float)L.first[(size_t)c] / (float)std::max(1, count - L.visible[(size_t)c]);
-            const float thumbH = std::max(8.0f * s, track.h * share);
-            drawRect(track, RGBA{ 0.24f, 0.10f, 0.12f, 0.8f });
-            drawRect(Rect{ track.x, track.y + (track.h - thumbH) * at, barW, thumbH }, RGBA{ 0.80f, 0.70f, 0.60f, 1.0f });
-        }
+        if (L.bars[(size_t)c].on()) drawScrollBar(L.bars[(size_t)c].track, L.bars[(size_t)c].thumb, mouseOver(L.bars[(size_t)c].track));
     }
 
     const bool anyMoves = !moves.empty();
-    drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(moves.size()) }), anyMoves, anyMoves && L.apply.contains(mx, my));
-    drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
+    drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(moves.size()) }), anyMoves);
+    drawButton(L.cancel, lang("UILABEL_CLOSE"), true);
 }
 
 void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost, const std::string& tag, bool pointRight,
@@ -171,11 +157,7 @@ void Renderer::drawSquadsRoster(World& w, const SquadsLayout& SL, const std::arr
     const AltarLayout& L = SL.roster;
     const float s = uiScale();
     const float th = listTextHeight("Ag");
-    drawScrim();
-    drawThemedPanel(L.box);
-    drawListText(fitText(lang("UILABEL_MANAGE_SQUADS"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
-    if (L.close.contains(mx, my)) noteHover(L.close);
-    drawCloseButton(L.close);
+    drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_MANAGE_SQUADS"));
     {
         const std::string shown = fitTextTip(text.totals, L.totals.w, L.totals);
         drawListText(shown, L.totals.x, L.totals.y + (L.totals.h - th) * 0.5f, text.warn ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f } : theme::TEXT_DIM);
@@ -215,32 +197,18 @@ void Renderer::drawSquadsRoster(World& w, const SquadsLayout& SL, const std::arr
             const Rect& list = L.lists[(size_t)c];
             drawListText(none, list.x + (list.w - listTextWidth(none)) * 0.5f, list.y + 12.0f * s, theme::TEXT_DIM);
         }
-        const int count = (int)cols[(size_t)c].size();
-        if (count > L.visible[(size_t)c] && L.visible[(size_t)c] > 0) {
-            const Rect& list = L.lists[(size_t)c];
-            const float barW = 4.0f * s;
-            const Rect track{ list.x + list.w - barW, list.y, barW, list.h };
-            const float share = (float)L.visible[(size_t)c] / (float)count;
-            const float at = (float)L.first[(size_t)c] / (float)std::max(1, count - L.visible[(size_t)c]);
-            const float thumbH = std::max(8.0f * s, track.h * share);
-            drawRect(track, RGBA{ 0.24f, 0.10f, 0.12f, 0.8f });
-            drawRect(Rect{ track.x, track.y + (track.h - thumbH) * at, barW, thumbH }, RGBA{ 0.80f, 0.70f, 0.60f, 1.0f });
-        }
+        if (L.bars[(size_t)c].on()) drawScrollBar(L.bars[(size_t)c].track, L.bars[(size_t)c].thumb, mouseOver(L.bars[(size_t)c].track));
     }
-    drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(text.moveCount) }), text.canApply, text.canApply && L.apply.contains(mx, my));
-    drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
+    drawButton(L.apply, langf("UILABEL_ALTAR_APPLY", { std::to_string(text.moveCount) }), text.canApply);
+    drawButton(L.cancel, lang("UILABEL_CLOSE"), true);
 }
 
 void Renderer::drawGhostsWindow(World& w, const AltarLayout& L, const std::vector<ItemStack>& bones, const std::vector<size_t>& ghosts,
-                                int bonesTotal, float mx, float my) {
+                                int bonesTotal) {
     const float s = uiScale();
     const float th = listTextHeight("Ag");
     const Graveyard& yard = w.resource<Graveyard>();
-    drawScrim();
-    drawThemedPanel(L.box);
-    drawListText(fitText(lang("UILABEL_APPEASE_GHOSTS"), L.title.w, false), L.title.x, L.title.y + (L.title.h - th) * 0.5f, WHITE);
-    if (L.close.contains(mx, my)) noteHover(L.close);
-    drawCloseButton(L.close);
+    drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_APPEASE_GHOSTS"));
 
     int waiting = 0;
     for (const Ghost& g : yard.ghosts) waiting += g.appeased ? 0 : 1;
@@ -306,7 +274,10 @@ void Renderer::drawGhostsWindow(World& w, const AltarLayout& L, const std::vecto
             tint = RGBA{ 1.0f, 0.78f, 0.35f, 1.0f };
         }
         drawListText(fitText(status, textW, false), textX, top + th + 2.0f * s, tint);
-        if (!g.appeased) drawButton(btn, lang("UILABEL_APPEASE"), bonesTotal > 0, bonesTotal > 0 && btn.contains(mx, my));
+        if (!g.appeased) drawButton(btn, lang("UILABEL_APPEASE"), bonesTotal > 0);
+    }
+    for (int c = 0; c < 2; ++c) {
+        if (L.bars[(size_t)c].on()) drawScrollBar(L.bars[(size_t)c].track, L.bars[(size_t)c].thumb, mouseOver(L.bars[(size_t)c].track));
     }
     if (ghosts.empty()) {
         const Rect& list = L.lists[1];
@@ -314,8 +285,8 @@ void Renderer::drawGhostsWindow(World& w, const AltarLayout& L, const std::vecto
         drawListText(none, list.x + (list.w - listTextWidth(none)) * 0.5f, list.y + 12.0f * s, theme::TEXT_DIM);
     }
     const bool can = bonesTotal > 0 && waiting > 0;
-    drawButton(L.apply, langf("UILABEL_APPEASE_ALL", { std::to_string(std::min(bonesTotal, waiting)) }), can, can && L.apply.contains(mx, my));
-    drawButton(L.cancel, lang("UILABEL_CLOSE"), true, L.cancel.contains(mx, my));
+    drawButton(L.apply, langf("UILABEL_APPEASE_ALL", { std::to_string(std::min(bonesTotal, waiting)) }), can);
+    drawButton(L.cancel, lang("UILABEL_CLOSE"), true);
 }
 
 void Renderer::drawUnitCard(World& w, ObjectId u, const UnitCardLayout& C) {

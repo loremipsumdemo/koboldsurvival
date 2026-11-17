@@ -42,8 +42,6 @@ UILABEL_CANCEL	Cancel
 UILABEL_CONFIRM	Confirm
 UILABEL_YES	Yes
 UILABEL_NO	No
-UILABEL_LIST_MORE_ABOVE	...   {0} more above
-UILABEL_LIST_MORE_BELOW	...   {0} more below
 UILABEL_ON	On
 UILABEL_OFF	Off
 UILABEL_EMPTY	Empty
@@ -52,8 +50,6 @@ UILABEL_UNLIMITED	Unlimited
 UILABEL_RESET	Reset
 UILABEL_NO_NAME	No name
 UILABEL_SHIFT_CLICK	Shift + click changes a stat by 10.
-UILABEL_SCROLL_UP	Scroll up
-UILABEL_SCROLL_DOWN	Scroll down
 UILABEL_CHOOSE_HOW_MANY	Choose how many: {0} ({1} available)
 UILABEL_REMOVE_ALL	Remove All
 UILABEL_CLEAR	Clear
@@ -1084,7 +1080,6 @@ UILABEL_STORE_STONE	Stone
 UILABEL_STORE_BONES	Bones
 MISC_STORE_NOT_ALLOWED	This store isn't set to take {1} ({0}): right-click it for Allowed Items
 UILABEL_STORE_HOLDS	Holds {0}/{1} items.
-UILABEL_STORE_SCROLL	Scroll the mouse wheel over it to see more.
 UILABEL_STOCK_STALL	Stock Stall
 UILABEL_STOCK_STALL_TITLE	Stock {0}
 

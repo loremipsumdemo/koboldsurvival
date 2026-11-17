@@ -301,6 +301,22 @@ struct App : AppSession {
 
     WorldGenUi worldGenUi;
     ThemeUi themeUi;
+    // A list's scrollbar being dragged by its thumb (the theme panel's, the map list's, a spawn list's)
+    struct BarDrag {
+        enum Kind { None, Theme, Maps, Picker, Saves, Storage, Custom } kind = None;
+        float grab = 0.0f;               // how far down the thumb it was taken
+        SpawnPicker* picker = nullptr;   // for Picker: whose list
+        std::function<void(float)> apply;   // for Custom: sets the list's scroll from where the thumb's top now is
+        Rect track;                          // for Custom: which bar it is
+    };
+    BarDrag barDrag;
+    void startBarDrag(BarDrag::Kind kind, const RowBar& bar, float y, SpawnPicker* picker);
+    void moveBarDrag(float y);
+    // A list's scrollbar: press it (true if the press was on it), and draw it. apply is called as the thumb is dragged, with where its top is.
+    bool pressListBar(const RowBar& bar, float x, float y, std::function<void(float)> apply);
+    void drawListBar(const RowBar& bar);
+    Rect themeAreaNow();
+    SpawnPickerLayout pickerView(const SpawnPicker& p, SpawnPickerLayout L);
     bool editing = false;
     LevelEditorUi editor;
     std::string pendingLevel;
@@ -459,7 +475,7 @@ struct App : AppSession {
     // Set Perimeter (app_perimeter.cpp): the tiles of an Altar's Perimeter drawn on a copy, kept by Confirm
     ObjectId perimShowAltar = NO_OBJECT;   // See Perimeter: an NPC faction's Perimeter shown on the ground until perimShowUntil
     Uint64 perimShowUntil = 0;
-    struct PerimeterUi {
+    struct PerimeterUi : WindowDrag {   // x, y: where the window is (-1: the top middle)
         bool active = false;
         ObjectId altar = NO_OBJECT;
         float cx = 0.0f, cz = 0.0f, radius = 0.0f;   // its claim
@@ -468,16 +484,9 @@ struct App : AppSession {
         bool manual = false;   // drawn by hand (kept as it is): else it is kept automatically
         bool drag = false;
         int dragX = 0, dragZ = 0;
-        float x = -1.0f, y = -1.0f;   // where the window is: -1, the top middle
-        bool moving = false;          // its title bar is held, to move it
-        float grabX = 0.0f, grabY = 0.0f;
     };
     // The window that stays up while no unit of yours is in a squad (app_no_units.cpp), and what keeps the camera leashed (camera_limit.h)
-    struct NoUnitsUi {
-        float x = -1.0f, y = -1.0f;   // where the window is: -1, the top middle
-        bool moving = false;          // its title bar is held, to move it
-        float grabX = 0.0f, grabY = 0.0f;
-    };
+    struct NoUnitsUi : WindowDrag {};
     NoUnitsUi noUnits;
     CameraLeash cameraLeash;
     bool noUnitsShown();
