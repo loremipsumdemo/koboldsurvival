@@ -37,8 +37,13 @@ Transform unitShownAt(World& w, ObjectId e);
 #include <vector>
 
 namespace render_detail {
-// A unit's model is drawn from its coarser copy (Model::lods, a quarter of the triangles) past this distance from the camera (tiles)
+// A unit's model is drawn from its coarser copies (Model::lods: a quarter of the triangles, a sixteenth, a sixty-fourth) past these
+// distances from the camera, in tiles: each from where what it leaves out is under a pixel across. Out to MODEL_LOD_FAR_TILES a
+// rigged unit is posed, in whichever copy it is drawn from; past it, it is drawn as it was made. A beast bigger than a unit keeps
+// each copy for as much further as it is bigger.
+inline constexpr float MODEL_LOD_NEAR_TILES = 26.0f;
 inline constexpr float MODEL_LOD_FAR_TILES = 90.0f;
+inline constexpr float MODEL_LOD_VAST_TILES = 180.0f;
 inline constexpr float GLYPH_H = 1.2f;
 inline constexpr float CARRIED_LIFT = 0.55f;
 inline constexpr float CARRIED_MODEL_LIFT = 0.95f;

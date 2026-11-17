@@ -46,6 +46,8 @@ struct PropIndex {
 
 // The index, made again first if the props have changed. Don't hold what it gives across a change to the props.
 const PropIndex& propIndex(World& w);
+// Whether the index is up to date with the props as they are now: asking for it would not make it again on their account
+bool propIndexFresh(World& w);
 
 // Every prop of this kind (blueprints too)
 const std::vector<ObjectId>& propsOfKind(World& w, PropKind kind);

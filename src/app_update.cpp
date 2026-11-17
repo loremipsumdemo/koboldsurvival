@@ -263,8 +263,11 @@ void App::stepSimulation() {
     while (simLeft >= SIM_STEP_SECONDS && steps < SIM_MOST_STEPS_PER_FRAME) {
         updateTalkOrders();
         if (session.paused) break;
-        simBefore.clear();
-        for (ObjectId u : world.view<Entity, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
+        {
+            PROFILE_SCOPE("step: simBefore");
+            simBefore.clear();
+            for (ObjectId u : world.view<Entity, Transform>()) simBefore.push_back({ u, *world.get<Transform>(u) });
+        }
         PROFILED("step: total", stepGame());
         endBrokenConversation();
         simLeft -= SIM_STEP_SECONDS;
@@ -329,12 +332,12 @@ void App::showEvents() {
 }
 
 void App::stepGame() {
-    simStep(world, terrain, rng, gs, dt, runMode);
+    PROFILED("step: simStep", simStep(world, terrain, rng, gs, dt, runMode));
     for (FloatingNumber& f : floatingNumbers) f.age += dt;
     floatingNumbers.erase(std::remove_if(floatingNumbers.begin(), floatingNumbers.end(),
                                          [](const FloatingNumber& f) { return f.age >= FLOAT_LIFE; }),
                           floatingNumbers.end());
-    showEvents();
+    PROFILED("step: showEvents", showEvents());
     PROFILED("playWorkSounds", playWorkSounds());
     PROFILED("autosaveTick", autosaveTick());
 }
@@ -420,9 +423,9 @@ void App::update() {
     if (dt > 0.25f) dt = 0.25f;
     if (noticeSec > 0.0f) noticeSec -= dt;
     // Even while paused, new and loaded units go straight into squads
-    if (screen == Screen::Playing && gameActive) settleSquads(world);
-    if (screen == Screen::Playing) updateUnitPanelState();
-    if (screen == Screen::Playing) followSelectionSquad();
+    if (screen == Screen::Playing && gameActive) PROFILED("update: settleSquads", settleSquads(world));
+    if (screen == Screen::Playing) PROFILED("update: unitPanelState", updateUnitPanelState());
+    if (screen == Screen::Playing) PROFILED("update: followSquad", followSelectionSquad());
     pivotAlpha = std::clamp(pivotAlpha + (middleDown ? 1.0f : -1.0f) * dt * 4.0f, 0.0f, 1.0f);
     updateRightHold();
     renderer.setShowNavmesh(devShowNavmesh);
@@ -437,8 +440,8 @@ void App::update() {
     if (screen == Screen::MapSelect) updateMapPick();
     stepSimulation();
     if (screen == Screen::Playing) updateDisbandHold();
-    placeUnitsBetweenSteps();
-    updateCamera();
+    PROFILED("update: placeBetween", placeUnitsBetweenSteps());
+    PROFILED("update: camera", updateCamera());
 
     PROFILED("closeStalePanels", closeStalePanels());
     PROFILED("playQueuedSounds", playQueuedSounds());

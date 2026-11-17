@@ -60,7 +60,7 @@ void App::benchFrame() {
     if (!bench.measuring && spent >= SETTLE_MS) {
         bench.measuring = true;
         bench.frames = 0;
-        bench.ground = bench.water = bench.cloudMs = 0.0;
+        bench.ground = bench.water = bench.cloudMs = bench.models = bench.fires = bench.ui = 0.0;
         bench.measureSince = SDL_GetPerformanceCounter();
     }
     if (!bench.measuring) return;
@@ -68,6 +68,9 @@ void App::benchFrame() {
     bench.ground += times.ground;
     bench.water += times.water;
     bench.cloudMs += times.clouds;
+    bench.models += times.models;
+    bench.fires += times.fires;
+    bench.ui += times.ui;
     ++bench.frames;
     if (spent < SETTLE_MS + MEASURE_MS) return;
 
@@ -79,9 +82,9 @@ void App::benchFrame() {
         debuglog::line("bench", "view %d, %s: camera at %.0f, %.0f, %.0f, %.0f from its focus, pitch %.2f", view + 1, VIEW_NAMES[view],
                        ex, ey, ez, cam.distance, cam.pitch);
     }
-    debuglog::line("bench", "view %d | %-36s | frame %6.2f (%3.0f FPS) | ground %6.2f | water %5.2f | clouds %5.2f", view + 1, c.name,
-                   seconds * 1000.0 / frames, frames / seconds, bench.ground / frames, bench.water / frames,
-                   c.clouds ? bench.cloudMs / frames : 0.0);
+    debuglog::line("bench", "view %d | %-36s | frame %6.2f (%3.0f FPS) | ground %6.2f | water %5.2f | clouds %5.2f | models %5.2f | fires %5.2f | interface %5.2f",
+                   view + 1, c.name, seconds * 1000.0 / frames, frames / seconds, bench.ground / frames, bench.water / frames,
+                   c.clouds ? bench.cloudMs / frames : 0.0, bench.models / frames, bench.fires / frames, bench.ui / frames);
     debugLogBuildTest();
 
     bench.measuring = false;

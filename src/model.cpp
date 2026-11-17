@@ -3,6 +3,7 @@
 #include "gl_util.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -61,6 +62,7 @@ GLuint readIndex(const Accessor& a, size_t i) {
 namespace {
 struct LodMesh {
     std::vector<float> verts;   // 5 floats a vertex, as the model's own
+    std::vector<float> skin;    // 8 floats a vertex (4 joints, 4 weights) for a skinned model, else empty
     std::vector<GLuint> indices;
     std::vector<DrawRange> draws;
 };
@@ -71,9 +73,15 @@ struct LodMesh {
 //  - vertices are only merged if they lie in the same coarse patch (1/4 by 1/4) of their texture, and a merged vertex takes the
 //    average texture position of those it merges, so the picture is not smeared across seams.
 // A triangle left with fewer than three different corners is dropped. Each draw range (one texture) keeps its own triangles.
+// A skinned model's merged vertex is moved by the joints that move what is in its cell (the four that weigh most there, the same for
+// every merged vertex of the cell, so that those sitting together still move together): the coarse copy can be posed as the model is.
 LodMesh clusterMesh(const std::vector<float>& verts, const std::vector<GLuint>& indices, const std::vector<DrawRange>& draws,
-                    float cell, const float lo[3]) {
-    struct Sum { float x = 0, y = 0, z = 0; int n = 0; };
+                    float cell, const float lo[3], const std::vector<float>* skin) {
+    struct Sum {
+        float x = 0, y = 0, z = 0;
+        int n = 0;
+        std::array<float, Skeleton::MAX_JOINTS> weight{};   // by joint, summed over the cell (a skinned model only)
+    };
     auto cellOf = [&](float x, float low) {
         return (std::uint64_t)std::min(65535.0f, std::max(0.0f, std::floor((x - low) / cell)));
     };
@@ -90,7 +98,34 @@ LodMesh clusterMesh(const std::vector<float>& verts, const std::vector<GLuint>& 
         s.y += p[1];
         s.z += p[2];
         ++s.n;
+        if (skin) {
+            const float* sk = &(*skin)[(size_t)v * 8];
+            for (int c = 0; c < 4; ++c) {
+                const int joint = (int)(sk[c] + 0.5f);
+                if (joint >= 0 && joint < Skeleton::MAX_JOINTS) s.weight[(size_t)joint] += sk[4 + c];
+            }
+        }
     }
+    // The four joints that weigh most in a cell, their weights adding up to one
+    auto cellSkin = [](const Sum& s, float* sk) {
+        std::array<float, Skeleton::MAX_JOINTS> left = s.weight;
+        float sum = 0.0f;
+        for (int c = 0; c < 4; ++c) {
+            int best = 0;
+            for (int j = 1; j < Skeleton::MAX_JOINTS; ++j) {
+                if (left[(size_t)j] > left[(size_t)best]) best = j;
+            }
+            sk[c] = (float)best;
+            sk[4 + c] = left[(size_t)best];
+            sum += sk[4 + c];
+            left[(size_t)best] = -1.0f;
+        }
+        if (sum > 1e-6f) {
+            for (int c = 0; c < 4; ++c) sk[4 + c] /= sum;
+        } else {
+            sk[4] = 1.0f;
+        }
+    };
     LodMesh out;
     for (const DrawRange& d : draws) {
         struct Made { GLuint index = 0; float u = 0, v = 0; int n = 0; };
@@ -109,6 +144,11 @@ LodMesh clusterMesh(const std::vector<float>& verts, const std::vector<GLuint>& 
                     const Sum& s = places[placeKey(p)];
                     g.index = (GLuint)(out.verts.size() / 5);
                     out.verts.insert(out.verts.end(), { s.x / (float)s.n, s.y / (float)s.n, s.z / (float)s.n, 0.0f, 0.0f });
+                    if (skin) {
+                        float sk[8] = {};
+                        cellSkin(s, sk);
+                        out.skin.insert(out.skin.end(), sk, sk + 8);
+                    }
                 }
                 g.u += p[3];
                 g.v += p[4];
@@ -136,14 +176,14 @@ LodMesh clusterMesh(const std::vector<float>& verts, const std::vector<GLuint>& 
 
 // The coarse copy with about this many triangles, by trying cell sizes (the count falls roughly with the square of the size)
 bool makeLod(const std::vector<float>& verts, const std::vector<GLuint>& indices, const std::vector<DrawRange>& draws,
-             const float lo[3], float diagonal, size_t target, LodMesh& out) {
+             const float lo[3], float diagonal, size_t target, LodMesh& out, const std::vector<float>* skin) {
     float cell = diagonal / std::sqrt((float)target) * 0.5f;
-    out = clusterMesh(verts, indices, draws, cell, lo);
+    out = clusterMesh(verts, indices, draws, cell, lo, skin);
     for (int pass = 0; pass < 3; ++pass) {
         const float n = (float)(out.indices.size() / 3);
         if (n > (float)target * 0.8f && n < (float)target * 1.25f) break;
         cell *= std::sqrt(std::max(n, 1.0f) / (float)target);
-        out = clusterMesh(verts, indices, draws, cell, lo);
+        out = clusterMesh(verts, indices, draws, cell, lo, skin);
     }
     return !out.indices.empty() && out.indices.size() * 10 < indices.size() * 9;
 }
@@ -648,15 +688,24 @@ bool loadGLBModel(const char* path, Model& m) {
     }
     glBindVertexArray(0);
 
-    // A model with this many triangles is too much to draw whole for a unit far off: one coarser copy, a quarter of the
-    // triangles, for that
-    constexpr size_t LOD_FROM_TRIANGLES = 4000;
+    // A model with this many triangles (the units and the big beasts) is too much to draw whole unless it is near: coarser copies with
+    // about a quarter, a sixteenth and a sixty-fourth of the triangles, each for further off than the last (the renderer picks one by
+    // how far the unit is). A skinned model's copies are skinned too, so they are posed as it is.
+    constexpr size_t LOD_FROM_TRIANGLES = 2500;
+    constexpr size_t LOD_LEAST_TRIANGLES = 40;
+    constexpr int LOD_MOST_COPIES = 3;
     const size_t triangleCount = indices.size() / 3;
     if (triangleCount > LOD_FROM_TRIANGLES) {
         const float lo[3] = { minX, minY, minZ };
         const float diagonal = std::sqrt((maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY) + (maxZ - minZ) * (maxZ - minZ));
-        LodMesh mesh;
-        if (makeLod(verts, indices, m.draws, lo, diagonal, triangleCount / 4, mesh)) {
+        const std::vector<float>* skin = m.skeleton ? &skinVerts : nullptr;
+        size_t before = indices.size();
+        size_t target = triangleCount / 4;
+        for (int copy = 0; copy < LOD_MOST_COPIES && target >= LOD_LEAST_TRIANGLES; ++copy, target /= 4) {
+            LodMesh mesh;
+            // Each is made from the model itself, and is only kept if it is lighter than the copy before it
+            if (!makeLod(verts, indices, m.draws, lo, diagonal, target, mesh, skin) || mesh.indices.size() * 10 >= before * 9) break;
+            before = mesh.indices.size();
             Model lod;
             lod.minX = minX; lod.minY = minY; lod.minZ = minZ;
             lod.maxX = maxX; lod.maxY = maxY; lod.maxZ = maxZ;
@@ -670,6 +719,19 @@ bool loadGLBModel(const char* path, Model& m) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lod.ebo);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(GLuint), mesh.indices.data(), GL_STATIC_DRAW);
             setLodLayout(lod.vao, lod.vbo, lod.ebo);
+            if (skin && mesh.skin.size() == mesh.verts.size() / 5 * 8) {
+                // The same rig and the same place to stand as the model: posed with the model's own joint matrices
+                lod.skeleton = m.skeleton;
+                lod.hasPivot = m.hasPivot;
+                lod.pivotX = m.pivotX;
+                lod.pivotZ = m.pivotZ;
+                glBindVertexArray(lod.vao);
+                glGenBuffers(1, &lod.skinVbo);
+                glBindBuffer(GL_ARRAY_BUFFER, lod.skinVbo);
+                glBufferData(GL_ARRAY_BUFFER, mesh.skin.size() * sizeof(float), mesh.skin.data(), GL_STATIC_DRAW);
+                setSkinLayout();
+                glBindVertexArray(0);
+            }
             m.lods.push_back(std::move(lod));
         }
     }
@@ -712,6 +774,7 @@ void destroyModel(Model& m) {
     for (Model& lod : m.lods) {   // their textures are this model's; the buffers are their own
         if (lod.ebo) glDeleteBuffers(1, &lod.ebo);
         if (lod.vbo) glDeleteBuffers(1, &lod.vbo);
+        if (lod.skinVbo) glDeleteBuffers(1, &lod.skinVbo);
         if (lod.vao) glDeleteVertexArrays(1, &lod.vao);
         if (lod.instVao) glDeleteVertexArrays(1, &lod.instVao);
     }

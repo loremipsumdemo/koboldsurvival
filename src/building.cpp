@@ -708,7 +708,16 @@ BuildingMap buildingMap(World& w) {
     BuildingMap m;
     // Only the building kinds are gathered: a map's trees and boulders are never looked at
     std::vector<ObjectId> pieces;
-    forPropsOfKinds(w, buildingMapKind, [&](ObjectId e) { pieces.push_back(e); });
+    if (propIndexFresh(w)) {
+        forPropsOfKinds(w, buildingMapKind, [&](ObjectId e) { pieces.push_back(e); });
+    } else {
+        // A piece has just been added or taken away, as when a run of them is laid and this is made again after each: walking the props
+        // costs less than making the index again for every one of them (whoever next asks the index makes it once)
+        for (ObjectId e : w.view<Prop, Transform>()) {
+            const PropKind kind = w.get<Prop>(e)->kind;
+            if (idx(kind) >= 0 && idx(kind) < propKindCount() && buildingMapKind(propInfo(kind))) pieces.push_back(e);
+        }
+    }
     std::sort(pieces.begin(), pieces.end());   // by id, so a tile two pieces share (ghosts laid with no rules) always keeps the same one
     // The Perimeter pieces' walkways: each piece's tiles but its spike rows (the open sides but the one behind it)
     struct PerimPiece {

@@ -39,6 +39,27 @@ struct Scope {
     }
 };
 
+// Times the stretches of a function one after another: each PROFILE_LAP ends the stretch before it and starts its own, and the last
+// one ends when the Laps goes out of scope. For a long function whose parts share their variables, where a scope can't be put round one.
+struct Laps {
+    Site* site = nullptr;
+    Uint64 start = 0;
+    void to(Site& next) {
+        end();
+        site = &next;
+        start = SDL_GetPerformanceCounter();
+    }
+    void end() {
+        if (!site) return;
+        const Uint64 spent = SDL_GetPerformanceCounter() - start;
+        site->total += spent;
+        site->worst = std::max(site->worst, spent);
+        ++site->calls;
+        site = nullptr;
+    }
+    ~Laps() { end(); }
+};
+
 // Counts a frame, and every REPORT_SECONDS writes the report and starts over
 inline void frameEnd() {
     static Uint64 frames = 0;
@@ -77,11 +98,20 @@ inline void frameEnd() {
 #define PROFILE_SCOPE(name)                                                         \
     static profile::Site PROFILE_JOIN(profileSite, __LINE__)(name);                \
     const profile::Scope PROFILE_JOIN(profileScope, __LINE__)(PROFILE_JOIN(profileSite, __LINE__))
+// PROFILE_LAPS(lap); then PROFILE_LAP(lap, "name") at the start of each stretch of the function to time (see profile::Laps)
+#define PROFILE_LAPS(laps) profile::Laps laps
+#define PROFILE_LAP(laps, name)                      \
+    do {                                             \
+        static profile::Site profileLapSite(name);   \
+        (laps).to(profileLapSite);                   \
+    } while (0)
 
 #else
 
 #define PROFILED(name, ...) (__VA_ARGS__)
 #define PROFILE_FRAME_END() ((void)0)
 #define PROFILE_SCOPE(name) ((void)0)
+#define PROFILE_LAPS(laps) ((void)0)
+#define PROFILE_LAP(laps, name) ((void)0)
 
 #endif

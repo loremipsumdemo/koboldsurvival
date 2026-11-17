@@ -13,6 +13,7 @@
 #include "camera.h"
 #include "game_tables.h"
 #include "map_theme.h"
+#include "look.h"
 #include "sky.h"
 #include "ecs.h"
 #include "factions.h"
@@ -87,9 +88,10 @@ public:
     // the last frames. Only measured while switched on.
     struct PassTimes {
         float ground = 0.0f, water = 0.0f, clouds = 0.0f;
+        float models = 0.0f, fires = 0.0f, ui = 0.0f;   // the props' and units' models, the fires' glow and flames, the interface
     };
     void setPassTimers(bool on) { passTimersOn_ = on; }
-    PassTimes passTimes() const { return PassTimes{ groundTimer_.ms, waterTimer_.ms, cloudTimer_.ms }; }
+    PassTimes passTimes() const { return PassTimes{ groundTimer_.ms, waterTimer_.ms, cloudTimer_.ms, modelTimer_.ms, fireTimer_.ms, uiTimer_.ms }; }
     // From the Graphics settings: the world is drawn at this percent of the window's width and height and stretched to
     // fit, which costs fewer pixels. The interface is always drawn at the window's own size.
     void setRenderScale(int percent) { renderScale_ = percent; }
@@ -528,6 +530,13 @@ private:
     GLuint farVao_ = 0, farVbo_ = 0, farEbo_ = 0;
     GLsizei farIndexCount_ = 0;
     const void* farFor_ = nullptr;
+    // The far ground in square patches, each a run of the index buffer with the box it fills: only the patches in view and in the
+    // ring between the chunks held and the view distance are sent to the card (the whole of it is two million triangles on a big map)
+    struct FarPatch {
+        GLsizei first = 0, count = 0;
+        float x0 = 0.0f, z0 = 0.0f, x1 = 0.0f, z1 = 0.0f, minY = 0.0f, maxY = 0.0f;
+    };
+    std::vector<FarPatch> farPatches_;
     void releaseFar();
     void buildFar(const Terrain::FarField& f, const Terrain& t);
     int terrainSize_ = 0;
@@ -536,6 +545,8 @@ private:
     void releaseTerrain();
     void releaseChunk(TerrainChunk& c);
     void buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep);
+    void prepareSurfaces(const Terrain& t, const Camera& cam);
+    SkyLight frameSky_;   // the light on the ground and the water this frame (prepareSurfaces)
     void drawTerrain(const Terrain& t, const Camera& cam);
 
     // The uniforms of kSurfaceCommon, which the ground, water and cloud shaders all have
@@ -625,7 +636,7 @@ private:
         bool running = false, waiting = false;
         float ms = 0.0f;
     };
-    PassTimer groundTimer_, waterTimer_, cloudTimer_;
+    PassTimer groundTimer_, waterTimer_, cloudTimer_, modelTimer_, fireTimer_, uiTimer_;
     bool passTimersOn_ = false;
     void passTimerBegin(PassTimer& t);
     void passTimerEnd(PassTimer& t);
@@ -775,6 +786,7 @@ private:
     std::vector<std::pair<const Model*, std::vector<ModelInstance>>> instQueues_;
     std::unordered_map<const Model*, size_t> instSlot_;
     std::vector<ModelInstance> instUpload_;
+    std::vector<std::pair<float, size_t>> instOrder_;   // this frame's models with copies, nearest first: how far, and which of instQueues_
     GLuint modelInstVao(const Model& m);
     struct PlanInstance {
         const Model* model;

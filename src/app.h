@@ -928,7 +928,7 @@ struct App : AppSession {
         bool clouds = true, shadows = true, varied = true;
         int renderScale = 100;
         Camera saved;
-        double ground = 0.0, water = 0.0, cloudMs = 0.0;
+        double ground = 0.0, water = 0.0, cloudMs = 0.0, models = 0.0, fires = 0.0, ui = 0.0;
     };
     Bench bench;
     void benchStart();

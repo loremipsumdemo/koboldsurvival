@@ -93,57 +93,77 @@ struct RingCell {
 // The ring of cells round an Altar: a cell counts if its farthest corner is inside the radius, the ones joined to the middle are
 // filled, and the ring is every filled cell with an unfilled one among its eight neighbours. A ring cell faces the open side that
 // points furthest from the middle (a corner, the two sides that make up its open diagonal).
-std::vector<RingCell> perimeterRing(float claimRadius) {
-    std::vector<RingCell> ring;
-    const float rc = (claimRadius - 3.0f) * 0.5f;
-    if (claimRadius <= PERIMETER_MIN_RADIUS || rc < 1.0f) return ring;
-    auto valid = [&](int i, int j) { return (std::abs(i) + 0.5f) * (std::abs(i) + 0.5f) + (std::abs(j) + 0.5f) * (std::abs(j) + 0.5f) <= rc * rc; };
-    std::set<std::pair<int, int>> filled{ { 0, 0 } };
-    std::queue<std::pair<int, int>> q;
-    q.push({ 0, 0 });
-    const int N4[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-    while (!q.empty()) {
-        const auto [i, j] = q.front();
-        q.pop();
-        for (const auto& d : N4) {
-            const int ni = i + d[0], nj = j + d[1];
-            if (!filled.count({ ni, nj }) && valid(ni, nj)) {
-                filled.insert({ ni, nj });
-                q.push({ ni, nj });
+// The filled cells of a ring's radius, as a grid of yes and no with a cell to spare all round. A cell counts if its farthest corner is
+// inside the radius, and every such cell is joined to the middle (the cell next to it toward the middle is nearer, so it counts too):
+// the filled cells are exactly the ones that count, and need no flood to find. Both perimeterRing and activeRing read their rings from
+// this, so they always agree.
+struct RingGrid {
+    int reach = 0, side = 0;
+    std::vector<char> cells;
+    // False for a radius that has no ring
+    bool fill(float claimRadius) {
+        const float rc = (claimRadius - 3.0f) * 0.5f;
+        if (claimRadius <= PERIMETER_MIN_RADIUS || rc < 1.0f) return false;
+        reach = (int)std::floor(rc) + 1;   // no cell this far out counts
+        side = 2 * reach + 3;
+        cells.assign((size_t)side * side, 0);
+        for (int i = -reach; i <= reach; ++i) {
+            for (int j = -reach; j <= reach; ++j) {
+                const float a = (float)std::abs(i) + 0.5f, b = (float)std::abs(j) + 0.5f;
+                cells[index(i, j)] = a * a + b * b <= rc * rc ? 1 : 0;
             }
         }
+        return true;
     }
-    for (const auto& [i, j] : filled) {
-        bool all = true;
+    size_t index(int i, int j) const { return (size_t)(i + reach + 1) * (size_t)side + (size_t)(j + reach + 1); }
+    bool filled(int i, int j) const { return cells[index(i, j)] != 0; }
+    // A filled cell with an unfilled one among its eight neighbours
+    bool onRing(int i, int j) const {
+        if (!filled(i, j)) return false;
         for (int a = -1; a <= 1; ++a) {
-            for (int b = -1; b <= 1; ++b) all = all && filled.count({ i + a, j + b }) > 0;
+            for (int b = -1; b <= 1; ++b) {
+                if (!filled(i + a, j + b)) return true;
+            }
         }
-        if (all) continue;
-        std::vector<std::pair<int, int>> cand;
-        for (const auto& d : N4) {
-            if (!filled.count({ i + d[0], j + d[1] })) cand.push_back({ d[0], d[1] });
-        }
-        const bool corner = cand.empty();
-        if (corner) {
-            for (int a = -1; a <= 1; a += 2) {
-                for (int b = -1; b <= 1; b += 2) {
-                    if (!filled.count({ i + a, j + b })) {
-                        cand.push_back({ a, 0 });
-                        cand.push_back({ 0, b });
+        return false;
+    }
+};
+
+std::vector<RingCell> perimeterRing(float claimRadius) {
+    std::vector<RingCell> ring;
+    RingGrid grid;
+    if (!grid.fill(claimRadius)) return ring;
+    const int N4[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+    // In the order of i, then j: the order the pieces are laid in
+    for (int i = -grid.reach; i <= grid.reach; ++i) {
+        for (int j = -grid.reach; j <= grid.reach; ++j) {
+            if (!grid.onRing(i, j)) continue;
+            std::vector<std::pair<int, int>> cand;
+            for (const auto& d : N4) {
+                if (!grid.filled(i + d[0], j + d[1])) cand.push_back({ d[0], d[1] });
+            }
+            const bool corner = cand.empty();
+            if (corner) {
+                for (int a = -1; a <= 1; a += 2) {
+                    for (int b = -1; b <= 1; b += 2) {
+                        if (!grid.filled(i + a, j + b)) {
+                            cand.push_back({ a, 0 });
+                            cand.push_back({ 0, b });
+                        }
                     }
                 }
             }
-        }
-        std::pair<int, int> best = cand.front();
-        int bestV = -(1 << 20);
-        for (const auto& c : cand) {
-            const int v = c.first * i + c.second * j;
-            if (v > bestV) {
-                bestV = v;
-                best = c;
+            std::pair<int, int> best = cand.front();
+            int bestV = -(1 << 20);
+            for (const auto& c : cand) {
+                const int v = c.first * i + c.second * j;
+                if (v > bestV) {
+                    bestV = v;
+                    best = c;
+                }
             }
+            ring.push_back(RingCell{ i, j, best.first, best.second, corner });
         }
-        ring.push_back(RingCell{ i, j, best.first, best.second, corner });
     }
     return ring;
 }
@@ -219,12 +239,30 @@ float activeRing(const std::set<long long>& covered, float cx, float cz, float c
     snapBuildSpot(wall, cx, cz, ax, az);
     float best = claimRadius;
     int bestN = 0;
+    // Every ring takes its cells from the same lattice round the Altar, so whether a cell's piece has a tile covered is asked once a
+    // cell (when a ring first has it), and each ring is counted off the grid of its radius. This used to make each ring's whole list
+    // of cells afresh and ask about every one of them, for a few hundred radii: tens of milliseconds a faction, every game hour.
+    RingGrid grid;
+    if (!grid.fill(claimRadius)) return best;   // the widest ring: no narrower one reaches further out
+    const int reach = grid.reach, side = 2 * reach + 1;
+    std::vector<signed char> cover((size_t)side * side, (signed char)-1);   // -1 not asked yet
+    auto coveredCell = [&](int i, int j) {
+        signed char& c = cover[(size_t)(i + reach) * side + (size_t)(j + reach)];
+        if (c < 0) {
+            float x = 0.0f, z = 0.0f;
+            cellSpot(wall, ax, az, RingCell{ i, j, 0, 0, false }, x, z);
+            c = cellCovered(covered, x, z) ? 1 : 0;
+        }
+        return c != 0;
+    };
     for (float p = claimRadius; p > PERIMETER_MIN_RADIUS + 1.0f; p -= 0.25f) {
         int n = 0;
-        for (const RingCell& cell : perimeterRing(p)) {
-            float x = 0.0f, z = 0.0f;
-            cellSpot(wall, ax, az, cell, x, z);
-            if (cellCovered(covered, x, z)) ++n;
+        if (grid.fill(p)) {
+            for (int i = -grid.reach; i <= grid.reach; ++i) {
+                for (int j = -grid.reach; j <= grid.reach; ++j) {
+                    if (grid.onRing(i, j) && coveredCell(i, j)) ++n;
+                }
+            }
         }
         if (n > bestN) {
             bestN = n;
@@ -393,12 +431,16 @@ void perimeterHour(World& w, Terrain& t, const std::vector<Claim>& claims, doubl
         }
     }
     PerimeterDays& days = w.resource<PerimeterDays>();
+    // Every faction's hour comes up at the same moment. One faction looks a call (a call a second): the others stay due and take the
+    // next calls in turn, so the looks are spread over as many seconds instead of all landing in one step.
+    bool looked = false;
     for (const Claim& c : claims) {
         if (c.camp || !factionCanClaim(c.owner) || isMobFaction(c.owner) || c.radius <= PERIMETER_MIN_RADIUS) continue;
         double& since = days.since[c.owner];
         since += hours;
-        if (since < PERIMETER_LOOK_HOURS) continue;
+        if (since < PERIMETER_LOOK_HOURS || looked) continue;
         since = 0.0;
+        looked = true;
         PROFILE_SCOPE("perimeter: one claim");
         const bool npc = c.owner != FACTION_PLAYER;
 
@@ -702,12 +744,16 @@ void npcBuilderSystem(World& w, Terrain& t, Rng& rng, float realSeconds, double 
     BuilderClock& clock = w.resource<BuilderClock>();
     clock.timer += realSeconds;
     clock.hours += gameSeconds / 3600.0;
+    // The Perimeters are looked at on every call (a call a second), one faction at a time (see perimeterHour)
+    {
+        const std::vector<Claim> claimsNow = claimsOf(w);
+        PROFILED("npcBuilder: perimeterHour", perimeterHour(w, t, claimsNow, gameSeconds / 3600.0));
+    }
     if (clock.timer < NPC_BUILDERS_LOOK_SECONDS) return;
     const double hours = clock.hours;
     clock.timer = 0.0f;
     clock.hours = 0.0;
     const std::vector<Claim> claims = claimsOf(w);
-    PROFILED("npcBuilder: perimeterHour", perimeterHour(w, t, claims, hours));
     PROFILED("npcBuilder: rolesHour", npcRolesHour(w, hours));   // each NPC faction's share of citizens, military and Fortified (npc_roles.h)
     PROFILE_SCOPE("npcBuilder: sites");
 

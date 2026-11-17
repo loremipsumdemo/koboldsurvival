@@ -124,8 +124,9 @@ void corpseDecaySystem(World& w, double gameSeconds) {
 void bonesDecaySystem(World& w, double gameSeconds) {
     const double hours = gameSeconds / 3600.0;
     if (hours <= 0.0) return;
-    for (ObjectId e : w.view<Prop, Transform>()) {
-        if (!destroyedByHand(w.get<Prop>(e)->kind)) continue;
+    // Only the kinds this is about, from the prop index: a map has thousands of props and few of these
+    for (ObjectId e : propsWhere(w, [](PropKind k) { return destroyedByHand(k); })) {
+        if (!w.has<Prop>(e) || !w.has<Transform>(e)) continue;   // one broken a moment ago may have taken this one with it
         BonesPile* pile = w.get<BonesPile>(e);
         if (!pile) pile = &w.add(e, BonesPile{});
         pile->hours += hours;

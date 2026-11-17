@@ -138,9 +138,11 @@ void main() {
 
     // The face's own slope (the vertex normals are smoothed over several tiles, so a one-tile-wide wall gets an up-facing
     // one). Walls take the tile from the side rather than from above, so it isn't smeared down them.
-    vec3 face = normalize(cross(dFdx(vPos), dFdy(vPos)));
+    vec3 face = normalize(cross(vec3(dx.x, dYx, dx.y), vec3(dy.x, dYy, dy.y)));
     if (dot(face, uEye - vPos) < 0.0) face = -face;
-    vec3 aw = pow(abs(face), vec3(4.0));
+    // The fourth power of each part, by squaring twice
+    vec3 aw = face * face;
+    aw *= aw;
     aw /= aw.x + aw.y + aw.z;
     float side = 1.0 - aw.y;
 
@@ -175,12 +177,16 @@ void main() {
     }
     bump *= grain;
     // On walls the face's own slope lights them, so they shade by which way they face
-    vec3 nBase = normalize(mix(normalize(vNrm), face, smoothstep(0.5, 0.9, side)));
+    vec3 nrm = normalize(vNrm);
+    float wall = smoothstep(0.5, 0.9, side);
+    vec3 nBase = nrm;
+    if (wall > 0.0) nBase = normalize(mix(nrm, face, wall));
     vec3 n = normalize(nBase + bump * bumpBy);
-    float diff = max(dot(n, normalize(uSunDir)), 0.0) * cloudShade(vXZ, vPos.y);
+    // uSunDir comes in already of length 1
+    float diff = max(dot(n, uSunDir), 0.0) * cloudShade(vXZ, vPos.y);
 
     // Steep faces turn to bare rock.
-    float steep = max(1.0 - clamp(normalize(vNrm).y, 0.0, 1.0), smoothstep(0.6, 0.9, side));
+    float steep = max(1.0 - clamp(nrm.y, 0.0, 1.0), smoothstep(0.6, 0.9, side));
     float rock = smoothstep(uRockSlope, uRockSlope + 0.15, steep);
     vec3 base = mix(vCol, uRockRgb, rock);
     float grey = dot(vCol, vec3(0.333));
@@ -191,11 +197,13 @@ void main() {
     // Under the sea, the water between the eye and the ground absorbs light and tints
     // it. The deeper the ground, the more of the water it has been seen through.
     float depth = max(uSeaY - vPos.y, 0.0) * uDepthScale;
-    float absorb = 1.0 - exp(-depth * 0.25);
-    vec3 underwater = uUnderwater * (uAmbient + uSunLight * 0.5);
-    lit = mix(lit, underwater, absorb);
+    if (depth > 0.0) {
+        float absorb = 1.0 - exp(-depth * 0.25);
+        vec3 underwater = uUnderwater * (uAmbient + uSunLight * 0.5);
+        lit = mix(lit, underwater, absorb);
+    }
     // A void wall darkens towards where it stops, so the broken edge is a dim fringe rather than a hard line
-    lit *= mix(0.18, 1.0, smoothstep(cutY, cutY + 10.0, vPos.y));
+    if (uVoidCut > -1.0e5) lit *= mix(0.18, 1.0, smoothstep(cutY, cutY + 10.0, vPos.y));
 
     float d = vDist * uFog * 0.004;
     float f = clamp(1.0 - exp(-d * d), 0.0, 1.0);
@@ -570,7 +578,7 @@ void Renderer::drawClouds(const Camera& cam) {
 // Times a pass on the graphics card. The answer comes a frame or more later, so a pass is only timed again once its last
 // time has been read: nothing here ever waits for the card.
 void Renderer::passTimerBegin(PassTimer& t) {
-    if (!passTimersOn_) return;
+    if (!passTimersOn_ || t.running) return;
     if (!t.query) glGenQueries(1, &t.query);
     if (t.waiting) {
         GLint ready = 0;
@@ -701,7 +709,7 @@ void Renderer::releaseTerrainGl() {
     glDeleteTextures(1, &seaTex_);
     glDeleteTextures(1, &noiseTex_);
     glDeleteVertexArrays(1, &emptyVao_);
-    for (PassTimer* t : { &groundTimer_, &waterTimer_, &cloudTimer_ }) {
+    for (PassTimer* t : { &groundTimer_, &waterTimer_, &cloudTimer_, &modelTimer_, &fireTimer_, &uiTimer_ }) {
         if (t->query) glDeleteQueries(1, &t->query);
         *t = PassTimer{};
     }
@@ -742,6 +750,7 @@ void Renderer::releaseFar() {
     farVao_ = farVbo_ = farEbo_ = 0;
     farIndexCount_ = 0;
     farFor_ = nullptr;
+    farPatches_.clear();
 }
 
 // The coarse ground of the whole world as one mesh, set a little below where it really is (what is near is drawn over it by the chunks)
@@ -762,12 +771,40 @@ void Renderer::buildFar(const Terrain::FarField& f, const Terrain& t) {
                          f.rgb[k * 3] / 255.0f, f.rgb[k * 3 + 1] / 255.0f, f.rgb[k * 3 + 2] / 255.0f };
         }
     }
+    // The triangles go into the index buffer a patch at a time, so a patch is one run of it and patches next to each other in the
+    // buffer can be drawn together
+    constexpr int FAR_PATCH_CELLS = 32;
+    const int cells = n - 1;
     std::vector<uint32_t> idx;
-    idx.reserve((size_t)(n - 1) * (n - 1) * 6);
-    for (int j = 0; j < n - 1; ++j) {
-        for (int i = 0; i < n - 1; ++i) {
-            const uint32_t p = (uint32_t)(j * n + i), q = p + 1, r = p + (uint32_t)n, s = r + 1;
-            idx.insert(idx.end(), { p, r, s, p, s, q });
+    idx.reserve((size_t)cells * cells * 6);
+    farPatches_.clear();
+    for (int pj = 0; pj < cells; pj += FAR_PATCH_CELLS) {
+        for (int pi = 0; pi < cells; pi += FAR_PATCH_CELLS) {
+            const int j1 = std::min(pj + FAR_PATCH_CELLS, cells), i1 = std::min(pi + FAR_PATCH_CELLS, cells);
+            FarPatch patch;
+            patch.first = (GLsizei)idx.size();
+            for (int j = pj; j < j1; ++j) {
+                for (int i = pi; i < i1; ++i) {
+                    const uint32_t p = (uint32_t)(j * n + i), q = p + 1, r = p + (uint32_t)n, s = r + 1;
+                    idx.insert(idx.end(), { p, r, s, p, s, q });
+                }
+            }
+            patch.count = (GLsizei)idx.size() - patch.first;
+            float lo = verts[(size_t)pj * n + pi].y, hi = lo;
+            for (int j = pj; j <= j1; ++j) {
+                for (int i = pi; i <= i1; ++i) {
+                    const float y = verts[(size_t)j * n + i].y;
+                    lo = std::min(lo, y);
+                    hi = std::max(hi, y);
+                }
+            }
+            patch.x0 = (float)pi * f.spacing;
+            patch.z0 = (float)pj * f.spacing;
+            patch.x1 = (float)i1 * f.spacing;
+            patch.z1 = (float)j1 * f.spacing;
+            patch.minY = lo;
+            patch.maxY = hi;
+            farPatches_.push_back(patch);
         }
     }
     glGenVertexArrays(1, &farVao_);
@@ -863,7 +900,10 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
     glBindVertexArray(0);
 }
 
-void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
+// What the frame is lit by, worked out once before anything of the world is drawn: the weather as it is shown now, the light on the
+// ground and the water (frameSky_), where the surfaces' tiles and the clouds fall (surfaceFrame_), and the light on props and units
+// (worldTint_). The props and units are drawn before the ground, so this can't wait for drawTerrain.
+void Renderer::prepareSurfaces(const Terrain& t, const Camera& cam) {
     if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
@@ -878,11 +918,9 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     }
     Look shownLook = hasTheme_ ? themeLook_ : t.surface().look;
     applyWeather(shownLook, weatherShown_);
-    const SkyLight sky = skyLightFor(shownLook, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    frameSky_ = skyLightFor(shownLook, Vec3{ skySun_[0], skySun_[1], skySun_[2] });
+    const SkyLight& sky = frameSky_;
     updateSurfaceFrame(cam, sky);
-    const SurfaceFrame& frame = surfaceFrame_;
-    const bool hasWater = !hasTheme_ || theme_.waterShown;
-    const float seaEnd = hasTheme_ && seaBounded_ ? (float)t.size() : 0.0f;
     // The light that reaches props and units
     for (int i = 0; i < 3; ++i) worldTint_[i] = 1.0f;
     if (hasTheme_ && theme_.modelLight > 0) {
@@ -891,6 +929,14 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         const float reach[3] = { sky.ambientLight.x * 1.4f + sky.sunLight.x * up, sky.ambientLight.y * 1.4f + sky.sunLight.y * up, sky.ambientLight.z * 1.4f + sky.sunLight.z * up };
         for (int i = 0; i < 3; ++i) worldTint_[i] = 1.0f + (std::min(reach[i], 1.0f) - 1.0f) * amount;
     }
+}
+
+// The ground, the sky where there is none, the sea floor and the water. prepareSurfaces has been called for the frame.
+void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
+    const SkyLight& sky = frameSky_;
+    const SurfaceFrame& frame = surfaceFrame_;
+    const bool hasWater = !hasTheme_ || theme_.waterShown;
+    const float seaEnd = hasTheme_ && seaBounded_ ? (float)t.size() : 0.0f;
     const float hs = t.heightScale();
     const float seaY = 0.0f;
     const float waterY = seaY - kWaterDrop * hs;
@@ -906,7 +952,11 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUseProgram(groundShader_.prog);
     glUniformMatrix4fv(groundShader_.viewProj, 1, GL_FALSE, viewProj_.m);
     glUniform3f(groundShader_.eye, ex, ey, ez);
-    glUniform3f(groundShader_.sunDir, sky.sunDir.x, sky.sunDir.y, sky.sunDir.z);
+    {
+        const float sunLen = std::sqrt(sky.sunDir.x * sky.sunDir.x + sky.sunDir.y * sky.sunDir.y + sky.sunDir.z * sky.sunDir.z);
+        const float k = sunLen > 1e-6f ? 1.0f / sunLen : 1.0f;
+        glUniform3f(groundShader_.sunDir, sky.sunDir.x * k, sky.sunDir.y * k, sky.sunDir.z * k);
+    }
     glUniform3f(groundShader_.sunLight, sky.sunLight.x, sky.sunLight.y, sky.sunLight.z);
     glUniform3f(groundShader_.ambient, sky.ambientLight.x, sky.ambientLight.y, sky.ambientLight.z);
     glUniform3f(groundShader_.underwater, sky.underwaterRgb.x, sky.underwaterRgb.y, sky.underwaterRgb.z);
@@ -1028,9 +1078,30 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
         if (const Terrain::FarField* far = t.farField(); far && far->res > 1) {
             if (farFor_ != far) buildFar(*far, t);
             if (farVao_) {
-                glUniform4f(groundShader_.hole, cam.focusX, cam.focusZ, std::min(heldReach_, FAR_HOLE_TILES), (float)viewDistance_);
+                const float inner = std::min(heldReach_, FAR_HOLE_TILES), outer = (float)viewDistance_;
+                glUniform4f(groundShader_.hole, cam.focusX, cam.focusZ, inner, outer);
                 glBindVertexArray(farVao_);
-                glDrawElements(GL_TRIANGLES, farIndexCount_, GL_UNSIGNED_INT, nullptr);
+                // Only the patches the shader would keep any of (in the ring from inner to outer round the focus) and that are in
+                // view. Patches that follow one another in the index buffer go in one draw.
+                GLsizei runFirst = 0, runCount = 0;
+                auto flushRun = [&]() {
+                    if (runCount > 0) glDrawElements(GL_TRIANGLES, runCount, GL_UNSIGNED_INT, (void*)((size_t)runFirst * sizeof(uint32_t)));
+                    runCount = 0;
+                };
+                for (const FarPatch& p : farPatches_) {
+                    const float nearX = std::clamp(cam.focusX, p.x0, p.x1) - cam.focusX, nearZ = std::clamp(cam.focusZ, p.z0, p.z1) - cam.focusZ;
+                    const float farX = std::max(std::fabs(p.x0 - cam.focusX), std::fabs(p.x1 - cam.focusX));
+                    const float farZ = std::max(std::fabs(p.z0 - cam.focusZ), std::fabs(p.z1 - cam.focusZ));
+                    const bool wanted = nearX * nearX + nearZ * nearZ <= outer * outer && farX * farX + farZ * farZ >= inner * inner &&
+                                        boxVisible(planes, p.x0, p.minY, p.z0, p.x1, p.maxY, p.z1);
+                    if (!wanted) {
+                        flushRun();
+                        continue;
+                    }
+                    if (runCount == 0) runFirst = p.first;
+                    runCount += p.count;
+                }
+                flushRun();
                 glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
             }
         }

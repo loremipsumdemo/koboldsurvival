@@ -80,10 +80,11 @@ int xpForLevel(int level) {
 }
 
 int levelForXp(int xp) {
-    for (int level = MAX_LEVEL; level > 1; --level) {
-        if (xp >= xpTable()[level]) return level;
-    }
-    return 1;
+    // The highest level whose xp this reaches. The table rises with every level, so the first level it falls short of is found by
+    // halving (this is asked for every unit every step, and walking down from the top took most of a hundred looks for a low level).
+    const std::array<int, MAX_LEVEL + 1>& table = xpTable();
+    const auto above = std::upper_bound(table.begin() + 2, table.end(), xp);
+    return (int)(above - table.begin()) - 1;
 }
 
 int addXp(Stats& s, StatId stat, int amount) {

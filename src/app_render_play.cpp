@@ -21,14 +21,19 @@ void App::updateWorldMapView() {
 }
 
 void App::drawWorldOverlays() {
+    PROFILE_LAPS(lap);
+    PROFILE_LAP(lap, "overlays: names");
     if (sel.dragging) {
         renderer.drawSelectArrows(world, cam, unitsInBox(world, cam, sel.x0, sel.y0, sel.x1, sel.y1, winW, winH), winW, winH);
     }
     if (settings.showUnitNames || settings.showNpcNames) {
         renderer.drawUnitNames(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
     }
+    PROFILE_LAP(lap, "overlays: emotes");
     renderer.drawEmotes(world, cam, winW, winH, settings.showUnitNames, settings.showNpcNames);
+    PROFILE_LAP(lap, "overlays: prop emotes");
     renderer.drawPropEmotes(world, cam, winW, winH);
+    PROFILE_LAP(lap, "overlays: rest");
     if (!mouseOverPanels() && !session.contextMenu.open && !itemMenu.open && session.dialogueUnit == NO_OBJECT) {
         for (ObjectId u : unitsUnderMouse) {
             const Carried* cd = world.get<Carried>(u);
@@ -78,12 +83,15 @@ bool App::dragStillThere() {
 }
 
 void App::drawGamePanels() {
+    PROFILE_LAPS(lap);
+    PROFILE_LAP(lap, "panels: squad panel");
     const std::vector<ObjectId> own = ownUnitList();
     const UnitPanelLayout L = squadPanelLayout(winW, winH);
     unitPanelRow = L.scrollRow;
     renderer.drawUnitPanel(world, L, own, runMode, repView, squadRenaming ? &squadRenameText : nullptr, session.floorLevel,
                            session.floorManual, squadMenu == SQUAD_MENU_FORM, factionRulesNaming ? &factionRulesName : nullptr);
     drawPanelLock(PanelId::Squad);
+    PROFILE_LAP(lap, "panels: game log");
     const GameLogLayout cl = gameLogPanel(winW, winH);
     logOffset = cl.offset;
     InfoTime timeInfo;
@@ -95,6 +103,7 @@ void App::drawGamePanels() {
     }
     renderer.drawGameLog(cl, infoLines(gameLog, infoTab, logFilter), logFilter, mouseX, mouseY, timeInfo);
     if (!cl.filterOpen) drawPanelLock(PanelId::Info);
+    PROFILE_LAP(lap, "panels: unit sidebar");
     const ObjectId shown = sidebarUnitOf(world);
     {
         // Under the Filter menu, which is over this panel, the panel is not pointed at

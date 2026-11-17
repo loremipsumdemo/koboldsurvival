@@ -442,7 +442,15 @@ void Renderer::queueSkinnedModel(const Model& m, const Mat4& place, RGBA faction
     }
     const size_t row = (size_t)boneRowCount_++;
     if (boneRows_.size() < (row + 1) * (size_t)BONE_TEXELS * 4) boneRows_.resize(std::max((row + 1) * 2, (size_t)64) * (size_t)BONE_TEXELS * 4, 0.0f);
-    std::memcpy(&boneRows_[row * (size_t)BONE_TEXELS * 4], joints, sizeof(float) * 16 * (size_t)m.skeleton->jointCount);
+    // A joint's four texels are the rows of its matrix (the joints come column by column): the shader reads the first three
+    float* texels = &boneRows_[row * (size_t)BONE_TEXELS * 4];
+    for (int j = 0; j < m.skeleton->jointCount; ++j) {
+        const float* in = joints + (size_t)j * 16;
+        float* out = texels + (size_t)j * 16;
+        for (int r = 0; r < 4; ++r) {
+            for (int c = 0; c < 4; ++c) out[r * 4 + c] = in[c * 4 + r];
+        }
+    }
     queueModelMatrix(m, place, faction, sat, hue, (float)row);
 }
 
@@ -513,7 +521,25 @@ std::string Renderer::modelDrawText() const {
 void Renderer::drawModelInstances() {
     modelDraws_ = ModelDrawCount{};
     instUpload_.clear();
-    for (const auto& q : instQueues_) instUpload_.insert(instUpload_.end(), q.second.begin(), q.second.end());
+    // The models are drawn nearest first, and each one's copies nearest first: the card passes over the pixels of what is behind
+    // something already drawn, and the props and units are drawn before the ground, with nothing in front of them yet. (Copies the
+    // same distance off keep the order they were queued in, so two on one spot don't swap from frame to frame.)
+    auto away2 = [this](const ModelInstance& i) {
+        const float dx = i.place.m[12] - eyeX_, dy = i.place.m[13] - eyeY_, dz = i.place.m[14] - eyeZ_;
+        return dx * dx + dy * dy + dz * dz;
+    };
+    instOrder_.clear();
+    for (size_t k = 0; k < instQueues_.size(); ++k) {
+        std::vector<ModelInstance>& list = instQueues_[k].second;
+        if (list.empty()) continue;
+        std::stable_sort(list.begin(), list.end(), [&](const ModelInstance& a, const ModelInstance& b) { return away2(a) < away2(b); });
+        instOrder_.push_back({ away2(list.front()), k });
+    }
+    std::stable_sort(instOrder_.begin(), instOrder_.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    for (const auto& o : instOrder_) {
+        const std::vector<ModelInstance>& list = instQueues_[o.second].second;
+        instUpload_.insert(instUpload_.end(), list.begin(), list.end());
+    }
     if (instUpload_.empty()) return;
     glUseProgram(modelInstProgram_);
     glUniform4f(uTintInst_, worldTint_[0], worldTint_[1], worldTint_[2], 1.0f);
@@ -545,7 +571,8 @@ void Renderer::drawModelInstances() {
     GLuint surfaceBound = 0;
     glUniform1f(uGrainOnInst_, 0.0f);
     size_t first = 0;
-    for (auto& q : instQueues_) {
+    for (const auto& o : instOrder_) {
+        auto& q = instQueues_[o.second];
         std::vector<ModelInstance>& list = q.second;
         if (list.empty()) continue;
         const Model& m = *q.first;

@@ -10,6 +10,7 @@
 #include "wheelbarrow.h"
 #include "frustum.h"
 #include <unordered_map>
+#include "profile.h"
 
 using namespace render_detail;
 
@@ -300,6 +301,8 @@ void Renderer::drawActionCrystal(const Camera& cam, const Terrain& t, float x, f
 
 void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Selection& sel,
                          const std::vector<HudEntry>& hud, int winW, int winH) {
+    PROFILE_LAPS(lap);
+    PROFILE_LAP(lap, "world: sky and setup");
     beginScene(winW, winH);
     glClearColor(0.55f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -414,14 +417,16 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         else paintSky(false);
     }
 
-    glUseProgram(colorProgram_);
-    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
-    drawTerrain(t, cam);
-    if (skyLater_) {   // drawTerrain paints it between the ground and the water; this is only if it did not get that far
-        skyLater_();
-        skyLater_ = nullptr;
-    }
-
+    // The props and units are drawn first and the ground after them, so the card skips every pixel of ground that a building, a tree
+    // or a unit covers (in a camp or a wood that is much of the screen) instead of working it out and then drawing over it. What
+    // comes out is the same, but for a piece standing in water: the water now lies over the part of it that is under the surface.
+    PROFILE_LAP(lap, "world: props");
+    prepareSurfaces(t, cam);
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
     glUseProgram(glyphProgram_);
     glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
 
@@ -783,6 +788,13 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             moving.push_back(e);
             continue;
         }
+        // Wholly out of view, by a ball with room to spare for everything drawProp draws of it (its model, a piece's tiles, a blueprint's
+        // box): passed over before its parts are looked up. A foundation's slab can be any size, and has its own test.
+        if (!info.foundation) {
+            const float tall = std::max({ info.size, (float)FLOOR_HEIGHT, GLYPH_H });
+            const float room = 2.0f * tall + 4.0f + (float)std::max(info.tilesW, info.tilesD);
+            if (!sphereVisible(frustum, tr->x, tr->y + 0.5f * tall, tr->z, room)) continue;
+        }
         drawProp(e, tr, kind, info);
     }
     for (ObjectId e : moving) {
@@ -799,6 +811,7 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
     }
 
     // Units with a model join the props' models, one draw for each model; the few without one are pictures
+    PROFILE_LAP(lap, "world: units");
     ++animFrame_;
     if (animFrame_ % 300 == 0) {
         for (auto it = unitAnims_.begin(); it != unitAnims_.end();) {
@@ -815,25 +828,33 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         if (const Model* m = unitModel(w, e)) {
             if (!(m->maxY > m->minY)) continue;
             const float yaw = unitYaw(e, tr->x, tr->z, unitIdle(w, e));
-            // A unit far off is drawn from a coarser copy of its model (a quarter of the triangles)
+            // A unit that is not near is drawn from a coarser copy of its model: a quarter of the triangles, then a sixteenth, then a
+            // sixty-fourth, each from where what it leaves out is under a pixel (MODEL_LOD_NEAR_TILES and so on)
             const Model* shown = m;
+            bool far = false;   // past where units are posed
             if (!m->lods.empty()) {
                 const float lx = tr->x - camX, ly = tr->y - camY, lz = tr->z - camZ;
-                if (lx * lx + ly * ly + lz * lz > MODEL_LOD_FAR_TILES * MODEL_LOD_FAR_TILES) shown = &m->lods.front();
+                const float eyeDist2 = lx * lx + ly * ly + lz * lz;
+                far = eyeDist2 > MODEL_LOD_FAR_TILES * MODEL_LOD_FAR_TILES;
+                const float away = std::sqrt(eyeDist2) / std::max(1.0f, tall / GLYPH_H);
+                const size_t steps = away > MODEL_LOD_VAST_TILES ? 3 : away > MODEL_LOD_FAR_TILES ? 2 : away > MODEL_LOD_NEAR_TILES ? 1 : 0;
+                // Past where units are posed it is always a copy, as it was before there were several
+                const size_t copy = std::min(std::max(steps, far ? (size_t)1 : (size_t)0), m->lods.size());
+                if (copy > 0) shown = &m->lods[copy - 1];
             }
             const Mat4 place = unitWorldMatrix(w, e, *m, yaw);
             const RGBA tint = unitFactionTint(w, e);
             const float sat = pose.lying ? unitSaturation(w, e) : 1.0f;
-            // A rigged model that is near and on its feet is posed (idle, walk or attack); lying down, it holds the first frame of its idle
-            // (asleep); far off in its coarser copy, it is drawn as it was made
-            if (shown == m && m->skeleton && !pose.lying) {
+            // A rigged model that is not far off and is on its feet is posed (idle, walk or attack), in whichever copy it is drawn from;
+            // lying down, it holds the first frame of its idle (asleep); far off, it is drawn as it was made
+            if (!far && shown->skeleton && !pose.lying) {
                 unitPoseJoints(w, e, *m, tr->x, tr->z, poseJoints_);
-                queueSkinnedModel(*m, place, tint, sat, unitHue(w, e), poseJoints_.data());
-            } else if (shown == m && m->skeleton && m->skeleton->clipNamed("idle") >= 0) {
-                const Skeleton& sk = *m->skeleton;
+                queueSkinnedModel(*shown, place, tint, sat, unitHue(w, e), poseJoints_.data());
+            } else if (!far && shown->skeleton && shown->skeleton->clipNamed("idle") >= 0) {
+                const Skeleton& sk = *shown->skeleton;
                 poseJoints_.resize((size_t)sk.jointCount * 16);
                 poseSkeleton(sk, sk.clipNamed("idle"), 0.0f, -1, 0.0f, 0.0f, poseJoints_.data());
-                queueSkinnedModel(*m, place, tint, sat, unitHue(w, e), poseJoints_.data());
+                queueSkinnedModel(*shown, place, tint, sat, unitHue(w, e), poseJoints_.data());
             } else {
                 queueModelMatrix(*shown, place, tint, sat, unitHue(w, e));
             }
@@ -847,7 +868,23 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
             drawGlyph(unitGlyph(w, e), tr->x, tr->y + pose.lift, tr->z, unitHeight(w, e), WHITE);
         }
     }
+    PROFILE_LAP(lap, "world: model draws");
+    passTimerBegin(modelTimer_);
     drawModelInstances();
+    passTimerEnd(modelTimer_);
+
+    // The ground, then the sky where there is none, the sea floor and the water
+    PROFILE_LAP(lap, "world: terrain");
+    glUseProgram(colorProgram_);
+    glUniformMatrix4fv(uMVPColor_, 1, GL_FALSE, viewProj_.m);
+    drawTerrain(t, cam);
+    if (skyLater_) {   // drawTerrain paints it between the ground and the water; this is only if it did not get that far
+        skyLater_();
+        skyLater_ = nullptr;
+    }
+    glUseProgram(glyphProgram_);
+    glUniformMatrix4fv(uMVPGlyph_, 1, GL_FALSE, viewProj_.m);
+    PROFILE_LAP(lap, "world: items, fires, rest");
 
     drawGroundItems(w, t, cam);
     if (!plannedBoxes.empty()) {
@@ -889,7 +926,9 @@ void Renderer::drawFrame(World& w, const Terrain& t, const Camera& cam, const Se
         f.floorY = tr->y;
         fires_.push_back(f);
     }
+    passTimerBegin(fireTimer_);
     drawFires(cam);
+    passTimerEnd(fireTimer_);
     drawBuildPreview(t);
     drawNavmesh(w, t, cam);
     drawClouds(cam);

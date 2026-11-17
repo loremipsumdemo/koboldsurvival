@@ -98,21 +98,21 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
         explicit Stepping(World& world) : w(world) { w.resource<SimStepping>().on = true; }
         ~Stepping() { w.resource<SimStepping>().on = false; }
     } stepping(w);
-    pathPaceSystem(w, t, dt);
+    PROFILED("pathPaceSystem", pathPaceSystem(w, t, dt));
     // Fighting first, so a unit that dies this frame is gone before the others move. One sound covers the
     // swings of the frame: a hit if any landed, otherwise a miss if any were missed or dodged.
     PROFILED("factionSystem", factionSystem(w, dt));
     PROFILED("defendSystem", defendSystem(w));
     PROFILED("combatSystem", combatSystem(w, t, rng, dt));
     PROFILED("patrolSpawnSystem", patrolSpawnSystem(w, t, dt));
-    fleeSystem(w, t, dt);
+    PROFILED("fleeSystem", fleeSystem(w, t, dt));
     // Behaviors after the fight, so a unit hit this frame can drink in the same frame
     PROFILED("behaviorSystem", behaviorSystem(w, dt));
-    downedSystem(w);
+    PROFILED("downedSystem", downedSystem(w));
     PROFILED("squadSystem", squadSystem(w, dt, running));
     PROFILED("steeringSystem", steeringSystem(w, t, dt, running));
-    airshipSystem(w, t, dt);
-    wheelbarrowSystem(w);
+    PROFILED("airshipSystem", airshipSystem(w, t, dt));
+    PROFILED("wheelbarrowSystem", wheelbarrowSystem(w));
     PROFILED("pickupSystem", pickupSystem(w, t));
     append(events(w).arrivals, PROFILED("propOrderSystem", propOrderSystem(w, t)));
     PROFILED("wildMobSystem", wildMobSystem(w, t, rng, dt));
@@ -123,33 +123,33 @@ void simStep(World& w, Terrain& t, Rng& rng, GameState& gs, float dt, bool runni
     PROFILED("dealJobSystem", dealJobSystem(w, t, dt));
     PROFILED("craftJobSystem", craftJobSystem(w, t, dt));
     PROFILED("factionRulesSystem", factionRulesSystem(w, dt));
-    campPropSystem(w, dt);
-    lightSystem(w, t, gs.clockSeconds, dt);
+    PROFILED("campPropSystem", campPropSystem(w, dt));
+    PROFILED("lightSystem", lightSystem(w, t, gs.clockSeconds, dt));
     PROFILED("commerceSystem", commerceSystem(w, t, rng, dt));
     PROFILED("npcCampSystem", npcCampSystem(w, t, dt, dt * GAME_SECONDS_PER_REAL_SECOND));
     CarryEvents carried = PROFILED("carrySystem", carrySystem(w));
     append(events(w).lootOpened, std::move(carried.loot));
     PROFILED("leaveOpenLocksSystem", leaveOpenLocksSystem(w, t));
-    occupyBanSystem(w, dt);
-    cleanupActiveSquads(w);
-    settleSquads(w);
+    PROFILED("occupyBanSystem", occupyBanSystem(w, dt));
+    PROFILED("cleanupActiveSquads", cleanupActiveSquads(w));
+    PROFILED("settleSquads", settleSquads(w));
     const double gameSecs = dt * GAME_SECONDS_PER_REAL_SECOND;
-    freeBuildSystem(w, t, gameSecs / 3600.0);
+    PROFILED("freeBuildSystem", freeBuildSystem(w, t, gameSecs / 3600.0));
     PROFILED("stuckSystem", stuckSystem(w, t, rng, dt));
     PROFILED("motivationSystem", motivationSystem(w, dt, gameSecs));
-    npcScheduleSystem(w, dt);
+    PROFILED("npcScheduleSystem", npcScheduleSystem(w, dt));
     const int hoursPassed = advanceClock(gs.clockSeconds, dt);
-    gateSystem(w, gs.clockSeconds, dt);
+    PROFILED("gateSystem", gateSystem(w, gs.clockSeconds, dt));
     PROFILED("needsSystem", needsSystem(w, hoursPassed, gameSecs));
-    ghostSystem(w, gameSecs);
-    downedSystem(w);
+    PROFILED("ghostSystem", ghostSystem(w, gameSecs));
+    PROFILED("downedSystem (2nd)", downedSystem(w));
     WakeChanges wakes = PROFILED("unconsciousSystem", unconsciousSystem(w, gameSecs));
     append(events(w).wakes.woke, std::move(wakes.woke));
     append(events(w).wakes.died, std::move(wakes.died));
     PROFILED("playDeadSystem", playDeadSystem(w));
-    corpseDecaySystem(w, gameSecs);
-    bonesDecaySystem(w, gameSecs);
-    groundFoodSystem(w, gameSecs);
+    PROFILED("corpseDecaySystem", corpseDecaySystem(w, gameSecs));
+    PROFILED("bonesDecaySystem", bonesDecaySystem(w, gameSecs));
+    PROFILED("groundFoodSystem", groundFoodSystem(w, gameSecs));
     append(events(w).gains, PROFILED("workSystem", workSystem(w, gameSecs, rng)));
     PROFILED("passiveCraftSystem", passiveCraftSystem(w, gameSecs));
     gs.claimDecayDue += gameSecs;

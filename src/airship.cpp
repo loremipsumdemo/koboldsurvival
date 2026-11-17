@@ -166,8 +166,9 @@ int topFloorAt(World& w, int x, int z) {
 
 void airshipSystem(World& w, Terrain& t, float dt) {
     boardingStep(w, t, dt);
-    for (ObjectId ship : w.view<Prop, Transform>()) {
-        if (!isAirship(w, ship)) continue;
+    // Only the Airships and Watchtowers, from the prop index: a map has thousands of props and a handful of these
+    for (ObjectId ship : propsWhere(w, [](PropKind k) { return propInfo(k).airship || propInfo(k).tower; })) {
+        if (!isAirship(w, ship) || !w.has<Transform>(ship)) continue;
         AirshipState& st = w.has<AirshipState>(ship) ? *w.get<AirshipState>(ship) : w.add(ship, AirshipState{});
         Transform* tr = w.get<Transform>(ship);
         Prop* prop = w.get<Prop>(ship);

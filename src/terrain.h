@@ -142,6 +142,13 @@ private:
     float heightScale_ = 1.0f;
     float floorY_ = -1.0f;
     std::unordered_set<long long> blocked_;
+    // The closed tiles again, as a bit a tile in each chunk (a chunk's row is one 64-bit word): what walkable asks, many times a step
+    // for every unit and every tile a path search opens, without hashing. Kept in step with blocked_ by setBlocked and clearBlocked.
+    struct BlockedBits {
+        uint64_t rows[CHUNK_TILES] = {};
+    };
+    static_assert(CHUNK_TILES == 64, "a chunk's row of closed tiles is one 64-bit word");
+    std::vector<std::unique_ptr<BlockedBits>> blockedBits_;
     std::unordered_map<long long, float> sightBlocks_;
     std::unordered_set<long long> decks_;
     std::unordered_map<long long, float> heightEdits_;

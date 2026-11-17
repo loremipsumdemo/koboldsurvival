@@ -727,6 +727,11 @@ void applySteering(World& w, Terrain& t, const SteerFrame& s, ObjectId e, Vec2f 
         }
     }
     const float x0 = tr->x, z0 = tr->z;
+    // Standing still on the ground: the step below would test the spot it is on twice over and change nothing but its height
+    if (velocity.first == 0.0f && velocity.second == 0.0f && !w.has<Upstairs>(e)) {
+        tr->y = t.standHeight(tr->x, tr->z);
+        return;
+    }
 
     float nx = tr->x + velocity.first * dt;
     float nz = tr->z + velocity.second * dt;

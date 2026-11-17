@@ -48,9 +48,10 @@ struct Model {
     std::vector<float> positions;
     std::vector<GLuint> triangles;
     GLuint surface = 0;   // a building piece's material texture laid over it in world space (not owned), or 0
-    // A coarser copy of a model with many triangles (the units and mobs), for when it is far from the camera: about a quarter of the
-    // triangles, in vertex and index buffers of its own, with this model's textures (which it does not own). Empty for a model that
-    // is light already.
+    // Coarser copies of a model with many triangles (the units and mobs), for when it is far from the camera: about a quarter, a
+    // sixteenth and a sixty-fourth of the triangles, the lightest last, each in vertex and index buffers of its own, with this model's
+    // textures (which it does not own) and, for a skinned model, its rig (so a copy is posed as the model is). Empty for a model that is
+    // light already.
     std::vector<Model> lods;
 };
 

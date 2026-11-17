@@ -62,6 +62,11 @@ const PropIndex& propIndex(World& w) {
     return ix;
 }
 
+bool propIndexFresh(World& w) {
+    const PropIndex& ix = w.resource<PropIndex>();
+    return ix.filled && ix.propRevision == w.revision<Prop>() && ix.transformRevision == w.revision<Transform>();
+}
+
 const std::vector<ObjectId>& propsOfKind(World& w, PropKind kind) {
     static const std::vector<ObjectId> none;
     const PropIndex& ix = propIndex(w);

@@ -74,12 +74,18 @@ void main() {
     vec4 c = texture(uTex, vUV);
     if (c.a < 0.1) discard;   // keep only the visible pixels
     c.rgb = clamp(hueTurn(c.rgb, uHue), 0.0, 1.0);
-    float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    // The faction's color at the texture's own brightness, so shading and detail stay
-    vec3 fl = uFaction.rgb / max(dot(uFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
-    c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), uFaction.a);
-    l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    c.rgb = mix(vec3(l), c.rgb, uSat);
+    // With no faction color and at full saturation (text, pictures, nearly everything) the mixes below would give the colors back
+    // unchanged, so they are passed over
+    if (uFaction.a > 0.0) {
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        // The faction's color at the texture's own brightness, so shading and detail stay
+        vec3 fl = uFaction.rgb / max(dot(uFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
+        c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), uFaction.a);
+    }
+    if (uSat < 1.0) {
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        c.rgb = mix(vec3(l), c.rgb, uSat);
+    }
     if (uShine > 0.0) {
         float across = abs((vUV.x + vUV.y) * 0.5 - (uShine * 1.6 - 0.3));
         c.rgb = mix(c.rgb, vec3(1.0), (1.0 - smoothstep(0.02, 0.16, across)) * 0.9);
@@ -130,15 +136,17 @@ layout(location=10) in vec4 aWeights;
 layout(location=11) in float aBone;    // per copy: its row of uBones, the pose it is drawn in
 uniform mat4 uVP;
 uniform float uSkinOn;                 // 1 for a skinned model
-uniform sampler2D uBones;              // a row for each posed copy: a joint's matrix is four texels, one for each column
+uniform sampler2D uBones;              // a row for each posed copy: a joint has four texels, the first three the rows of its matrix
 out vec2 vUV;
 out vec4 vFaction;
 out float vSat;
 out float vHue;
 out vec3 vWorld;
-mat4 boneMatrix(int joint, int row) {
-    return mat4(texelFetch(uBones, ivec2(joint * 4, row), 0), texelFetch(uBones, ivec2(joint * 4 + 1, row), 0),
-                texelFetch(uBones, ivec2(joint * 4 + 2, row), 0), texelFetch(uBones, ivec2(joint * 4 + 3, row), 0));
+// Where a joint's matrix puts a point: its three rows are three texels (the fourth row of such a matrix is always 0 0 0 1, and is
+// not read)
+vec3 boneMove(int joint, int row, vec4 p) {
+    return vec3(dot(texelFetch(uBones, ivec2(joint * 4, row), 0), p), dot(texelFetch(uBones, ivec2(joint * 4 + 1, row), 0), p),
+                dot(texelFetch(uBones, ivec2(joint * 4 + 2, row), 0), p));
 }
 void main() {
     vUV = aUV;
@@ -146,13 +154,14 @@ void main() {
     vSat = aSat;
     vHue = aHue;
     vec4 local = vec4(aPos, 1.0);
-    if (uSkinOn > 0.5) {
+    // A copy with no pose of its own (aBone under 0: one far off, or lying with no clip to hold) is drawn as the model was made
+    if (uSkinOn > 0.5 && aBone >= 0.0) {
         int row = int(aBone + 0.5);
-        vec4 skinned = vec4(0.0);
+        vec3 skinned = vec3(0.0);
         for (int i = 0; i < 4; ++i) {
-            if (aWeights[i] > 0.0) skinned += aWeights[i] * (boneMatrix(int(aJoints[i] + 0.5), row) * local);
+            if (aWeights[i] > 0.0) skinned += aWeights[i] * boneMove(int(aJoints[i] + 0.5), row, local);
         }
-        local = vec4(skinned.xyz, 1.0);
+        local = vec4(skinned, 1.0);
     }
     vec4 world = aModel * local;
     vWorld = world.xyz;
@@ -184,7 +193,8 @@ void main() {
     if (uGrainOn > 0.0) {
         // Laid on in world space along the face's own plane, so it runs on from one tile's piece into the next.
         // The face's facing comes from how the position changes across the pixel: the models have no normals here.
-        vec3 n = abs(normalize(cross(dFdx(vWorld), dFdy(vWorld))));
+        // Only which way it faces most is asked of it, so its length does not matter
+        vec3 n = abs(cross(dFdx(vWorld), dFdy(vWorld)));
         vec2 p;
         if (n.y >= n.x && n.y >= n.z) p = vWorld.xz;        // floors and tops: grain along z
         else if (n.x >= n.z) p = vec2(vWorld.z, vWorld.y);  // walls facing x: grain upright
@@ -192,11 +202,17 @@ void main() {
         float g = texture(uGrain, p / uGrainTile).r;
         c.rgb = clamp(c.rgb * (g * 2.0), 0.0, 1.0);
     }
-    float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 fl = vFaction.rgb / max(dot(vFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
-    c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), vFaction.a);
-    l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-    c.rgb = mix(vec3(l), c.rgb, vSat);
+    // A copy with no faction color (every prop) or at full saturation (nearly everything) leaves its colors as they are: the mixes
+    // below would give them back unchanged, so they are passed over
+    if (vFaction.a > 0.0) {
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        vec3 fl = vFaction.rgb / max(dot(vFaction.rgb, vec3(0.299, 0.587, 0.114)), 0.05);
+        c.rgb = mix(c.rgb, clamp(fl * l, 0.0, 1.0), vFaction.a);
+    }
+    if (vSat < 1.0) {
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        c.rgb = mix(vec3(l), c.rgb, vSat);
+    }
     FragColor = c * uTint;
 }
 )";
@@ -806,6 +822,7 @@ void Renderer::beginUi(int winW, int winH) {
     text_.ui.trim(TEXT_CACHE_LIMIT);
     text_.list.trim(TEXT_CACHE_LIMIT);
     truncated_.clear();
+    passTimerBegin(uiTimer_);
     presentScene();
     uiW_ = winW;
     uiH_ = winH;
@@ -824,6 +841,7 @@ void Renderer::endUi() {
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    passTimerEnd(uiTimer_);
 }
 
 void Renderer::drawColorTris(const Vertex* v, size_t count, const Mat4& mvp) {

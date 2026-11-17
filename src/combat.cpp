@@ -16,6 +16,7 @@
 #include "systems.h"
 #include "terrain.h"
 #include "useitem.h"
+#include "profile.h"
 
 namespace {
 const char* const ELIXIR = "Elixir of Might";
@@ -109,7 +110,13 @@ ObjectId pickInReach(World& w, const Terrain& t, ObjectId p, const std::vector<O
     ObjectId best = NO_OBJECT;
     int bestHp = 0;
     const float reach = reachOf(w, p);
+    const Transform* from = w.get<Transform>(p);
+    // Clearly out of reach across the ground: not looked at further (flatGap says the same of it, after more lookups)
+    const float far2 = (reach + 0.05f) * (reach + 0.05f);
     for (ObjectId h : hostiles) {
+        if (from) {
+            if (const Transform* at = w.get<Transform>(h); at && distSq(*from, *at) > far2) continue;
+        }
         if (!targetable(w, h) || flatGap(w, p, h) > reach || !canStrike(w, p, h)) continue;
         const int hp = hpOf(w, h);
         if ((best == NO_OBJECT || hp < bestHp) && canSee(w, t, p, h)) {
@@ -516,12 +523,14 @@ static std::string elixirName() {
 
 // What numbersOf says for maxHp, without working out the rest (every unit asks it every step)
 static int maxHpOf(World& w, ObjectId e) {
-    int hp = maxHealthFor(statsOf(w, e));
-    if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) hp = mobInfo(m->kind).hp;
-    return hp;
+    if (const Mob* m = w.get<Mob>(e); m && mobInfo(m->kind).hp > 0) return mobInfo(m->kind).hp;
+    if (const Stats* s = w.get<Stats>(e)) return maxHealthFor(*s);
+    return maxHealthFor(statsOf(w, e));
 }
 
 void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
+    PROFILE_LAPS(lap);
+    PROFILE_LAP(lap, "combat: upkeep");
     const std::vector<ObjectId> everyone = w.view<Entity, Transform>();
     for (ObjectId e : everyone) ensureCombat(w, e);
     for (ObjectId e : everyone) {
@@ -559,7 +568,13 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         w.remove<AttackOrder>(e);
     }
 
-    std::unordered_map<std::int64_t, std::vector<std::uint32_t>> grid;
+    PROFILE_LAP(lap, "combat: notice");
+    // Everyone by the cell they stand in, sorted, with what the pairs below ask of each read once: where it is, its faction, and
+    // (when first asked) whether it is on its feet. None of that changes while the noticing is worked out.
+    std::vector<std::pair<std::int64_t, std::uint32_t>> grid;
+    std::vector<float> atX, atZ;
+    std::vector<int> factionAt;
+    std::vector<signed char> standingAt;   // -1 not asked yet, else 0 or 1
     std::vector<std::uint32_t> nearby;
     bool gridBuilt = false;
     for (ObjectId h : everyone) {
@@ -580,27 +595,40 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         // Only those in the cells round it can be in range. Taken in the order of everyone, so the dice fall as they always did.
         if (!gridBuilt) {
             gridBuilt = true;
-            for (size_t i = 0; i < everyone.size(); ++i) {
+            const size_t count = everyone.size();
+            grid.resize(count);
+            atX.resize(count);
+            atZ.resize(count);
+            factionAt.resize(count);
+            standingAt.assign(count, (signed char)-1);
+            for (size_t i = 0; i < count; ++i) {
                 const Transform* ti = w.get<Transform>(everyone[i]);
-                grid[noticeCell((int)std::floor(ti->x / NOTICE_CELL), (int)std::floor(ti->z / NOTICE_CELL))].push_back((std::uint32_t)i);
+                atX[i] = ti->x;
+                atZ[i] = ti->z;
+                factionAt[i] = factionOf(w, everyone[i]);
+                grid[i] = { noticeCell((int)std::floor(ti->x / NOTICE_CELL), (int)std::floor(ti->z / NOTICE_CELL)), (std::uint32_t)i };
             }
+            std::sort(grid.begin(), grid.end());
         }
         nearby.clear();
         const int hx = (int)std::floor(th->x / NOTICE_CELL), hz = (int)std::floor(th->z / NOTICE_CELL);
         for (int dz = -1; dz <= 1; ++dz) {
             for (int dx = -1; dx <= 1; ++dx) {
-                const auto cell = grid.find(noticeCell(hx + dx, hz + dz));
-                if (cell != grid.end()) nearby.insert(nearby.end(), cell->second.begin(), cell->second.end());
+                const std::int64_t key = noticeCell(hx + dx, hz + dz);
+                auto it = std::lower_bound(grid.begin(), grid.end(), std::make_pair(key, (std::uint32_t)0));
+                for (; it != grid.end() && it->first == key; ++it) nearby.push_back(it->second);
             }
         }
         std::sort(nearby.begin(), nearby.end());
+        const int hFaction = factionOf(w, h);
         for (const std::uint32_t pi : nearby) {
-            const ObjectId p = everyone[pi];
-            const Transform* tp = w.get<Transform>(p);
-            if (!th || !tp) continue;
-            const float gx = tp->x - th->x, gz = tp->z - th->z;
+            const float gx = atX[pi] - th->x, gz = atZ[pi] - th->z;
             if (gx * gx + gz * gz > MAX_NOTICE_RANGE * MAX_NOTICE_RANGE) continue;
-            if (p == h || !standing(p) || !unitsHostile(w, h, p) || !canStrike(w, h, p)) continue;
+            // Its own faction is never hostile to it (unitsHostile says so first thing): most of those near a unit are its own
+            if (factionAt[pi] == hFaction) continue;
+            const ObjectId p = everyone[pi];
+            if (standingAt[pi] < 0) standingAt[pi] = standing(p) ? 1 : 0;
+            if (p == h || !standingAt[pi] || !unitsHostile(w, h, p) || !canStrike(w, h, p)) continue;
             if (flatGap(w, h, p) > noticeRangeOf(w, p)) continue;
             if (rng.unit() < dt * (1.0f - noticeFailChance(w, p)) && canSee(w, t, h, p)) {
                 hc.target = p;
@@ -611,6 +639,7 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         }
     }
 
+    PROFILE_LAP(lap, "combat: players");
     for (ObjectId p : players) {
         if (!standing(p)) continue;
         Combat& pc = *w.get<Combat>(p);
@@ -637,8 +666,10 @@ void combatSystem(World& w, const Terrain& t, Rng& rng, float dt) {
         if (pc.target != NO_OBJECT) drinkForFight(w, p, pc);
     }
 
+    PROFILE_LAP(lap, "combat: slots");
     assignAttackSlots(w, t, everyone, standing, dt);
 
+    PROFILE_LAP(lap, "combat: strikes");
     for (ObjectId e : everyone) {
         if (!w.has<Combat>(e) || !w.has<Transform>(e) || !standing(e)) continue;
         Combat& c = *w.get<Combat>(e);

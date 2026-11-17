@@ -65,6 +65,8 @@ void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     floorY_ = source_->floorY();
     chunks_.clear();
     chunks_.resize((size_t)cps_ * cps_);
+    blockedBits_.clear();
+    blockedBits_.resize((size_t)cps_ * cps_);
     drawn_.clear();
     ground_.clear();
     ground_.resize((size_t)cps_ * cps_);
@@ -296,9 +298,10 @@ float Terrain::heightAt(float x, float z) const {
 }
 
 bool Terrain::walkable(int x, int y) const {
-    if (!blocked_.empty() && blockedByBuilding(x, y)) return false;
     if (!inBounds(x, y)) return false;
-    return groundOf(x / CHUNK_TILES, y / CHUNK_TILES).walk[(size_t)(y % CHUNK_TILES) * CHUNK_TILES + x % CHUNK_TILES] != 0;
+    const int cx = x / CHUNK_TILES, cz = y / CHUNK_TILES, tx = x % CHUNK_TILES, tz = y % CHUNK_TILES;
+    if (const BlockedBits* closed = blockedBits_[(size_t)cz * cps_ + cx].get(); closed && ((closed->rows[tz] >> tx) & 1u)) return false;
+    return groundOf(cx, cz).walk[(size_t)tz * CHUNK_TILES + tx] != 0;
 }
 
 bool Terrain::tileGround(int x, int y, bool& walkable, float& height) const {
@@ -315,12 +318,22 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
     const long long key = (long long)y * 1000003LL + (long long)x;
     if (blocked) blocked_.insert(key);
     else blocked_.erase(key);
+    if (inBounds(x, y)) {
+        std::unique_ptr<BlockedBits>& closed = blockedBits_[(size_t)(y / CHUNK_TILES) * cps_ + x / CHUNK_TILES];
+        if (blocked && !closed) closed = std::make_unique<BlockedBits>();
+        if (closed) {
+            const uint64_t bit = uint64_t(1) << (x % CHUNK_TILES);
+            if (blocked) closed->rows[y % CHUNK_TILES] |= bit;
+            else closed->rows[y % CHUNK_TILES] &= ~bit;
+        }
+    }
     navTileChanged(x, y);
 }
 
 void Terrain::clearBlocked() {
     navStashBlocked();
     blocked_.clear();
+    for (std::unique_ptr<BlockedBits>& closed : blockedBits_) closed.reset();
     sightBlocks_.clear();
 }
 
@@ -347,13 +360,26 @@ float Terrain::standHeight(float x, float z) const {
 }
 
 bool Terrain::blockedByBuilding(int x, int y) const {
+    if (inBounds(x, y)) {
+        const BlockedBits* closed = blockedBits_[(size_t)(y / CHUNK_TILES) * cps_ + x / CHUNK_TILES].get();
+        return closed && ((closed->rows[y % CHUNK_TILES] >> (x % CHUNK_TILES)) & 1u) != 0;
+    }
     return blocked_.count((long long)y * 1000003LL + (long long)x) > 0;
 }
 
 bool Terrain::isFree(float x, float z) const {
     const int tx = (int)std::floor(x), tz = (int)std::floor(z);
-    for (int dz = -1; dz <= 1; ++dz) {
-        for (int dx = -1; dx <= 1; ++dx) {
+    // A closed tile is only in the way if it is nearer than the clearance, and a tile beside this one is at least as far off as its
+    // side of this tile is: a side further than the clearance (with a little to spare, so the sums below still settle every close
+    // call) rules out the three tiles along it. In the middle of a tile only the tile itself is asked about.
+    constexpr float REACH = AGENT_CLEARANCE + 0.001f;
+    if (!walkable(tx, tz)) return false;   // its own tile, which it is no distance from
+    const float fx = x - (float)tx, fz = z - (float)tz;
+    const int dx0 = fx < REACH ? -1 : 0, dx1 = 1.0f - fx < REACH ? 1 : 0;
+    const int dz0 = fz < REACH ? -1 : 0, dz1 = 1.0f - fz < REACH ? 1 : 0;
+    for (int dz = dz0; dz <= dz1; ++dz) {
+        for (int dx = dx0; dx <= dx1; ++dx) {
+            if (dx == 0 && dz == 0) continue;
             const int nx = tx + dx, nz = tz + dz;
             if (walkable(nx, nz)) continue;
             const float cx = std::clamp(x, (float)nx, (float)nx + 1.0f);
@@ -362,7 +388,7 @@ bool Terrain::isFree(float x, float z) const {
             if (ex * ex + ez * ez < AGENT_CLEARANCE * AGENT_CLEARANCE) return false;
         }
     }
-    return walkable(tx, tz);
+    return true;
 }
 
 bool Terrain::nearestBigLand(Vec2 from, Vec2& out) const {
