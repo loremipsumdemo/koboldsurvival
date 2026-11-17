@@ -395,35 +395,13 @@ void Renderer::drawTitleHeader(const TitleLayout& L, const std::string& firstWor
     }
 }
 
-void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std::string& sub, bool selected, bool enabled,
-                            float appear) {
+// A title, Esc or other menu screen's item: the same bevelled button plate as every other button in the game, there at once (no
+// slide or fade). Selected is the item the pointer or the keys are on, lit as a hovered button is.
+void Renderer::drawMenuItem(const Rect& r, const std::string& label, const std::string& sub, bool selected, bool enabled) {
     const float s = uiScale();
-    appear = std::clamp(appear, 0.0f, 1.0f);
-    const float fade = appear;
-    if (selected && enabled) noteHover(r0);
-    Rect r = r0;
-    r.x += (selected && enabled ? -14.0f * s : 0.0f) + (1.0f - appear) * 34.0f * s;
-    auto A = [&](RGBA c) { return theme::alpha(c, c.a * fade); };
-    const float split = r.x + r.w * (selected ? 0.40f : 0.45f);
-    const RGBA left = selected ? rgb255(245, 201, 117, 0.0f) : rgb255(22, 10, 12, 0.0f);
-    const RGBA mid = selected ? rgb255(52, 30, 16, 0.75f) : rgb255(22, 10, 12, 0.72f);
-    const RGBA right = selected ? rgb255(96, 58, 30, 0.9f) : rgb255(22, 10, 12, 0.9f);
-    drawRectGradientH(Rect{ r.x, r.y, split - r.x, r.h }, A(left), A(mid));
-    drawRectGradientH(Rect{ split, r.y, r.x + r.w - split, r.h }, A(mid), A(right));
-    if (selected) {
-        const float gw = r.w * 0.46f;
-        drawRectGradientH(Rect{ r.x + r.w - gw, r.y, gw, r.h }, A(rgb255(245, 201, 117, 0.0f)), A(rgb255(245, 201, 117, 0.16f)));
-        drawRect(Rect{ r.x - 4.0f * s, r.y - 3.0f * s, r.w + 8.0f * s, r.h + 6.0f * s }, A(rgb255(245, 201, 117, 0.05f)));
-    }
-    {
-        const float px = std::max(1.0f, std::round(s));
-        drawRectGradientH(Rect{ r.x, r.y, r.w, px }, A(RGBA{ 1.0f, 1.0f, 1.0f, 0.0f }), A(RGBA{ 1.0f, 1.0f, 1.0f, enabled ? 0.20f : 0.08f }));
-        drawRectGradientH(Rect{ r.x, r.y + r.h - px, r.w, px }, A(RGBA{ 0.0f, 0.0f, 0.0f, 0.0f }), A(RGBA{ 0.0f, 0.0f, 0.0f, 0.45f }));
-    }
-    const RGBA edge = selected ? theme::GOLD : theme::alpha(theme::ASH, enabled ? 0.35f : 0.15f);
-    drawRect(Rect{ r.x, r.y, 3.0f * s, r.h }, A(edge));
-    if (selected) drawRect(Rect{ r.x - 1.0f * s, r.y, 1.0f * s, r.h }, A(theme::GOLD));
-    const RGBA ink = !enabled ? theme::alpha(theme::ASH, 0.4f) : selected ? theme::BONE : theme::ASH;
+    const bool lit = selected && enabled;
+    drawButtonPlate(r, enabled, lit, 3.0f * s, lit);
+    const RGBA ink = buttonInk(enabled, lit, false);
     const std::string up = uiUpper(label);
     const float lh = uiTextHeight(up);
     const float subH = sub.empty() ? 0.0f : listTextHeight("Ag");
@@ -432,13 +410,13 @@ void Renderer::drawMenuItem(const Rect& r0, const std::string& label, const std:
     const float ty = r.y + (r.h - block) * 0.5f;
     const float maxW = r.w - 3.0f * s - 28.0f * s;
     if (uiTextWidth(up) > maxW) {
-        drawUiTextInBox(up, Rect{ tx, ty, maxW, lh }, A(ink));
+        drawUiTextInBox(up, Rect{ tx, ty, maxW, lh }, ink);
     } else {
-        drawUiText(up, tx, ty, A(ink));
+        drawUiText(up, tx, ty, ink);
     }
     if (!sub.empty()) {
-        const RGBA subInk = selected ? rgb255(245, 201, 117, 0.85f) : theme::alpha(theme::ASH, 0.6f);
-        drawListText(fitText(sub, maxW, false), tx, ty + lh + 2.0f * s, A(subInk));
+        const RGBA subInk = lit ? theme::GOLD : theme::alpha(theme::ASH, 0.7f);
+        drawListText(fitText(sub, maxW, false), tx, ty + lh + 2.0f * s, subInk);
     }
 }
 
@@ -463,22 +441,14 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
     const float s = uiScale();
     const RGBA faint{ 0.50f, 0.43f, 0.40f, 1.0f };
     const RGBA panel = theme::alpha(theme::PANEL_FILL, 0.92f);
-    const RGBA plate = theme::alpha(theme::SLOT, 0.95f);
     const RGBA plateHot = theme::alpha(theme::SLOT_HOT, 0.95f);
-    const RGBA plateOn = theme::alpha(theme::GOLD_DEEP, 0.95f);
-    const RGBA plateOff = theme::alpha(theme::BOX_FILL, 0.70f);
     const float menuLineH = listTextHeight("Ag");
     float lineH = menuLineH;
     const PartyMember& picked = pickedMember(p, ui);
 
-    auto plateFor = [&](bool hot, bool on, bool enabled) -> RGBA {
-        if (!enabled) return plateOff;
-        if (on) return plateOn;
-        return hot ? plateHot : plate;
-    };
-    auto plateButton = [&](const Rect& r, RGBA fill, bool enabled) {
-        drawRect(r, fill);
-        drawBevel(r, enabled ? 1.0f : 0.4f);
+    // The game's own button plate (renderer_widgets.cpp), lit when hovered or picked
+    auto plateButton = [&](const Rect& r, bool hot, bool on, bool enabled) {
+        drawButtonPlate(r, enabled, enabled && (hot || on), 3.0f * s, false);
     };
     auto centered = [&](const Rect& r, const std::string& text, RGBA tint) {
         const std::string t = fitText(text, r.w - 8.0f * s, false);
@@ -508,7 +478,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyPick: {
             const PartyMember& u = p[static_cast<size_t>(b.param)];
             const bool chosen = b.param == std::clamp(ui.selected, 0, std::max(0, (int)p.size() - 1));
-            drawRect(b.rect, plateFor(hot, chosen, true));
+            plateButton(b.rect, hot, chosen, true);
             const float pic = b.rect.h - 14.0f * s;
             const Rect picRect{ b.rect.x + 7.0f * s, b.rect.y + 7.0f * s, pic, pic };
             if (u.mob != MobKind::None) drawFitted(mobPicture(u.mob), picRect, WHITE);
@@ -523,14 +493,15 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyTabPick: {
             const bool on = b.param == (int)ui.tab;
-            plateButton(b.rect, plateFor(hot, on, true), true);
+            plateButton(b.rect, hot, on, true);
             drawIconLabel(b.rect, partyTabIcon(b.param), b.label, on ? theme::GOLD : WHITE, false);
             break;
         }
 
         case Action::PartyNameField: {
             drawListText(lang("UILABEL_NAME"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
-            drawRect(b.rect, plateFor(hot, ui.editingName, true));
+            drawField(b.rect, ui.editingName);
+            drawBevel(b.rect, 0.6f);
             if (b.label.empty() && !ui.editingName) {
                 leftText(b.rect, lang("UILABEL_CLICK_TO_TYPE"), faint, 10.0f * s);
             } else {
@@ -541,31 +512,31 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyBodyBox:
             drawListText(lang("UILABEL_BODY_TYPE"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
-            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::Body, true));
+            plateButton(b.rect, hot, ui.dropKind == DropKind::Body, true);
             leftText(b.rect, b.label, WHITE, 10.0f * s);
             break;
 
         case Action::PartyMobBox:
             drawListText(lang("UILABEL_MOB_KIND"), b.rect.x, b.rect.y - 22.0f * s, theme::TEXT_QUIET);
-            drawRect(b.rect, plateFor(hot, ui.dropKind == DropKind::MobKind && ui.dropSlot >= 0, true));
+            plateButton(b.rect, hot, ui.dropKind == DropKind::MobKind && ui.dropSlot >= 0, true);
             leftText(b.rect, b.label, b.enabled ? WHITE : theme::TEXT_QUIET, 10.0f * s);
             break;
 
         case Action::PartyRandomUnit:
-            plateButton(b.rect, plateFor(hot, false, true), true);
+            plateButton(b.rect, hot, false, true);
             centered(b.rect, b.label, WHITE);
             break;
 
         case Action::PartyAddUnit:
         case Action::PartyRemoveUnit:
         case Action::PartyAddMob:
-            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
+            plateButton(b.rect, hot, false, b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
         case Action::PartyGearSlot: {
             const bool open = ui.dropKind == DropKind::Gear && ui.dropSlot == b.param;
-            drawRect(b.rect, plateFor(hot, open, true));
+            plateButton(b.rect, hot, open, true);
             const Rect cell{ b.rect.x + 4.0f, b.rect.y + std::floor((b.rect.h - ITEM_CELL_PX) * 0.5f), ITEM_CELL_PX, ITEM_CELL_PX };
             drawRect(cell, RGBA{ 0.0f, 0.0f, 0.0f, 0.30f });
             const int item = b.param >= 0 && b.param < GEAR_SLOTS ? picked.gear[(size_t)b.param] : 0;
@@ -590,7 +561,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartyStep:
-            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
+            plateButton(b.rect, hot, false, b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
@@ -625,7 +596,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
 
         case Action::PartyInvSlot: {
             const ItemStack& st = picked.items[b.param];
-            drawRect(b.rect, plateFor(hot, b.param == ui.stackSlot, true));
+            plateButton(b.rect, hot, b.param == ui.stackSlot, true);
             if (st.item > 0) {
                 drawItemPicture(b.rect, st.item, 1.0f);
                 const std::string n = std::to_string(st.count);
@@ -636,7 +607,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         }
 
         case Action::PartyCount:
-            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
+            plateButton(b.rect, hot, false, b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 
@@ -665,7 +636,7 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
         case Action::PartyFaction:
         case Action::PartyConfirm:
         case Action::Back:
-            plateButton(b.rect, plateFor(hot, false, b.enabled), b.enabled);
+            plateButton(b.rect, hot, false, b.enabled);
             centered(b.rect, b.label, b.enabled ? WHITE : faint);
             break;
 

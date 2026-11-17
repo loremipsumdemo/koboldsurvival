@@ -295,8 +295,9 @@ void App::drawStall() {
     for (size_t i = 0; i < L.pay.size(); ++i) {
         const bool on = (ss->payment & storeBit((StoreCategory)i)) != 0;
         const Rect& r = L.pay[i];
-        renderer.drawRect(r, on ? RGBA{ 0.25f, 0.45f, 0.22f, 0.95f } : RGBA{ 0.20f, 0.08f, 0.10f, 0.9f });
-        renderer.drawListText(lang(STORE_CATEGORY_KEYS[i]), r.x + 6.0f * s, mid(r), on ? theme::TEXT : theme::TEXT_DIM);
+        const bool hot = r.contains(mouseX, mouseY);
+        renderer.drawButtonPlate(r, true, on || hot, 3.0f * s, hot);
+        renderer.drawListText(lang(STORE_CATEGORY_KEYS[i]), r.x + 8.0f * s, mid(r), renderer.buttonInk(true, on || hot, on));
     }
     if (hoverItem != 0) renderer.showItemTooltip(hoverItem, hoverCount, (float)mouseX, (float)mouseY);
 }

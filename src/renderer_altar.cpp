@@ -131,8 +131,7 @@ void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost
 
     // The move button points to the other column
     const bool moveHot = r.move.contains(mx, my);
-    if (moveHot) noteHover(r.move);
-    drawRect(r.move, moveHot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+    drawButtonPlate(r.move, true, moveHot, 2.0f * uiScale(), moveHot);
     const float cx = r.move.x + r.move.w * 0.5f, cy = r.move.y + r.move.h * 0.5f;
     const float hw = r.move.w * 0.22f, hh = r.move.h * 0.3f;
     const RGBA ac = ghost ? theme::GOLD : WHITE;
@@ -143,8 +142,7 @@ void Renderer::drawRosterRow(World& w, const AltarRow& r, ObjectId u, bool ghost
     // A citizen's way back to the military
     if (r.back.w > 0.0f && !ghost) {
         const bool backHot = r.back.contains(mx, my);
-        if (backHot) noteHover(r.back);
-        drawRect(r.back, backHot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+        drawButtonPlate(r.back, true, backHot, 2.0f * uiScale(), backHot);
         const float bx = r.back.x + r.back.w * 0.5f, by = r.back.y + r.back.h * 0.5f;
         drawUiTris({ { bx + hw, by - hh, WHITE }, { bx - hw, by, WHITE }, { bx + hw, by + hh, WHITE } });
         noteTip(lang("UILABEL_ALTAR_TO_MILITARY_TIP"), r.back);
@@ -173,8 +171,7 @@ void Renderer::drawSquadsRoster(World& w, const SquadsLayout& SL, const std::arr
         for (int side = 0; side < 2; ++side) {
             const Rect& b = side == 0 ? SL.prev[(size_t)c] : SL.next[(size_t)c];
             const bool hot = b.contains(mx, my);
-            if (hot) noteHover(b);
-            drawRect(b, hot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.95f });
+            drawButtonPlate(b, true, hot, 3.0f * s, hot);
             const float cx = b.x + b.w * 0.5f, cy = b.y + b.h * 0.5f, hw = b.w * 0.2f, hh = b.h * 0.28f;
             if (side == 1) drawUiTris({ { cx - hw, cy - hh, WHITE }, { cx + hw, cy, WHITE }, { cx - hw, cy + hh, WHITE } });
             else drawUiTris({ { cx + hw, cy - hh, WHITE }, { cx - hw, cy, WHITE }, { cx + hw, cy + hh, WHITE } });

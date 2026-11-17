@@ -136,10 +136,8 @@ void App::drawScreenButtons(const std::vector<Button>& buttons) {
 }
 
 void App::drawMenuItems(Screen which, const std::vector<Button>& buttons) {
-    const unsigned long long now = SDL_GetTicks();
     if (menuScreen != which) {
         menuScreen = which;
-        menuShownAt = now;
         menuSel = -1;
         for (size_t i = 0; i < buttons.size(); ++i) {
             if (buttons[i].enabled) { menuSel = (int)i; break; }
@@ -151,12 +149,11 @@ void App::drawMenuItems(Screen which, const std::vector<Button>& buttons) {
     for (size_t i = 0; i < buttons.size(); ++i) {
         if (moved && buttons[i].enabled && buttons[i].rect.contains(mouseX, mouseY)) menuSel = (int)i;
     }
-    const float since = (float)(now - menuShownAt) / 1000.0f;
+    // Every item is there at once, drawn as the game's buttons are
     for (size_t i = 0; i < buttons.size(); ++i) {
         const Button& b = buttons[i];
-        const float appear = std::clamp((since - (0.055f * (float)i + 0.1f)) / 0.34f, 0.0f, 1.0f);
         const std::string sub = b.action == Action::Language ? languageDisplayName() : std::string();
-        renderer.drawMenuItem(b.rect, b.label, sub, (int)i == menuSel && b.enabled, b.enabled, appear);
+        renderer.drawMenuItem(b.rect, b.label, sub, (int)i == menuSel && b.enabled, b.enabled);
     }
 }
 

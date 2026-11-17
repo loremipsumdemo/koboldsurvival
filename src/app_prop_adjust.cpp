@@ -330,7 +330,7 @@ void App::drawPropAdjust() {
         const Rect& b = v.buttons[i];
         const bool on = i < 3 && (int)propAdjust.mode == i;
         const bool over = b.contains((float)mouseX, (float)mouseY);
-        renderer.drawRect(b, on ? RGBA{ 0.55f, 0.38f, 0.14f, 0.95f } : RGBA{ 0.16f, 0.10f, 0.09f, over ? 0.95f : 0.8f });
+        renderer.drawButtonPlate(b, true, on || over, 3.0f * s, over);
         const float mx = b.x + b.w * 0.5f, my = b.y + b.h * 0.5f, r = b.w * 0.30f;
         const RGBA ink = i == 3 ? RGBA{ 0.45f, 1.0f, 0.45f, 1.0f } : (on || over ? HOT : white);
         const float t = 2.0f * s;

@@ -313,12 +313,7 @@ void Renderer::drawItemMenu(const ItemMenuLayout& L, const std::vector<std::stri
     for (size_t i = 0; i < L.buttons.size() && i < labels.size(); ++i) {
         const Rect& r = L.buttons[i];
         const bool hot = r.contains(mx, my);
-        if (hot) noteHover(r);
-        if (hot) {
-            drawRectGradientH(r, rgb255(52, 30, 16, 0.85f), rgb255(96, 58, 30, 0.95f));
-            drawBevel(r);
-        }
-        drawRect(Rect{ r.x, r.y, 2.0f * s, r.h }, hot ? theme::GOLD : theme::alpha(theme::ASH, 0.35f));
+        drawButtonPlate(r, true, hot, 2.0f * s, hot);
         const float tw = listTextWidth(labels[i]), th = listTextHeight(labels[i]);
         drawListText(labels[i], r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, hot ? theme::BONE : rgb255(232, 214, 190, 1.0f));
     }

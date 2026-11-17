@@ -282,8 +282,7 @@ public:
     void drawTitleBackground();
     void drawTitleHeader(const TitleLayout& L, const std::string& first, const std::string& second,
                          const std::vector<std::string>& news);
-    void drawMenuItem(const Rect& r, const std::string& label, const std::string& sub, bool selected, bool enabled,
-                      float appear);
+    void drawMenuItem(const Rect& r, const std::string& label, const std::string& sub, bool selected, bool enabled);
     void drawTitleFooter(const Rect& footer, const std::string& left, const std::string& right);
     void drawThemedPanel(const Rect& r);
     void setWorldPreview(int px, const std::vector<uint8_t>& rgba);
@@ -327,6 +326,10 @@ public:
     void drawButton(const Rect& r, const std::string& label, bool enabled = true);
     // A button that stays lit while on (a tool or tab that is picked), as well as when the pointer is over it
     void drawToggleButton(const Rect& r, const std::string& label, bool on, bool enabled = true);
+    // Every button's plate (its fill, the stripe down its left and the bevel), for a button that draws its own face: lit when hovered,
+    // picked or on. And the ink for its label.
+    void drawButtonPlate(const Rect& r, bool enabled, bool lit, float stripeW, bool hot);
+    RGBA buttonInk(bool enabled, bool lit, bool on);
     bool mouseOver(const Rect& r) const { return r.contains(mouseX_, mouseY_); }
     enum class TextAlign { Left, Center, Right };
     // Text in the middle of a box's height, cut to fit with the whole of it as the tip when the pointer is over it
@@ -419,8 +422,6 @@ private:
                       int skip, float mx, float my, CellLight light = CellLight::UnderMouse);
     void drawInteractionHeader(const Rect& bar, const Rect& nameBox, const std::string& name);
     void drawSmallButton(const Rect& r, const std::string& label, bool enabled, bool hovered);
-    void drawButtonPlate(const Rect& r, bool enabled, bool lit, float stripeW, bool hot);
-    RGBA buttonInk(bool enabled, bool lit, bool on);
     void drawRectGradient(const Rect& r, RGBA top, RGBA bottom);
     float digitCellWidth();
     float clockTextWidth(const std::string& s);

@@ -269,6 +269,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
                 const bool on = L.sub == i, hot = !on && r.contains(mouseX_, mouseY_);
                 if (hot) noteHover(r);
                 drawRect(r, on ? theme::alpha(theme::GOLD_DEEP, 0.95f) : RGBA{ 0.16f, 0.07f, 0.085f, hot ? 1.0f : 0.9f });
+                drawBevel(r);   // as the tabs above it
                 if (on) drawRect(Rect{ r.x, r.y + r.h - 2.0f, r.w, 2.0f }, theme::GOLD);
                 const std::string t = fitText(lang(SUB_KEYS[i]), r.w - 6.0f * s, false);
                 drawListText(t, r.x + (r.w - listTextWidth(t)) * 0.5f, r.y + (r.h - th) * 0.5f, on ? WHITE : theme::TEXT_DIM);
@@ -290,11 +291,10 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
     }
 
     auto mode = [&](const Rect& r, const std::string& text, bool on) {
-        if (r.contains(mouseX_, mouseY_)) noteHover(r);
-        drawRect(r, on ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, bgAlpha });
-        drawBevel(r);
+        const bool hot = r.contains(mouseX_, mouseY_);
+        drawButtonPlate(r, true, on || hot, 3.0f * s, hot);
         const float tw = listTextWidth(text), th = listTextHeight(text);
-        drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, WHITE);
+        drawListText(text, r.x + (r.w - tw) * 0.5f, r.y + (r.h - th) * 0.5f, buttonInk(true, on || hot, on));
     };
     {
         const int current = w.resource<SquadBook>().current;
@@ -361,8 +361,7 @@ void Renderer::drawUnitPanel(World& w, const UnitPanelLayout& L, const std::vect
         auto arrow = [&](const Rect& r, bool up, bool can) {
             if (r.h <= 0.0f) return;
             const bool hot = can && r.contains(mouseX_, mouseY_);
-            if (hot) noteHover(r);
-            drawRect(r, hot ? RGBA{ 0.46f, 0.22f, 0.26f, 1.0f } : RGBA{ 0.29f, 0.13f, 0.16f, 0.9f });
+            drawButtonPlate(r, can, hot, 2.0f * s, hot);
             const RGBA c = can ? WHITE : RGBA{ 0.56f, 0.49f, 0.45f, 0.6f };
             const float cx = r.x + r.w * 0.5f, cy = r.y + r.h * 0.5f, hw = r.w * 0.3f, hh = r.h * 0.22f;
             if (up) drawUiTris({ { cx, cy - hh, c }, { cx + hw, cy + hh, c }, { cx - hw, cy + hh, c } });
@@ -413,19 +412,15 @@ void Renderer::drawSquadGrid(World& w, const UnitPanelLayout& L, const std::stri
     if (L.manageSquadsButton.w > 0.0f) {
         const Rect& b = L.manageSquadsButton;
         const bool hot = inView && b.contains(mouseX_, mouseY_);
-        if (hot) noteHover(b);
-        drawRect(b, RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
-        drawBevel(b);
+        drawButtonPlate(b, true, hot, 3.0f * s, hot);
         const std::string shown = fitText(lang("UILABEL_MANAGE_SQUADS"), b.w - 6.0f * s, false);
-        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, WHITE);
+        drawListText(shown, b.x + (b.w - listTextWidth(shown)) * 0.5f, b.y + (b.h - th) * 0.5f, buttonInk(true, hot, false));
         noteTip(lang("UILABEL_MANAGE_SQUADS_TIP"), visibleRect(b));
     }
     if (L.renameButton.w > 0.0f) {
         const Rect& b = L.renameButton;
         const bool hot = inView && b.contains(mouseX_, mouseY_);
-        if (hot) noteHover(b);
-        drawRect(b, renameText ? RGBA{ 0.74f, 0.54f, 0.24f, 1.0f } : RGBA{ 0.19f, 0.08f, 0.10f, hot ? 0.95f : 0.5f });
-        drawBevel(b);
+        drawButtonPlate(b, true, hot || renameText, 3.0f * s, hot);
         const std::string label = renameText ? lang("UILABEL_SQUAD_RENAME_DONE")
                                              : langf("UILABEL_SQUAD_RENAME", { std::to_string(book.current + 1) });
         const std::string shown = fitText(label, b.w - 6.0f * s, false);

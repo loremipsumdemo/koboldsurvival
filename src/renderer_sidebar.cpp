@@ -471,9 +471,7 @@ void Renderer::drawBehaviorSection(const SidebarLayout& L, const std::vector<Beh
             const BehaviorOption& opt = L.behaviorOptionInfo[i];
             const bool usable = editable && (opt.have || !full);
             const bool hot = usable && o.contains(mx, my);
-            if (hot) noteHover(o);
-            drawRect(o, hot ? theme::alpha(theme::GOLD_DEEP, 0.95f) : theme::alpha(theme::TAB_OFF, 0.90f));
-            drawRect(Rect{ o.x, o.y, 2.0f * s, o.h }, hot ? theme::GOLD : theme::alpha(theme::ASH, 0.45f));
+            drawButtonPlate(o, usable, hot, 2.0f * s, hot);
             const std::string tag = opt.have ? lang("UILABEL_BEHAVIOR_HAVE") : (full ? lang("UILABEL_BEHAVIOR_FULL") : std::string());
             const float tagW = tag.empty() ? 0.0f : listTextWidth(tag) + 8.0f * s;
             drawListText(fitText(opt.label, o.w - 10.0f * s - tagW, false), o.x + 6.0f * s, o.y + (o.h - listH) * 0.5f,

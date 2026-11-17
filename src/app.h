@@ -858,7 +858,6 @@ struct App : AppSession {
     Screen screen = Screen::Title;
     int menuSel = -1;
     Screen menuScreen = Screen::Playing;
-    unsigned long long menuShownAt = 0;
     float menuMouseX = -1.0f, menuMouseY = -1.0f;
     Screen backScreen = Screen::Title;
     SettingsMenuState settingsUi;
