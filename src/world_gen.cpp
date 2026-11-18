@@ -5,6 +5,7 @@
 #include <sstream>
 #include <thread>
 #include "surface_tiles.h"
+#include "terrain_mesh.h"
 
 namespace fs = std::filesystem;
 
@@ -211,6 +212,10 @@ public:
     }
     bool farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& cancel) const override {
         return generator_.farField(res, heights, rgb, cancel);
+    }
+    bool farFieldWindow(int x0, int z0, int spacing, int res, std::vector<float>& heights, std::vector<uint8_t>& rgb,
+                        const std::atomic<bool>& cancel) const override {
+        return generator_.farFieldWindow(x0, z0, spacing, res, heights, rgb, cancel);
     }
     const MapTheme* theme() const override { return &generator_.settings().theme; }
     bool walledIn() const override { return mapStyleInfo(generator_.settings().style).walled; }
@@ -425,40 +430,66 @@ std::vector<uint8_t> WorldGenerator::preview(int px, const std::atomic<bool>* ca
     return out;
 }
 
-bool WorldGenerator::farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& stop) const {
+bool WorldGenerator::farFieldSampled(int res, const std::function<int(int)>& atX, const std::function<int(int)>& atZ, int helpers,
+                                     std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& stop) const {
     if (res < 2) return false;
     const auto eachRow = [&](const auto& body) {
         std::atomic<int> next{ 0 };
         const auto work = [&]() {
             for (int j = next++; j < res && !stop.load(); j = next++) body(j);
         };
-        const int helpers = std::clamp((int)std::thread::hardware_concurrency() - 2, 0, 15);
         std::vector<std::thread> threads;
         for (int i = 0; i < helpers; ++i) threads.emplace_back(work);
         work();
         for (std::thread& t : threads) t.join();
     };
-    const auto at = [&](int i) { return (int)((int64_t)i * s_.size / (res - 1)); };
     std::vector<int> mm((size_t)res * res);
     eachRow([&](int j) {
-        for (int i = 0; i < res; ++i) mm[(size_t)j * res + i] = heightAt(at(i), at(j));
+        const int z = atZ(j);
+        for (int i = 0; i < res; ++i) mm[(size_t)j * res + i] = heightAt(atX(i), z);
     });
     heights.resize((size_t)res * res);
     rgb.resize((size_t)res * res * 3);
     eachRow([&](int j) {
+        const int z = atZ(j);
+        const int ja = std::max(j - 1, 0), jb = std::min(j + 1, res - 1);
+        const int spanZ = atZ(jb) - atZ(ja);
         for (int i = 0; i < res; ++i) {
             const size_t k = (size_t)j * res + i;
             const int h = mm[k];
             heights[k] = (float)h / 1000.0f;
-            uint8_t veg = 0, px[4];
-            const Biome b = biomeOf(s_, at(i), at(j), h, 0, veg);
-            previewColor(s_.theme, b, h, veg, 0, px);
+            // How steep the ground is here, in thousandths of a tile a tile, as the range of a chunk's tile's corners is (steep ground is bare rock).
+            // Taken over the far ground's cells it is smaller than the tiles' own, which are steeper on rough ground, so a little more is made of it:
+            // that gives about as much bare rock as the chunks have.
+            const int ia = std::max(i - 1, 0), ib = std::min(i + 1, res - 1);
+            const int spanX = atX(ib) - atX(ia);
+            const int slopeX = spanX > 0 ? (int)((int64_t)std::abs(mm[(size_t)j * res + ib] - mm[(size_t)j * res + ia]) / spanX) : 0;
+            const int slopeZ = spanZ > 0 ? (int)((int64_t)std::abs(mm[(size_t)jb * res + i] - mm[(size_t)ja * res + i]) / spanZ) : 0;
+            uint8_t veg = 0, px[3];
+            const Biome b = biomeOf(s_, atX(i), z, h, (slopeX + slopeZ) * 7 / 5, veg);
+            // The colors the chunks have for the ground (not the overview's, which has the water and the ground's tint in it: both are drawn over the far ground)
+            biomeGroundColor(b, veg, (float)h / 1000.0f, px);
             rgb[k * 3] = px[0];
             rgb[k * 3 + 1] = px[1];
             rgb[k * 3 + 2] = px[2];
         }
     });
     return !stop.load();
+}
+
+bool WorldGenerator::farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& stop) const {
+    if (res < 2) return false;
+    const auto at = [&](int i) { return (int)((int64_t)i * s_.size / (res - 1)); };
+    return farFieldSampled(res, at, at, std::clamp((int)std::thread::hardware_concurrency() - 2, 0, 15), heights, rgb, stop);
+}
+
+bool WorldGenerator::farFieldWindow(int x0, int z0, int spacing, int res, std::vector<float>& heights, std::vector<uint8_t>& rgb,
+                                    const std::atomic<bool>& stop) const {
+    if (res < 2 || spacing < 1) return false;
+    const auto atX = [&](int i) { return std::clamp(x0 + i * spacing, 0, s_.size); };
+    const auto atZ = [&](int j) { return std::clamp(z0 + j * spacing, 0, s_.size); };
+    // A window is remade while the game is played: it leaves most of the processor to the game
+    return farFieldSampled(res, atX, atZ, std::clamp((int)std::thread::hardware_concurrency() / 2 - 1, 0, 7), heights, rgb, stop);
 }
 
 std::shared_ptr<const ChunkSource> generatedChunkSource(const WorldGenSettings& settings) {
@@ -491,6 +522,14 @@ std::string mapFileText(const WorldGenSettings& s) {
     const std::string theme = themeFileText(s.theme, s.themePreset);
     if (theme != std::string("theme ") + themePresets()[0].fileName + "\n") out << theme;
     return out.str();
+}
+
+bool sameGround(const WorldGenSettings& a, const WorldGenSettings& b) {
+    // Give both the same theme, then what the file says of each is the same only if the rest of the recipe is
+    WorldGenSettings alike = a;
+    alike.theme = b.theme;
+    alike.themePreset = b.themePreset;
+    return mapFileText(alike) == mapFileText(b);
 }
 
 bool mapFromText(const std::string& text, WorldGenSettings& out, std::string& err) {
@@ -529,7 +568,7 @@ bool mapFromText(const std::string& text, WorldGenSettings& out, std::string& er
     }
     if (format != 1) { err = "not a version 1 map"; return false; }
     if (generator != WORLD_GEN_VERSION) { err = "made by generator " + std::to_string(generator) + ", which this game doesn't have"; return false; }
-    if (s.size < 64 || s.size > 65536 || s.size % CHUNK_TILES != 0) { err = "no valid size"; return false; }
+    if (s.size < 64 || s.size > WORLD_GEN_MAX_SIZE || s.size % CHUNK_TILES != 0) { err = "no valid size"; return false; }
     out = s;
     return true;
 }

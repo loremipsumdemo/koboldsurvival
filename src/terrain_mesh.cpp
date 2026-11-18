@@ -63,19 +63,21 @@ float cornerHeight(const Terrain& t, const ChunkData& c, int gx, int gz) {
 }
 }
 
+void biomeGroundColor(Biome b, uint8_t veg, float h, uint8_t out[3]) {
+    Rgb col = (b == Biome::None) ? bandColor(h) : biomeColor(b);
+    const float v = veg / 255.0f * kCanopyShare;
+    col = { col.r + (kCanopyR - col.r) * v, col.g + (kCanopyG - col.g) * v, col.b + (kCanopyB - col.b) * v };
+    out[0] = (uint8_t)std::clamp((int)(col.r * 255.0f), 0, 255);
+    out[1] = (uint8_t)std::clamp((int)(col.g * 255.0f), 0, 255);
+    out[2] = (uint8_t)std::clamp((int)(col.b * 255.0f), 0, 255);
+}
+
 void chunkTileColor(const ChunkData& c, int tx, int tz, float h, uint8_t out[3]) {
     tx = std::clamp(tx, 0, CHUNK_TILES - 1);
     tz = std::clamp(tz, 0, CHUNK_TILES - 1);
     const size_t ti = (size_t)tz * CHUNK_TILES + tx;
     const Biome bt = ti < c.biome.size() ? (Biome)c.biome[ti] : Biome::None;
-    Rgb col = (bt == Biome::None) ? bandColor(h) : biomeColor(bt);
-    if (c.veg.size() == (size_t)CHUNK_TILES * CHUNK_TILES) {
-        const float v = c.veg[ti] / 255.0f * kCanopyShare;
-        col = { col.r + (kCanopyR - col.r) * v, col.g + (kCanopyG - col.g) * v, col.b + (kCanopyB - col.b) * v };
-    }
-    out[0] = (uint8_t)std::clamp((int)(col.r * 255.0f), 0, 255);
-    out[1] = (uint8_t)std::clamp((int)(col.g * 255.0f), 0, 255);
-    out[2] = (uint8_t)std::clamp((int)(col.b * 255.0f), 0, 255);
+    biomeGroundColor(bt, c.veg.size() == (size_t)CHUNK_TILES * CHUNK_TILES ? c.veg[ti] : (uint8_t)0, h, out);
 }
 
 ChunkBounds chunkBounds(const Terrain& t, const ChunkData& c) {
@@ -195,4 +197,74 @@ void buildChunkMesh(const Terrain& t, const ChunkData& c, int step, ChunkMesh& o
     edge.clear();
     for (int j = 0; j < nz; ++j) edge.push_back((uint32_t)(j * nx + nx - 1));
     skirt(edge, eastBorder);
+}
+
+FarMesh buildFarMesh(const std::vector<float>& heights, const std::vector<uint8_t>& rgb, int res, float spacing, float originX, float originZ,
+                     float heightScale, int clipTo, float waterY) {
+    FarMesh mesh;
+    const int n = res;
+    if (n < 2 || spacing <= 0.0f || heights.size() < (size_t)n * n || rgb.size() < (size_t)n * n * 3) return mesh;
+    mesh.verts.resize((size_t)n * n);
+    // The far ground lies this far under where the ground really is, so that the chunks, which are drawn over it, always hide it. The water
+    // is the exception: ground that is above it stays above it however low it sits (a plain a tile over the sea is not sunk eight tiles under
+    // it, where it would look like deep water past the chunks), and ground under it only goes a little way down (the sea floor is seen
+    // through the water, so it has to be about where the chunks have it).
+    const float drop = spacing * 0.5f + 4.0f;
+    const float dropUnder = std::min(drop, 0.5f + spacing * 0.1f);
+    const float landFloor = waterY + 0.03f;
+    const auto h = [&](int i, int j) { return heights[(size_t)std::clamp(j, 0, n - 1) * n + std::clamp(i, 0, n - 1)]; };
+    for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i) {
+            const float dhdx = (h(i + 1, j) - h(i - 1, j)) / (2.0f * spacing) / heightScale;
+            const float dhdz = (h(i, j + 1) - h(i, j - 1)) / (2.0f * spacing) / heightScale;
+            const float nl = std::sqrt(dhdx * dhdx + 1.0f + dhdz * dhdz);
+            const size_t k = (size_t)j * n + i;
+            const float ground = h(i, j);
+            const float y = ground > waterY ? std::max(ground - drop, std::min(ground, landFloor)) : ground - dropUnder;
+            mesh.verts[k] = { originX + (float)i * spacing, y, originZ + (float)j * spacing, -dhdx / nl, 1.0f / nl, -dhdz / nl,
+                              rgb[k * 3] / 255.0f, rgb[k * 3 + 1] / 255.0f, rgb[k * 3 + 2] / 255.0f };
+        }
+    }
+    // A cell is left out if any of it is past the map's edge
+    const auto cellIn = [&](int i, int j) {
+        if (clipTo <= 0) return true;
+        const float x0 = originX + (float)i * spacing, z0 = originZ + (float)j * spacing;
+        return x0 >= 0.0f && z0 >= 0.0f && x0 + spacing <= (float)clipTo && z0 + spacing <= (float)clipTo;
+    };
+    const int cells = n - 1;
+    mesh.idx.reserve((size_t)cells * cells * 6);
+    for (int pj = 0; pj < cells; pj += FAR_PATCH_CELLS) {
+        for (int pi = 0; pi < cells; pi += FAR_PATCH_CELLS) {
+            const int j1 = std::min(pj + FAR_PATCH_CELLS, cells), i1 = std::min(pi + FAR_PATCH_CELLS, cells);
+            FarPatch patch;
+            patch.first = (int)mesh.idx.size();
+            int made = 0;
+            for (int j = pj; j < j1; ++j) {
+                for (int i = pi; i < i1; ++i) {
+                    if (!cellIn(i, j)) continue;
+                    const uint32_t p = (uint32_t)(j * n + i), q = p + 1, r = p + (uint32_t)n, s = r + 1;
+                    mesh.idx.insert(mesh.idx.end(), { p, r, s, p, s, q });
+                    ++made;
+                }
+            }
+            if (made == 0) continue;   // a patch wholly past the edge has nothing to draw
+            patch.count = (int)mesh.idx.size() - patch.first;
+            float lo = mesh.verts[(size_t)pj * n + pi].y, hi = lo;
+            for (int j = pj; j <= j1; ++j) {
+                for (int i = pi; i <= i1; ++i) {
+                    const float y = mesh.verts[(size_t)j * n + i].y;
+                    lo = std::min(lo, y);
+                    hi = std::max(hi, y);
+                }
+            }
+            patch.x0 = originX + (float)pi * spacing;
+            patch.z0 = originZ + (float)pj * spacing;
+            patch.x1 = originX + (float)i1 * spacing;
+            patch.z1 = originZ + (float)j1 * spacing;
+            patch.minY = lo;
+            patch.maxY = hi;
+            mesh.patches.push_back(patch);
+        }
+    }
+    return mesh;
 }

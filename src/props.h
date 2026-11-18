@@ -143,7 +143,7 @@ inline const char* itemFilterKey(ItemFilter f) {
     }
 }
 
-enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy, Evacuate, Climb };
+enum class PropAction { Inventory, Use, Occupy, Place, Unlock, Store, Lock, Destroy, Evacuate, Climb, ClimbWall };
 
 constexpr int INPUT_COOKABLE = -1;
 constexpr int INPUT_BONES = -2;   // any bones (the Altar's upkeep)

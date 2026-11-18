@@ -77,6 +77,9 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
             if (action == PropAction::Unlock && occupiedProp(w, u) == prop) w.add(u, PropOrder{ prop, action });
             continue;
         }
+        // Up the outside of a Perimeter Wall: to its foot, if the unit has a way there
+        Vec2 wallBase{ 0.0f, 0.0f };
+        if (action == PropAction::ClimbWall && !wallFoot(w, t, u, prop, wallBase)) continue;
         clearOrders(w, u);
         // Climbing: to the foot of the ladder or stairs, or down from their head, on the floor the unit is on
         const bool down = action == PropAction::Climb && storeyOf(w, u) == storeyOf(w, prop) + 1;
@@ -84,6 +87,8 @@ void issuePropOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, Ob
         if (action == PropAction::Climb) {
             to = climbFoot(w, prop);
             if (down) climbTop(w, prop, to);
+        } else if (action == PropAction::ClimbWall) {
+            to = wallBase;
         }
         walkSolo(w, t, u, to, down ? storeyOf(w, u) : storeyOf(w, prop));
         w.add(u, PropOrder{ prop, action });
@@ -124,6 +129,10 @@ std::vector<PropArrival> propOrderSystem(World& w, Terrain& t) {
             }
             if (action == PropAction::Climb) {
                 if (!startClimb(w, t, u, prop)) queueLog(w, langf("MISC_CANT_CLIMB", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
+                continue;
+            }
+            if (action == PropAction::ClimbWall) {
+                if (!startWallClimb(w, t, u, prop)) queueLog(w, langf("MISC_CANT_CLIMB_WALL", { nameOf(w, u) }), LogKind::Other, npcOnly(w, u));
                 continue;
             }
             if (action == PropAction::Destroy) {

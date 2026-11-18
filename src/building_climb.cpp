@@ -187,6 +187,155 @@ bool startClimb(World& w, const Terrain& t, ObjectId u, ObjectId ladder, const V
     return true;
 }
 
+// ---- Up the outside of a Perimeter Wall
+
+namespace {
+// A map bigger than this has no navigation regions that count what buildings close (nav_regions.cpp)
+constexpr int NAV_MAP_MOST = 2048;
+
+// Whether a unit has no way to any Gate of its faction, as a walk there would be planned: over the ground, or up a Slope and along the
+// walkways. A faction with no finished Gate has none to reach.
+bool shutOutOfGates(World& w, const Terrain& t, ObjectId u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return false;
+    for (ObjectId g : ownGates(w, factionOf(w, u))) {
+        const Vec2 front = gateSpot(w, g, 1.5f);
+        if (t.size() > NAV_MAP_MOST) {
+            // No regions to plan over, so no way over the walls by a Slope either: the ground is searched
+            if (stuckReachable(w, t, Vec2{ ut->x, ut->z }, front)) return false;
+            continue;
+        }
+        Route way;
+        if (planRoute(w, t, u, front, 0, way)) return false;
+    }
+    return true;
+}
+
+// The walkway tile of this wall nearest a spot (floor 1, as the Slopes come out on it), or false if it has none
+bool wallTop(World& w, const BuildingMap& m, ObjectId wall, Vec2 near, Vec2& out) {
+    int x0 = 0, z0 = 0, x1 = 0, z1 = 0;
+    pieceTiles(w, wall, x0, z0, x1, z1);
+    bool found = false;
+    float best = 0.0f;
+    for (int z = z0; z <= z1; ++z) {
+        for (int x = x0; x <= x1; ++x) {
+            if (mapGet(m.perimTop, levelKey(x, z, 1)) != wall || !floorWalkable(w, m, x, z, 1)) continue;
+            const float d = std::hypot((float)x + 0.5f - near.x, (float)z + 0.5f - near.z);
+            if (!found || d < best) {
+                found = true;
+                best = d;
+                out = Vec2{ (float)x + 0.5f, (float)z + 0.5f };
+            }
+        }
+    }
+    return found;
+}
+
+// Every test of canScalePerimeter but the one about the Gates, which costs the most and is the same for every wall
+bool scalableHere(World& w, const Terrain& t, ObjectId u, ObjectId wall) {
+    const Prop* wp = w.get<Prop>(wall);
+    if (!wp || !w.has<Transform>(u) || !w.has<Entity>(u) || w.has<Blueprint>(wall)) return false;
+    // A finished Perimeter Wall of the faction the unit is of: no other faction's unit may climb it
+    const PropInfo& info = propInfo(wp->kind);
+    if (!info.perimeter || !info.solid || systems_detail::ownerOf(w, wall) != factionOf(w, u)) return false;
+    // On its feet on the ground, and not held by anything
+    if (w.has<Mob>(u) || outCold(w, u) || w.has<Carried>(u) || w.has<Occupying>(u) || w.has<Climbing>(u) || w.has<Upstairs>(u) ||
+        airshipOf(w, u) != NO_OBJECT) {
+        return false;
+    }
+    // It can walk to the wall's outer face, and the wall has a walkway to climb onto
+    Vec2 foot{ 0.0f, 0.0f }, top{ 0.0f, 0.0f };
+    return wallFoot(w, t, u, wall, foot) && wallTop(w, cachedBuildingMap(w), wall, foot, top);
+}
+
+// Off the climb up a wall: the unit steps onto its walkway, nearest where it climbed. A unit of an NPC faction goes straight on down, on
+// the inside (yours stays up there until you bring it down); with no ground inside to come down on, it is back where it climbed from.
+void landOnWall(World& w, Terrain& t, const BuildingMap& m, ObjectId u, ObjectId wall) {
+    Transform* ut = w.get<Transform>(u);
+    Vec2 top{ 0.0f, 0.0f };
+    // The wall or its walkway is gone: it stays on the ground
+    if (!ut || !w.has<Prop>(wall) || !wallTop(w, m, wall, Vec2{ ut->x, ut->z }, top)) return;
+    const Vec2 was{ ut->x, ut->z };
+    ut->x = top.x;
+    ut->z = top.z;
+    ut->y = t.heightAt(top.x, top.z) + storeyBaseHeight(1);
+    w.add(u, Upstairs{ mapGet(m.foundation, tileKey(tileOf(top.x), tileOf(top.z))), 1 });
+    queueSoundFrom(w, Sfx::Occupy, wall);
+    if (factionOf(w, u) == FACTION_PLAYER || climbDownPerimeter(w, t, u)) return;
+    ut->x = was.x;
+    ut->z = was.z;
+    ut->y = t.standHeight(was.x, was.z);
+    w.remove<Upstairs>(u);
+}
+}
+
+bool walkOverGround(World& w, const Terrain& t, Vec2 from, Vec2 to) {
+    if (t.size() > NAV_MAP_MOST) return stuckReachable(w, t, from, to);
+    return t.connected(tileOf(from.x), tileOf(from.z), tileOf(to.x), tileOf(to.z));
+}
+
+bool wallFoot(World& w, const Terrain& t, ObjectId u, ObjectId wall, Vec2& out) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut || !w.has<Prop>(wall)) return false;
+    // The wall's outer face is two tiles wide: the middle of the tile against each half of it, the one it can reach that is nearer first
+    const Vec2 face = gateSpot(w, wall, 0.5f), outward = gateOutward(w, wall);
+    const Vec2 along{ -outward.z, outward.x };
+    bool found = false;
+    float best = 0.0f;
+    for (const float s : { -0.5f, 0.5f }) {
+        const int sx = tileOf(face.x + along.x * s), sz = tileOf(face.z + along.z * s);
+        if (!t.inBounds(sx, sz) || !t.walkable(sx, sz)) continue;
+        const Vec2 spot{ (float)sx + 0.5f, (float)sz + 0.5f };
+        if (!walkOverGround(w, t, Vec2{ ut->x, ut->z }, spot)) continue;
+        const float d = std::hypot(spot.x - ut->x, spot.z - ut->z);
+        if (!found || d < best) {
+            found = true;
+            best = d;
+            out = spot;
+        }
+    }
+    return found;
+}
+
+bool canScalePerimeter(World& w, const Terrain& t, ObjectId u, ObjectId wall) {
+    return scalableHere(w, t, u, wall) && shutOutOfGates(w, t, u);
+}
+
+ObjectId scalableWall(World& w, const Terrain& t, ObjectId u) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut) return NO_OBJECT;
+    std::vector<ObjectId> nearby;
+    propsNear(w, ut->x, ut->z, WALL_CLIMB_SEARCH + propIndex(w).widestReach, nearby);
+    // The nearest first: the Gates are only asked about once there is a wall it could climb
+    std::vector<std::pair<float, ObjectId>> walls;
+    for (ObjectId e : nearby) {
+        const Prop* p = w.get<Prop>(e);
+        if (!p || !propInfo(p->kind).perimeter || !propInfo(p->kind).solid) continue;
+        const float gap = gateGap(w, e, ut->x, ut->z);
+        if (gap <= WALL_CLIMB_SEARCH) walls.push_back({ gap, e });
+    }
+    std::sort(walls.begin(), walls.end());
+    // Only the nearest few: a unit shut in against its wall has its wall among them
+    constexpr size_t MOST_LOOKED_AT = 8;
+    for (size_t i = 0; i < walls.size() && i < MOST_LOOKED_AT; ++i) {
+        if (scalableHere(w, t, u, walls[i].second)) return shutOutOfGates(w, t, u) ? walls[i].second : NO_OBJECT;
+    }
+    return NO_OBJECT;
+}
+
+bool startWallClimb(World& w, const Terrain& t, ObjectId u, ObjectId wall) {
+    const Transform* ut = w.get<Transform>(u);
+    if (!ut || !canScalePerimeter(w, t, u, wall) || gateGap(w, wall, ut->x, ut->z) > WALL_CLIMB_REACH) return false;
+    Climbing c{ wall, WALL_CLIMB_SECONDS, false, WALL_CLIMB_SECONDS };
+    c.wall = true;
+    if (w.has<Carrying>(u)) putDown(w, u);
+    leaveSquad(w, u);
+    w.remove<SoloMove>(u);
+    w.remove<Route>(u);
+    w.add(u, std::move(c));
+    return true;
+}
+
 void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target) {
     if (!w.has<Upstairs>(u)) return;
     clearOrders(w, u);
@@ -286,6 +435,10 @@ void climbSystem(World& w, Terrain& t, float dt) {
             w.remove<Climbing>(u);
             w.remove<IdleSpot>(u);
             if (!w.has<Route>(u)) w.remove<SoloMove>(u);
+            if (c.wall) {
+                landOnWall(w, t, m, u, c.ladder);
+                continue;
+            }
             land(m, u, c.ladder, c.down, c.down && !c.path.empty() ? &c.path.back() : nullptr);
             queueSoundFrom(w, Sfx::Occupy, c.ladder);
         }

@@ -233,6 +233,11 @@ bool App::autosaveNow() {
 }
 
 void App::performDelete() {
+    // The button held down for 3 seconds on World Generation answers its questions: going over the sizes the game is made for, deleting a map
+    if (screen == Screen::WorldGen && worldGenUi.sizeAsk) {
+        confirmBigSize();
+        return;
+    }
     if (screen == Screen::WorldGen && !worldGenUi.deleteMap.empty()) {
         deleteWorldMap();
         return;

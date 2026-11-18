@@ -391,6 +391,21 @@ int nightHomeSpot(World& w, const Terrain& t, const std::vector<Claim>& claims, 
     return night && beyondClaim && claimInnerSpot(w, t, u, home->x, home->z, to) ? 1 : 0;
 }
 
+// A unit of an NPC faction that is shut out of its own Perimeter with no way in (every Gate out of its reach, over the ground or by a
+// Slope) goes to the foot of the nearest wall it can climb, and climbs it: that takes WALL_CLIMB_SECONDS and ends with it down on the
+// inside (building.h). Yours climb when you say so. True if it is on its way to the wall, or climbing.
+bool scaleWallHome(World& w, Terrain& t, ObjectId u) {
+    if (factionOf(w, u) == FACTION_PLAYER) return false;
+    if (w.has<Climbing>(u)) return true;
+    const ObjectId wall = scalableWall(w, t, u);
+    Vec2 foot{ 0.0f, 0.0f };
+    if (wall == NO_OBJECT || !wallFoot(w, t, u, wall, foot)) return false;
+    autoWalk(w, t, u, foot, 0);
+    w.add(u, PropOrder{ wall, PropAction::ClimbWall, true });
+    w.remove<AskingEntry>(u);   // not asking at a Gate it cannot get to
+    return true;
+}
+
 // An idle citizen outside the perimeter: shut out by a gate (at any hour), it goes to the front of it to ask to be let in, where a gate's
 // keeper opens it; at night, outside everything, it goes back in. True while it has that to do (so it does not drift off).
 bool homewardMove(World& w, Terrain& t, const std::vector<Claim>& claims, ObjectId u, bool night, float dt) {
@@ -404,7 +419,12 @@ bool homewardMove(World& w, Terrain& t, const std::vector<Claim>& claims, Object
     const int go = nightHomeSpot(w, t, claims, u, night, to, gate);
     if (go != 0 && gate != NO_OBJECT) w.add(u, AskingEntry{ gate });
     else w.remove<AskingEntry>(u);
-    if (go == 1) autoWalk(w, t, u, to, 0);
+    if (go == 1) {
+        // Where it is going cannot be walked to from here (the ground is parted by its own walls): over the wall, if there is a way
+        const Transform* ut = w.get<Transform>(u);
+        if (ut && !walkOverGround(w, t, Vec2{ ut->x, ut->z }, to) && scaleWallHome(w, t, u)) return true;
+        autoWalk(w, t, u, to, 0);
+    }
     return go != 0;
 }
 
@@ -1364,7 +1384,8 @@ void thinkUnits(World& w, Terrain& t, float stepDt, Rng& rng, unsigned thinkTick
         const PropOrder* po = w.get<PropOrder>(u);
         const SoloMove* walk = w.get<SoloMove>(u);
         const bool walkingStep = b->busy && isWalkBehavior(b->step.kind) && walk && walk->next < walk->waypoints.size();
-        const bool going = (po && po->automatic) || walkingStep;
+        // Up a wall, a climb that is not cut short by another task (it takes WALL_CLIMB_SECONDS)
+        const bool going = (po && po->automatic) || walkingStep || w.has<Climbing>(u);
         const Working* wk = w.get<Working>(u);
         const bool working = b->busy && wk && !wk->unlocking && wk->prop == b->stepProp;
 

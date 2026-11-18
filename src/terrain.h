@@ -36,6 +36,10 @@ public:
     int size() const { return size_; }
     const std::shared_ptr<const ChunkSource>& source() const { return source_; }
     int chunksPerSide() const { return cps_; }
+    // The chunks held for drawing, by id (chunk row times chunksPerSide, plus column), in no order: all of them for a map that is not streamed,
+    // else the ones round the camera and the units. What is done for the ground each frame goes by this list and never over every chunk of
+    // the map, so that a frame costs what is held, whatever the size of the map.
+    const std::vector<int>& drawnChunks() const { return drawn_; }
     size_t groundChunksHeld() const { return groundHeld_.size(); }
     const ChunkData* chunkAt(int cx, int cz) const;
 
@@ -49,6 +53,10 @@ public:
         std::vector<uint8_t> rgb;
     };
     const FarField* farField() const;
+    // How many corners across the whole world's far ground has: about a sample every 4 tiles up to 2048 tiles across, and past that as fine as
+    // the limit lets it be (the mesh is res squared vertices). A bigger map has its far ground as a window that follows the camera instead
+    // once that is finer (Renderer).
+    static int farFieldRes(int mapSize) { return mapSize <= 2048 ? 513 : 1025; }
     bool streamed() const { return streamed_; }
 
     float heightAt(float x, float z) const;
@@ -149,6 +157,7 @@ private:
     };
     static_assert(CHUNK_TILES == 64, "a chunk's row of closed tiles is one 64-bit word");
     std::vector<std::unique_ptr<BlockedBits>> blockedBits_;
+    std::vector<int> blockedChunks_;   // the ids of the chunks that have any of blockedBits_, so clearing them is a look at those and not at every chunk of the map
     std::unordered_map<long long, float> sightBlocks_;
     std::unordered_set<long long> decks_;
     std::unordered_map<long long, float> heightEdits_;

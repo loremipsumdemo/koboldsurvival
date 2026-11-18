@@ -49,6 +49,7 @@ struct MapPickLayout {
     Rect box, title, back, next;
     Rect mapsHead, levelsHead, mapsArea, levelsArea;
     std::vector<Rect> mapRows, levelRows;
+    std::vector<Rect> mapNick;   // the pencil beside each map's row, that sets its nickname
     int mapFirst = 0, levelFirst = 0;
     RowBar mapBar, levelBar;
     Rect previewHead, preview, note;

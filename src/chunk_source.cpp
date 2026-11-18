@@ -87,6 +87,50 @@ bool ChunkSource::farField(int res, std::vector<float>& heights, std::vector<uin
     return !cancel.load();
 }
 
+bool ChunkSource::farFieldWindow(int x0, int z0, int spacing, int res, std::vector<float>& heights, std::vector<uint8_t>& rgb,
+                                 const std::atomic<bool>& cancel) const {
+    const int n = size();
+    if (res < 2 || spacing < 1 || n < 1) return false;
+    const int cps = chunksPerSide(n);
+    heights.assign((size_t)res * res, 0.0f);
+    rgb.assign((size_t)res * res * 3, 0);
+    // Where each corner is along an axis, and which of them fall in each chunk of it
+    const auto at = [&](int origin, int i) { return std::clamp(origin + i * spacing, 0, n); };
+    std::vector<std::vector<int>> acrossX((size_t)cps), acrossZ((size_t)cps);
+    for (int i = 0; i < res; ++i) {
+        acrossX[(size_t)std::min(at(x0, i) / CHUNK_TILES, cps - 1)].push_back(i);
+        acrossZ[(size_t)std::min(at(z0, i) / CHUNK_TILES, cps - 1)].push_back(i);
+    }
+    std::atomic<int> nextRow{ 0 };
+    const auto work = [&]() {
+        for (int cz = nextRow++; cz < cps && !cancel.load(); cz = nextRow++) {
+            if (acrossZ[(size_t)cz].empty()) continue;
+            for (int cx = 0; cx < cps; ++cx) {
+                if (acrossX[(size_t)cx].empty()) continue;
+                ChunkData c;
+                if (!fill(cx, cz, c) || c.heights.size() < (size_t)CHUNK_CORNERS * CHUNK_CORNERS) continue;
+                for (const int j : acrossZ[(size_t)cz]) {
+                    const int lz = std::min(at(z0, j) - cz * CHUNK_TILES, CHUNK_TILES);
+                    for (const int i : acrossX[(size_t)cx]) {
+                        const int lx = std::min(at(x0, i) - cx * CHUNK_TILES, CHUNK_TILES);
+                        const size_t k = (size_t)j * res + i;
+                        const float h = c.heights[(size_t)lz * CHUNK_CORNERS + lx];
+                        heights[k] = h;
+                        chunkTileColor(c, lx, lz, h, &rgb[k * 3]);
+                    }
+                }
+            }
+        }
+    };
+    // A window is remade while the game is played: it leaves most of the processor to the game
+    const int helpers = std::clamp((int)std::thread::hardware_concurrency() / 2 - 1, 0, 7);
+    std::vector<std::thread> threads;
+    for (int i = 0; i < helpers; ++i) threads.emplace_back(work);
+    work();
+    for (std::thread& t : threads) t.join();
+    return !cancel.load();
+}
+
 std::shared_ptr<const ChunkSource> flatChunkSource(int size) {
     return std::make_shared<FlatSource>(size);
 }

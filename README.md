@@ -32,7 +32,12 @@
 temperature and forests, set the look on the Theme tab, preview and generate. **Continue to Level Editor** places the
 spawn point, units, mobs, props and items (Tab switches between the editor's own UI and the game's).
 
+The game is made and tested for maps up to 8192 tiles wide. The Size + button goes on past that, doubling up to 65536 (the most a map
+file can say), only after a warning that such a map might not work properly has been held through for 3 seconds.
+
 Maps are saved in [MAP](MAP) and levels in [MAP/LEVEL](MAP/LEVEL); New Game lets you choose the map and level to start on.
+The pencil beside a map in either list gives it a nickname, shown before its name as "nickname (name)". It is only a label: the map
+keeps its name and file, and the nicknames are kept in `MAP/nicknames.txt`.
 
 ## Text and languages
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "app.h"
 #include "chunk_source.h"
 #include "factions.h"
@@ -56,18 +57,23 @@ MapPickLayout layoutMapPick(int W, int H, int maps, int levels, int mapScroll, i
     const float listX = L.box.x + pad;
     // Maps take the top half of the column and levels the bottom half
     const float half = (bottom - top - gap) * 0.5f;
-    auto column = [&](float y, float h, int count, int scroll, Rect& heading, std::vector<Rect>& rows, int& first, RowBar& bar) {
+    // pencils: where a row has a pencil beside it (a map's, that sets its nickname), they are put here
+    auto column = [&](float y, float h, int count, int scroll, Rect& heading, std::vector<Rect>& rows, int& first, RowBar& bar,
+                      std::vector<Rect>* pencils) {
         heading = Rect{ listX, y, listW, head };
         const float listTop = y + head + 4.0f * s;
         const int visible = std::max(1, (int)std::floor((h - head - 4.0f * s + rowGap) / (rowH + rowGap)));
         first = std::clamp(scroll, 0, std::max(0, count - visible));
         bar = layoutRowBar(listX + listW - 8.0f * s, listTop, visible * (rowH + rowGap) - rowGap, s, count, visible, first);
         for (int i = first; i < count && i < first + visible; ++i) {
-            rows.push_back(Rect{ listX, listTop + (i - first) * (rowH + rowGap), listW - (bar.on() ? 12.0f * s : 0.0f), rowH });
+            const float rowY = listTop + (i - first) * (rowH + rowGap);
+            const float rowW = listW - (bar.on() ? 12.0f * s : 0.0f) - (pencils ? rowH + 4.0f * s : 0.0f);
+            rows.push_back(Rect{ listX, rowY, rowW, rowH });
+            if (pencils) pencils->push_back(Rect{ listX + rowW + 4.0f * s, rowY, rowH, rowH });
         }
     };
-    column(top, half, maps, mapScroll, L.mapsHead, L.mapRows, L.mapFirst, L.mapBar);
-    column(top + half + gap, half, levels, levelScroll, L.levelsHead, L.levelRows, L.levelFirst, L.levelBar);
+    column(top, half, maps, mapScroll, L.mapsHead, L.mapRows, L.mapFirst, L.mapBar, &L.mapNick);
+    column(top + half + gap, half, levels, levelScroll, L.levelsHead, L.levelRows, L.levelFirst, L.levelBar, nullptr);
     L.mapsArea = Rect{ listX, top, listW, half };
     L.levelsArea = Rect{ listX, top + half + gap, listW, half };
 
@@ -140,6 +146,9 @@ void App::updateMapPick() {
     if (layoutPlanner && layoutPlanner->take(mapPick.plan)) mapPick.planReady = true;
     OverviewPicture pic;
     if (!mapPreview || !mapPreview->take(pic) || pic.px <= 0) return;
+    // The overview picture runs the other way from the map (its first row and column are the far edges, which is how the world map draws it).
+    // Here it is turned back to the map's own way, as World Generation draws its picture and as the camps and units over it are placed.
+    for (size_t a = 0, b = pic.rgba.size() / 4 - 1; a < b; ++a, --b) std::swap_ranges(&pic.rgba[a * 4], &pic.rgba[a * 4] + 4, &pic.rgba[b * 4]);
     renderer.setWorldPreview(pic.px, pic.rgba);
     mapPick.previewExtent = pic.extent();
     mapPick.previewReady = true;
@@ -148,6 +157,7 @@ void App::updateMapPick() {
 bool App::mapPickMouseDown() {
     if (screen != Screen::MapSelect || e.button.button != SDL_BUTTON_LEFT) return false;
     const float mx = e.button.x, my = e.button.y;
+    if (nicknameClick(mx, my)) return true;
     const MapPickLayout L = mapPickLayout();
     if (pressListBar(L.mapBar, mx, my, [this](float top) {
             const MapPickLayout M = mapPickLayout();
@@ -157,6 +167,11 @@ bool App::mapPickMouseDown() {
             const MapPickLayout M = mapPickLayout();
             mapPick.levelScroll = rowBarFirst(M.levelBar, (int)mapPick.levels.size(), (int)M.levelRows.size(), top);
         })) return true;
+    for (size_t i = 0; i < L.mapNick.size(); ++i) {
+        if (!L.mapNick[i].contains(mx, my)) continue;
+        openNickname(mapPick.maps[(size_t)(L.mapFirst + (int)i)].stem);
+        return true;
+    }
     for (size_t i = 0; i < L.mapRows.size(); ++i) {
         if (!L.mapRows[i].contains(mx, my)) continue;
         if (L.mapFirst + (int)i != mapPick.map) pickMap(L.mapFirst + (int)i);
@@ -210,6 +225,12 @@ void App::drawMapPickScreen() {
         const bool picked = at == mapPick.map;
         const Rect& r = L.mapRows[i];
         renderer.drawToggleButton(r, mapPick.maps[(size_t)at].name, picked);
+        // The pencil that sets this map's nickname
+        const Rect& pencil = L.mapNick[i];
+        const bool hot = !nicknameUi.open && renderer.mouseOver(pencil);
+        renderer.drawButtonPlate(pencil, true, hot, 3.0f * s, hot);
+        drawPencil(pencil);
+        if (!nicknameUi.open) renderer.noteTip(lang("UILABEL_MAP_NICKNAME_TIP"), pencil);
     }
     drawListBar(L.mapBar);
     drawListBar(L.levelBar);
@@ -273,5 +294,6 @@ void App::drawMapPickScreen() {
     renderer.drawButton(L.back, lang("UILABEL_BACK"), true);
     renderer.drawButton(L.next, lang("UILABEL_NEXT"), !mapPick.maps.empty());
     (void)white;
+    drawNicknameDialog();
     renderer.endUi();
 }

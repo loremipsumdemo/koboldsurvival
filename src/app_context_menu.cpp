@@ -303,14 +303,16 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
             if (ground && canClimbUp(world, target)) out.push_back(MenuAction::Climb);
             if (up) out.push_back(MenuAction::ClimbDown);
         }
-        // A unit up on the walkway of a Perimeter Wall or Gate (it may have no Slope down any more) can climb down, on the inside
+        // A unit up on the walkway of a Perimeter Wall or Gate (it may have no Slope down any more) can climb down, on the inside. A unit of
+        // the wall's own faction that can reach it but has no way to a Gate can climb up its outside (it takes a while).
         if (propInfo(p->kind).perimeter && !world.has<Blueprint>(target)) {
+            bool up = false, down = false;
             for (ObjectId u : selectedUnits(world)) {
-                if (onPerimeterTop(world, u)) {
-                    out.push_back(MenuAction::ClimbDown);
-                    break;
-                }
+                if (onPerimeterTop(world, u)) down = true;
+                else if (!up && canScalePerimeter(world, terrain, u, target)) up = true;
             }
+            if (up) out.push_back(MenuAction::Climb);
+            if (down) out.push_back(MenuAction::ClimbDown);
         }
     }
     return out;
@@ -877,6 +879,16 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::Climb:
     case MenuAction::ClimbDown: {
         if (const Prop* tp = world.get<Prop>(target); tp && propInfo(tp->kind).perimeter) {
+            if (a == MenuAction::Climb) {
+                // Up the outside of a Perimeter Wall: the units that may climb it walk to its foot, and climb
+                std::vector<ObjectId> scalers;
+                for (ObjectId u : actors) {
+                    if (canScalePerimeter(world, terrain, u, target)) scalers.push_back(u);
+                }
+                issuePropOrder(world, terrain, scalers, target, PropAction::ClimbWall);
+                if (!scalers.empty()) playSfx(Sfx::UiOrder);
+                break;
+            }
             // Down from a Perimeter Wall or Gate's walkway: to the nearest open ground on its inside
             int down = 0;
             for (ObjectId u : actors) {

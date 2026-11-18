@@ -23,9 +23,10 @@ Terrain::Terrain(std::shared_ptr<const ChunkSource> source) {
 
 const Terrain::FarField* Terrain::farField() const {
     if (!streamed_ || farDone_) return far_.get();
-    // About a sample every 4 tiles, as a 2048 map has had, for as far as the limit lets it grow (the mesh is res squared vertices): 513 up to
-    // 2048 tiles across, then 1025 (a bigger map is coarser past that, 8 tiles at 8192 and 16 at 16384, instead of 32 at 16384)
-    const int FAR_FIELD_RES = size_ <= 2048 ? 513 : 1025;
+    // About a sample every 4 tiles, as a 2048 map has had, for as far as the limit lets it grow (farFieldRes): a bigger map is coarser past
+    // that, 8 tiles at 8192. Past that the far ground is a window that follows the camera (Renderer::updateFarWindow), which is as fine on a
+    // map of any size, and this is not asked for.
+    const int FAR_FIELD_RES = farFieldRes(size_);
     if (!farJob_.valid()) {
         const std::shared_ptr<const ChunkSource> src = source_;
         farJob_ = std::async(std::launch::async, [src, FAR_FIELD_RES]() -> std::shared_ptr<FarField> {
@@ -67,6 +68,7 @@ void Terrain::open(std::shared_ptr<const ChunkSource> source) {
     chunks_.resize((size_t)cps_ * cps_);
     blockedBits_.clear();
     blockedBits_.resize((size_t)cps_ * cps_);
+    blockedChunks_.clear();
     drawn_.clear();
     ground_.clear();
     ground_.resize((size_t)cps_ * cps_);
@@ -319,8 +321,12 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
     if (blocked) blocked_.insert(key);
     else blocked_.erase(key);
     if (inBounds(x, y)) {
-        std::unique_ptr<BlockedBits>& closed = blockedBits_[(size_t)(y / CHUNK_TILES) * cps_ + x / CHUNK_TILES];
-        if (blocked && !closed) closed = std::make_unique<BlockedBits>();
+        const int chunkId = (y / CHUNK_TILES) * cps_ + x / CHUNK_TILES;
+        std::unique_ptr<BlockedBits>& closed = blockedBits_[(size_t)chunkId];
+        if (blocked && !closed) {
+            closed = std::make_unique<BlockedBits>();
+            blockedChunks_.push_back(chunkId);
+        }
         if (closed) {
             const uint64_t bit = uint64_t(1) << (x % CHUNK_TILES);
             if (blocked) closed->rows[y % CHUNK_TILES] |= bit;
@@ -333,7 +339,8 @@ void Terrain::setBlocked(int x, int y, bool blocked) {
 void Terrain::clearBlocked() {
     navStashBlocked();
     blocked_.clear();
-    for (std::unique_ptr<BlockedBits>& closed : blockedBits_) closed.reset();
+    for (const int id : blockedChunks_) blockedBits_[(size_t)id].reset();
+    blockedChunks_.clear();
     sightBlocks_.clear();
 }
 

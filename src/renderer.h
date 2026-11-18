@@ -525,19 +525,43 @@ private:
         uint32_t version = 0;
         ChunkBounds bounds{};
     };
-    std::vector<TerrainChunk> chunks_;
-    // The whole world's ground in one coarse mesh, drawn past the chunks (Terrain::farField)
+    // The slots of the chunks the terrain holds, by chunk id, made as they are wanted and given back when the chunk is let go: a map's size sets
+    // nothing here, only what is held round the camera
+    std::unordered_map<int, TerrainChunk> chunks_;
+    // The far ground in one coarse mesh, drawn past the chunks: the whole world's (Terrain::farField), or a window of it (below)
     GLuint farVao_ = 0, farVbo_ = 0, farEbo_ = 0;
     GLsizei farIndexCount_ = 0;
-    const void* farFor_ = nullptr;
-    // The far ground in square patches, each a run of the index buffer with the box it fills: only the patches in view and in the
+    const void* farFor_ = nullptr;   // the whole world's ground that farVao_ is the mesh of; null for a window, or nothing
+    // The far ground in square patches (terrain_mesh.h), each a run of the index buffer with the box it fills: only the patches in view and in the
     // ring between the chunks held and the view distance are sent to the card (the whole of it is two million triangles on a big map)
-    struct FarPatch {
-        GLsizei first = 0, count = 0;
-        float x0 = 0.0f, z0 = 0.0f, x1 = 0.0f, z1 = 0.0f, minY = 0.0f, maxY = 0.0f;
-    };
     std::vector<FarPatch> farPatches_;
+    // A map so big that one mesh of all of it (a fixed number of corners, so as far apart as the map is big) is coarser than a window of it with
+    // the corners as close as the view distance asks (farWindowSpacing) has the far ground as that window, which follows the camera: asked for
+    // from the map's source and made into a mesh on another thread, and swapped in when it is ready, so that the ground past what is held
+    // is as fine on a map of 65536 tiles as on one of 8192.
+    struct FarWindow {
+        int spacing = 0;                // tiles between its corners; 0: none
+        int originX = 0, originZ = 0;   // the tile its first corner is at
+    };
+    struct FarWindowMesh {
+        FarWindow window;
+        FarMesh mesh;
+        float waterY = 0.0f;                     // the water level it was made for (farWaterLevel)
+    };
+    // The level of the water over the ground, or over a void of the line the ground is cut off at: buildFarMesh keeps ground that is above it
+    // above it, so land a little over the sea is not drawn as sea past the chunks
+    float farWaterLevel(const Terrain& t) const;
+    float farWaterY_ = 0.0f;                     // the level the held far ground was made for
+    FarWindow farWindowHeld_;                    // the window farVao_ is the mesh of (spacing 0: it is not a window)
+    std::future<std::shared_ptr<FarWindowMesh>> farWindowJob_;
+    std::shared_ptr<std::atomic<bool>> farWindowCancel_;
+    bool farWindowFailed_ = false;                // the map's source can't make a window: it is not asked again
+    // True if there is a window mesh to draw (which may be an older one, until the one being made is ready)
+    bool updateFarWindow(const Terrain& t, const Camera& cam, int spacing);
+    void startFarWindow(const Terrain& t, const Camera& cam, int spacing);
+    void cancelFarWindow();
     void releaseFar();
+    void uploadFarMesh(const FarMesh& mesh, float waterY);
     void buildFar(const Terrain::FarField& f, const Terrain& t);
     int terrainSize_ = 0;
     int chunksPerSide_ = 0;

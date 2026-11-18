@@ -241,6 +241,9 @@ UILABEL_GEN_TEMPERATURE	温度
 UILABEL_GEN_FORESTS	森林
 UILABEL_GEN_SEED	种子
 UILABEL_GEN_SIZE	大小
+MISC_GEN_BIG_SIZE_Q	大于 {0} x {0} 的地图可能无法正常运行。
+UILABEL_GEN_BIG_SIZE_RISK	它们生成和加载可能非常慢，占用大量内存，甚至完全无法打开。
+UILABEL_GEN_BIG_SIZE_HOLD	按住“继续”3 秒钟以解锁更大的尺寸。
 UILABEL_GEN_RANDOM	随机
 UILABEL_GEN_PREVIEW	预览
 UILABEL_GEN_DONE	已生成 {0}：{1} 字节
@@ -326,7 +329,11 @@ UILABEL_THEME_GROUND_TINT	地面色调
 UILABEL_THEME_GROUND_TINT_AMOUNT	色调强度
 UILABEL_THEME_ROCK_COLOR	陡峭岩石颜色
 MISC_GEN_NEEDS_NAME	名称只能包含字母、数字、空格、- 或 _。
-MISC_GEN_HAS_SAVES	“{0}”已有在其上进行的游戏存档，无法重新生成。请换一个名称。
+MISC_GEN_HAS_SAVES	“{0}”已有在其上进行的游戏存档，只能更改其主题。要生成新世界，请换一个名称。
+MISC_GEN_OVERWRITE_Q	要覆盖地图"{0}"吗？
+MISC_GEN_OVERWRITE_THEME_Q	要覆盖地图"{0}"的主题吗？
+UILABEL_GEN_OVERWRITE_SAVES	在其上进行的游戏存档：{0}。这些存档的主题也将被覆盖。
+UILABEL_GEN_OVERWRITE	覆盖
 UILABEL_EDITOR_TITLE	关卡编辑器：{0}
 UILABEL_EDITOR_USE_GAME_UI	使用游戏界面（Tab）
 UILABEL_EDITOR_USE_OWN_UI	使用编辑器界面（Tab）
@@ -358,6 +365,12 @@ UILABEL_MAP_PICK_RANDOM_NOTE	随机布局会在游戏开始时放置营地、单
 UILABEL_MAP_PICK_LEVEL_NOTE	黄色：起始位置。绿色：你的单位。红色：其他单位。灰色：怪物。紫色：道具。
 UILABEL_MAP_PICK_CAMPS_NOTE	每个派系的营地以其自身颜色显示，并标出周围的空间。单位、道具和怪物会在游戏开始时放置。
 UILABEL_MAP_PICK_LEVEL_BAD	无法读取此关卡文件。
+UILABEL_MAP_NICKNAMED	{0}（{1}）
+UILABEL_MAP_NICKNAME_TIP	为此地图设置昵称
+MISC_MAP_NICKNAME_Q	地图"{0}"的昵称
+UILABEL_MAP_NICKNAME_HINT1	显示在地图名称之前，格式为“昵称（地图名称）”。
+UILABEL_MAP_NICKNAME_HINT2	地图及其文件的名称保持不变。留空则移除昵称。
+MISC_MAP_NICKNAME_FAILED	无法保存昵称
 UILABEL_GEN_DEFAULT_NAME	世界
 
 # ----------------------------------------------------------------------
@@ -1028,6 +1041,7 @@ UILABEL_CLIMB_DOWN	向下爬
 MISC_BUILT	{0}建好了
 MISC_DOOR_SMASHED	{0} 砸坏了{1}
 MISC_CANT_CLIMB	{0} 不能在这里攀爬：梯子旁边需要一块建好的楼板
+MISC_CANT_CLIMB_WALL	{0} 不能从这里爬上那堵墙
 MISC_FOUNDATION_TOO_SMALL	新建筑的地基每边至少 3 格；之后可以随意扩建
 MISC_FOUNDATION_TOO_BIG	地基每边最多 64 格
 MISC_FOUNDATION_TOO_STEEP	那里的地面太陡，无法为地基整平

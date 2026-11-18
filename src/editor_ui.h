@@ -61,22 +61,33 @@ struct WorldGenUi {
     int mapScroll = 0;
     std::string deleteMap;                 // the map the delete question is asked about, empty when none is
     int deleteLevels = 0;                  // how many levels are made on it, counted when the question opens
+    std::string overwriteMap;              // the map the overwrite question is asked about, empty when none is
+    bool overwriteThemeOnly = false;       // what is on screen differs from that map in its theme alone
+    bool sizeAsk = false;                  // the warning about sizes over WORLD_GEN_SAFE_SIZE is asked, to be held through
+    bool sizesUnlocked = false;            // it was held through: the bigger sizes can be stepped up to, until the game is closed
+};
+
+// The question that sets a map's nickname (level.h), opened by the pencil beside a map in a list of maps: World Generation's and New Game's
+struct NicknameUi {
+    bool open = false;
+    std::string stem;   // the map
+    std::string text;   // the nickname as typed
 };
 
 struct WorldGenLayout {
     Rect panel, tabWorld, tabTheme, themeArea, nameBox, seedBox, seedRandom, sizeDown, sizeUp, sizeBox, styleDown, styleUp, styleBox, styleAbout;
     std::vector<Rect> bars, stepDown, stepUp;
     Rect preview, previewLabel, mapsBox, generate, proceed, back;
-    std::vector<Rect> mapRows, mapDelete;  // a map's row, and the X beside it that asks to delete it
+    std::vector<Rect> mapRows, mapNick, mapDelete;  // a map's row, and beside it the pencil that sets its nickname and the X that asks to delete it
     RowBar mapBar;
 };
 
-// The question asked before a map is deleted: its box, the Delete button held down to delete, and Cancel
-struct MapDeleteLayout {
-    Rect box, hold, cancel;
+// The question asked before a map is deleted or written over: its box, the button that confirms (Delete is held down), and Cancel
+struct MapQuestionLayout {
+    Rect box, confirm, cancel;
     std::vector<Rect> lines;
 };
-MapDeleteLayout layoutMapDelete(int W, int H, int lineCount);
+MapQuestionLayout layoutMapQuestion(int W, int H, int lineCount);
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
 enum class EditorTab { Entities, Props, Items, Theme, Kill, Clean, Destroy };   // Kill: the Developer panel's own, never the level editor's

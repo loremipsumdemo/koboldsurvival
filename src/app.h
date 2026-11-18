@@ -251,6 +251,19 @@ struct App : AppSession {
     std::vector<std::pair<std::string, RGBA>> mapDeleteLines();
     void cancelMapDelete();
     void deleteWorldMap();
+    std::vector<std::pair<std::string, RGBA>> mapOverwriteLines();
+    void cancelMapOverwrite();
+    std::vector<std::pair<std::string, RGBA>> bigSizeLines();
+    void cancelBigSize();
+    void confirmBigSize();
+    // A map's nickname, set from the pencil beside it in a list of maps (World Generation's, and New Game's)
+    NicknameUi nicknameUi;
+    void openNickname(const std::string& stem);
+    void closeNickname(bool keep);
+    bool nicknameClick(float x, float y);   // true if the question took the click (it takes every one while it is open)
+    void nicknameKey();
+    void drawNicknameDialog();
+    void drawPencil(const Rect& r);
     void refreshPlayedMaps();
     void stopWorldGenName();
     void worldGenChanged();
@@ -267,7 +280,7 @@ struct App : AppSession {
     void drawThemePanel(const Rect& area);
     bool themeClick(const Rect& area, float x, float y);
     void themeDragAt(float x);
-    bool generateWorld();
+    bool generateWorld(bool confirmed = false);
     void openLevelEditor(const std::string& mapName);
     void editorFocusCamera();
     void editorEdited();
