@@ -12,3 +12,5 @@ a tab, then the nickname. A nickname only changes how a map is shown, never its 
 Levels made for these maps go in [LEVEL](LEVEL).
 
 Plans for the buildings other factions build go in [BLUEPRINT](BLUEPRINT).
+
+Scenarios made in Add Custom Scenario (how a new game starts) go in [SCENARIO](SCENARIO).

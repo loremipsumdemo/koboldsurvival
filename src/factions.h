@@ -66,9 +66,10 @@ struct FactionRules {
     RecruitRule recruit = RecruitRule::Never;
     AidRule aid = AidRule::Allies;
     // How an NPC faction runs itself (yours are set by you): the share of its units that are Fortified (guard the Perimeter) and the
-    // share that are military (roam); the rest are citizens. Looked at once an hour. And its building order and gate hours.
-    int fortified = 20;
-    int military = 30;
+    // share that are military (roam); the rest are citizens. By default 23 and 10 percent, which for the 30 units a faction starts with is 7
+    // Fortified, 3 military and 20 citizens. Looked at once an hour. And its building order and gate hours.
+    int fortified = 23;
+    int military = 10;
     BuildOrder buildOrder = BuildOrder::PerimeterFirst;
     GateRule gates = GateRule::Sleep;
     bool operator==(const FactionRules& o) const {
@@ -101,6 +102,8 @@ int ruleCurrent(const FactionRules& r, RuleRow row);
 void setRule(FactionRules& r, RuleRow row, int value);
 const char* ruleRowKey(RuleRow row);
 const char* ruleRowTipKey(RuleRow row);
+// The word a row has in factions.txt, in saves and in scenario files ("trade", "build")
+const char* ruleRowWord(RuleRow row);
 // The value of one row of r as text for the window
 std::string ruleValueText(const FactionRules& r, RuleRow row);
 // Steps one row's value up or down (the markup by 5 percent), wrapping round
@@ -112,6 +115,9 @@ struct FactionDef {
     FactionColor color;
     int units = 0;
     bool playerControlled = false;   // "control=player": its units are yours to order. The rest run themselves.
+    // The patron that speaks for it ("patron=<id>", an id in data/patrons.txt): one to a faction, never chosen apart from it. Yours is the one
+    // of the color you are. 0: none named, so it is given one of those left (patrons.h).
+    int patron = 0;
     FactionRules rules;
 };
 

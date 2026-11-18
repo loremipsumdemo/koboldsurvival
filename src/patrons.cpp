@@ -13,27 +13,35 @@ std::vector<PatronInfo>& table() {
 
 bool holdsPatron(int faction) { return factionCanClaim(faction) && !isMobFaction(faction) && faction != FACTION_FACTIONLESS; }
 
-// Gives each faction that has none a patron from those left (the one asked for first, if it is free)
-void fill(World& w, Rng& rng, int playerPick) {
+// Gives each faction its own patron: the one its row names (yours has the one of its color), and to one that names none, or a taken one, the
+// first of those left
+void fill(World& w) {
     Patrons& p = w.resource<Patrons>();
+    p.byFaction.clear();
     const int count = (int)table().size();
     if (count == 0) return;
-    std::vector<int> free;
-    for (int i = 0; i < count; ++i) {
-        bool taken = false;
-        for (const auto& [f, held] : p.byFaction) taken = taken || held == i;
-        if (!taken) free.push_back(i);
-    }
-    auto take = [&](int faction, int want) {
-        if (p.byFaction.count(faction) || free.empty()) return;
-        auto it = std::find(free.begin(), free.end(), want);
-        if (it == free.end()) it = free.begin() + rng.range(0, (int)free.size() - 1);
-        p.byFaction[faction] = *it;
-        free.erase(it);
-    };
-    take(FACTION_PLAYER, playerPick);   // yours first, so that it is the one picked
+    std::vector<bool> taken((size_t)count, false);
+    std::vector<int> without;
     for (const FactionDef& f : factions()) {
-        if (f.id != FACTION_PLAYER && holdsPatron(f.id)) take(f.id, -1);
+        if (!holdsPatron(f.id)) continue;
+        int index = -1;
+        for (int i = 0; i < count && f.patron > 0; ++i) {
+            if (table()[(size_t)i].id == f.patron) index = i;
+        }
+        if (index >= 0 && !taken[(size_t)index]) {
+            p.byFaction[f.id] = index;
+            taken[(size_t)index] = true;
+        } else {
+            without.push_back(f.id);
+        }
+    }
+    for (const int faction : without) {
+        for (int i = 0; i < count; ++i) {
+            if (taken[(size_t)i]) continue;
+            p.byFaction[faction] = i;
+            taken[(size_t)i] = true;
+            break;
+        }
     }
 }
 }
@@ -85,13 +93,12 @@ int patronHolder(World& w, int patron) {
     return -1;
 }
 
-void newPatrons(World& w, Rng& rng, int playerPick) {
-    w.resource<Patrons>().byFaction.clear();
+void newPatrons(World& w) {
     w.resource<PatronTalk>().out.clear();
-    fill(w, rng, playerPick);
+    fill(w);
 }
 
-void ensurePatrons(World& w, Rng& rng) { fill(w, rng, -1); }
+void ensurePatrons(World& w) { fill(w); }
 
 void patronEvent(World& w, PatronEvent event, int caller, int responder) {
     if (caller == responder || patronOf(w, caller) < 0 || patronOf(w, responder) < 0) return;

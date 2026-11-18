@@ -12,6 +12,6 @@ A faction other than yours that has an Altar builds from these plans inside its 
   door) adds to the claim.
 - It has up to 6 buildings in its claim: 3 of wood, and once those 3 are complete, 2 of stone and 1 of metal. One is built at a
   time, and a new one stands at least a tile from any other building.
-- The material for the plan has to be in its stores. Its citizens fetch it and build, as yours do with Auto-Construct.
+- The material for the plan has to be in its stores. Its citizens fetch it and build, as yours do with their Auto-Construct task.
 - A plan is turned any of four ways to fit. Keep it no bigger than about 40 tiles across, so that it fits an Altar's claim.
 - Every complete building adds 2 to the radius of the Altar's claim, if no other Altar's claim is in the way.

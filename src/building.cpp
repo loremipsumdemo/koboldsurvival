@@ -1958,18 +1958,19 @@ void settleBuildingsAfterLoad(World& w, Terrain& t) {
     w.resource<BuildingsChanged>().dirty = true;
 }
 
-bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r) {
+bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r, ObjectId only) {
     const Transform* ut = w.get<Transform>(u);
     Inventory* inv = w.get<Inventory>(u);
     if (!ut || w.has<Mob>(u)) return false;
     const int faction = factionOf(w, u);
-    // A Fortified unit builds only the Perimeter's pieces, and not while it holds a gate or a Guard Post (they come first)
+    // A Fortified unit builds only the Perimeter's pieces, and not while it holds a gate or a Guard Post (they come first). An order of yours to
+    // build one blueprint is not held to that.
     const bool fortified = w.has<Fortified>(u);
-    if (fortified && (w.has<GateKeeper>(u) || w.has<GuardPostDuty>(u))) return false;
+    if (only == NO_OBJECT && fortified && (w.has<GateKeeper>(u) || w.has<GuardPostDuty>(u))) return false;
     // An NPC faction builds in the order its Build Priority rule says (Faction Rules): its Perimeter before anything else while any piece of it
     // waits to be built, or the base before the Perimeter
-    bool perimeterOnly = fortified, baseOnly = false;
-    if (faction != FACTION_PLAYER && !fortified && !factionPlayerControlled(faction)) {
+    bool perimeterOnly = fortified && only == NO_OBJECT, baseOnly = false;
+    if (only == NO_OBJECT && faction != FACTION_PLAYER && !fortified && !factionPlayerControlled(faction)) {
         const BuildOrder order = factionRules(w, faction).buildOrder;
         if (order != BuildOrder::Balanced) {
             bool perimeter = false, other = false;
@@ -1998,6 +1999,7 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     std::vector<std::pair<float, ObjectId>> wanted, rest;
     for (ObjectId e : w.view<Blueprint, Prop, Transform>()) {
         // A ghost waits for its stage; nobody builds what is being pulled down
+        if (only != NO_OBJECT && e != only) continue;
         if (ownerOf(w, e) != faction || w.get<Blueprint>(e)->ghost || w.has<Condemned>(e) || w.has<FreeBuild>(e)) continue;
         if (perimeterOnly && !isPerimeterWork(w, e)) continue;
         if (baseOnly && isPerimeterWork(w, e)) continue;
@@ -2109,6 +2111,57 @@ bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule
     return true;
 }
 
+namespace {
+// The next job of a unit's order to construct this blueprint (the same jobs Auto-Construct does, kept to this one). False if there is none to
+// start: the blueprint wants materials that no store of the faction has, or cannot be built just now.
+bool startConstructStep(World& w, Terrain& t, ObjectId u, ObjectId blueprint) {
+    Behaviors* b = w.get<Behaviors>(u);
+    if (!b || !w.has<Blueprint>(blueprint)) return false;
+    BehaviorRule rule;
+    rule.kind = BehaviorKind::AutoConstruct;
+    if (!startBuildStep(w, t, u, *b, rule, blueprint)) return false;
+    // Starting the job gave up the order it was on, this one too: it is put back. It is not a step of the unit's task list, which stays
+    // clear of it (hasPlayerOrder).
+    b->busy = false;
+    w.add(u, ConstructOrder{ blueprint });
+    return true;
+}
+}
+
+int issueConstructOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId blueprint) {
+    int started = 0;
+    for (ObjectId u : units) {
+        if (w.has<Mob>(u) || !w.has<Behaviors>(u)) continue;
+        if (startConstructStep(w, t, u, blueprint)) ++started;
+    }
+    return started;
+}
+
+void constructOrderSystem(World& w, Terrain& t, float dt) {
+    PROFILE_SCOPE("build: constructOrderSystem");
+    for (ObjectId u : w.view<ConstructOrder>()) {
+        ConstructOrder* co = w.get<ConstructOrder>(u);
+        if (!co) continue;
+        if (w.has<Corpse>(u) || !w.has<Blueprint>(co->blueprint)) {
+            w.remove<ConstructOrder>(u);   // it stands now, or is gone
+            continue;
+        }
+        if (w.has<BuildJob>(u)) {
+            co->idle = 0.0f;
+            continue;
+        }
+        if (outCold(w, u) || w.has<Carried>(u)) continue;
+        if (startConstructStep(w, t, u, co->blueprint)) continue;
+        co = w.get<ConstructOrder>(u);
+        if (!co) continue;
+        co->idle += dt;
+        if (co->idle >= CONSTRUCT_WAIT_SECONDS) {
+            w.remove<ConstructOrder>(u);
+            noteTaskFailed(w, u, lang("UILABEL_CONSTRUCT"));
+        }
+    }
+}
+
 void buildJobSystem(World& w, Terrain& t, float dt) {
     PROFILE_SCOPE("build: buildJobSystem");
     for (ObjectId e : w.view<Blueprint>()) {
@@ -2146,7 +2199,9 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
                 job.stuck += dt;
                 const int storey = job.phase == BuildJob::Phase::Fetch ? storeyOf(w, goal) : workStorey(w, goal);
                 if (job.stuck > BUILD_GIVE_UP_SECONDS) {
-                    noteTaskFailed(w, u, behaviorName(b->step));
+                    // An order of yours is given up by its own name; a task of the unit's list, by the behavior's
+                    noteTaskFailed(w, u, w.has<ConstructOrder>(u) ? lang("UILABEL_CONSTRUCT") : behaviorName(b->step));
+                    w.remove<ConstructOrder>(u);
                     end(BEHAVIOR_RETRY_SECONDS * 3.0f);
                 }
                 else if (job.stuck > 1.0f && job.stuck - dt <= 1.0f) walkSoloTo(w, t, u, job.phase == BuildJob::Phase::Fetch ? approachOf(w, u, goal) : standOffOf(w, u, goal), storey);
@@ -2217,6 +2272,7 @@ void buildJobSystem(World& w, Terrain& t, float dt) {
 }
 
 void buildingSystem(World& w, Terrain& t, float dt) {
+    constructOrderSystem(w, t, dt);
     buildJobSystem(w, t, dt);
     climbSystem(w, t, dt);
     routeSystem(w, t, dt);

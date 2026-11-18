@@ -10,8 +10,8 @@ constexpr float MOVE_MARK_SECONDS = 3.0f;
 constexpr float TALK_COOLDOWN = 1.0f;
 
 enum class MenuAction { Talk, Shop, Trade, Follow, Defend, Attack, AttackUnprovoked, Inventory, Use, Occupy, Place,
-                        Unlock, Lock, PickUp, PutDown, AutoHarvest, AutoHaul, Disband, Destroy, Evacuate,
-                        ManageUnits, Rename, AutoHaulBones, AppeaseGhosts, BehaviorGroups, Schedule, FactionInfo, SeeUnits, SeeGroups, SeeSchedule, SeePerimeter, SeePatron, StoreFilter, CancelBuild, AutoConstruct, Climb, ClimbDown,
+                        Unlock, Lock, PickUp, PutDown, Disband, Destroy, Evacuate,
+                        ManageUnits, Rename, AppeaseGhosts, BehaviorGroups, Schedule, FactionInfo, SeeUnits, SeeGroups, SeeSchedule, SeePerimeter, SeePatron, StoreFilter, CancelBuild, Construct, Climb, ClimbDown,
                         BedPublic, BedPrivate, StockStall, ManStall, DealWith, GetOut, CraftOrder, Research, Recruit, CancelAllBuild, SetPerimeter, OpenGate, CloseGate,
                         UpgradeStone, UpgradeIron, UpgradeCrystal };
 struct ContextMenu {

@@ -130,8 +130,7 @@ std::string partyMessage(const Party& p) {
 }
 
 std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi& ui,
-                                     const std::vector<DropEntry>& drop, const std::string& patronName,
-                                     const std::string& factionName) {
+                                     const std::vector<DropEntry>& drop, const std::string& factionName) {
     const float s = uiScaleFor(H);
     const PartyPanels P = partyPanels(W, H);
     const PartyMember& m = pickedMember(p, ui);
@@ -297,11 +296,11 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     // The row of buttons shrinks together when the window is too narrow for all of them (a Custom Squad has the most), each label fitting
     // its button, rather than running into the ones beside it
     const float bY = P.bottom.y + 32.0f * s, bH = 36.0f * s;
-    float bW = 200.0f * s, bGap = 12.0f * s, backW = 160.0f * s, unitW = 150.0f * s, patronW = 260.0f * s, factionW = 220.0f * s;
+    float bW = 200.0f * s, bGap = 12.0f * s, backW = 160.0f * s, unitW = 150.0f * s, factionW = 220.0f * s;
     {
         const float lefts = bW + backW + (ui.resizable ? 3.0f * unitW : 0.0f);
-        const float rights = bW + (!patronName.empty() ? patronW : 0.0f) + (!factionName.empty() ? factionW : 0.0f);
-        const int leftN = 2 + (ui.resizable ? 3 : 0), rightN = 1 + (!patronName.empty() ? 1 : 0) + (!factionName.empty() ? 1 : 0);
+        const float rights = bW + (!factionName.empty() ? factionW : 0.0f);
+        const int leftN = 2 + (ui.resizable ? 3 : 0), rightN = 1 + (!factionName.empty() ? 1 : 0);
         const float want = lefts + rights + (float)(leftN - 1 + rightN - 1 + 1) * bGap + 32.0f * s;
         const float fit = std::clamp((float)W / want, 0.4f, 1.0f);
         if (fit < 1.0f) {
@@ -309,7 +308,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
             bGap *= fit;
             backW *= fit;
             unitW *= fit;
-            patronW *= fit;
             factionW *= fit;
         }
     }
@@ -327,10 +325,6 @@ std::vector<Button> layoutPartySetup(int W, int H, const Party& p, const PartyUi
     }
     float rightX = P.bottom.x + P.bottom.w - edge - bW;
     out.push_back(Button{ lang("UILABEL_CONFIRM"), Rect{ rightX, bY, bW, bH }, Action::PartyConfirm, !p.empty() && partyNamesValid(p), 0 });
-    if (!patronName.empty()) {
-        rightX -= bGap + patronW;
-        out.push_back(Button{ patronName, Rect{ rightX, bY, patronW, bH }, Action::PartyPatron, true, 0 });
-    }
     if (!factionName.empty()) {
         rightX -= bGap + factionW;
         out.push_back(Button{ factionName, Rect{ rightX, bY, factionW, bH }, Action::PartyFaction, true, 0 });

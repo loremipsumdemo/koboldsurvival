@@ -8,10 +8,10 @@ struct PanelPlace {
     bool barBottom = false;
 };
 
-enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen, DefaultWorldAsk };
+enum class Screen { Title, Settings, Playing, Pause, MapSelect, ScenarioSelect, PartySetup, WorldGen, DefaultWorldAsk, ScenarioEdit };
 
 enum class Action {
-    Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration, BuildingBlueprints,
+    Continue, NewGame, LoadGame, Settings, Language, Quit, WorldGeneration, AddCustomScenario, BuildingBlueprints,
     Resume, Save, Load, LoadSlot, LoadPicked, ReturnToTitle, Back,
     ConfirmName,
     CancelName,
@@ -43,7 +43,6 @@ enum class Action {
     PartyDropBar,
     PartyDropBack,
     PartyRandomAll,
-    PartyPatron,
     PartyFaction,
     PartyConfirm,
     PartyMessage

@@ -122,6 +122,15 @@ struct BuildJob {
     float stuck = 0.0f;
 };
 
+// An order of yours to construct one blueprint (Construct on its right-click menu): the unit fetches and brings what it wants and builds it,
+// job after job (BuildJob), until it stands. Any other order of yours ends it, as does the blueprint going or the unit waiting too long on
+// materials. Not saved.
+struct ConstructOrder {
+    ObjectId blueprint = NO_OBJECT;
+    float idle = 0.0f;   // how long it has had no job to start on the blueprint, in seconds
+};
+constexpr float CONSTRUCT_WAIT_SECONDS = 20.0f;
+
 // A unit held back by a locked door it may not pass. Not saved.
 struct AtDoor {
     ObjectId door = NO_OBJECT;
@@ -430,8 +439,11 @@ void walkSoloTo(World& w, Terrain& t, ObjectId e, Vec2 target, int storey = -1);
 // Units following a Route, and units chasing a foe on another floor
 void routeSystem(World& w, Terrain& t, float dt);
 
-// The building tasks: Auto-Haul Blueprint Supplies and Auto-Construct
-bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r);
+// The building tasks: Auto-Haul Blueprint Supplies and Auto-Construct. `only` (a blueprint) keeps the step to that one, as an order of yours does.
+bool startBuildStep(World& w, Terrain& t, ObjectId u, Behaviors& b, BehaviorRule& r, ObjectId only = NO_OBJECT);
+// Sends these units to construct a blueprint of yours, by hand: each brings what it needs and builds it. How many could start.
+int issueConstructOrder(World& w, Terrain& t, const std::vector<ObjectId>& units, ObjectId blueprint);
+void constructOrderSystem(World& w, Terrain& t, float dt);
 void buildJobSystem(World& w, Terrain& t, float dt);
 // The whole building step: jobs, climbing, routes, doors, and the terrain's closed tiles
 void buildingSystem(World& w, Terrain& t, float dt);

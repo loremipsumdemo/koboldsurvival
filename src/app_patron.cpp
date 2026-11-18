@@ -4,7 +4,7 @@
 using namespace play;
 
 // Patrons (patrons.h): the Patron Dialogue banner at the top middle of the screen, and the window of all of them (See Patron on an Altar's
-// menu, and the Patron button of the party screen, where yours is picked).
+// menu). A patron comes with its faction and is not picked: its portrait is tinted by the faction's color.
 
 namespace {
 constexpr Uint64 CHAT_STEP_MS = 4000;     // a line has been up this long before the next comes, and the banner fades this long after the last
@@ -12,17 +12,28 @@ constexpr double CHAT_SAME_SECONDS = 3600.0;   // game time: the same event betw
 constexpr size_t CHAT_KEEP = 10;          // the lines waiting to be shown (more than that and the oldest are let go)
 constexpr size_t PATRON_KEEP_MESSAGES = 500;   // the messages remembered, for the Patrons tab
 constexpr int CHAT_SHOWN = 2;             // and shown at a time
+// How far a portrait is tinted toward its faction's color (1: the color itself, 0: none): not all the way, so a dark color keeps the face plain
+constexpr float PATRON_TINT = 0.7f;
+
+// The tint of a patron's portrait: its faction's color pulled toward white by what PATRON_TINT leaves, darkened by k (an older line on the
+// banner) and as see-through as a (a line fading in or out)
+RGBA patronTint(int faction, float k = 1.0f, float a = 1.0f) {
+    if (faction < 0 || !findFaction(faction)) return RGBA{ k, k, k, a };
+    const FactionColor c = factionColor(faction);
+    const auto toward = [&](float v) { return k * (1.0f - PATRON_TINT * (1.0f - v)); };
+    return RGBA{ toward(c.r), toward(c.g), toward(c.b), a };
+}
 
 struct PatronLayout {
-    Rect box, title, close, random;
+    Rect box, title, close;
     std::vector<Rect> cells;
 };
 
-PatronLayout layoutPatron(int W, int H, int count, bool pick) {
+PatronLayout layoutPatron(int W, int H, int count) {
     const float s = uiScaleFor((float)H);
     const int cols = 4, rows = std::max(1, (count + cols - 1) / cols);
-    const float pad = 14.0f * s, gap = 8.0f * s, line = 30.0f * s, btnH = 34.0f * s;
-    const float fixedH = pad + line + gap + (pick ? gap + btnH : 0.0f) + pad;
+    const float pad = 14.0f * s, gap = 8.0f * s, line = 30.0f * s;
+    const float fixedH = pad + line + gap + pad;
     const float cell = std::min(96.0f * s, std::max(32.0f * s, ((float)H - 20.0f * s - fixedH - (rows - 1) * gap) / rows));
     PatronLayout L;
     const float w = cols * cell + (cols - 1) * gap + 2.0f * pad;
@@ -33,19 +44,12 @@ PatronLayout layoutPatron(int W, int H, int count, bool pick) {
     for (int i = 0; i < count; ++i) {
         L.cells.push_back(Rect{ L.box.x + pad + (float)(i % cols) * (cell + gap), top + (float)(i / cols) * (cell + gap), cell, cell });
     }
-    if (pick) L.random = Rect{ L.box.x + pad, L.box.y + h - pad - btnH, w - 2.0f * pad, btnH };
     return L;
 }
 }
 
-std::string App::patronButtonText() {
-    const std::vector<PatronInfo>& list = patrons();
-    return langf("UILABEL_PATRON_BUTTON", { patronPick >= 0 && (size_t)patronPick < list.size() ? lang(list[(size_t)patronPick].nameKey) : lang("UILABEL_PATRON_RANDOM") });
-}
-
-void App::openPatrons(int faction, bool pick) {
+void App::openPatrons(int faction) {
     patronOpen = true;
-    patronPicking = pick;
     patronFaction = faction;
     session.contextMenu.open = false;
     itemMenu.open = false;
@@ -53,42 +57,26 @@ void App::openPatrons(int faction, bool pick) {
 }
 
 bool App::pressOnPatrons() {
-    if (!patronOpen || (screen != Screen::Playing && screen != Screen::PartySetup)) return false;
+    if (!patronOpen || screen != Screen::Playing) return false;
     if (e.button.button != SDL_BUTTON_LEFT) return true;
     const float x = e.button.x, y = e.button.y;
-    const PatronLayout L = layoutPatron(winW, winH, (int)patrons().size(), patronPicking);
+    const PatronLayout L = layoutPatron(winW, winH, (int)patrons().size());
     if (dismissAt(L.box, L.close, x, y)) {
         patronOpen = false;
         playSfx(Sfx::UiBack);
-        return true;
-    }
-    if (patronPicking) {
-        if (L.random.contains(x, y)) {
-            patronPick = -1;
-            patronOpen = false;
-            playSfx(Sfx::UiClick);
-            return true;
-        }
-        for (size_t i = 0; i < L.cells.size(); ++i) {
-            if (!L.cells[i].contains(x, y)) continue;
-            patronPick = (int)i;
-            patronOpen = false;
-            playSfx(Sfx::UiClick);
-            return true;
-        }
     }
     return true;
 }
 
 void App::drawPatrons() {
-    if (!patronOpen || (screen != Screen::Playing && screen != Screen::PartySetup)) return;
+    if (!patronOpen || screen != Screen::Playing) return;
     const std::vector<PatronInfo>& list = patrons();
-    const PatronLayout L = layoutPatron(winW, winH, (int)list.size(), patronPicking);
+    const PatronLayout L = layoutPatron(winW, winH, (int)list.size());
     const float s = uiScaleFor((float)winH), textH = renderer.listTextHeight("Ag");
     const RGBA white = theme::TEXT, gold = theme::GOLD, dim = theme::TEXT_DIM;
     renderer.drawWindowFrame(L.box, L.title, L.close, lang("UILABEL_PATRONS_TITLE"));
-    // The one lit: the Altar's faction's patron, or the one picked
-    const int lit = patronPicking ? patronPick : patronOf(world, patronFaction);
+    // The one lit: the Altar's faction's patron. Each is tinted by the color of the faction it speaks for.
+    const int lit = patronOf(world, patronFaction);
     const float mx = (float)mouseX, my = (float)mouseY;
     int hover = -1;
     for (size_t i = 0; i < L.cells.size() && i < list.size(); ++i) {
@@ -96,11 +84,8 @@ void App::drawPatrons() {
         const bool on = (int)i == lit;
         if (c.contains(mx, my)) hover = (int)i;
         renderer.drawRect(Rect{ c.x - 3.0f * s, c.y - 3.0f * s, c.w + 6.0f * s, c.h + 6.0f * s }, on ? gold : RGBA{ 0.30f, 0.20f, 0.35f, 1.0f });
-        renderer.drawPatronPicture((int)i, c);
+        renderer.drawPatronPicture((int)i, c, patronTint(patronHolder(world, (int)i)));
         if (hover == (int)i && !on) renderer.drawRect(c, RGBA{ 1.0f, 1.0f, 1.0f, 0.12f });
-    }
-    if (patronPicking) {
-        renderer.drawToggleButton(L.random, lang("UILABEL_PATRON_RANDOM"), patronPick < 0);
     }
     if (hover < 0) return;
     // The details of the one under the pointer
@@ -110,9 +95,7 @@ void App::drawPatrons() {
     lines.push_back({ p.mbti, dim });
     const float textW = 260.0f * s;
     for (const std::string& ln : renderer.wrapListText(lang(p.descKey), textW)) lines.push_back({ ln, white });
-    if (!patronPicking) {
-        if (const int holder = patronHolder(world, hover); holder >= 0) lines.push_back({ langf("UILABEL_PATRON_OF", { factionName(holder) }), dim });
-    }
+    if (const int holder = patronHolder(world, hover); holder >= 0) lines.push_back({ langf("UILABEL_PATRON_OF", { factionName(holder) }), dim });
     const float pad = 8.0f * s;
     const float bw = textW + 2.0f * pad, bh = (float)lines.size() * textH + 2.0f * pad;
     const float bx = std::clamp(mx + 18.0f * s, 4.0f, std::max(4.0f, (float)winW - bw - 4.0f));
@@ -131,8 +114,8 @@ void App::drawPatrons() {
 // The call, then the response. Yours is always on the right; of two others, the one answering is
 void App::queuePatronChat(const PatronMemory& m, bool replay) {
     const bool callerRight = m.caller == FACTION_PLAYER;
-    patronChat.queue.push_back({ m.callerPatron, callerRight, m.call, replay });
-    patronChat.queue.push_back({ m.responderPatron, !callerRight, m.response, replay });
+    patronChat.queue.push_back({ m.callerPatron, m.caller, callerRight, m.call, replay });
+    patronChat.queue.push_back({ m.responderPatron, m.responder, !callerRight, m.response, replay });
 }
 
 void App::replayPatronEvent(int index) {
@@ -316,7 +299,7 @@ void App::drawPatronChat() {
         const Rect picRect = ln.right ? Rect{ x0 + w - pic - inset, y + inset, pic, pic } : Rect{ x0 + inset, y + inset, pic, pic };
         renderer.drawRect(Rect{ picRect.x - 2.0f * s, picRect.y - 2.0f * s, picRect.w + 4.0f * s, picRect.h + 4.0f * s },
                           RGBA{ 0.55f * k, 0.35f * k, 0.70f * k, 0.9f * a });
-        renderer.drawPatronPicture(ln.patron, picRect, RGBA{ k, k, k, a });
+        renderer.drawPatronPicture(ln.patron, picRect, patronTint(ln.faction, k, a));
         const float textW = w - pic - 3.0f * inset - 8.0f * s;
         const float tx = ln.right ? x0 + inset + 4.0f * s : picRect.x + pic + inset + 4.0f * s;
         const std::string name = ln.patron >= 0 && (size_t)ln.patron < list.size() ? lang(list[(size_t)ln.patron].nameKey) : std::string();

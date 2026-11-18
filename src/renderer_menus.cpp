@@ -632,7 +632,6 @@ void Renderer::drawPartySetup(const std::vector<Button>& buttons, const Party& p
             break;
 
         case Action::PartyRandomAll:
-        case Action::PartyPatron:
         case Action::PartyFaction:
         case Action::PartyConfirm:
         case Action::Back:

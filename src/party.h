@@ -72,23 +72,10 @@ Party randomParty(Rng& rng, int count = START_UNIT_COUNT);
 void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearItems& gear,
                           const Stats& stats, float share = -1.0f);
 
-enum class ScenarioId : int {
-    Outpost = 0,    // Outpost (Recommended): your own camp like the other factions have, and as many units as they start with. They can
-                    // be customized but not added or removed
-    Vagabond,       // one unit, every stat at level 1, nothing carried
-    Custom,         // Custom Squad: build your own
-    Count
-};
-const char* scenarioNameKey(ScenarioId id);
-const char* scenarioDescKey(ScenarioId id);
-inline bool scenarioResizable(ScenarioId id) { return id == ScenarioId::Custom; }
-inline bool scenarioEditable(ScenarioId id) { return id == ScenarioId::Custom || id == ScenarioId::Outpost; }
-// Whether the level is given your own camp (an Altar, a Campfire, Bedrolls, stockpiles and the like), as the other factions have
-inline bool scenarioHasCamp(ScenarioId id) { return id == ScenarioId::Outpost; }
-// How many units the Outpost starts with, as many as a faction of the level starts with
-inline constexpr int OUTPOST_UNITS = 10;
-inline bool scenarioMobKindEditable(ScenarioId id) { return id == ScenarioId::Custom; }
-Party scenarioParty(ScenarioId id, Rng& rng, int count = 0);
+// Your party as a scenario (scenario.h) starts it: as many people as it gives your faction, each with random stats and gear that they can
+// carry, and the mobs it gives them after the people. Their names, stats and gear can be changed in the party menu, but not how many.
+struct Scenario;
+Party scenarioParty(const Scenario& scenario, Rng& rng);
 
 void addRandomMember(Party& p, Rng& rng);
 

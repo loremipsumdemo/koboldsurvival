@@ -5,10 +5,12 @@
 #include "ecs.h"
 #include "rng.h"
 
-// Patrons: a historical figure for each faction that claims land, no two the same. They are not units in the world: they speak for their
-// faction in a line of dialogue (the Patron Dialogue banner at the top of the screen) whenever something happens between two factions, a call
-// from the faction that did it and a response from the other. data/patrons.txt lists them; their names and descriptions are PATRON_nn_NAME and
-// PATRON_nn_DESC in the language files, and their pictures are data/profile/patron/<picture>.
+// Patrons: a figure for each faction that claims land, no two the same, and never chosen apart from the faction: each faction's row in
+// data/factions.txt names its own (patron=<id>), and you have the patron of the color you are. They are not units in the world: they speak for
+// their faction in a line of dialogue (the Patron Dialogue banner at the top of the screen) whenever something happens between two factions, a
+// call from the faction that did it and a response from the other. Their portraits are drawn tinted by their faction's color. data/patrons.txt
+// lists them; their names and descriptions are PATRON_nn_NAME and PATRON_nn_DESC in the language files, and their pictures are
+// data/profile/patron/<picture>.
 
 struct PatronInfo {
     int id = 0;
@@ -25,11 +27,11 @@ struct Patrons {
 int patronOf(World& w, int faction);
 // Which faction has this patron, or -1
 int patronHolder(World& w, int patron);
-// A new game: every faction that claims land is given one. Yours is the one picked (an index), or a random one if that is -1; the others
-// are drawn from those left.
-void newPatrons(World& w, Rng& rng, int playerPick);
-// A loaded game: a faction with none yet is given one of those left
-void ensurePatrons(World& w, Rng& rng);
+// A new game: every faction that claims land is given its own patron, the one its row of data/factions.txt names (yours is the one of the color
+// you are). A faction whose row names none, or one already taken, is given one of those left, in the order they are listed.
+void newPatrons(World& w);
+// A loaded game is brought into line the same way: a save from before patrons were bound to their factions has its patrons put right
+void ensurePatrons(World& w);
 
 // What happened between two factions, for their patrons to speak of: the call is the patron of the one that did it (the caller), the response
 // is the patron of the other (the responder).

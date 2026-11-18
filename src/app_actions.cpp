@@ -1,5 +1,6 @@
 #include "patrons.h"
 #include "app.h"
+#include "scenario.h"
 
 using namespace play;
 
@@ -61,6 +62,7 @@ void App::startMapLevel(const MapChoice& choice) {
         return;
     }
     audio::stopTracks();
+    const Scenario scenario = pickedScenario();   // a copy: the list is read again when its screen is opened
     // Which color you are: the one picked in character creation, or a random one. The other 15 factions are the rest.
     setPlayerSlot(resolveFactionPick());
     setPlayerFactionName(factionNameText);   // empty keeps the color's own name
@@ -72,10 +74,10 @@ void App::startMapLevel(const MapChoice& choice) {
         }
         buildLevelFrom(world, terrain, rng, (unsigned)std::time(nullptr), level);
     } else {
-        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenarioHasCamp(scenarioPick), progress);
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenario, progress);
     }
     settleFactionHomes(world, terrain);
-    newPatrons(world, rng, patronPick);   // the one you picked, a random one if none, and a different one for each other faction
+    newPatrons(world);   // each faction its own, yours the one of the color you are
     // The party from the menu replaces the units that the seed made: its people, then its mobs after them
     std::vector<MobKind> mobKinds;
     for (const PartyMember& m : party) {
@@ -85,21 +87,41 @@ void App::startMapLevel(const MapChoice& choice) {
     ensurePlayerUnits(world, terrain, rng, people);
     ensurePlayerMobs(world, terrain, rng, mobKinds, people);
     applyParty(world, party);
-    if (scenarioHasCamp(scenarioPick) && pendingLevel.empty()) {
-        // The Outpost: only the first unit is yours to command, the rest start as citizens who tend the camp
-        const ObjectId lead = firstSquadUnit(world);
+    const FactionStart yours = scenarioStart(scenario, FACTION_PLAYER);
+    const std::vector<Claim> claims = claimsOf(world);
+    const bool haveAltar = std::any_of(claims.begin(), claims.end(), [](const Claim& c) { return c.owner == FACTION_PLAYER; });
+    if (haveAltar && pendingLevel.empty()) {
+        // With a camp (the Outpost's): the first of your people, as many as the scenario says, are yours to command, and the rest start as
+        // citizens who tend the camp
         std::vector<ObjectId> squad = world.view<Entity, Commandable>();
         std::sort(squad.begin(), squad.end());
+        std::vector<ObjectId> military, tenders;
+        int fortified = 0;
         for (ObjectId u : squad) {
-            if (u != lead && !world.has<Mob>(u)) makeCitizen(world, u);
+            if (world.has<Mob>(u)) continue;
+            if ((int)military.size() < yours.military) {
+                military.push_back(u);
+                continue;
+            }
+            if (fortified < yours.fortified) {
+                makeFortified(world, u);
+                ++fortified;
+            } else {
+                makeCitizen(world, u);
+            }
+            tenders.push_back(u);
         }
-        // The one left military keeps just the first three default behaviors: Eat, Heal and Share
-        if (Behaviors* b = lead != NO_OBJECT ? world.get<Behaviors>(lead) : nullptr) {
-            b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [](const BehaviorRule& r) {
-                               return r.kind != BehaviorKind::Eat && r.kind != BehaviorKind::Heal && r.kind != BehaviorKind::Share;
-                           }),
-                           b->rules.end());
-            b->pending = true;
+        // They start round your Altar, on the nearest free tiles to it, as the units of the other factions do round theirs
+        placeUnitsRoundAltar(world, terrain, FACTION_PLAYER, tenders);
+        // Those left military keep just the first three default behaviors: Eat, Heal and Share
+        for (ObjectId u : military) {
+            if (Behaviors* b = world.get<Behaviors>(u)) {
+                b->rules.erase(std::remove_if(b->rules.begin(), b->rules.end(), [](const BehaviorRule& r) {
+                                   return r.kind != BehaviorKind::Eat && r.kind != BehaviorKind::Heal && r.kind != BehaviorKind::Share;
+                               }),
+                               b->rules.end());
+                b->pending = true;
+            }
         }
     }
     if (const ObjectId first = firstSquadUnit(world); first != NO_OBJECT) {
@@ -122,19 +144,35 @@ void App::startMapLevel(const MapChoice& choice) {
 
 void App::openParty(const MapChoice& choice) {
     pendingMap = choice;
-    scenarioPick = ScenarioId::Outpost;
+    refreshScenarios();
+    scenarioPick = 0;   // the Outpost
     scenarioScroll = 0;
     screen = Screen::ScenarioSelect;
 }
 
 void App::openPartyMenu() {
-    party = scenarioParty(scenarioPick, partyRng);
+    party = scenarioParty(pickedScenario(), partyRng);
     partyUi = PartyUi{};
-    partyUi.resizable = scenarioResizable(scenarioPick);
-    partyUi.editable = scenarioEditable(scenarioPick);
-    partyUi.mobKindEditable = scenarioMobKindEditable(scenarioPick);
+    // How many units the party has, and of which animals, is the scenario's to say; what each one is called, its stats and its gear are yours
+    partyUi.resizable = false;
+    partyUi.editable = true;
+    partyUi.mobKindEditable = false;
     backScreen = Screen::ScenarioSelect;
     screen = Screen::PartySetup;
+}
+
+void App::refreshScenarios() {
+    scenarioList.clear();
+    scenarioList.push_back(outpostScenario());
+    for (const std::string& name : listScenarioFiles()) {
+        Scenario s;
+        std::string err;
+        if (readScenarioFile(name, s, err)) scenarioList.push_back(std::move(s));
+    }
+}
+
+const Scenario& App::pickedScenario() const {
+    return scenarioPick >= 0 && scenarioPick < (int)scenarioList.size() ? scenarioList[(size_t)scenarioPick] : outpostScenario();
 }
 
 void App::stopNameEdit() {
@@ -188,6 +226,9 @@ void App::performAction(Action action, int param) {
         return;
     case Action::WorldGeneration:
         openWorldGen();
+        return;
+    case Action::AddCustomScenario:
+        openScenarioEditor();
         return;
     case Action::BuildingBlueprints:
         fadeOutThen([this] { openBlueprintEditor(); });

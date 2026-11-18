@@ -5,6 +5,7 @@
 #include "inventory.h"
 #include "items.h"
 #include "mobs.h"
+#include "scenario.h"
 #include "systems.h"
 #include "emotes.h"
 #include "equip.h"
@@ -124,14 +125,6 @@ void keepUnderEncumbrance(std::array<ItemStack, INVENTORY_SLOTS>& items, GearIte
     }
 }
 
-const char* scenarioNameKey(ScenarioId id) {
-    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_NAME" : id == ScenarioId::Outpost ? "SCENARIO_OUTPOST_NAME" : "SCENARIO_VAGABOND_NAME";
-}
-
-const char* scenarioDescKey(ScenarioId id) {
-    return id == ScenarioId::Custom ? "SCENARIO_CUSTOM_DESC" : id == ScenarioId::Outpost ? "SCENARIO_OUTPOST_DESC" : "SCENARIO_VAGABOND_DESC";
-}
-
 PartyMember mobMember(MobKind kind, Rng& rng) {
     PartyMember m;
     m.mob = isRegularMob(kind) ? kind : MobKind::Wolf;
@@ -152,23 +145,12 @@ int partyPeople(const Party& p) {
     return (int)std::count_if(p.begin(), p.end(), [](const PartyMember& m) { return m.mob == MobKind::None; });
 }
 
-Party scenarioParty(ScenarioId id, Rng& rng, int count) {
-    if (id == ScenarioId::Custom) {
-        Party p = randomParty(rng, count >= 1 ? std::min(count, PARTY_MAX_UNITS) : START_UNIT_COUNT);
-        for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
-        return p;
-    }
-    if (id == ScenarioId::Outpost) {
-        Party p = randomParty(rng, OUTPOST_UNITS);
-        for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
-        return p;
-    }
-    // Vagabond: one unit with nothing, every stat at level 1
-    Party p = randomParty(rng, 1);
-    for (PartyMember& m : p) {
-        m.gear = {};
-        m.items = {};
-        for (int i = 0; i < STAT_COUNT; ++i) setStatLevel(m.stats, (StatId)i, 1);
+Party scenarioParty(const Scenario& scenario, Rng& rng) {
+    const FactionStart start = scenarioStart(scenario, FACTION_PLAYER);
+    Party p = randomParty(rng, start.people());
+    for (PartyMember& m : p) keepUnderEncumbrance(m.items, m.gear, m.stats);
+    for (const auto& [kind, count] : start.mobs) {
+        for (int i = 0; i < count; ++i) p.push_back(mobMember(kind, rng));
     }
     return p;
 }

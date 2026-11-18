@@ -14,22 +14,22 @@ namespace {
 const char* const DEFAULT_TEXT =
     "faction\t0\tFACTION_PLAYER\t#c77dff\t0\tcontrol=player\n"
     "faction\t6\tFACTION_FACTIONLESS\t#9a9a9a\t0\ttake=food aid=own\n"
-    "faction\t100\tFACTION_EMBER\t#FF4000\t8\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep\n"
-    "faction\t101\tFACTION_SOLAR\t#EFDF00\t8\ttake=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open\n"
-    "faction\t102\tFACTION_AMBER\t#AF8010\t8\ttrespass=warn take=food markup=20 fortified=20 military=20 build=balanced gates=sleep\n"
-    "faction\t103\tFACTION_DAWN\t#FFCFAF\t8\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep\n"
-    "faction\t104\tFACTION_UMBER\t#704020\t8\ttrespass=attack downed=cage take=weapons trade=allies markup=30 aid=own fortified=35 military=25 build=base_first gates=shut\n"
-    "faction\t105\tFACTION_THICKET\t#305000\t8\ttrespass=warn aid=own fortified=40 military=10 build=perimeter_first gates=shut\n"
-    "faction\t106\tFACTION_VERDANT\t#00FF40\t8\tfactionless=friendly downed=carry_out recruit=both aid=anyone fortified=20 military=15 build=balanced gates=open\n"
-    "faction\t107\tFACTION_JADE\t#509F70\t8\tdowned=carry_out markup=10 fortified=25 military=20 build=perimeter_first gates=sleep\n"
-    "faction\t108\tFACTION_TIDAL\t#007080\t8\ttrespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut\n"
-    "faction\t109\tFACTION_GLACIER\t#00EFEF\t8\ttrespass=warn trade=allies markup=15 aid=own fortified=30 military=20 build=perimeter_first gates=shut\n"
-    "faction\t110\tFACTION_ZEPHYR\t#40AFFF\t8\trecruit=factionless aid=anyone fortified=10 military=40 build=balanced gates=open\n"
-    "faction\t111\tFACTION_COBALT\t#1000EF\t8\ttrespass=attack downed=cage take=weapons markup=20 trade=allies aid=own fortified=25 military=40 build=base_first gates=sleep\n"
-    "faction\t112\tFACTION_MYSTIC\t#9F70FF\t8\ttrade=not_factionless markup=25 recruit=rescued fortified=20 military=30 build=balanced gates=sleep\n"
-    "faction\t113\tFACTION_VEIL\t#EFCFFF\t8\tfactionless=friendly downed=carry_out aid=anyone fortified=15 military=10 build=balanced gates=open\n"
-    "faction\t114\tFACTION_GARNET\t#8F0050\t8\tfactionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own fortified=10 military=60 build=base_first gates=sleep\n"
-    "faction\t115\tFACTION_BLOSSOM\t#FF508F\t8\tfactionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone fortified=15 military=20 build=balanced gates=open\n";
+    "faction\t100\tFACTION_EMBER\t#FF4000\t30\tfactionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own build=base_first gates=sleep patron=5\n"
+    "faction\t101\tFACTION_SOLAR\t#EFDF00\t30\ttake=weapons trade=not_factionless markup=15 recruit=factionless build=balanced gates=open patron=13\n"
+    "faction\t102\tFACTION_AMBER\t#AF8010\t30\ttrespass=warn take=food markup=20 build=balanced gates=sleep patron=6\n"
+    "faction\t103\tFACTION_DAWN\t#FFCFAF\t30\tfactionless=friendly downed=carry_out recruit=rescued aid=anyone build=perimeter_first gates=sleep patron=2\n"
+    "faction\t104\tFACTION_UMBER\t#704020\t30\ttrespass=attack downed=cage take=weapons trade=allies markup=30 aid=own build=base_first gates=shut patron=9\n"
+    "faction\t105\tFACTION_THICKET\t#305000\t30\ttrespass=warn aid=own build=perimeter_first gates=shut patron=1\n"
+    "faction\t106\tFACTION_VERDANT\t#00FF40\t30\tfactionless=friendly downed=carry_out recruit=both aid=anyone build=balanced gates=open patron=10\n"
+    "faction\t107\tFACTION_JADE\t#509F70\t30\tdowned=carry_out markup=10 build=perimeter_first gates=sleep patron=3\n"
+    "faction\t108\tFACTION_TIDAL\t#007080\t30\ttrespass=warn downed=carry_out take=food markup=10 build=perimeter_first gates=shut patron=12\n"
+    "faction\t109\tFACTION_GLACIER\t#00EFEF\t30\ttrespass=warn trade=allies markup=15 aid=own build=perimeter_first gates=shut patron=14\n"
+    "faction\t110\tFACTION_ZEPHYR\t#40AFFF\t30\trecruit=factionless aid=anyone build=balanced gates=open patron=7\n"
+    "faction\t111\tFACTION_COBALT\t#1000EF\t30\ttrespass=attack downed=cage take=weapons markup=20 trade=allies aid=own build=base_first gates=sleep patron=11\n"
+    "faction\t112\tFACTION_MYSTIC\t#9F70FF\t30\ttrade=not_factionless markup=25 recruit=rescued build=balanced gates=sleep patron=16\n"
+    "faction\t113\tFACTION_VEIL\t#EFCFFF\t30\tfactionless=friendly downed=carry_out aid=anyone build=balanced gates=open patron=4\n"
+    "faction\t114\tFACTION_GARNET\t#8F0050\t30\tfactionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own build=base_first gates=sleep patron=8\n"
+    "faction\t115\tFACTION_BLOSSOM\t#FF508F\t30\tfactionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone build=balanced gates=open patron=15\n";
 
 // Each rule's words in factions.txt and saves, and the language keys the Faction Rules window shows them by, in the
 // order of its enum
@@ -162,6 +162,8 @@ const char* ruleRowKey(RuleRow row) {
     return KEYS[std::clamp((int)row, 0, (int)RuleRow::Count - 1)];
 }
 
+const char* ruleRowWord(RuleRow row) { return wordsOf(row).key; }
+
 const char* ruleRowTipKey(RuleRow row) {
     static const char* const KEYS[] = { "UILABEL_RULES_FACTIONLESS_TIP", "UILABEL_RULES_TRESPASS_TIP", "UILABEL_RULES_DOWNED_BODY_TIP",
                                         "UILABEL_RULES_DOWNED_TAKE_TIP", "UILABEL_RULES_TRADE_TIP", "UILABEL_RULES_MARKUP_TIP",
@@ -251,6 +253,7 @@ bool parseTable(const std::string& text, Table& out, std::string& err) {
             std::string word, rules;
             while (ls >> word) {
                 if (word == "control=player" || word == "control=npc") f.playerControlled = word == "control=player";
+                else if (word.rfind("patron=", 0) == 0) f.patron = std::max(0, std::atoi(word.c_str() + 7));
                 else rules += word + " ";
             }
             std::string why;
@@ -338,6 +341,7 @@ const std::vector<FactionDef>& active() {
         if (mine && f.id == FACTION_PLAYER) {
             g_active.back().nameKey = mine->nameKey;
             g_active.back().color = mine->color;
+            g_active.back().patron = mine->patron;   // its patron comes with its color
         }
     }
     g_activeBuilt = true;
