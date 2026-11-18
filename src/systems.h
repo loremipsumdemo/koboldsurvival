@@ -11,7 +11,10 @@ ObjectId makeEntity(World& w, const Transform& at, int faction);
 Dialogue defaultDialogue();
 // A new random level: your faction and the others as the scenario (scenario.h) starts them
 struct Scenario;
-void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario);
+// withFactions false leaves out the camps and the people (yours and theirs): the resource nodes and the wild animals alone
+void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario, bool withFactions = true);
+// The camps of the NPC factions a level (LevelInfo) gives a spawn to, as the scenario starts them, once a game on it begins
+void placeLevelFactions(World& w, Terrain& t, Rng& rng, const Scenario& scenario);
 // Where a random layout on this ground puts your start and each faction's camp, without building it. setupWorld puts
 // them in the same places, so New Game can show them. cancel, when set, stops it early (an empty plan).
 struct CampPlan {

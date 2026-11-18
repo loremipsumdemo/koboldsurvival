@@ -362,6 +362,7 @@ void App::drawPlayingScreen() {
     drawFloorBanner();
     drawFormMenu();
     if (editing) {
+        if (!mapEditing) drawEditorSpawnLabels();
         drawEditorPanel();
         const LevelInfo& level = world.resource<LevelInfo>();
         actionX = level.spawnX;

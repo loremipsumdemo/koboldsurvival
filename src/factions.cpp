@@ -397,6 +397,22 @@ int factionSlot(int faction) {
 
 const FactionDef* paletteFaction(int slot) { return rawPalette(slot); }
 
+int levelNpcNumber(int code) {
+    const int n = code - LEVEL_NPC_CODE;
+    return n >= 1 && n <= LEVEL_NPC_FACTIONS ? n : 0;
+}
+
+int resolveLevelFaction(int code) {
+    const int n = levelNpcNumber(code);
+    return n > 0 ? paletteFactionId((g_playerSlot + n) % PALETTE_COUNT) : code;
+}
+
+int levelFactionCode(int faction) {
+    if (!isPaletteId(faction)) return faction;
+    const int n = ((faction - PALETTE_FIRST_ID) - g_playerSlot + PALETTE_COUNT) % PALETTE_COUNT;
+    return n > 0 ? LEVEL_NPC_CODE + n : FACTION_PLAYER;
+}
+
 int loopReputation(int a, int b) {
     if (a == b) return REP_MAX;
     const int raw = std::abs(a - b);

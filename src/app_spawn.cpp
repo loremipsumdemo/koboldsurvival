@@ -116,15 +116,29 @@ DeveloperLayout layoutDeveloper(int W, int H, EditorTab tab) {
 namespace {
 // The factions the spawn list's Faction row steps through: every faction but the mobs' own. Factionless is the wild:
 // a Factionless mob is one of its own kind's.
-std::vector<int> spawnFactions() {
+// The level editor has no colors picked yet: its choices are Player, NPC Faction 1 to 15 (counted round the loop from the player's color, whichever
+// that turns out to be) and Factionless, and a level keeps just those (factions.h)
+std::vector<int> spawnFactions(bool editor) {
     std::vector<int> out;
+    if (editor) {
+        out.push_back(FACTION_PLAYER);
+        for (int n = 1; n <= LEVEL_NPC_FACTIONS; ++n) out.push_back(resolveLevelFaction(LEVEL_NPC_CODE + n));
+        out.push_back(FACTION_FACTIONLESS);
+        return out;
+    }
     for (const FactionDef& f : factions()) {
         if (!isMobFaction(f.id)) out.push_back(f.id);
     }
     return out;
 }
 
-std::string spawnFactionName(int faction) { return factionName(faction); }
+std::string spawnFactionName(int faction, bool editor) {
+    if (editor) {
+        if (faction == FACTION_PLAYER) return lang("UILABEL_EDITOR_FACTION_PLAYER");
+        if (const int n = levelNpcNumber(levelFactionCode(faction)); n > 0) return langf("UILABEL_EDITOR_FACTION_NPC", { std::to_string(n) });
+    }
+    return factionName(faction);
+}
 }
 
 std::vector<App::EditorEntry> App::spawnEntries(EditorTab tab) {
@@ -265,10 +279,10 @@ void App::drawSpawnPicker(SpawnPicker& p, const SpawnPickerLayout& baseLayout) {
             const float d = 10.0f * s;
             renderer.drawRect(Rect{ L.factionBox.x + 6.0f * s, L.factionBox.y + (L.factionBox.h - d) * 0.5f, d, d }, RGBA{ c.r, c.g, c.b, 1.0f });
         }
-        const std::string name = renderer.fitListText(spawnFactionName(p.faction), L.factionBox.w - 26.0f * s);
+        const std::string name = renderer.fitListText(spawnFactionName(p.faction, editing), L.factionBox.w - 26.0f * s);
         renderer.drawListText(name, L.factionBox.x + 20.0f * s, L.factionBox.y + (L.factionBox.h - textH) * 0.5f, gold);
         renderer.drawButton(L.factionUp, ">", true);
-        if (L.factionBox.contains(mouseX, mouseY)) renderer.noteTip(lang("UILABEL_SPAWN_FACTION_TIP"), L.factionBox);
+        if (L.factionBox.contains(mouseX, mouseY)) renderer.noteTip(lang(editing ? "UILABEL_EDITOR_FACTION_TIP" : "UILABEL_SPAWN_FACTION_TIP"), L.factionBox);
     }
     renderer.drawListText(renderer.fitListText(lang("UILABEL_SPAWN_CLUSTER"), L.clusterLabel.w), L.clusterLabel.x,
                           L.clusterLabel.y + (L.clusterLabel.h - textH) * 0.5f, white);
@@ -356,7 +370,7 @@ bool App::spawnPickerClick(SpawnPicker& p, const SpawnPickerLayout& baseLayout, 
         return true;
     }
     if (p.tab != EditorTab::Items && (L.factionDown.contains(x, y) || L.factionUp.contains(x, y))) {
-        const std::vector<int> list = spawnFactions();
+        const std::vector<int> list = spawnFactions(editing);
         const auto at = std::find(list.begin(), list.end(), p.faction);
         const int i = at == list.end() ? 0 : (int)(at - list.begin());
         const int n = (int)list.size();

@@ -30,13 +30,13 @@ bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, s
     return true;
 }
 
-void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress) {
+void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress, bool withFactions) {
     LoadStages stages(progress);
     stages.stage(0.7f, "LOADING_WORLD");
     world = World{};
     resetPlayState();
     rng.gen.seed(seed);
-    setupWorld(world, terrain, rng, scenario);
+    setupWorld(world, terrain, rng, scenario, withFactions);
     terrain.prepareNav();   // the navigation regions, made once here rather than at the first path
     stages.stage(0.85f, "LOADING_GROUND_ITEMS");
 }

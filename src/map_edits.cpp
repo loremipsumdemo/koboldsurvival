@@ -1,6 +1,7 @@
 #include "map_edits.h"
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <filesystem>
 #include <fstream>
 #include "world_gen.h"
@@ -158,7 +159,7 @@ public:
     const MapTheme* theme() const override { return inner_->theme(); }
     bool walledIn() const override { return inner_->walledIn(); }
     bool fill(int cx, int cz, ChunkData& out) const override {
-        if (!inner_->fill(cx, cz, out)) return false;
+        if (!baseFill(cx, cz, out)) return false;
         std::lock_guard<std::mutex> g(edits_->lock);
         bool touched = false;
         std::vector<char> dirty((size_t)CHUNK_TILES * CHUNK_TILES, 0);
@@ -204,6 +205,29 @@ public:
         return true;
     }
 private:
+    // The unedited chunk, kept for the last few made: a brush makes the same chunks again every stroke, and making one from the recipe is slow
+    bool baseFill(int cx, int cz, ChunkData& out) const {
+        const long long key = (long long)cz * 100003LL + cx;
+        {
+            std::lock_guard<std::mutex> g(cacheLock_);
+            const auto it = cache_.find(key);
+            if (it != cache_.end()) {
+                out = it->second;
+                return true;
+            }
+        }
+        if (!inner_->fill(cx, cz, out)) return false;
+        std::lock_guard<std::mutex> g(cacheLock_);
+        if (cache_.size() >= 96) {
+            cache_.erase(order_.front());
+            order_.pop_front();
+        }
+        if (cache_.emplace(key, out).second) order_.push_back(key);
+        return true;
+    }
+    mutable std::mutex cacheLock_;
+    mutable std::unordered_map<long long, ChunkData> cache_;
+    mutable std::deque<long long> order_;
     std::shared_ptr<const ChunkSource> inner_;
     std::shared_ptr<MapEdits> edits_;
 };
