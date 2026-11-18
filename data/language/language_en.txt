@@ -384,7 +384,7 @@ UILABEL_GEN_OVERWRITE	Overwrite
 UILABEL_EDITOR_TITLE	Level Editor: {0}
 UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
 UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
-UILABEL_EDITOR_SPAWN	Spawn Point
+UILABEL_EDITOR_SPAWN	Player Spawn
 UILABEL_MAP_EDITOR	Map Editor
 UILABEL_MAPED_TITLE	Map Editor: {0}
 UILABEL_MAPED_RAISE	Raise
@@ -435,6 +435,10 @@ MISC_EDITOR_CLEAN_Q	Erase everything placed on this level?
 MISC_EDITOR_CLEAN_Q2	Hold the button for 3 seconds. The map stays; the level starts empty.
 MISC_LEVEL_CLEANED	Level cleaned: nothing is placed
 UILABEL_EDITOR_ERASE	Erase
+UILABEL_EDITOR_NPC_SPAWN	NPC Spawn
+UILABEL_EDITOR_FACTION_PLAYER	Player
+UILABEL_EDITOR_FACTION_NPC	NPC Faction {0}
+UILABEL_EDITOR_FACTION_TIP	What a unit, mob or built prop placed belongs to: the Player, or NPC Faction 1 to 15 (counted round the loop from the color the player picks). NPC Spawn places the camp of the NPC Faction shown, made as on a regular map when a game starts. A Factionless mob is a wild one.
 UILABEL_EDITOR_ENTITIES	Entities
 UILABEL_EDITOR_PROPS	Props
 UILABEL_EDITOR_ITEMS	Items

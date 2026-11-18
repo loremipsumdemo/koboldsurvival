@@ -15,9 +15,9 @@ struct LevelObject {
     enum class Type { Unit, Mob, Prop, Item };
     Type type = Type::Prop;
     int id = 0;
-    int kind = 0;       // a unit's faction, a MobKind, a PropKind or an item id
+    int kind = 0;       // a unit's faction (an NPC Faction's code, factions.h), a MobKind, a PropKind or an item id
     int count = 1;      // items
-    int owner = -1;     // props and mobs: their faction, or -1 (a prop of none, a mob of its own kind's)
+    int owner = -1;     // props and mobs: their faction (an NPC Faction's code), or -1 (a prop of none, a mob of its own kind's)
     float x = 0.0f, z = 0.0f, yaw = 0.0f;
     int storey = 0;     // placed in a game only: the floor of a building it is put on (0 the ground). Not kept in a level file.
     PropVisual visual;  // props: how it is drawn apart from where it stands (plain when it isn't)
@@ -27,6 +27,7 @@ struct LevelData {
     std::string map;
     bool hasSpawn = false;
     float spawnX = 0.0f, spawnZ = 0.0f;
+    LevelInfo::NpcSpawn npc[15];   // where NPC Faction 1 to 15 start (factions.h), by number - 1
     int nextId = 1;
     std::vector<LevelObject> objects;
 };

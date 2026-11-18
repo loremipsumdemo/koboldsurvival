@@ -50,6 +50,12 @@ struct LevelInfo {
     bool spawnSet = false;
     float spawnX = 0.0f, spawnZ = 0.0f;
     int nextId = 1;
+    // Where NPC Faction 1 to 15 (factions.h) start: each is given a camp there when a game starts on the level
+    struct NpcSpawn {
+        bool set = false;
+        float x = 0.0f, z = 0.0f;
+    };
+    NpcSpawn npc[15];
 };
 
 // Stands still and talks, unless it is attacked

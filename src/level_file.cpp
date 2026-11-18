@@ -18,12 +18,28 @@ std::string levelFilePath(const std::string& name) {
     return std::string(LEVEL_FOLDER) + "/" + name + ".level";
 }
 
+namespace {
+// A level of format 1 named the colored factions outright (100 to 115). Format 2 names the 15 that run themselves by number instead
+// (NPC Faction 1 to 15, factions.h), so that which colors they are can wait until a game starts. Format 1's slot 0 is yours.
+int fromFormat1(int faction) {
+    if (faction < PALETTE_FIRST_ID || faction >= PALETTE_FIRST_ID + PALETTE_COUNT) return faction;
+    const int n = faction - PALETTE_FIRST_ID;
+    return n == 0 ? FACTION_PLAYER : LEVEL_NPC_CODE + n;
+}
+bool levelFaction(int code) { return levelNpcNumber(code) > 0 || (findFaction(code) != nullptr && !isMobFaction(code)); }
+}
+
 std::string levelToText(const LevelData& d) {
     std::ostringstream out;
-    out << "format 1\nmap " << d.map << "\nnext " << d.nextId << "\n";
+    out << "format 2\nmap " << d.map << "\nnext " << d.nextId << "\n";
     char line[160];
     if (d.hasSpawn) {
         std::snprintf(line, sizeof line, "spawn %.2f %.2f\n", d.spawnX, d.spawnZ);
+        out << line;
+    }
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) {
+        if (!d.npc[i].set) continue;
+        std::snprintf(line, sizeof line, "npcspawn %d %.2f %.2f\n", i + 1, d.npc[i].x, d.npc[i].z);
         out << line;
     }
     for (const LevelObject& o : d.objects) {
@@ -80,6 +96,7 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             std::string kind;
             PropKind named = PropKind::Wagon;
             ok = (bool)(ls >> o.id >> kind >> o.x >> o.z >> o.yaw >> o.owner);
+            if (format == 1) o.owner = fromFormat1(o.owner);
             kind = currentPropKey(kind);   // a prop that is gone loads as the one that took its place
             ok = ok && propKindNamed(kind, named);
             o.type = LevelObject::Type::Prop;
@@ -91,9 +108,16 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             ok = (bool)(ls >> v.dx >> v.dy >> v.dz >> v.rx >> v.ry >> v.rz >> v.sx >> v.sy >> v.sz) && !d.objects.empty() &&
                  d.objects.back().type == LevelObject::Type::Prop;
             if (ok) d.objects.back().visual = clampPropVisual(v);
+        } else if (key == "npcspawn") {
+            int n = 0;
+            float x = 0.0f, z = 0.0f;
+            ok = (bool)(ls >> n >> x >> z) && n >= 1 && n <= LEVEL_NPC_FACTIONS;
+            if (ok) d.npc[n - 1] = LevelInfo::NpcSpawn{ true, x, z };
         } else if (key == "unit") {
             LevelObject o;
-            ok = (ls >> o.id >> o.kind >> o.x >> o.z) && findFaction(o.kind) != nullptr && !isMobFaction(o.kind);
+            ok = (bool)(ls >> o.id >> o.kind >> o.x >> o.z);
+            if (format == 1) o.kind = fromFormat1(o.kind);
+            ok = ok && levelFaction(o.kind);
             o.type = LevelObject::Type::Unit;
             d.objects.push_back(o);
         } else if (key == "mob") {
@@ -103,7 +127,8 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             ok = (ls >> o.id >> kind >> o.x >> o.z) && mobKindNamed(kind, named);
             // Its faction, when not its own kind's; a level written before mobs had one names none
             if (ok && !(ls >> o.owner)) o.owner = -1;
-            if (o.owner >= 0 && (!findFaction(o.owner) || isMobFaction(o.owner))) o.owner = -1;
+            if (format == 1) o.owner = fromFormat1(o.owner);
+            if (o.owner >= 0 && !levelFaction(o.owner)) o.owner = -1;
             o.type = LevelObject::Type::Mob;
             o.kind = idx(named);
             d.objects.push_back(o);
@@ -120,7 +145,7 @@ bool levelFromText(const std::string& text, LevelData& out, std::string& err) {
             return false;
         }
     }
-    if (format != 1) { err = "not a version 1 level"; return false; }
+    if (format != 1 && format != 2) { err = "not a version 1 or 2 level"; return false; }
     if (d.map.empty()) { err = "names no map"; return false; }
     out = std::move(d);
     return true;
@@ -171,23 +196,24 @@ ObjectId placeLevelObject(World& w, const Terrain& t, Rng& rng, const LevelObjec
     };
     switch (o.type) {
     case LevelObject::Type::Unit:
-        e = spawnUnit(w, t, rng, o.kind, o.x, o.z);
+        e = spawnUnit(w, t, rng, resolveLevelFaction(o.kind), o.x, o.z);
         standUpstairs(e);
         break;
     case LevelObject::Type::Prop: {
         const PropKind kind = (PropKind)o.kind;
-        if (propInfo(kind).built && o.owner >= 0) {
-            e = placeBuiltProp(w, t, kind, o.x, o.z, o.yaw, o.owner, o.storey);
+        const int owner = o.owner >= 0 ? resolveLevelFaction(o.owner) : -1;
+        if (propInfo(kind).built && owner >= 0) {
+            e = placeBuiltProp(w, t, kind, o.x, o.z, o.yaw, owner, o.storey);
         } else {
             e = makeProp(w, kind, at, o.yaw);
             if (o.storey > 0) w.add(e, Storey{ o.storey });
-            if (o.owner >= 0) w.add(e, Owner{ o.owner });
+            if (owner >= 0) w.add(e, Owner{ owner });
         }
         if (e != NO_OBJECT && !o.visual.plain()) w.add(e, o.visual);
         break;
     }
     case LevelObject::Type::Mob:
-        e = spawnMob(w, t, rng, (MobKind)o.kind, o.owner, o.x, o.z);   // -1 or Factionless: wild
+        e = spawnMob(w, t, rng, (MobKind)o.kind, o.owner >= 0 ? resolveLevelFaction(o.owner) : o.owner, o.x, o.z);   // -1 or Factionless: wild
         standUpstairs(e);
         break;
     case LevelObject::Type::Item:
@@ -204,6 +230,7 @@ void applyLevel(World& w, const Terrain& t, Rng& rng, const LevelData& d) {
     info.spawnSet = d.hasSpawn;
     info.spawnX = d.spawnX;
     info.spawnZ = d.spawnZ;
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) info.npc[i] = d.npc[i];
     info.nextId = d.nextId;
     for (const LevelObject& o : d.objects) placeLevelObject(w, t, rng, o);
 }
@@ -215,6 +242,7 @@ LevelData captureLevel(World& w, const std::string& map) {
     d.hasSpawn = info.spawnSet;
     d.spawnX = info.spawnX;
     d.spawnZ = info.spawnZ;
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) d.npc[i] = info.npc[i];
     const auto idOf = [&](ObjectId e) {
         if (const LevelId* id = w.get<LevelId>(e)) return id->id;
         return w.add(e, LevelId{ info.nextId++ }).id;
@@ -229,7 +257,7 @@ LevelData captureLevel(World& w, const std::string& map) {
         o.yaw = w.get<Prop>(e)->yaw;
         o.x = w.get<Transform>(e)->x;
         o.z = w.get<Transform>(e)->z;
-        if (const Owner* own = w.get<Owner>(e)) o.owner = own->faction;
+        if (const Owner* own = w.get<Owner>(e)) o.owner = levelFactionCode(own->faction);
         if (const PropVisual* pv = w.get<PropVisual>(e)) o.visual = *pv;
         d.objects.push_back(o);
     }
@@ -240,7 +268,7 @@ LevelData captureLevel(World& w, const std::string& map) {
         LevelObject o;
         o.type = LevelObject::Type::Unit;
         o.id = idOf(e);
-        o.kind = w.get<Faction>(e)->id;
+        o.kind = levelFactionCode(w.get<Faction>(e)->id);
         o.x = w.get<Transform>(e)->x;
         o.z = w.get<Transform>(e)->z;
         d.objects.push_back(o);
@@ -253,7 +281,7 @@ LevelData captureLevel(World& w, const std::string& map) {
         o.id = idOf(e);
         o.kind = idx(w.get<Mob>(e)->kind);
         const int faction = factionOf(w, e);
-        o.owner = faction != mobFaction(w.get<Mob>(e)->kind) ? faction : -1;
+        o.owner = faction != mobFaction(w.get<Mob>(e)->kind) ? levelFactionCode(faction) : -1;
         o.x = w.get<Transform>(e)->x;
         o.z = w.get<Transform>(e)->z;
         d.objects.push_back(o);

@@ -752,6 +752,7 @@ void App::updateHover() {
             previewPlanPick(bp, claims);
         }
         if (mapEditing && screen == Screen::Playing) mapEditorPreview(bp);
+        else if (editing && screen == Screen::Playing) editorSpawnMarks(bp);
         renderer.setBuildPreview(std::move(bp));
         renderer.setBuildSelected(session.buildPick);
     }

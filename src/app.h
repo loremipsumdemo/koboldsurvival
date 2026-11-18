@@ -312,6 +312,10 @@ struct App : AppSession {
     bool editorMouseDown();
     void editorPlaceAt(float mx, float my);
     void editorEraseAt(float mx, float my);
+    bool editorEraseSpawnAt(float x, float z);
+    void editorNextNpc();
+    void editorSpawnMarks(BuildPreview& bp);
+    void drawEditorSpawnLabels();
     bool editorSave();
     bool editorLoad();
     bool editorDirty();

@@ -100,11 +100,12 @@ EditorLayout layoutEditor(int W, int H, bool ownUi) {
     L.load = Rect{ x + half + gap, y, half, btnH };
     y += btnH + gap * 2.0f;
     L.spawnTool = Rect{ x, y, half, btnH };
-    L.eraseTool = Rect{ x + half + gap, y, half, btnH };
+    L.npcSpawnTool = Rect{ x + half + gap, y, half, btnH };
+    y += btnH + gap;
+    L.eraseTool = Rect{ x, y, half, btnH };
+    L.clean = Rect{ x + half + gap, y, half, btnH };
     y += btnH + gap * 2.0f;
     L.themeTab = Rect{ x, y, w, btnH };
-    y += btnH + gap;
-    L.clean = Rect{ x, y, w, btnH };
     y += btnH + gap;
     const float bottom = L.panel.y + L.panel.h - 10.0f * s;
     L.exit = Rect{ x, bottom - btnH, w, btnH };
@@ -1073,6 +1074,10 @@ bool App::generateWorld(bool confirmed) {
 
 void App::openLevelEditor(const std::string& mapName) {
     mapEditing = false;
+    // The editor's world has the first color as yours and the others as NPC Faction 1 to 15, round the loop: a level keeps those numbers
+    // (factions.h), and which colors they are is decided when a game starts
+    setPlayerSlot(0);
+    setPlayerFactionName("");
     const std::optional<MapChoice> map = findMap(listMaps(), MAP_SOURCE_FILE, mapName);
     if (!map) {
         refuse(langf("MISC_MAP_MISSING", { mapName }));
@@ -1105,14 +1110,23 @@ void App::openLevelEditor(const std::string& mapName) {
     if (std::filesystem::exists(std::filesystem::u8path(path)) && readLevelFile(path, loaded, err) && loaded.map == mapName) {
         applyLevel(world, terrain, rng, loaded);
     } else {
-        // A new level starts with what a regular map has (its camps, resource nodes and wild animals, in the same amounts); Clean Level
-        // empties it. Your own units are not part of a level: its start point says where yours go.
-        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), outpostScenario());
-        settleFactionHomes(world, terrain);
-        for (ObjectId u : world.view<Entity, Faction>()) {
-            if (world.get<Faction>(u)->id == FACTION_PLAYER && !world.has<Prop>(u)) world.destroy(u);
+        // A new level starts with what a regular map has (its resource nodes and wild animals, in the same amounts), your start where the
+        // first color would be and a spawn for each NPC Faction where the others would be. The factions' camps are not placed: each is made
+        // when a game starts, as on a regular map. Clean Level empties the level.
+        const FactionLandPlan land = planFactionLand(terrain);
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), outpostScenario(), {}, false);
+        LevelInfo& info = world.resource<LevelInfo>();
+        for (int slot = 0; slot < PALETTE_COUNT && slot < (int)land.slots.size(); ++slot) {
+            const FactionLanding& at = land.slots[(size_t)slot];
+            if (at.tier == LandTier::Eliminated) continue;
+            if (slot == 0) {
+                info.spawnSet = true;
+                info.spawnX = at.x;
+                info.spawnZ = at.z;
+            } else {
+                info.npc[slot - 1] = LevelInfo::NpcSpawn{ true, at.x, at.z };
+            }
         }
-        world.resource<LevelInfo>();
     }
     editor.savedText = levelToText(captureLevel(world, mapName));
     editorFocusCamera();
@@ -1181,6 +1195,7 @@ void App::drawEditorPanel() {
     button(L.save, lang("UILABEL_SAVE"), false);
     button(L.load, lang("UILABEL_LOAD"), false);
     button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.spawn.tool == EditorTool::Spawn);
+    button(L.npcSpawnTool, lang("UILABEL_EDITOR_NPC_SPAWN"), editor.spawn.tool == EditorTool::NpcSpawn);
     button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.spawn.tool == EditorTool::Erase);
     button(L.themeTab, lang("UILABEL_GEN_TAB_THEME"), editor.spawn.tab == EditorTab::Theme);
     button(L.clean, lang("UILABEL_EDITOR_CLEAN"), editor.cleanAsk);
@@ -1216,6 +1231,7 @@ void App::cleanLevel() {
     editorRemember();
     LevelData d = captureLevel(world, currentMap.stem);
     d.objects.clear();
+    for (LevelInfo::NpcSpawn& n : d.npc) n = LevelInfo::NpcSpawn{};   // no NPC Faction either
     applyLevel(world, terrain, rng, d);
     editor.cleanAsk = false;
     deleteHolding = false;
@@ -1270,6 +1286,11 @@ bool App::editorMouseDown() {
         } else if (L.spawnTool.contains(x, y)) {
             setEditorTool(editor.spawn.tool == EditorTool::Spawn ? EditorTool::None : EditorTool::Spawn, 0);
             playSfx(Sfx::UiClick);
+        } else if (L.npcSpawnTool.contains(x, y)) {
+            setEditorTool(editor.spawn.tool == EditorTool::NpcSpawn ? EditorTool::None : EditorTool::NpcSpawn, 0);
+            // The number it places is the Faction row's, when that is an NPC Faction, else the first that has no spawn yet
+            if (editor.spawn.tool == EditorTool::NpcSpawn && levelNpcNumber(levelFactionCode(editor.spawn.faction)) == 0) editorNextNpc();
+            playSfx(Sfx::UiClick);
         } else if (L.eraseTool.contains(x, y)) {
             setEditorTool(editor.spawn.tool == EditorTool::Erase ? EditorTool::None : EditorTool::Erase, 0);
             playSfx(Sfx::UiClick);
@@ -1322,12 +1343,88 @@ void App::editorPlaceAt(float mx, float my) {
         editorEdited();
         return;
     }
+    if (editor.spawn.tool == EditorTool::NpcSpawn) {
+        const int n = levelNpcNumber(levelFactionCode(editor.spawn.faction));
+        if (n == 0) {
+            editorNextNpc();
+            return;
+        }
+        editorRemember();
+        world.resource<LevelInfo>().npc[n - 1] = LevelInfo::NpcSpawn{ true, x, z };
+        playSfx(Sfx::UiOrder);
+        editorNextNpc();   // on to the next that has none, to lay them out one after the other
+        editorEdited();
+        return;
+    }
     editorRemember();
     if (spawnAt(editor.spawn, x, z, true) > 0) editorEdited();
     else editor.undo.pop_back();
 }
 
+// The Faction row steps on to the first NPC Faction (after the one it is on) that has no spawn yet; if all have one, to the next number
+void App::editorNextNpc() {
+    const LevelInfo& info = world.resource<LevelInfo>();
+    const int now = levelNpcNumber(levelFactionCode(editor.spawn.faction));
+    int pick = 0;
+    for (int k = 1; k <= LEVEL_NPC_FACTIONS && pick == 0; ++k) {
+        const int n = (now - 1 + k + LEVEL_NPC_FACTIONS) % LEVEL_NPC_FACTIONS + 1;
+        if (now == 0 ? !info.npc[n - 1].set : (n != now && !info.npc[n - 1].set)) pick = n;
+    }
+    if (pick == 0) pick = now == 0 ? 1 : now % LEVEL_NPC_FACTIONS + 1;
+    editor.spawn.faction = resolveLevelFaction(LEVEL_NPC_CODE + pick);
+}
+
+// Each NPC Faction's spawn is a square of marked tiles on the ground, with its number over it (drawEditorSpawnLabels)
+void App::editorSpawnMarks(BuildPreview& bp) {
+    const LevelInfo& info = world.resource<LevelInfo>();
+    const int selected = editor.spawn.tool == EditorTool::NpcSpawn ? levelNpcNumber(levelFactionCode(editor.spawn.faction)) : 0;
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) {
+        if (!info.npc[i].set) continue;
+        const int cx = (int)std::floor(info.npc[i].x), cz = (int)std::floor(info.npc[i].z);
+        for (int dz = -2; dz <= 2; ++dz) {
+            for (int dx = -2; dx <= 2; ++dx) {
+                if (std::abs(dx) != 2 && std::abs(dz) != 2) continue;
+                bp.marks.push_back({ cx + dx, cz + dz, terrain.heightAt((float)(cx + dx) + 0.5f, (float)(cz + dz) + 0.5f) + 0.14f, i + 1 == selected ? 0 : 1 });
+            }
+        }
+    }
+
+}
+
+void App::drawEditorSpawnLabels() {
+    const LevelInfo& info = world.resource<LevelInfo>();
+    const Mat4 vp = cam.viewProj((float)winW / (float)winH);
+    const float s = uiScaleFor(winH), textH = renderer.listTextHeight("Ag");
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) {
+        if (!info.npc[i].set) continue;
+        float sx = 0.0f, sy = 0.0f;
+        if (!worldToScreen(vp, info.npc[i].x, terrain.heightAt(info.npc[i].x, info.npc[i].z) + 1.6f, info.npc[i].z, winW, winH, sx, sy)) continue;
+        const std::string text = "N" + std::to_string(i + 1);
+        const float w = (float)renderer.listTextWidth(text) + 12.0f * s;
+        const Rect box{ sx - w * 0.5f, sy - textH - 6.0f * s, w, textH + 6.0f * s };
+        renderer.drawRect(box, RGBA{ 0.10f, 0.08f, 0.06f, 0.85f });
+        renderer.drawListText(text, box.x + 6.0f * s, box.y + 3.0f * s, RGBA{ 1.0f, 0.78f, 0.30f, 1.0f });
+    }
+}
+
+// A spawn marker is erased by the Erase tool or a right click within a couple of tiles of it
+bool App::editorEraseSpawnAt(float x, float z) {
+    LevelInfo& info = world.resource<LevelInfo>();
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) {
+        if (!info.npc[i].set || std::fabs(info.npc[i].x - x) > 2.0f || std::fabs(info.npc[i].z - z) > 2.0f) continue;
+        editorRemember();
+        info.npc[i] = LevelInfo::NpcSpawn{};
+        playSfx(Sfx::Take);
+        editorEdited();
+        return true;
+    }
+    return false;
+}
+
 void App::editorEraseAt(float mx, float my) {
+    if (const auto hit = pickGround(cam, terrain, mx, my, winW, winH)) {
+        if (editorEraseSpawnAt(hit->first, hit->second)) return;
+    }
     ObjectId target = NO_OBJECT;
     const std::vector<ObjectId> units = renderer.entitiesAtPixel(world, cam, mx, my, winW, winH);
     const std::vector<ObjectId> items = renderer.groundItemsAtPixel(world, terrain, cam, mx, my, winW, winH);

@@ -91,7 +91,8 @@ MapQuestionLayout layoutMapQuestion(int W, int H, int lineCount);
 WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll);
 
 enum class EditorTab { Entities, Props, Items, Theme, Kill, Clean, Destroy };   // Kill: the Developer panel's own, never the level editor's
-enum class EditorTool { None, Unit, Mob, Prop, Item, Spawn, Erase };
+// Spawn: where your party starts. NpcSpawn: where an NPC Faction's camp goes (the number picked in the Faction row), once a game starts on the level
+enum class EditorTool { None, Unit, Mob, Prop, Item, Spawn, Erase, NpcSpawn };
 inline constexpr int EDITOR_NAME_CHARS = 32;
 
 // The spawn list: the level editor's, and the Build tab's Developer panel in a game, which work the same way (app_spawn.cpp).
@@ -185,7 +186,7 @@ struct LevelEditorUi {
 };
 
 struct EditorLayout {
-    Rect panel, themeTab, themeArea, nameBox, save, load, spawnTool, eraseTool, clean, exit, status;
+    Rect panel, themeTab, themeArea, nameBox, save, load, spawnTool, npcSpawnTool, eraseTool, clean, exit, status;
     SpawnPickerLayout picker;
     Rect uiToggle;
 };

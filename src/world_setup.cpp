@@ -640,10 +640,12 @@ struct LevelBuilder {
         for (auto& [unit, kit] : woodcutters) giveWoodcutting(unit, kit);
     }
 
-    void finishUnits() {
+    // skip: units made before (sorted), left as they are
+    void finishUnits(const std::vector<ObjectId>* skip = nullptr) {
         std::vector<std::string> takenNames;
         for (ObjectId u : w.view<Entity>()) {
-            if (!w.has<Mob>(u)) finishUnit(w, rng, u, takenNames);
+            if (w.has<Mob>(u) || (skip && std::binary_search(skip->begin(), skip->end(), u))) continue;
+            finishUnit(w, rng, u, takenNames);
         }
     }
 
@@ -765,7 +767,7 @@ struct LevelBuilder {
 };
 }
 
-void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario) {
+void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario, bool withFactions) {
     const FactionLandPlan land = planFactionLand(t);
     const FactionLanding mine = land.slots.empty() ? FactionLanding{} : land.slots[(size_t)playerSlot()];
     const bool campForYou = mine.tier == LandTier::Spread || mine.tier == LandTier::Scattered;
@@ -788,13 +790,15 @@ void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario) {
     notes.start = spawn;
     notes.startSet = true;
 
-    for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
-    b.placePlayerCamp(campForYou && playerCamp, Vec2{ mine.x, mine.z }, yours);
-    if (!campForYou) notes.nomadic.push_back(FACTION_PLAYER);
+    if (withFactions) {
+        for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
+        b.placePlayerCamp(campForYou && playerCamp, Vec2{ mine.x, mine.z }, yours);
+        if (!campForYou) notes.nomadic.push_back(FACTION_PLAYER);
+    }
 
     // The camps first, then the factions with no land (they keep clear of every camp)
     std::vector<int> landless;
-    for (int slot = 0; slot < PALETTE_COUNT && !land.slots.empty(); ++slot) {
+    for (int slot = 0; slot < PALETTE_COUNT && !land.slots.empty() && withFactions; ++slot) {
         if (slot == playerSlot()) continue;
         const FactionDef* f = paletteFaction(slot);
         if (!f) continue;
@@ -820,6 +824,39 @@ void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario) {
 
     b.placeCampMobs();
     b.placeWildMobs(land.open);
+    b.giveFactionPatrols();
+}
+
+// The camps of the NPC factions a level gives a spawn to (components.h LevelInfo), each as the scenario starts that faction: the camp with its
+// props, its people round it, its animals. Which colors the 15 are comes from the one that is yours now (factions.h).
+void placeLevelFactions(World& w, Terrain& t, Rng& rng, const Scenario& scenario) {
+    const LevelInfo info = w.resource<LevelInfo>();
+    bool any = false;
+    for (const LevelInfo::NpcSpawn& n : info.npc) any = any || n.set;
+    if (!any) return;
+    applyScenarioRules(w, scenario);
+    const Vec2 start = info.spawnSet ? Vec2{ info.spawnX, info.spawnZ } : findSpawn(t);
+    LevelBuilder b{ w, t, rng, start, t.size() };
+    FactionLandNotes& notes = w.resource<FactionLandNotes>();
+    // What the level already has of camps, to keep these clear of
+    for (const Claim& c : claimsOf(w)) b.flagSpots.push_back(Vec2{ c.x, c.z });
+    std::vector<ObjectId> before = w.view<Entity>();
+    std::sort(before.begin(), before.end());
+    for (int i = 0; i < LEVEL_NPC_FACTIONS; ++i) {
+        if (!info.npc[i].set) continue;
+        const int faction = resolveLevelFaction(LEVEL_NPC_CODE + i + 1);
+        const FactionStart st = scenarioStart(scenario, faction);
+        FactionLanding at;
+        at.tier = LandTier::Spread;
+        at.x = info.npc[i].x;
+        at.z = info.npc[i].z;
+        if (b.placeCampFaction(faction, st, at)) continue;
+        if (!b.settleLandless(faction, st, at)) b.placeNomadFaction(faction, st, at.x, at.z);
+    }
+    (void)notes;
+    b.settleCamps();
+    b.finishUnits(&before);
+    b.placeCampMobs();
     b.giveFactionPatrols();
 }
 

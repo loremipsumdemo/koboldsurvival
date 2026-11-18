@@ -129,6 +129,17 @@ int playerSlot();
 bool setPlayerSlot(int slot);
 // The slot a faction holds on the loop: its own for a colored faction, yours for the Player Faction, -1 for any other
 int factionSlot(int faction);
+// A level (level.h) does not say which colored faction is which: the 15 that run themselves are NPC Faction 1 to 15, counted round the loop from
+// the color you are (1 is the next one after yours), and a level file keeps them as LEVEL_NPC_CODE + their number. What they are is worked out
+// when a game starts, from the color picked then.
+inline constexpr int LEVEL_NPC_FACTIONS = PALETTE_COUNT - 1;
+inline constexpr int LEVEL_NPC_CODE = 200;
+// The faction a level's code stands for with the color that is yours now (any other number is itself)
+int resolveLevelFaction(int code);
+// The code a colored faction has in a level, with the color that is yours now (the level editor's world has slot 0 as yours)
+int levelFactionCode(int faction);
+// 1 to LEVEL_NPC_FACTIONS for an NPC code, else 0
+int levelNpcNumber(int code);
 // The colored faction the table lists for a slot, yours included (its name key and color are what you take), or null
 const FactionDef* paletteFaction(int slot);
 // How two slots stand on the loop, -100 to 100: +100 for neighbors down to -100 on the far side

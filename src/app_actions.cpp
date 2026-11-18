@@ -73,6 +73,8 @@ void App::startMapLevel(const MapChoice& choice) {
             return;
         }
         buildLevelFrom(world, terrain, rng, (unsigned)std::time(nullptr), level);
+        // The NPC Factions the level gave a spawn to are made now that it is known which colors they are: each with its camp, as on a regular map
+        placeLevelFactions(world, terrain, rng, scenario);
     } else {
         buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), scenario, progress);
     }

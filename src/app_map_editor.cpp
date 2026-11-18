@@ -144,6 +144,13 @@ void App::mapEditorApply(float cx, float cz) {
     const int x0 = std::max(0, (int)std::floor(cx - r)), x1 = std::min(size, (int)std::ceil(cx + r));
     const int z0 = std::max(0, (int)std::floor(cz - r)), z1 = std::min(size, (int)std::ceil(cz + r));
     ++u.applyCount;
+    int cx0 = size, cz0 = size, cx1 = -1, cz1 = -1;   // what this stroke really changed
+    const auto changed = [&](int x, int z) {
+        cx0 = std::min(cx0, x);
+        cz0 = std::min(cz0, z);
+        cx1 = std::max(cx1, x);
+        cz1 = std::max(cz1, z);
+    };
     const float strength = (float)u.strength * 0.01f;
     if (u.tool == MapTool::Paint || u.tool == MapTool::Unpaint) {
         // Whole tiles: Paint lays its ground type on those the brush reaches, a softer brush reaching in less at its edge; Unpaint gives the
@@ -159,6 +166,7 @@ void App::mapEditorApply(float cx, float cz) {
                 if (u.seenTiles.insert((long long)tz * 1000003LL + tx).second) u.current.tiles.push_back({ tx, tz, had, was });
                 if (u.tool == MapTool::Paint) u.edits->setTile(tx, tz, (uint8_t)u.biome);
                 else u.edits->clearTile(tx, tz);
+                changed(tx, tz);
             }
         }
     } else {
@@ -193,17 +201,20 @@ void App::mapEditorApply(float cx, float cz) {
                     if (!had || w < 0.2f) continue;
                     if (u.seenCorners.insert((long long)z * 1000003LL + x).second) u.current.corners.push_back({ x, z, true, was });
                     u.edits->clearCorner(x, z);
+                    changed(x, z);
                     continue;
                 }
                 if (std::fabs(to - h) < 1e-4f) continue;
                 if (u.seenCorners.insert((long long)z * 1000003LL + x).second) u.current.corners.push_back({ x, z, had, was });
                 u.edits->setCorner(x, z, to);
+                changed(x, z);
             }
         }
     }
+    if (cx1 < 0) return;
     u.dirty = true;
     u.exitWarned = false;
-    mapEditorReload(x0, z0, x1, z1);
+    mapEditorReload(cx0, cz0, cx1 + 1, cz1 + 1);
 }
 
 void App::mapEditorEndStroke() {

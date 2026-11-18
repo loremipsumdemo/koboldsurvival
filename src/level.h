@@ -45,7 +45,7 @@ struct MapEdits;
 bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress = {},
                      std::shared_ptr<MapEdits>* edits = nullptr);
 struct Scenario;
-void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress = {});
+void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress = {}, bool withFactions = true);
 // The same, with what a level file says in place of the random set-up
 void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, const LevelData& level);
 
