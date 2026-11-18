@@ -28,6 +28,9 @@ inline constexpr float FLOOR_HEIGHT = 2.4f;          // walls' height: the upper
 inline constexpr float FLOOR_THICK = 0.14f;          // an upper floor's slab
 inline constexpr float FLOOR_TOP = FLOOR_HEIGHT + FLOOR_THICK;   // where a unit on the first upper floor stands
 inline constexpr float CLIMB_SECONDS = 1.5f;
+inline constexpr float WALL_CLIMB_SECONDS = 30.0f;   // up the outside of a Perimeter Wall, by a unit of its faction that cannot get to a Gate
+inline constexpr float WALL_CLIMB_SEARCH = 24.0f;    // how far from a unit a wall is looked for to send it up
+inline constexpr float WALL_CLIMB_REACH = 1.6f;      // how near the wall's edge a unit must be to start up it
 inline constexpr double BUILD_SPEED = 4.0;           // every piece builds this many times faster than props.txt's build_seconds
 inline constexpr float BLOCKED_RETRY_SECONDS = 4.0f; // a piece with a unit in the way waits this long before it is tried again
 inline constexpr float BUILD_GIVE_UP_SECONDS = 12.0f;
@@ -105,6 +108,8 @@ struct Climbing {
     // A Slope: no hops, the height going from startHeight to endHeight along the whole walk
     bool smooth = false;
     float endHeight = 0.0f;
+    // The outside of a Perimeter Wall (WALL_CLIMB_SECONDS): `ladder` is the wall, and the unit ends on its walkway
+    bool wall = false;
 };
 
 // A unit's building task under way: fetching logs from a store, bringing them to a blueprint, or building it. Not saved.
@@ -395,6 +400,20 @@ bool climbTop(World& w, ObjectId ladder, Vec2& out);
 bool atClimbSpot(World& w, ObjectId u, ObjectId ladder);
 // off: stairs down, the tile beside the bottom step to get off onto (else the one nearest the unit)
 bool startClimb(World& w, const Terrain& t, ObjectId u, ObjectId ladder, const Vec2* off = nullptr);
+// Up the outside of a Perimeter Wall, for a unit of the wall's own faction that can reach the wall but has no way to any Gate of that
+// faction (a walk there would be planned over the ground or by a Slope to the walkways, and finds none). It takes WALL_CLIMB_SECONDS and
+// ends on the wall's walkway, from where Climb Down brings the unit to the inside (a unit of an NPC faction goes on down by itself).
+bool canScalePerimeter(World& w, const Terrain& t, ObjectId u, ObjectId wall);
+// Whether a unit could walk over the ground from one spot to another, the walls and shut Gates in the way as they are (a way over the walls
+// by a Slope is not counted): the navigation regions say so on a map that has them, a search of the open ground (stuckReachable) on a
+// bigger one
+bool walkOverGround(World& w, const Terrain& t, Vec2 from, Vec2 to);
+// Where a unit stands to climb a wall: the open tile against its outer face that the unit can walk to. False if there is none.
+bool wallFoot(World& w, const Terrain& t, ObjectId u, ObjectId wall, Vec2& out);
+// Starts the climb from beside the wall (WALL_CLIMB_REACH). False if the unit may not climb it from where it stands.
+bool startWallClimb(World& w, const Terrain& t, ObjectId u, ObjectId wall);
+// The nearest wall within WALL_CLIMB_SEARCH that the unit may climb, or NO_OBJECT
+ObjectId scalableWall(World& w, const Terrain& t, ObjectId u);
 bool isUpstairs(World& w, ObjectId u);
 // The unit heads for a spot: on its own floor, or by way of ladders on another
 void moveUpstairs(World& w, Terrain& t, ObjectId u, Vec2 target);

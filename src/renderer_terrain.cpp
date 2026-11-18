@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <future>
 #include <string>
 #include <vector>
 
@@ -388,6 +389,7 @@ void main() {
 )GLSL";
 
 constexpr float kWaterDrop = 0.05f;
+constexpr float kVoidCutY = -5.0f;   // over a void (no water drawn), ground under this height is cut off (kGroundFS's uVoidCut)
 constexpr float kWaterBiasSlope = 0.0f;
 constexpr float kWaterBiasUnits = 4.0f;
 constexpr float kFarPlane = CAMERA_FAR;
@@ -395,6 +397,17 @@ constexpr int MAX_BUILDS_PER_FRAME = 8;
 // The coarse far ground lies under everything past this far from the point the camera turns about, so that wherever a chunk is not
 // ready (not loaded yet, or not built yet) the far ground shows instead of a gap
 constexpr float FAR_HOLE_TILES = 160.0f;
+
+// The far ground is a window of the map that follows the camera (Renderer::updateFarWindow) when its corners can be closer together than one
+// mesh of the whole map has them (Terrain::farFieldRes across it). They are as close as the window's FAR_WINDOW_CELLS can put them while it
+// reaches one and a half view distances either way of the camera: a power of two, 4 tiles at the least. This is that distance, or 0 where one
+// mesh of the whole map is as fine.
+int farWindowSpacing(int mapSize, float viewDistance) {
+    int spacing = 4;
+    while ((float)spacing * (float)FAR_WINDOW_CELLS < 3.0f * viewDistance) spacing *= 2;
+    const float whole = (float)mapSize / (float)(Terrain::farFieldRes(mapSize) - 1);
+    return (float)spacing < whole ? spacing : 0;
+}
 
 bool chunkVisible(const FrustumPlanes& f, const ChunkBounds& b) {
     for (const auto& p : f.p) {
@@ -750,70 +763,27 @@ void Renderer::releaseFar() {
     farVao_ = farVbo_ = farEbo_ = 0;
     farIndexCount_ = 0;
     farFor_ = nullptr;
+    farWindowHeld_ = FarWindow{};
     farPatches_.clear();
 }
 
-// The coarse ground of the whole world as one mesh, set a little below where it really is (what is near is drawn over it by the chunks)
-void Renderer::buildFar(const Terrain::FarField& f, const Terrain& t) {
+float Renderer::farWaterLevel(const Terrain& t) const {
+    const bool hasWater = !hasTheme_ || theme_.waterShown;
+    return hasWater ? -kWaterDrop * t.heightScale() : kVoidCutY + 0.1f;
+}
+
+// A far ground mesh goes to the card
+void Renderer::uploadFarMesh(const FarMesh& mesh, float waterY) {
     releaseFar();
-    const int n = f.res;
-    std::vector<TerrainVertex> verts((size_t)n * n);
-    const float drop = f.spacing * 0.5f + 4.0f;
-    auto h = [&](int i, int j) { return f.heights[(size_t)std::clamp(j, 0, n - 1) * n + std::clamp(i, 0, n - 1)]; };
-    const float hs = t.heightScale();
-    for (int j = 0; j < n; ++j) {
-        for (int i = 0; i < n; ++i) {
-            const float dhdx = (h(i + 1, j) - h(i - 1, j)) / (2.0f * f.spacing) / hs;
-            const float dhdz = (h(i, j + 1) - h(i, j - 1)) / (2.0f * f.spacing) / hs;
-            const float nl = std::sqrt(dhdx * dhdx + 1.0f + dhdz * dhdz);
-            const size_t k = (size_t)j * n + i;
-            verts[k] = { (float)i * f.spacing, h(i, j) - drop, (float)j * f.spacing, -dhdx / nl, 1.0f / nl, -dhdz / nl,
-                         f.rgb[k * 3] / 255.0f, f.rgb[k * 3 + 1] / 255.0f, f.rgb[k * 3 + 2] / 255.0f };
-        }
-    }
-    // The triangles go into the index buffer a patch at a time, so a patch is one run of it and patches next to each other in the
-    // buffer can be drawn together
-    constexpr int FAR_PATCH_CELLS = 32;
-    const int cells = n - 1;
-    std::vector<uint32_t> idx;
-    idx.reserve((size_t)cells * cells * 6);
-    farPatches_.clear();
-    for (int pj = 0; pj < cells; pj += FAR_PATCH_CELLS) {
-        for (int pi = 0; pi < cells; pi += FAR_PATCH_CELLS) {
-            const int j1 = std::min(pj + FAR_PATCH_CELLS, cells), i1 = std::min(pi + FAR_PATCH_CELLS, cells);
-            FarPatch patch;
-            patch.first = (GLsizei)idx.size();
-            for (int j = pj; j < j1; ++j) {
-                for (int i = pi; i < i1; ++i) {
-                    const uint32_t p = (uint32_t)(j * n + i), q = p + 1, r = p + (uint32_t)n, s = r + 1;
-                    idx.insert(idx.end(), { p, r, s, p, s, q });
-                }
-            }
-            patch.count = (GLsizei)idx.size() - patch.first;
-            float lo = verts[(size_t)pj * n + pi].y, hi = lo;
-            for (int j = pj; j <= j1; ++j) {
-                for (int i = pi; i <= i1; ++i) {
-                    const float y = verts[(size_t)j * n + i].y;
-                    lo = std::min(lo, y);
-                    hi = std::max(hi, y);
-                }
-            }
-            patch.x0 = (float)pi * f.spacing;
-            patch.z0 = (float)pj * f.spacing;
-            patch.x1 = (float)i1 * f.spacing;
-            patch.z1 = (float)j1 * f.spacing;
-            patch.minY = lo;
-            patch.maxY = hi;
-            farPatches_.push_back(patch);
-        }
-    }
+    farWaterY_ = waterY;
+    farPatches_ = mesh.patches;
     glGenVertexArrays(1, &farVao_);
     glGenBuffers(1, &farVbo_);
     glGenBuffers(1, &farEbo_);
     glBindVertexArray(farVao_);
     glBindBuffer(GL_ARRAY_BUFFER, farVbo_);
     const GLsizei stride = sizeof(TerrainVertex);
-    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(TerrainVertex), verts.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh.verts.size() * sizeof(TerrainVertex), mesh.verts.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
@@ -821,15 +791,83 @@ void Renderer::buildFar(const Terrain::FarField& f, const Terrain& t) {
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, farEbo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx.size() * sizeof(uint32_t), idx.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.idx.size() * sizeof(uint32_t), mesh.idx.data(), GL_STATIC_DRAW);
     glBindVertexArray(0);
-    farIndexCount_ = (GLsizei)idx.size();
+    farIndexCount_ = (GLsizei)mesh.idx.size();
+}
+
+// The coarse ground of the whole world as one mesh, set a little below where it really is (what is near is drawn over it by the chunks)
+void Renderer::buildFar(const Terrain::FarField& f, const Terrain& t) {
+    const float waterY = farWaterLevel(t);
+    uploadFarMesh(buildFarMesh(f.heights, f.rgb, f.res, f.spacing, 0.0f, 0.0f, t.heightScale(), 0, waterY), waterY);
     farFor_ = &f;
 }
 
+// Stops the window being made, if one is, and waits for it to stop
+void Renderer::cancelFarWindow() {
+    if (farWindowCancel_) *farWindowCancel_ = true;
+    if (farWindowJob_.valid()) farWindowJob_.wait();
+    farWindowJob_ = {};
+    farWindowCancel_.reset();
+}
+
+// A window of the far ground, centred on the camera's focus, is asked of the map's source and made into a mesh on another thread. Its
+// corners are on the map's lattice of every spacing tiles, and it is centred on a patch's width, so a new window's ground is the old one's
+// where they overlap.
+void Renderer::startFarWindow(const Terrain& t, const Camera& cam, int spacing) {
+    const int patch = FAR_PATCH_CELLS * spacing, half = FAR_WINDOW_CELLS / 2 * spacing;
+    FarWindow want;
+    want.spacing = spacing;
+    want.originX = (int)std::lround(cam.focusX / (float)patch) * patch - half;
+    want.originZ = (int)std::lround(cam.focusZ / (float)patch) * patch - half;
+    farWindowCancel_ = std::make_shared<std::atomic<bool>>(false);
+    farWindowJob_ = std::async(std::launch::async, [source = t.source(), want, hs = t.heightScale(), size = t.size(), waterY = farWaterLevel(t),
+                                                    cancel = farWindowCancel_]() -> std::shared_ptr<FarWindowMesh> {
+        std::vector<float> heights;
+        std::vector<uint8_t> rgb;
+        if (!source->farFieldWindow(want.originX, want.originZ, want.spacing, FAR_WINDOW_CELLS + 1, heights, rgb, *cancel)) return nullptr;
+        auto made = std::make_shared<FarWindowMesh>();
+        made->window = want;
+        made->waterY = waterY;
+        made->mesh = buildFarMesh(heights, rgb, FAR_WINDOW_CELLS + 1, (float)want.spacing, (float)want.originX, (float)want.originZ, hs, size, waterY);
+        return made;
+    });
+}
+
+bool Renderer::updateFarWindow(const Terrain& t, const Camera& cam, int spacing) {
+    if (farFor_) releaseFar();   // the whole map's mesh is no use here
+    // A window that is ready goes to the card
+    if (farWindowJob_.valid() && farWindowJob_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        const std::shared_ptr<FarWindowMesh> made = farWindowJob_.get();
+        farWindowJob_ = {};
+        farWindowCancel_.reset();
+        if (made) {
+            uploadFarMesh(made->mesh, made->waterY);
+            farWindowHeld_ = made->window;
+        } else {
+            farWindowFailed_ = true;
+        }
+    }
+    if (!farWindowJob_.valid() && !farWindowFailed_) {
+        // The held window is asked for again when its corners should be another distance apart, when the water it was made for has moved (the
+        // map's theme was changed), or once the focus has drifted half as far as it can before the view distance would reach past the window
+        bool fine = farWindowHeld_.spacing == spacing && farWaterY_ == farWaterLevel(t);
+        if (fine) {
+            const float half = (float)(FAR_WINDOW_CELLS / 2 * spacing);
+            const float drift = std::max(std::fabs(cam.focusX - ((float)farWindowHeld_.originX + half)),
+                                         std::fabs(cam.focusZ - ((float)farWindowHeld_.originZ + half)));
+            fine = drift <= std::max(0.0f, half - (float)viewDistance_) * 0.5f;
+        }
+        if (!fine) startFarWindow(t, cam, spacing);
+    }
+    return farVao_ != 0 && farWindowHeld_.spacing != 0;
+}
+
 void Renderer::releaseTerrain() {
+    cancelFarWindow();
+    farWindowFailed_ = false;
     releaseFar();
-    for (TerrainChunk& c : chunks_) releaseChunk(c);
+    for (auto& entry : chunks_) releaseChunk(entry.second);
     chunks_.clear();
     terrainSize_ = 0;
     chunksPerSide_ = 0;
@@ -864,11 +902,10 @@ void Renderer::uploadTerrain(const Terrain& t) {
                     t.streamed());
     terrainSize_ = t.size();
     chunksPerSide_ = t.chunksPerSide();
-    chunks_.resize((size_t)chunksPerSide_ * chunksPerSide_);
 }
 
 void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step, const int* nbStep) {
-    TerrainChunk& slot = chunks_[(size_t)id];
+    TerrainChunk& slot = chunks_[id];
     if (!slot.vao) {
         glGenVertexArrays(1, &slot.vao);
         glGenBuffers(1, &slot.vbo);
@@ -904,7 +941,7 @@ void Renderer::buildChunk(const Terrain& t, const ChunkData& c, int id, int step
 // ground and the water (frameSky_), where the surfaces' tiles and the clouds fall (surfaceFrame_), and the light on props and units
 // (worldTint_). The props and units are drawn before the ground, so this can't wait for drawTerrain.
 void Renderer::prepareSurfaces(const Terrain& t, const Camera& cam) {
-    if (t.size() != terrainSize_ || chunks_.empty()) uploadTerrain(t);
+    if (t.size() != terrainSize_ || chunksPerSide_ == 0) uploadTerrain(t);
     if (t.surfaceVersion() != surfaceVersion_) uploadSurfaceTiles(t);
 
     {
@@ -966,7 +1003,7 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     glUniform1f(groundShader_.rockSlope, sky.rockSlope);
     glUniform1f(groundShader_.seaY, seaY);
     glUniform1f(groundShader_.depthScale, hasWater ? 1.0f / hs : 0.0f);
-    glUniform1f(groundShader_.voidCut, hasWater ? -1000000.0f : -5.0f);
+    glUniform1f(groundShader_.voidCut, hasWater ? -1000000.0f : kVoidCutY);
     float groundTint[3] = { 1.0f, 1.0f, 1.0f };
     if (hasTheme_) themeRgb(theme_.groundTint, groundTint);
     glUniform3fv(groundShader_.groundTint, 1, groundTint);
@@ -996,13 +1033,20 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     };
     static std::vector<BuildWant> toBuild;   // the chunks in range, to be made as they are wanted
     toBuild.clear();
-    for (int id = 0; id < (int)chunks_.size(); ++id) {
-        TerrainChunk& slot = chunks_[(size_t)id];
-        const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
-        if (!c) {
-            if (slot.vao) releaseChunk(slot);
+    // A chunk that is let go gives its buffers back. The slots are only of chunks that have been held, so this looks at about as many as are.
+    for (auto it = chunks_.begin(); it != chunks_.end();) {
+        if (t.chunkAt(it->first % chunksPerSide_, it->first / chunksPerSide_)) {
+            ++it;
             continue;
         }
+        releaseChunk(it->second);
+        it = chunks_.erase(it);
+    }
+    // Only the chunks that are held are looked at, so a frame costs what is held, whatever the map's size
+    for (const int id : t.drawnChunks()) {
+        const ChunkData* c = t.chunkAt(id % chunksPerSide_, id / chunksPerSide_);
+        if (!c) continue;
+        TerrainChunk& slot = chunks_[id];
         if (slot.version != c->version) {
             slot.version = c->version;
             slot.bounds = chunkBounds(t, *c);
@@ -1047,63 +1091,81 @@ void Renderer::drawTerrain(const Terrain& t, const Camera& cam) {
     std::sort(toBuild.begin(), toBuild.end(), [](const BuildWant& a, const BuildWant& b) { return a.focusDist2 < b.focusDist2; });
     for (const BuildWant& want : toBuild) {
         if (builds >= MAX_BUILDS_PER_FRAME) break;
-        TerrainChunk& slot = chunks_[(size_t)want.id];
+        TerrainChunk& slot = chunks_[want.id];
         const ChunkData* c = t.chunkAt(want.id % chunksPerSide_, want.id / chunksPerSide_);
         if (!c) continue;
         const int cx = want.id % chunksPerSide_, cz = want.id / chunksPerSide_;
+        // The level a neighbour is at (0: it has no mesh, or is not held)
+        const auto stepOf = [&](int id) {
+            const auto found = chunks_.find(id);
+            return found == chunks_.end() ? 0 : found->second.step;
+        };
         int nb[4] = { 0, 0, 0, 0 };
-        if (cx > 0) nb[0] = chunks_[(size_t)(want.id - 1)].step;
-        if (cx < chunksPerSide_ - 1) nb[1] = chunks_[(size_t)(want.id + 1)].step;
-        if (cz > 0) nb[2] = chunks_[(size_t)(want.id - chunksPerSide_)].step;
-        if (cz < chunksPerSide_ - 1) nb[3] = chunks_[(size_t)(want.id + chunksPerSide_)].step;
+        if (cx > 0) nb[0] = stepOf(want.id - 1);
+        if (cx < chunksPerSide_ - 1) nb[1] = stepOf(want.id + 1);
+        if (cz > 0) nb[2] = stepOf(want.id - chunksPerSide_);
+        if (cz < chunksPerSide_ - 1) nb[3] = stepOf(want.id + chunksPerSide_);
         if (!slot.stale && slot.step == want.step && std::memcmp(nb, slot.nbStep, sizeof nb) == 0) continue;
         buildChunk(t, *c, want.id, want.step, nb);
         ++builds;
     }
     // What is drawn is worked out after the chunks are made, so one made this frame is drawn this frame
     for (const BuildWant& want : toBuild) {
-        if (want.visible && chunks_[(size_t)want.id].step != 0) drawOrder.push_back({ want.dist, want.id });
+        if (want.visible && chunks_.at(want.id).step != 0) drawOrder.push_back({ want.dist, want.id });
     }
     // Over a void the ground blends, so it keeps the far-to-near order that needs; otherwise the nearest goes first
     if (blendEdge) std::sort(drawOrder.begin(), drawOrder.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
     else std::sort(drawOrder.begin(), drawOrder.end());
     glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
     for (const auto& [distance, id] : drawOrder) {
-        const TerrainChunk& slot = chunks_[(size_t)id];
+        const TerrainChunk& slot = chunks_.at(id);
         glBindVertexArray(slot.vao);
         glDrawElements(GL_TRIANGLES, slot.indexCount, GL_UNSIGNED_INT, nullptr);
     }
-    // Past the chunks that are held, the whole world's coarse ground, from the edge of what is held out to the view distance
+    // Past the chunks that are held, the coarse ground, from the edge of what is held out to the view distance: one mesh of the whole map, or a
+    // window of it that follows the camera, whichever is finer (farWindowSpacing)
     if (t.streamed() && viewDistance_ > std::min(heldReach_, FAR_HOLE_TILES)) {
-        if (const Terrain::FarField* far = t.farField(); far && far->res > 1) {
-            if (farFor_ != far) buildFar(*far, t);
-            if (farVao_) {
-                const float inner = std::min(heldReach_, FAR_HOLE_TILES), outer = (float)viewDistance_;
-                glUniform4f(groundShader_.hole, cam.focusX, cam.focusZ, inner, outer);
-                glBindVertexArray(farVao_);
-                // Only the patches the shader would keep any of (in the ring from inner to outer round the focus) and that are in
-                // view. Patches that follow one another in the index buffer go in one draw.
-                GLsizei runFirst = 0, runCount = 0;
-                auto flushRun = [&]() {
-                    if (runCount > 0) glDrawElements(GL_TRIANGLES, runCount, GL_UNSIGNED_INT, (void*)((size_t)runFirst * sizeof(uint32_t)));
-                    runCount = 0;
-                };
-                for (const FarPatch& p : farPatches_) {
-                    const float nearX = std::clamp(cam.focusX, p.x0, p.x1) - cam.focusX, nearZ = std::clamp(cam.focusZ, p.z0, p.z1) - cam.focusZ;
-                    const float farX = std::max(std::fabs(p.x0 - cam.focusX), std::fabs(p.x1 - cam.focusX));
-                    const float farZ = std::max(std::fabs(p.z0 - cam.focusZ), std::fabs(p.z1 - cam.focusZ));
-                    const bool wanted = nearX * nearX + nearZ * nearZ <= outer * outer && farX * farX + farZ * farZ >= inner * inner &&
-                                        boxVisible(planes, p.x0, p.minY, p.z0, p.x1, p.maxY, p.z1);
-                    if (!wanted) {
-                        flushRun();
-                        continue;
-                    }
-                    if (runCount == 0) runFirst = p.first;
-                    runCount += p.count;
-                }
-                flushRun();
-                glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
+        bool haveFar = false;
+        const int windowSpacing = farWindowSpacing(t.size(), (float)viewDistance_);
+        if (windowSpacing > 0) {
+            haveFar = updateFarWindow(t, cam, windowSpacing);
+        } else {
+            // The view distance is down to where the whole map's mesh is as fine as a window: one held or being made is let go
+            if (farWindowHeld_.spacing != 0 || farWindowJob_.valid()) {
+                cancelFarWindow();
+                releaseFar();
             }
+            if (const Terrain::FarField* far = t.farField(); far && far->res > 1) {
+                if (farFor_ != far || farWaterY_ != farWaterLevel(t)) buildFar(*far, t);
+                haveFar = farVao_ != 0;
+            }
+        }
+        if (haveFar) {
+            const float inner = std::min(heldReach_, FAR_HOLE_TILES), outer = (float)viewDistance_;
+            glUniform4f(groundShader_.hole, cam.focusX, cam.focusZ, inner, outer);
+            glBindVertexArray(farVao_);
+            // Only the patches the shader would keep any of (in the ring from inner to outer round the focus) and that are in
+            // view. Patches that follow one another in the index buffer go in one draw.
+            GLsizei runFirst = 0, runCount = 0;
+            auto flushRun = [&]() {
+                if (runCount > 0) glDrawElements(GL_TRIANGLES, runCount, GL_UNSIGNED_INT, (void*)((size_t)runFirst * sizeof(uint32_t)));
+                runCount = 0;
+            };
+            for (const FarPatch& p : farPatches_) {
+                const float nearX = std::clamp(cam.focusX, p.x0, p.x1) - cam.focusX, nearZ = std::clamp(cam.focusZ, p.z0, p.z1) - cam.focusZ;
+                const float farX = std::max(std::fabs(p.x0 - cam.focusX), std::fabs(p.x1 - cam.focusX));
+                const float farZ = std::max(std::fabs(p.z0 - cam.focusZ), std::fabs(p.z1 - cam.focusZ));
+                const bool wanted = nearX * nearX + nearZ * nearZ <= outer * outer && farX * farX + farZ * farZ >= inner * inner &&
+                                    boxVisible(planes, p.x0, p.minY, p.z0, p.x1, p.maxY, p.z1);
+                if (!wanted) {
+                    flushRun();
+                    continue;
+                }
+                if (runCount == 0) runFirst = p.first;
+                runCount += p.count;
+            }
+            flushRun();
+            glUniform4f(groundShader_.hole, 0.0f, 0.0f, 0.0f, 0.0f);
         }
     }
     glBindVertexArray(0);

@@ -27,6 +27,15 @@ struct MapChoice {
 constexpr const char* MAP_SOURCE_FILE = "file";
 
 std::vector<MapChoice> listMaps();
+// A map's nickname: a name of the player's own, shown before the map's own ("nickname (map)") to tell maps apart. It is only a label: the
+// map and its file keep their names, and a map made again keeps its nickname. Kept in the MAP folder, in nicknames.txt, a line a map (its
+// file name, a tab, the nickname). MapChoice::name is how the map is shown, nickname and all; the stem is its name.
+inline constexpr size_t MAP_NICKNAME_CHARS = 24;
+std::string mapNickname(const std::string& stem);
+// An empty nickname takes it off. False if it could not be written down.
+bool setMapNickname(const std::string& stem, const std::string& nickname);
+// How a map is shown in a list: "nickname (stem)", or the stem alone for a map with no nickname
+std::string mapDisplayName(const std::string& stem);
 using LoadProgress = std::function<void(float, const std::string&)>;
 
 // Reads a map into the terrain. On failure the terrain and the running game are left as they were.

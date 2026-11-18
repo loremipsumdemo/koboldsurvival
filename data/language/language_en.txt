@@ -241,6 +241,9 @@ UILABEL_GEN_TEMPERATURE	Temperature
 UILABEL_GEN_FORESTS	Forests
 UILABEL_GEN_SEED	Seed
 UILABEL_GEN_SIZE	Size
+MISC_GEN_BIG_SIZE_Q	Maps bigger than {0} x {0} might not work properly.
+UILABEL_GEN_BIG_SIZE_RISK	They can be very slow to make and load, use a lot of memory, or not open at all.
+UILABEL_GEN_BIG_SIZE_HOLD	Hold Continue for 3 seconds to unlock the bigger sizes.
 UILABEL_GEN_RANDOM	Random
 UILABEL_GEN_PREVIEW	Preview
 UILABEL_GEN_DONE	Generated {0}: {1} bytes
@@ -326,7 +329,11 @@ UILABEL_THEME_GROUND_TINT	Ground tint
 UILABEL_THEME_GROUND_TINT_AMOUNT	Tint amount
 UILABEL_THEME_ROCK_COLOR	Steep rock color
 MISC_GEN_NEEDS_NAME	Needs a name made of letters, digits, spaces, - or _.
-MISC_GEN_HAS_SAVES	"{0}" has game saves played on it, so it can't be generated again. Pick another name.
+MISC_GEN_HAS_SAVES	"{0}" has game saves played on it, so only its theme can be changed. Pick another name for a new world.
+MISC_GEN_OVERWRITE_Q	Overwrite the map "{0}"?
+MISC_GEN_OVERWRITE_THEME_Q	Overwrite the theme of the map "{0}"?
+UILABEL_GEN_OVERWRITE_SAVES	Game saves played on it: {0}. Their theme will be overwritten too.
+UILABEL_GEN_OVERWRITE	Overwrite
 UILABEL_EDITOR_TITLE	Level Editor: {0}
 UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
 UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
@@ -358,6 +365,12 @@ UILABEL_MAP_PICK_RANDOM_NOTE	A random set-up places camps, units and props when 
 UILABEL_MAP_PICK_LEVEL_NOTE	Yellow: where you start. Green: your units. Red: other units. Grey: mobs. Purple: props.
 UILABEL_MAP_PICK_CAMPS_NOTE	Each faction's camp shows in its own colour, with the room it has round it. Units, props and mobs are placed when the game starts.
 UILABEL_MAP_PICK_LEVEL_BAD	This level file could not be read.
+UILABEL_MAP_NICKNAMED	{0} ({1})
+UILABEL_MAP_NICKNAME_TIP	Set a nickname for this map
+MISC_MAP_NICKNAME_Q	Nickname for the map "{0}"
+UILABEL_MAP_NICKNAME_HINT1	Shown before the map's name, as "nickname (map name)".
+UILABEL_MAP_NICKNAME_HINT2	The map and its file keep their names. Leave it empty to remove the nickname.
+MISC_MAP_NICKNAME_FAILED	Could not save the nickname
 UILABEL_GEN_DEFAULT_NAME	world
 
 # ----------------------------------------------------------------------
@@ -1028,6 +1041,7 @@ UILABEL_CLIMB_DOWN	Climb Down
 MISC_BUILT	A {0} is finished
 MISC_DOOR_SMASHED	{0} smashes the {1}
 MISC_CANT_CLIMB	{0} can't climb here: it needs a finished Floor beside the Ladder
+MISC_CANT_CLIMB_WALL	{0} can't climb that wall from here
 MISC_FOUNDATION_TOO_SMALL	A new building's foundation must be at least 3 tiles on each side; after that, extend it any way you like
 MISC_FOUNDATION_TOO_BIG	A foundation can be at most 64 tiles on each side
 MISC_FOUNDATION_TOO_STEEP	The ground there is too steep to level for a foundation

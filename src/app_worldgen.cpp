@@ -43,7 +43,7 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     L.back = Rect{ x, L.panel.y + L.panel.h - btnH - 14.0f * s, w, btnH };
     L.themeArea = Rect{ x, L.panel.y + 50.0f * s, w, L.back.y - gap - (L.panel.y + 50.0f * s) };
 
-    const float rightW = 250.0f * s;
+    const float rightW = 280.0f * s;   // a map's row has a pencil and an X beside it
     const float areaX = L.panel.x + L.panel.w + m, areaW = W - areaX - m - rightW - m;
     const float side = std::min(areaW, H - 2.0f * m - btnH * 1.0f - 40.0f * s);
     L.preview = Rect{ areaX + (areaW - side) * 0.5f, m + 30.0f * s, side, side };
@@ -61,22 +61,23 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     L.mapBar = bar;
     for (int i = first; i < mapCount && i < first + shown; ++i) {
         const float rowY = L.mapsBox.y + 44.0f * s + (i - first) * (listRow + 4.0f * s);
-        const float rowW = rightW - 20.0f * s - listRow - 4.0f * s - (bar.on() ? 12.0f * s : 0.0f);
+        const float rowW = rightW - 20.0f * s - 2.0f * (listRow + 4.0f * s) - (bar.on() ? 12.0f * s : 0.0f);
         L.mapRows.push_back(Rect{ L.mapsBox.x + 10.0f * s, rowY, rowW, listRow });
-        L.mapDelete.push_back(Rect{ L.mapsBox.x + 10.0f * s + rowW + 4.0f * s, rowY, listRow, listRow });
+        L.mapNick.push_back(Rect{ L.mapsBox.x + 10.0f * s + rowW + 4.0f * s, rowY, listRow, listRow });
+        L.mapDelete.push_back(Rect{ L.mapsBox.x + 10.0f * s + rowW + 4.0f * s + listRow + 4.0f * s, rowY, listRow, listRow });
     }
     return L;
 }
 
 // The lines stack up from the buttons, so the box grows upwards with them
-MapDeleteLayout layoutMapDelete(int W, int H, int lineCount) {
+MapQuestionLayout layoutMapQuestion(int W, int H, int lineCount) {
     const float s = uiScaleFor(H);
     const DialogGeometry d = questionGeometry(W, H);
     const float lineH = 44.0f * s;
     const float bottom = d.yes.y - 10.0f * s, top = bottom - lineCount * lineH;
-    MapDeleteLayout L;
+    MapQuestionLayout L;
     L.box = Rect{ d.box.x, top - 22.0f * s, d.box.w, d.box.y + d.box.h - (top - 22.0f * s) };
-    L.hold = d.yes;
+    L.confirm = d.yes;
     L.cancel = d.no;
     for (int i = 0; i < lineCount; ++i) L.lines.push_back(Rect{ d.box.x + 24.0f * s, top + i * lineH, d.box.w - 48.0f * s, lineH });
     return L;
@@ -420,18 +421,58 @@ std::string lowered(std::string s) {
     }
     return s;
 }
+
+// The size a step up (by > 0) or down from this one: the next of WORLD_GEN_SIZES above or below it, or the size itself if there is none. A
+// size that is not one of them (a hand-made map file) goes to the nearer one on that side.
+int steppedSize(int size, int by) {
+    int next = size;
+    if (by > 0) {
+        for (int i = (int)std::size(WORLD_GEN_SIZES) - 1; i >= 0; --i) {
+            if (WORLD_GEN_SIZES[i] > size) next = WORLD_GEN_SIZES[i];
+        }
+    } else {
+        for (const int candidate : WORLD_GEN_SIZES) {
+            if (candidate < size) next = candidate;
+        }
+    }
+    return next;
 }
 
-// "world" and the seed, until a name is typed or a map picked
+// The end of a map's name that says how many times 512 tiles across it is: "_1x" for 512, "_2x" for 1024, "_4x" for 2048, and so on
+std::string sizeSuffix(int size) {
+    return "_" + std::to_string(std::max(1, (size + 256) / 512)) + "x";
+}
+
+// The name with its size on the end, in place of any size it already ends with (an underscore, a number and an x), so that maps of one seed
+// and different sizes have different names. A name too long to take it loses the end of its own.
+std::string nameWithSize(std::string name, int size) {
+    const size_t last = name.size();
+    if (last > 0 && name[last - 1] == 'x') {
+        size_t digits = last - 1;
+        while (digits > 0 && name[digits - 1] >= '0' && name[digits - 1] <= '9') --digits;
+        if (digits < last - 1 && digits > 0 && name[digits - 1] == '_') name.erase(digits - 1);
+    }
+    const std::string suffix = sizeSuffix(size);
+    while (!name.empty() && utf8Length(name) + suffix.size() > (size_t)WORLD_GEN_NAME_CHARS) popUtf8Char(name);
+    return name + suffix;
+}
+
+// The Size was changed: the name's end says so (a name that is empty is left for what is typed)
+void putSizeOnName(WorldGenUi& ui) {
+    if (!ui.name.empty()) ui.name = nameWithSize(ui.name, ui.settings.size);
+}
+}
+
+// "world", the seed and the size, until a name is typed or a map picked
 void App::defaultWorldGenName() {
     if (!worldGenUi.nameEdited || worldGenUi.name.empty()) {
-        worldGenUi.name = lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(worldGenUi.settings.seed);
+        worldGenUi.name = nameWithSize(lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(worldGenUi.settings.seed), worldGenUi.settings.size);
         worldGenUi.nameEdited = false;
     }
 }
 
-// True if a game save is played on the map of this name. Such a map isn't written over, so the save's ground stays
-// as it was.
+// True if a game save is played on the map of this name. The ground of such a map isn't written over, so the save's ground
+// stays as it was. Its theme can be: a save takes the theme from the map file each time it loads.
 bool App::worldHasSaves(const std::string& name) const {
     return worldSaveCount(name) > 0;
 }
@@ -445,7 +486,7 @@ int App::worldSaveCount(const std::string& name) const {
 std::vector<std::pair<std::string, RGBA>> App::mapDeleteLines() {
     const std::string& name = worldGenUi.deleteMap;
     std::vector<std::pair<std::string, RGBA>> lines;
-    lines.push_back({ langf("MISC_DELETE_MAP_Q", { name }), theme::TEXT });
+    lines.push_back({ langf("MISC_DELETE_MAP_Q", { mapDisplayName(name) }), theme::TEXT });
     const int saves = worldSaveCount(name);
     if (saves > 0) lines.push_back({ langf("UILABEL_DELETE_MAP_SAVES", { std::to_string(saves) }), RGBA{ 1.0f, 0.45f, 0.38f, 1.0f } });
     const int levels = worldGenUi.deleteLevels;
@@ -458,6 +499,137 @@ void App::cancelMapDelete() {
     worldGenUi.deleteMap.clear();
     deleteHolding = false;
     playSfx(Sfx::UiBack);
+}
+
+// The lines of the question asked before a map is written over, with their colours
+std::vector<std::pair<std::string, RGBA>> App::mapOverwriteLines() {
+    const std::string& name = worldGenUi.overwriteMap;
+    std::vector<std::pair<std::string, RGBA>> lines;
+    lines.push_back({ langf(worldGenUi.overwriteThemeOnly ? "MISC_GEN_OVERWRITE_THEME_Q" : "MISC_GEN_OVERWRITE_Q", { mapDisplayName(name) }), theme::TEXT });
+    const int saves = worldSaveCount(name);
+    if (saves > 0) lines.push_back({ langf("UILABEL_GEN_OVERWRITE_SAVES", { std::to_string(saves) }), RGBA{ 1.0f, 0.45f, 0.38f, 1.0f } });
+    return lines;
+}
+
+void App::cancelMapOverwrite() {
+    worldGenUi.overwriteMap.clear();
+    playSfx(Sfx::UiBack);
+}
+
+// The lines of the warning asked before the Size goes over what the game is made for, with their colours. Its button is held down.
+std::vector<std::pair<std::string, RGBA>> App::bigSizeLines() {
+    std::vector<std::pair<std::string, RGBA>> lines;
+    lines.push_back({ langf("MISC_GEN_BIG_SIZE_Q", { std::to_string(WORLD_GEN_SAFE_SIZE) }), theme::TEXT });
+    lines.push_back({ lang("UILABEL_GEN_BIG_SIZE_RISK"), RGBA{ 1.0f, 0.45f, 0.38f, 1.0f } });
+    lines.push_back({ lang("UILABEL_GEN_BIG_SIZE_HOLD"), theme::TEXT });
+    return lines;
+}
+
+void App::cancelBigSize() {
+    worldGenUi.sizeAsk = false;
+    deleteHolding = false;
+    playSfx(Sfx::UiBack);
+}
+
+// The button was held down: the bigger sizes are open from now on, and the Size goes up the step it was asked for
+void App::confirmBigSize() {
+    WorldGenUi& ui = worldGenUi;
+    ui.sizeAsk = false;
+    deleteHolding = false;
+    ui.sizesUnlocked = true;
+    ui.settings.size = steppedSize(ui.settings.size, 1);
+    putSizeOnName(ui);
+    worldGenChanged();
+    playSfx(Sfx::UiClick);
+}
+
+// ---- A map's nickname
+
+void App::openNickname(const std::string& stem) {
+    nicknameUi.open = true;
+    nicknameUi.stem = stem;
+    nicknameUi.text = mapNickname(stem);
+    SDL_StartTextInput(window);
+    playSfx(Sfx::UiClick);
+}
+
+// keep: write what is typed down as the map's nickname (nothing typed takes it off)
+void App::closeNickname(bool keep) {
+    if (!nicknameUi.open) return;
+    nicknameUi.open = false;
+    SDL_StopTextInput(window);
+    if (!keep) {
+        playSfx(Sfx::UiBack);
+        return;
+    }
+    if (!setMapNickname(nicknameUi.stem, nicknameUi.text)) {
+        refuse(lang("MISC_MAP_NICKNAME_FAILED"));
+        return;
+    }
+    // New Game's list and its pick were made before, with the names as they were
+    for (MapChoice& m : mapPick.maps) {
+        if (m.source == MAP_SOURCE_FILE && m.stem == nicknameUi.stem) m.name = mapDisplayName(m.stem);
+    }
+    if (pendingMap.source == MAP_SOURCE_FILE && pendingMap.stem == nicknameUi.stem) pendingMap.name = mapDisplayName(pendingMap.stem);
+    playSfx(Sfx::UiSaved);
+}
+
+// The question takes every click while it is open: Save and Cancel answer it, and so does a click outside it (as Cancel)
+bool App::nicknameClick(float x, float y) {
+    if (!nicknameUi.open) return false;
+    const MapQuestionLayout D = layoutMapQuestion(winW, winH, 4);
+    if (D.confirm.contains(x, y)) closeNickname(true);
+    else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) closeNickname(false);
+    return true;
+}
+
+void App::nicknameKey() {
+    const SDL_Keycode k = e.key.key;
+    if (k == SDLK_BACKSPACE) popUtf8Char(nicknameUi.text);
+    else if (k == SDLK_RETURN || k == SDLK_KP_ENTER) closeNickname(true);
+    else if (k == SDLK_ESCAPE) closeNickname(false);
+}
+
+void App::drawNicknameDialog() {
+    if (!nicknameUi.open) return;
+    const float s = uiScaleFor(winH);
+    dimScreen(0.45f);
+    const MapQuestionLayout D = layoutMapQuestion(winW, winH, 4);
+    renderer.drawThemedPanel(D.box);
+    renderer.drawUiTextInBox(langf("MISC_MAP_NICKNAME_Q", { nicknameUi.stem }), D.lines[0], theme::TEXT);
+    // What is typed, and where the next letter goes
+    const Rect field{ D.lines[1].x, D.lines[1].y + 4.0f * s, D.lines[1].w, D.lines[1].h - 8.0f * s };
+    const float textH = renderer.listTextHeight("Ag");
+    renderer.drawField(field, true);
+    renderer.drawListText(nicknameUi.text + "|", field.x + 8.0f * s, field.y + (field.h - textH) * 0.5f, RGBA{ 1.0f, 1.0f, 1.0f, 1.0f });
+    renderer.drawUiTextInBox(lang("UILABEL_MAP_NICKNAME_HINT1"), D.lines[2], theme::TEXT_DIM);
+    renderer.drawUiTextInBox(lang("UILABEL_MAP_NICKNAME_HINT2"), D.lines[3], theme::TEXT_DIM);
+    drawScreenButtons({ Button{ lang("UILABEL_SAVE"), D.confirm, Action::ConfirmName },
+                        Button{ lang("UILABEL_CANCEL"), D.cancel, Action::CancelName } });
+}
+
+// A pencil in square pixels, the tip down at the left and the eraser up at the right, in the middle of a button
+void App::drawPencil(const Rect& r) {
+    const float cell = std::max(1.0f, std::round(r.h * 0.6f / 10.0f));
+    const float ox = std::floor(r.x + (r.w - cell * 10.0f) * 0.5f), oy = std::floor(r.y + (r.h - cell * 10.0f) * 0.5f);
+    const RGBA eraser{ 0.98f, 0.70f, 0.72f, 1.0f }, metal{ 0.82f, 0.82f, 0.86f, 1.0f }, light{ 1.0f, 0.92f, 0.55f, 1.0f };
+    const RGBA body{ 1.0f, 0.80f, 0.25f, 1.0f }, shade{ 0.85f, 0.58f, 0.12f, 1.0f };
+    const RGBA wood{ 0.93f, 0.78f, 0.58f, 1.0f }, lead{ 0.25f, 0.22f, 0.22f, 1.0f };
+    for (int y = 0; y < 10; ++y) {
+        for (int x = 0; x < 10; ++x) {
+            // Three cells wide along the diagonal: the upper edge (-1), the middle, and the lower edge (1)
+            const int band = x + y - 9;
+            if (band < -1 || band > 1) continue;
+            // From the tip (-9) to the eraser (9)
+            const int along = x - y;
+            RGBA c = band < 0 ? light : band > 0 ? shade : body;
+            if (along <= -8) c = lead;
+            else if (along <= -5) c = wood;
+            else if (along >= 7) c = eraser;
+            else if (along >= 5) c = metal;
+            renderer.drawRect(Rect{ ox + (float)x * cell, oy + (float)y * cell, cell, cell }, c);
+        }
+    }
 }
 
 // Deletes the map the question was asked about, with the levels made on it and their pictures
@@ -473,6 +645,7 @@ void App::deleteWorldMap() {
         std::filesystem::remove(std::filesystem::u8path(savePreviewPath(levelFilePath(level))), levelEc);
     }
     std::filesystem::remove(std::filesystem::u8path(mapFilePath(name)), ec);
+    if (!ec && !mapNickname(name).empty()) setMapNickname(name, "");   // a map made later under this name starts with none
     if (ui.generated && ui.generatedName == name) ui.generated = false;
     ui.maps = listMapFiles();
     ui.mapScroll = std::min(ui.mapScroll, std::max(0, (int)ui.maps.size() - 1));
@@ -493,7 +666,7 @@ void App::makeDefaultWorld() {
     WorldGenSettings settings;
     settings.seed = (uint32_t)SDL_GetTicksNS() | 1u;
     settings.theme = themePresets()[mapStyleInfo(settings.style).themePreset].theme;
-    const std::string name = safeFileName(lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(settings.seed));
+    const std::string name = safeFileName(nameWithSize(lang("UILABEL_GEN_DEFAULT_NAME") + std::to_string(settings.seed), settings.size));
     std::string err;
     if (!writeMapFile(mapFilePath(name), settings, err)) {
         refuse(err);
@@ -542,6 +715,10 @@ void App::drawWorldGenScreen() {
     WorldGenUi& ui = worldGenUi;
     const WorldGenLayout L = layoutWorldGen(winW, winH, (int)ui.maps.size(), ui.mapScroll);
     const float s = uiScaleFor(winH);
+    const bool deleting = !ui.deleteMap.empty();
+    const bool holding = deleting || ui.sizeAsk;   // the questions answered by holding a button down for 3 seconds
+    const bool questioning = holding || !ui.overwriteMap.empty();
+    const bool asking = questioning || nicknameUi.open;   // with a question over the screen, nothing under it lights up or gives a tip
     // At most ten times a second, so dragging a bar stays smooth
     if (ui.previewDirty && SDL_GetTicks() - ui.previewAt >= 100) {
         renderer.setWorldPreview(WORLD_GEN_PREVIEW_PX, WorldGenerator(ui.settings).preview(WORLD_GEN_PREVIEW_PX));
@@ -572,7 +749,12 @@ void App::drawWorldGenScreen() {
     renderer.drawButton(L.seedRandom, lang("UILABEL_GEN_RANDOM"), true);
     label(lang("UILABEL_GEN_SIZE"), L.sizeBox);
     renderer.drawButton(L.sizeDown, "-", true);
-    field(L.sizeBox, std::to_string(ui.settings.size) + " x " + std::to_string(ui.settings.size), false);
+    // A size over what the game is made for shows in a warning colour, and says why when pointed at
+    const bool bigSize = ui.settings.size > WORLD_GEN_SAFE_SIZE;
+    renderer.drawField(L.sizeBox, false);
+    renderer.drawListText(std::to_string(ui.settings.size) + " x " + std::to_string(ui.settings.size), L.sizeBox.x + 8.0f * s,
+                          L.sizeBox.y + (L.sizeBox.h - textH) * 0.5f, bigSize ? RGBA{ 1.0f, 0.62f, 0.35f, 1.0f } : white);
+    if (bigSize && !asking) renderer.noteTip(langf("MISC_GEN_BIG_SIZE_Q", { std::to_string(WORLD_GEN_SAFE_SIZE) }), L.sizeBox);
     renderer.drawButton(L.sizeUp, "+", true);
     const MapStyleInfo& style = mapStyleInfo(ui.settings.style);
     label(lang("UILABEL_GEN_STYLE"), L.styleBox);
@@ -602,16 +784,16 @@ void App::drawWorldGenScreen() {
     renderer.drawThemedPanel(L.mapsBox);
     renderer.drawListText(lang("UILABEL_GEN_MAPS"), L.mapsBox.x + 10.0f * s, L.mapsBox.y + 12.0f * s, gray);
     const int first = std::clamp(ui.mapScroll, 0, std::max(0, (int)ui.maps.size() - (int)L.mapRows.size()));
-    const bool asking = !ui.deleteMap.empty();
     if (L.mapBar.on()) renderer.drawScrollBar(L.mapBar.track, L.mapBar.thumb, barDrag.kind == BarDrag::Maps || renderer.mouseOver(L.mapBar.track));
     const float hoverX = asking ? -1.0f : mouseX, hoverY = asking ? -1.0f : mouseY;
     for (size_t i = 0; i < L.mapRows.size(); ++i) {
         const Rect& row = L.mapRows[i];
-        const std::string& name = ui.maps[(size_t)first + i];
+        const std::string& stem = ui.maps[(size_t)first + i];
+        const std::string name = mapDisplayName(stem);   // with its nickname before it, if it has one
         renderer.drawListButton(row, "", row.contains(hoverX, hoverY));
         // A floppy disk and the number of game saves played on the map, in a slot every row keeps so the names line up
         const Rect slot{ row.x + 8.0f * s, row.y, 34.0f * s, row.h };
-        const int saves = worldSaveCount(name);
+        const int saves = worldSaveCount(stem);
         if (saves > 0) {
             const float d = row.h * 0.56f, dx = slot.x, dy = row.y + (row.h - d) * 0.5f;
             const RGBA body{ 0.62f, 0.46f, 0.20f, 1.0f }, metal{ 0.86f, 0.84f, 0.80f, 1.0f }, paper{ 0.96f, 0.92f, 0.82f, 1.0f };
@@ -628,19 +810,29 @@ void App::drawWorldGenScreen() {
         if (!asking && shown != name) renderer.noteTip(name, nameArea);
         renderer.drawListText(shown,
                               nameX, row.y + (row.h - textH) * 0.5f, white);
+        // The pencil that sets the map's nickname, and the X that deletes it
+        renderer.drawListButton(L.mapNick[i], "", L.mapNick[i].contains(hoverX, hoverY));
+        drawPencil(L.mapNick[i]);
+        if (!asking) renderer.noteTip(lang("UILABEL_MAP_NICKNAME_TIP"), L.mapNick[i]);
         renderer.drawListButton(L.mapDelete[i], "X", L.mapDelete[i].contains(hoverX, hoverY));
     }
 
-    if (asking) {
+    if (questioning) {
         dimScreen(0.45f);
-        const std::vector<std::pair<std::string, RGBA>> lines = mapDeleteLines();
-        const MapDeleteLayout D = layoutMapDelete(winW, winH, (int)lines.size());
+        const std::vector<std::pair<std::string, RGBA>> lines = deleting ? mapDeleteLines() : ui.sizeAsk ? bigSizeLines() : mapOverwriteLines();
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, (int)lines.size());
         renderer.drawThemedPanel(D.box);
         for (size_t i = 0; i < lines.size(); ++i) renderer.drawUiTextInBox(lines[i].first, D.lines[i], lines[i].second);
-        const float fill = deleteHolding ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS) : 0.0f;
-        renderer.drawHoldButton(D.hold, lang("UILABEL_DELETE"), fill);
-        drawScreenButtons({ Button{ lang("UILABEL_CANCEL"), D.cancel, Action::DeleteNo } });
+        if (holding) {
+            const float fill = deleteHolding ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS) : 0.0f;
+            renderer.drawHoldButton(D.confirm, lang(deleting ? "UILABEL_DELETE" : "UILABEL_CONTINUE"), fill);
+            drawScreenButtons({ Button{ lang("UILABEL_CANCEL"), D.cancel, Action::DeleteNo } });
+        } else {
+            drawScreenButtons({ Button{ lang("UILABEL_GEN_OVERWRITE"), D.confirm, Action::OverwriteYes },
+                                Button{ lang("UILABEL_CANCEL"), D.cancel, Action::OverwriteNo } });
+        }
     }
+    drawNicknameDialog();
     renderer.endUi();
 }
 
@@ -657,14 +849,36 @@ void App::worldGenBarAt(int row, float x) {
 void App::worldGenClick(float x, float y) {
     WorldGenUi& ui = worldGenUi;
     const WorldGenLayout L = layoutWorldGen(winW, winH, (int)ui.maps.size(), ui.mapScroll);
-    if (!ui.deleteMap.empty()) {
-        const MapDeleteLayout D = layoutMapDelete(winW, winH, (int)mapDeleteLines().size());
-        if (D.hold.contains(x, y)) {
+    if (nicknameClick(x, y)) return;
+    if (ui.sizeAsk) {
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, (int)bigSizeLines().size());
+        if (D.confirm.contains(x, y)) {
             deleteHolding = true;
             deleteHoldStart = SDL_GetTicks();
-            deleteHoldRect = D.hold;
+            deleteHoldRect = D.confirm;
+        } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
+            cancelBigSize();
+        }
+        return;
+    }
+    if (!ui.deleteMap.empty()) {
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, (int)mapDeleteLines().size());
+        if (D.confirm.contains(x, y)) {
+            deleteHolding = true;
+            deleteHoldStart = SDL_GetTicks();
+            deleteHoldRect = D.confirm;
         } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
             cancelMapDelete();
+        }
+        return;
+    }
+    if (!ui.overwriteMap.empty()) {
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, (int)mapOverwriteLines().size());
+        if (D.confirm.contains(x, y)) {
+            ui.overwriteMap.clear();
+            generateWorld(true);
+        } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
+            cancelMapOverwrite();
         }
         return;
     }
@@ -674,6 +888,12 @@ void App::worldGenClick(float x, float y) {
     }
     {
         const int top = std::clamp(ui.mapScroll, 0, std::max(0, (int)ui.maps.size() - (int)L.mapRows.size()));
+        for (size_t i = 0; i < L.mapNick.size(); ++i) {
+            if (!L.mapNick[i].contains(x, y)) continue;
+            stopWorldGenName();
+            openNickname(ui.maps[(size_t)top + i]);
+            return;
+        }
         for (size_t i = 0; i < L.mapDelete.size(); ++i) {
             if (!L.mapDelete[i].contains(x, y)) continue;
             stopWorldGenName();
@@ -703,12 +923,20 @@ void App::worldGenClick(float x, float y) {
     }
     stopWorldGenName();
     const auto stepSize = [&](int by) {
-        const int count = (int)std::size(WORLD_GEN_SIZES);
-        int at = 0;
-        for (int i = 0; i < count; ++i) {
-            if (WORLD_GEN_SIZES[i] == ui.settings.size) at = i;
+        const int to = steppedSize(ui.settings.size, by);
+        if (to == ui.settings.size) {
+            playSfx(Sfx::UiClick);   // already the smallest or the biggest
+            return;
         }
-        ui.settings.size = WORLD_GEN_SIZES[std::clamp(at + by, 0, count - 1)];
+        // A size over what the game is made for is asked about first, once: the warning is held through, and then the bigger sizes are open
+        if (to > WORLD_GEN_SAFE_SIZE && !ui.sizesUnlocked) {
+            ui.sizeAsk = true;
+            deleteHolding = false;
+            playSfx(Sfx::UiClick);
+            return;
+        }
+        ui.settings.size = to;
+        putSizeOnName(ui);
         worldGenChanged();
         playSfx(Sfx::UiClick);
     };
@@ -728,6 +956,7 @@ void App::worldGenClick(float x, float y) {
         return;
     } else if (L.seedRandom.contains(x, y)) {
         ui.settings.seed = partyRng.gen();
+        ui.nameEdited = false;   // a new seed is a new world, with a new name whatever the last one was
         defaultWorldGenName();
         worldGenChanged();
         playSfx(Sfx::UiClick);
@@ -780,7 +1009,9 @@ void App::worldGenClick(float x, float y) {
     }
 }
 
-bool App::generateWorld() {
+// Writes the map. A map of that name that is already there is only written over after a question, which this asks (confirmed: it was
+// answered). The ground of a map with game saves stays as it was, so all that may change on it is its theme.
+bool App::generateWorld(bool confirmed) {
     WorldGenUi& ui = worldGenUi;
     const std::string name = safeFileName(ui.name);
     if (name.empty()) {
@@ -788,14 +1019,33 @@ bool App::generateWorld() {
         return false;
     }
     ui.name = name;
-    // Read the saves again right before writing, so a map with game saves is never written over
+    // Read the saves again right before writing, so the ground of a map with game saves is never written over
     refreshPlayedMaps();
-    if (worldHasSaves(name)) {
+    const std::string path = mapFilePath(name);
+    std::error_code existsEc;
+    const bool exists = std::filesystem::exists(std::filesystem::u8path(path), existsEc);
+    WorldGenSettings onDisk;
+    std::string err;
+    const bool readable = exists && readMapFile(path, onDisk, err);
+    if (readable && mapFileText(onDisk) == mapFileText(ui.settings)) {
+        // The map is already as it is on screen, so there is nothing to write over
+        ui.generated = true;
+        ui.generatedName = name;
+        playSfx(Sfx::UiSaved);
+        return true;
+    }
+    const bool themeOnly = readable && sameGround(onDisk, ui.settings);
+    if (worldHasSaves(name) && !themeOnly) {
         refuse(langf("MISC_GEN_HAS_SAVES", { name }));
         return false;
     }
-    std::string err;
-    if (!writeMapFile(mapFilePath(name), ui.settings, err)) {
+    if (exists && !confirmed) {
+        ui.overwriteMap = name;
+        ui.overwriteThemeOnly = themeOnly;
+        playSfx(Sfx::UiClick);
+        return false;
+    }
+    if (!writeMapFile(path, ui.settings, err)) {
         refuse(err);
         return false;
     }

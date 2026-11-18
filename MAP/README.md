@@ -6,6 +6,8 @@ the game rebuilds the ground from it when the map is opened.
 
 The game ships with no map: New Game offers to make one from the default settings if this folder has none.
 Any `.map` file here shows up in New Game's map choice and in World Generation's Existing Maps.
+The game keeps the nicknames you give maps (the pencil beside a map in those lists) in `nicknames.txt` here: a line a map, its file name,
+a tab, then the nickname. A nickname only changes how a map is shown, never its name or file.
 
 Levels made for these maps go in [LEVEL](LEVEL).
 

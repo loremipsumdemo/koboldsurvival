@@ -37,6 +37,10 @@ void App::handleEvent() {
 }
 
 void App::onTextInput() {
+    if (nicknameUi.open) {
+        appendUtf8Limited(nicknameUi.text, e.text.text, MAP_NICKNAME_CHARS);
+        return;
+    }
     if (screen == Screen::Playing && rename.open) {
         appendUtf8Limited(rename.text, e.text.text, PARTY_NAME_CHARS);
         return;
@@ -91,6 +95,11 @@ void App::onTextInput() {
 
 void App::onKeyDown() {
     if (e.key.key == SDLK_ESCAPE && e.key.repeat) return;
+    // Typing a map's nickname (World Generation's list of maps, or New Game's)
+    if (nicknameUi.open) {
+        nicknameKey();
+        return;
+    }
     // Typing your faction's name (the Faction tab's Settings, or Faction Info)
     if (screen == Screen::Playing && factionRulesNaming) {
         if (e.key.key == SDLK_BACKSPACE) {
@@ -167,6 +176,10 @@ void App::onKeyDown() {
     if (screen == Screen::WorldGen) {
         if (!worldGenUi.deleteMap.empty()) {
             if (e.key.key == SDLK_ESCAPE) cancelMapDelete();
+        } else if (!worldGenUi.overwriteMap.empty()) {
+            if (e.key.key == SDLK_ESCAPE) cancelMapOverwrite();
+        } else if (worldGenUi.sizeAsk) {
+            if (e.key.key == SDLK_ESCAPE) cancelBigSize();
         } else if (worldGenUi.editingName) {
             if (e.key.key == SDLK_BACKSPACE) {
                 popUtf8Char(worldGenUi.name);

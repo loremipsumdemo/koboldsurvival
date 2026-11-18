@@ -34,6 +34,12 @@ public:
     // cancel was set. Called from other threads too.
     // The ground it makes by default is from reading every chunk that holds a sample, in the background.
     virtual bool farField(int res, std::vector<float>& heights, std::vector<uint8_t>& rgb, const std::atomic<bool>& cancel) const;
+    // The same for a window of the world, for a map too big for the far ground to be one mesh of all of it and fine enough: res by res corners
+    // spacing tiles apart, the first at tile (x0, z0). A corner past the map's edge takes the nearest point on it. False if it can't, or if cancel
+    // was set. Called from other threads too.
+    // The ground it makes by default is from reading every chunk that holds a sample, in the background.
+    virtual bool farFieldWindow(int x0, int z0, int spacing, int res, std::vector<float>& heights, std::vector<uint8_t>& rgb,
+                                const std::atomic<bool>& cancel) const;
     // How this map looks, for a source that has a theme. Null: as surface() says, as it always was.
     virtual const MapTheme* theme() const { return nullptr; }
     // True: the world ends in walls, so its water stops at the map's edge instead of running on to the horizon
