@@ -548,7 +548,7 @@ void restoreWorld(World& world, Terrain& terrain, Rng& rng, const SaveData& d, c
     }
     const std::vector<ObjectId> props = restoreProps(world, d, stages);
     restoreGroups(world, d, props);
-    ensurePatrons(world, rng);   // a save from before patrons: they are drawn now
+    ensurePatrons(world);   // each faction has its own patron: a save from before they were bound to their factions is put right
     stages.stage(0.75f, "LOADING_GROUND_ITEMS", (int)d.ground.size());
     int groundDone = 0;
     for (const SaveGround& g : d.ground) {

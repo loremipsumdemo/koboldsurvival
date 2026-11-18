@@ -1,5 +1,6 @@
 #include "level.h"
 #include "level_file.h"
+#include "scenario.h"
 #include "world_gen.h"
 #include "systems.h"
 #include "play_state.h"
@@ -23,13 +24,13 @@ bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, s
     return true;
 }
 
-void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool playerCamp, const LoadProgress& progress) {
+void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress) {
     LoadStages stages(progress);
     stages.stage(0.7f, "LOADING_WORLD");
     world = World{};
     resetPlayState();
     rng.gen.seed(seed);
-    setupWorld(world, terrain, rng, playerCamp);
+    setupWorld(world, terrain, rng, scenario);
     terrain.prepareNav();   // the navigation regions, made once here rather than at the first path
     stages.stage(0.85f, "LOADING_GROUND_ITEMS");
 }

@@ -35,7 +35,6 @@ const KitSpot CAMP_KIT[] = {
     { PropKind::Mushroom, -6.0f, 1.0f },
 };
 
-constexpr int KIT_STOCKPILE_COUNT = 500;
 // The item a camp's stockpile of this kind starts full of, or 0
 int kitStock(PropKind kind) {
     switch (kind) {
@@ -48,10 +47,25 @@ int kitStock(PropKind kind) {
 }
 }
 
-bool campKitFits(World& w, const Terrain& t, float cx, float cz) {
+bool fillKitStock(World& w, ObjectId e, PropKind kind, int count) {
+    const int stock = kitStock(kind);
+    Storage* st = stock > 0 ? w.get<Storage>(e) : nullptr;
+    if (!st) return false;
+    // A stockpile starts with 500 of what it holds (a scenario can say another number)
+    int left = std::max(0, count);
+    for (size_t i = 0; i < st->slots.size() && left > 0; ++i) {
+        const int n = std::min(left, stackLimit(stock));
+        st->slots[i] = ItemStack{ stock, n };
+        left -= n;
+    }
+    return true;
+}
+
+bool campKitFits(World& w, const Terrain& t, float cx, float cz, bool altarOnly) {
     const float ox = std::floor(cx) + 0.5f, oz = std::floor(cz) + 0.5f;
     const std::vector<ObjectId> props = w.view<Prop, Transform>();
     for (const KitSpot& k : CAMP_KIT) {
+        if (altarOnly && k.kind != PropKind::Altar) continue;
         const float x = ox + k.dx, z = oz + k.dz;
         if (!t.walkable((int)std::floor(x), (int)std::floor(z))) return false;
         for (ObjectId e : props) {
@@ -62,13 +76,14 @@ bool campKitFits(World& w, const Terrain& t, float cx, float cz) {
     return true;
 }
 
-CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, float yaw) {
+CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, float yaw, bool altarOnly, int stock) {
     CampKit kit;
-    if (!campKitFits(w, t, cx, cz)) return kit;
+    if (!campKitFits(w, t, cx, cz, altarOnly)) return kit;
     const float ox = std::floor(cx) + 0.5f, oz = std::floor(cz) + 0.5f;
     kit.x = ox;
     kit.z = oz;
     for (const KitSpot& k : CAMP_KIT) {
+        if (altarOnly && k.kind != PropKind::Altar) continue;
         const float x = ox + k.dx, z = oz + k.dz;
         ObjectId e = NO_OBJECT;
         if (propInfo(k.kind).built) {
@@ -84,16 +99,7 @@ CampKit placeCampKit(World& w, Terrain& t, int faction, float cx, float cz, floa
             const int bones = (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / altar.fuelHours);
             w.get<Storage>(e)->slots[0] = ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), bones };
         }
-        if (const int stock = kitStock(k.kind); stock > 0) {
-            // A stockpile starts with 300 of what it holds
-            Storage* st = w.get<Storage>(e);
-            int left = KIT_STOCKPILE_COUNT;
-            for (size_t i = 0; st && i < st->slots.size() && left > 0; ++i) {
-                const int n = std::min(left, stackLimit(stock));
-                st->slots[i] = ItemStack{ stock, n };
-                left -= n;
-            }
-        }
+        fillKitStock(w, e, k.kind, stock);
         if (k.kind == PropKind::Tree) kit.trees.push_back(e);
     }
     kit.faction = faction;

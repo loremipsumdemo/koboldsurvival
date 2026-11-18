@@ -65,6 +65,10 @@ void App::onTextInput() {
         percentPrompt.error.clear();
         return;
     }
+    if (screen == Screen::ScenarioEdit) {
+        scenarioEditText(e.text.text);
+        return;
+    }
     if (screen == Screen::WorldGen && worldGenUi.editingName) {
         appendUtf8Limited(worldGenUi.name, e.text.text, WORLD_GEN_NAME_CHARS);
         worldGenUi.nameEdited = true;
@@ -173,6 +177,10 @@ void App::onKeyDown() {
     if (closesOnEscape(stallUi.open, [&] { stallUi = StallUi{}; })) return;
     if (closesOnEscape(groupsUi.open, [&] { groupsUi = BehaviorGroupsUi{}; })) return;
     if (closesOnEscape(ghostsUi.open, [&] { ghostsUi = GhostsUi{}; })) return;
+    if (screen == Screen::ScenarioEdit) {
+        scenarioEditKey();
+        return;
+    }
     if (screen == Screen::WorldGen) {
         if (!worldGenUi.deleteMap.empty()) {
             if (e.key.key == SDLK_ESCAPE) cancelMapDelete();
@@ -441,6 +449,8 @@ void App::onMouseWheel() {
         } else {
             worldGenUi.mapScroll = std::max(0, worldGenUi.mapScroll - (int)e.wheel.y);
         }
+    } else if (screen == Screen::ScenarioEdit) {
+        scenarioEditWheel(e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
     } else if (screen == Screen::Playing && editing && editor.useOwnUi && layoutEditor(winW, winH, true).panel.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
         if (editor.spawn.tab == EditorTab::Theme && layoutEditor(winW, winH, true).themeArea.contains(e.wheel.mouse_x, e.wheel.mouse_y)) {
             themeUi.scroll = std::max(0, themeUi.scroll - (int)e.wheel.y);
@@ -448,7 +458,7 @@ void App::onMouseWheel() {
             spawnPickerWheel(editor.spawn, layoutEditor(winW, winH, true).picker, e.wheel.mouse_x, e.wheel.mouse_y, e.wheel.y);
         }
     } else if (screen == Screen::ScenarioSelect) {
-        scenarioScroll = layoutScenario(winW, winH, (int)ScenarioId::Count,
+        scenarioScroll = layoutScenario(winW, winH, (int)scenarioList.size(),
                                         scenarioScroll - (int)e.wheel.y).first;
     } else if (screen == Screen::PartySetup) {
         if (partyUi.dropKind != DropKind::None) {
@@ -556,21 +566,25 @@ void App::onMouseButtonDown() {
         if (e.button.button == SDL_BUTTON_LEFT) worldGenClick(e.button.x, e.button.y);
         return;
     }
+    if (screen == Screen::ScenarioEdit) {
+        if (e.button.button == SDL_BUTTON_LEFT) scenarioEditClick(e.button.x, e.button.y);
+        return;
+    }
     if (mapPickMouseDown()) return;
     if (screen == Screen::Playing && editing && editorMouseDown()) return;
 
     if (screen == Screen::ScenarioSelect) {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const float mx = e.button.x, my = e.button.y;
-            const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
+            const ScenarioLayout sl = layoutScenario(winW, winH, (int)scenarioList.size(), scenarioScroll);
             scenarioScroll = sl.first;
             if (pressListBar(sl.bar, mx, my, [this](float top) {
-                    const ScenarioLayout S = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
-                    scenarioScroll = rowBarFirst(S.bar, (int)ScenarioId::Count, S.visible, top);
+                    const ScenarioLayout S = layoutScenario(winW, winH, (int)scenarioList.size(), scenarioScroll);
+                    scenarioScroll = rowBarFirst(S.bar, (int)scenarioList.size(), S.visible, top);
                 })) return;
             for (size_t i = 0; i < sl.rows.size(); ++i) {
                 if (sl.rows[i].contains(mx, my)) {
-                    scenarioPick = (ScenarioId)(sl.first + (int)i);
+                    scenarioPick = sl.first + (int)i;
                     playSfx(Sfx::UiClick);
                 }
             }
@@ -586,7 +600,6 @@ void App::onMouseButtonDown() {
     }
 
     if (screen == Screen::PartySetup) {
-        if (patronOpen && pressOnPatrons()) return;
         if (factionPickOpen && pressOnFactionPick()) return;
         const PartyListBar bar = partyListBar(winW, winH, (int)party.size(), partyUi.listScroll);
         const Rect barGrab{ bar.track.x - 4.0f, bar.track.y, bar.track.w + 8.0f, bar.track.h };
@@ -605,7 +618,7 @@ void App::onMouseButtonDown() {
         if (e.button.button == SDL_BUTTON_LEFT) {
             const float mx = e.button.x, my = e.button.y;
             const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
-            const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText(), factionButtonText());
+            const std::vector<Button> buttons = layoutPartySetup(winW, winH, party, partyUi, drop, factionButtonText());
             const Button* hit = nullptr;
             for (auto it = buttons.rbegin(); it != buttons.rend(); ++it) {
                 if (it->enabled && it->rect.contains(mx, my)) {

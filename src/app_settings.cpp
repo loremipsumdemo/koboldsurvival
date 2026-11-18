@@ -58,7 +58,7 @@ void App::settingsCommit(const SettingsChange& c, bool save) {
     if (c.audio) applyAudio();
     if (c.language) {
         applyLanguage();
-        party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
+        party = scenarioParty(pickedScenario(), partyRng);
     }
     if (c.fonts || c.language) applyFontScale();
     if (save) saveSettingsFile();

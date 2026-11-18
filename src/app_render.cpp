@@ -189,7 +189,7 @@ void App::drawSettingsScreen() {
 
 void App::drawScenarioScreen() {
     const float s = uiScaleFor(winH);
-    const ScenarioLayout sl = layoutScenario(winW, winH, (int)ScenarioId::Count, scenarioScroll);
+    const ScenarioLayout sl = layoutScenario(winW, winH, (int)scenarioList.size(), scenarioScroll);
     scenarioScroll = sl.first;
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f };
     const RGBA gray{ 0.80f, 0.72f, 0.64f, 1.0f };
@@ -198,20 +198,20 @@ void App::drawScenarioScreen() {
     drawMenuBackdrop();
     renderer.drawThemedPanel(sl.box);
     renderer.drawListText(lang("UILABEL_SCENARIO"), sl.heading.x, sl.heading.y, gray);
-    const std::string name = lang(scenarioNameKey(scenarioPick));
+    const std::string name = scenarioTitle(pickedScenario());
     renderer.drawUiTextInBox(name, Rect{ sl.name.x, sl.name.y, sl.name.w, sl.name.h }, accent);
     float ty = sl.desc.y;
     const float lh = renderer.listTextHeight("Ag");
-    for (const std::string& ln : renderer.wrapListText(lang(scenarioDescKey(scenarioPick)), sl.desc.w)) {
+    for (const std::string& ln : renderer.wrapListText(scenarioAbout(pickedScenario()), sl.desc.w)) {
         if (ty + lh > sl.desc.y + sl.desc.h + 0.5f) break;
         renderer.drawListText(ln, sl.desc.x, ty, white);
         ty += lh;
     }
     renderer.drawRect(Rect{ sl.list.x, sl.list.y - 8.0f * s, sl.list.w, 1.0f * s }, RGBA{ 0.588f, 0.196f, 0.259f, 1.0f });
     for (size_t i = 0; i < sl.rows.size(); ++i) {
-        const ScenarioId id = (ScenarioId)(sl.first + (int)i);
+        const int id = sl.first + (int)i;
         const Rect& r = sl.rows[i];
-        renderer.drawButton(r, lang(scenarioNameKey(id)), true);
+        renderer.drawButton(r, renderer.fitListText(scenarioTitle(scenarioList[(size_t)id]), r.w - 20.0f * s), true);
         if (id == scenarioPick) {
             renderer.drawRect(Rect{ r.x, r.y, 5.0f * s, r.h }, accent);
             renderer.drawRect(Rect{ r.x, r.y, r.w, 2.0f * s }, accent);
@@ -229,9 +229,8 @@ void App::drawPartyScreen() {
     const std::vector<DropEntry> drop = dropdownEntries(party, partyUi);
     renderer.beginUi(winW, winH);
     drawMenuBackdrop();
-    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop, patronButtonText(), factionButtonText()), party, partyUi,
+    renderer.drawPartySetup(layoutPartySetup(winW, winH, party, partyUi, drop, factionButtonText()), party, partyUi,
                             partyPanels(winW, winH), mouseX, mouseY);
-    drawPatrons();
     drawFactionPick();
     renderer.endUi();
 }
@@ -433,6 +432,7 @@ void App::render() {
     case Screen::ScenarioSelect: drawScenarioScreen(); break;
     case Screen::PartySetup: drawPartyScreen(); break;
     case Screen::WorldGen: drawWorldGenScreen(); break;
+    case Screen::ScenarioEdit: drawScenarioEditScreen(); break;
     case Screen::DefaultWorldAsk: drawDefaultWorldAsk(); break;
     case Screen::Pause: drawPauseScreen(); break;
     }

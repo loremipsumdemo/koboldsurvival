@@ -169,18 +169,13 @@ bool App::partyAction(Action action, int param) {
             closeDropdown();
         }
         return true;
-    case Action::PartyPatron:
-        stopNameEdit();
-        closeDropdown();
-        openPatrons(FACTION_PLAYER, true);
-        return true;
     case Action::PartyFaction:
         stopNameEdit();
         closeDropdown();
         openFactionPick();
         return true;
     case Action::PartyRandomAll:
-        party = scenarioParty(scenarioPick, partyRng, partyPeople(party));
+        party = scenarioParty(pickedScenario(), partyRng);
         stopNameEdit();
         closeDropdown();
         return true;

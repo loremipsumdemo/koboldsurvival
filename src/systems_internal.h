@@ -39,6 +39,7 @@ inline void endPropTasks(World& w, ObjectId u) {
     w.remove<LootOrder>(u);
     w.remove<CarryOrder>(u);
     w.remove<PropOrder>(u);
+    w.remove<ConstructOrder>(u);
     if (airshipOf(w, u) == NO_OBJECT) w.remove<Occupying>(u);   // only Evacuate takes a unit off an Airship, and slowly
     w.remove<Boarding>(u);
     w.remove<Working>(u);
@@ -76,7 +77,7 @@ inline void clearOrders(World& w, ObjectId u) {
 // An order of yours that is not a walk, a prop or a carry. Add new order components here, in endPropTasks and in clearOrders.
 inline bool hasPlayerOrder(World& w, ObjectId u) {
     return w.has<AttackOrder>(u) || w.has<FollowOrder>(u) || w.has<DefendOrder>(u) || w.has<PickupOrder>(u) ||
-           w.has<PickupChain>(u) || w.has<LootOrder>(u) || w.has<TalkOrder>(u);
+           w.has<PickupChain>(u) || w.has<LootOrder>(u) || w.has<TalkOrder>(u) || w.has<ConstructOrder>(u);
 }
 
 void lootOrderSystem(World& w, CarryEvents& ev);

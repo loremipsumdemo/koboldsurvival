@@ -42,6 +42,17 @@ void systems_detail::spawnPlayerUnit(World& w, Terrain& t, Rng& rng, Vec2 spawn,
     w.add(u, Body{ body });
 }
 
+namespace {
+// Where the units of yours that the level did not place are put: where a level file says you start, else where setupWorld put the first of
+// yours (the map's own start is somewhere else, often hundreds of tiles from your camp)
+Vec2 startOf(World& w, Terrain& t) {
+    const LevelInfo& level = w.resource<LevelInfo>();
+    if (level.spawnSet) return Vec2{ level.spawnX, level.spawnZ };
+    const FactionLandNotes& notes = w.resource<FactionLandNotes>();
+    return notes.startSet ? notes.start : findSpawn(t);
+}
+}
+
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
     std::vector<ObjectId> players;
     for (ObjectId u : w.view<Entity, Commandable>()) {
@@ -51,16 +62,14 @@ void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count) {
     for (size_t i = (size_t)std::max(0, count); i < players.size(); ++i) w.destroy(players[i]);
     const int have = std::min((int)players.size(), std::max(0, count));
     if (have >= count) return;
-    const LevelInfo& level = w.resource<LevelInfo>();
-    const Vec2 spawn = level.spawnSet ? Vec2{ level.spawnX, level.spawnZ } : findSpawn(t);
+    const Vec2 spawn = startOf(w, t);
     for (int i = have; i < count; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
 }
 
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot) {
     for (ObjectId u : w.view<Mob, Commandable>()) w.destroy(u);
     if (kinds.empty()) return;
-    const LevelInfo& level = w.resource<LevelInfo>();
-    const Vec2 spawn = level.spawnSet ? Vec2{ level.spawnX, level.spawnZ } : findSpawn(t);
+    const Vec2 spawn = startOf(w, t);
     for (size_t j = 0; j < kinds.size(); ++j) {
         const int i = firstSlot + (int)j;
         const Vec2 p = t.snap({ spawn.x - 3.0f + (i % SQUAD_COLUMNS) * 1.5f, spawn.z - 3.0f + (i / SQUAD_COLUMNS) * 1.5f });

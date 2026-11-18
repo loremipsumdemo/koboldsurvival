@@ -6,7 +6,8 @@
 #   name key: the language key of its name (FACTION_... in data/language). A key the language files lack is
 #       shown as written.
 #   color: #rrggbb, for its dot in the Reputation tab (the colored factions' colors must all differ)
-#   units: how many of its units a new level places, together in one camp. 0 for the Player Faction.
+#   units: how many of its units a new level places, together in one camp, each on the nearest free tile to its Altar. 0 for the Player Faction.
+#       The colored factions have 30: with the default shares below, 3 military, 7 Fortified and 20 citizens.
 #   Then, optional words of key=value, in any order. Those left out take the value in [brackets]:
 #     control      player: its units are yours to order. npc: they run themselves. [player for id 0, npc for the rest]
 #     factionless  how it takes to the Factionless: friendly (as allies), neutral, hostile (attacks them on sight) [neutral]
@@ -26,13 +27,16 @@
 #     aid          whom its units rescue and share food with: own (their own faction only; for the Factionless, no
 #                  one); allies (allies too); anyone (anyone not hostile) [allies]
 #     fortified    NPC factions only: the percent of its units that are Fortified, guarding its Perimeter (its gates, posts and
-#                  walkways), 0 to 100 [20]. Looked at once an hour.
+#                  walkways), 0 to 100 [23]. Looked at once an hour.
 #     military     NPC factions only: the percent of its units that are military, roaming, 0 to 100. The rest are citizens, who stay
-#                  at the Altar, work and build [30]
+#                  at the Altar, work and build [10]
 #     build        NPC factions only: perimeter_first (its Perimeter is finished before anything else is built); balanced (the
 #                  nearest piece of anything first); base_first (the Perimeter waits for the buildings) [perimeter_first]
 #     gates        NPC factions only: when its Perimeter's gates are shut: sleep (in its units' sleeping hours); shut (always, opened
 #                  only for those who ask); open (never shut by it) [sleep]
+#     patron       the patron who speaks for it, by id in data/patrons.txt: one to a faction, and never chosen apart from it. When you play
+#                  a color, its patron is yours. The patron's portrait is tinted by the faction's color. [none: it is given one of
+#                  the patrons left, in the order they are listed]
 #   Your faction's rules can be changed in play, in Faction Rules on the Faction tab, and the save keeps them.
 #
 # relation <id> <id> <reputation>
@@ -46,22 +50,22 @@ faction	0	FACTION_PLAYER	#c77dff	0	control=player
 # how far apart they are round it (neighbors +100, the far side -100), so no relation lines are needed. You are one of them: the color you
 # pick in character creation is your faction (id 0, with its name and color), and the other 15 run themselves. No two share a color.
 # Their units are placed in one camp each, spread over the land (world_setup.cpp).
-faction	100	FACTION_EMBER	#FF4000	8	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own fortified=10 military=50 build=base_first gates=sleep
-faction	101	FACTION_SOLAR	#EFDF00	8	take=weapons trade=not_factionless markup=15 recruit=factionless fortified=15 military=30 build=balanced gates=open
-faction	102	FACTION_AMBER	#AF8010	8	trespass=warn take=food markup=20 fortified=20 military=20 build=balanced gates=sleep
-faction	103	FACTION_DAWN	#FFCFAF	8	factionless=friendly downed=carry_out recruit=rescued aid=anyone fortified=30 military=10 build=perimeter_first gates=sleep
-faction	104	FACTION_UMBER	#704020	8	trespass=attack downed=cage take=weapons trade=allies markup=30 aid=own fortified=35 military=25 build=base_first gates=shut
-faction	105	FACTION_THICKET	#305000	8	trespass=warn aid=own fortified=40 military=10 build=perimeter_first gates=shut
-faction	106	FACTION_VERDANT	#00FF40	8	factionless=friendly downed=carry_out recruit=both aid=anyone fortified=20 military=15 build=balanced gates=open
-faction	107	FACTION_JADE	#509F70	8	downed=carry_out markup=10 fortified=25 military=20 build=perimeter_first gates=sleep
-faction	108	FACTION_TIDAL	#007080	8	trespass=warn downed=carry_out take=food markup=10 fortified=25 military=25 build=perimeter_first gates=shut
-faction	109	FACTION_GLACIER	#00EFEF	8	trespass=warn trade=allies markup=15 aid=own fortified=30 military=20 build=perimeter_first gates=shut
-faction	110	FACTION_ZEPHYR	#40AFFF	8	recruit=factionless aid=anyone fortified=10 military=40 build=balanced gates=open
-faction	111	FACTION_COBALT	#1000EF	8	trespass=attack downed=cage take=weapons markup=20 trade=allies aid=own fortified=25 military=40 build=base_first gates=sleep
-faction	112	FACTION_MYSTIC	#9F70FF	8	trade=not_factionless markup=25 recruit=rescued fortified=20 military=30 build=balanced gates=sleep
-faction	113	FACTION_VEIL	#EFCFFF	8	factionless=friendly downed=carry_out aid=anyone fortified=15 military=10 build=balanced gates=open
-faction	114	FACTION_GARNET	#8F0050	8	factionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own fortified=10 military=60 build=base_first gates=sleep
-faction	115	FACTION_BLOSSOM	#FF508F	8	factionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone fortified=15 military=20 build=balanced gates=open
+faction	100	FACTION_EMBER	#FF4000	30	factionless=hostile trespass=attack downed=cage take=weapons trade=allies markup=25 aid=own build=base_first gates=sleep patron=5
+faction	101	FACTION_SOLAR	#EFDF00	30	take=weapons trade=not_factionless markup=15 recruit=factionless build=balanced gates=open patron=13
+faction	102	FACTION_AMBER	#AF8010	30	trespass=warn take=food markup=20 build=balanced gates=sleep patron=6
+faction	103	FACTION_DAWN	#FFCFAF	30	factionless=friendly downed=carry_out recruit=rescued aid=anyone build=perimeter_first gates=sleep patron=2
+faction	104	FACTION_UMBER	#704020	30	trespass=attack downed=cage take=weapons trade=allies markup=30 aid=own build=base_first gates=shut patron=9
+faction	105	FACTION_THICKET	#305000	30	trespass=warn aid=own build=perimeter_first gates=shut patron=1
+faction	106	FACTION_VERDANT	#00FF40	30	factionless=friendly downed=carry_out recruit=both aid=anyone build=balanced gates=open patron=10
+faction	107	FACTION_JADE	#509F70	30	downed=carry_out markup=10 build=perimeter_first gates=sleep patron=3
+faction	108	FACTION_TIDAL	#007080	30	trespass=warn downed=carry_out take=food markup=10 build=perimeter_first gates=shut patron=12
+faction	109	FACTION_GLACIER	#00EFEF	30	trespass=warn trade=allies markup=15 aid=own build=perimeter_first gates=shut patron=14
+faction	110	FACTION_ZEPHYR	#40AFFF	30	recruit=factionless aid=anyone build=balanced gates=open patron=7
+faction	111	FACTION_COBALT	#1000EF	30	trespass=attack downed=cage take=weapons markup=20 trade=allies aid=own build=base_first gates=sleep patron=11
+faction	112	FACTION_MYSTIC	#9F70FF	30	trade=not_factionless markup=25 recruit=rescued build=balanced gates=sleep patron=16
+faction	113	FACTION_VEIL	#EFCFFF	30	factionless=friendly downed=carry_out aid=anyone build=balanced gates=open patron=4
+faction	114	FACTION_GARNET	#8F0050	30	factionless=hostile trespass=attack downed=finish_off take=everything trade=nobody aid=own build=base_first gates=sleep patron=8
+faction	115	FACTION_BLOSSOM	#FF508F	30	factionless=friendly downed=carry_out recruit=both trade=anyone aid=anyone build=balanced gates=open patron=15
 # The Factionless: units disbanded from your squad, the Wandering Trader, and units spawned with no faction. No camp,
 # no Altar and no reputation: how each faction takes to them is its factionless rule. Their own rules are what each of
 # them does alone: they are not one another's allies.

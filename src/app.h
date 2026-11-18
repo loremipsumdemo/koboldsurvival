@@ -52,6 +52,8 @@
 #include "inventory.h"
 #include "party.h"
 #include "party_ui.h"
+#include "scenario.h"
+#include "scenario_ui.h"
 #include "need_behaviors.h"
 #include "build.h"
 #include "claims.h"
@@ -699,9 +701,8 @@ struct App : AppSession {
     void stopFactionRulesNaming();
     bool factionInfoOpen = false;
     // Patrons (app_patron.cpp): the window of them all, and the banner of what they say
-    bool patronOpen = false, patronPicking = false;
+    bool patronOpen = false;
     int patronFaction = 0;   // the Altar's faction whose patron is lit
-    int patronPick = -1;     // the one you pick for a new game (an index into patrons()): -1, a random one
     // Character creation's faction color (app_faction_pick.cpp): the window of the 16, and the slot of the loop you pick (factions.h), -1 a random one
     bool factionPickOpen = false;
     int factionPick = -1;
@@ -715,6 +716,7 @@ struct App : AppSession {
     void drawFactionPick();
     struct ChatLine {
         int patron = -1;
+        int faction = -1;   // the faction it speaks for, whose color tints its portrait
         bool right = false;
         std::string text;
         bool replay = false;   // played again from the Patrons tab: shown with (Replay) by the name
@@ -745,8 +747,7 @@ struct App : AppSession {
         std::map<long long, double> last;      // the game clock when each event between two factions was last spoken of
     };
     PatronChat patronChat;
-    void openPatrons(int faction, bool pick);
-    std::string patronButtonText();   // the party screen's button: the patron picked
+    void openPatrons(int faction);
     bool pressOnPatrons();
     void drawPatrons();
     void updatePatronChat();
@@ -877,8 +878,23 @@ struct App : AppSession {
 
     Party party{};
     PartyUi partyUi;
-    ScenarioId scenarioPick = ScenarioId::Outpost;
+    // Scenarios (scenario.h): the list New Game offers, the Outpost first, and Add Custom Scenario's screen (app_scenario.cpp)
+    std::vector<Scenario> scenarioList;
+    int scenarioPick = 0;   // into scenarioList
     int scenarioScroll = 0;
+    ScenarioEditUi scenarioEdit;
+    void refreshScenarios();
+    const Scenario& pickedScenario() const;
+    std::string scenarioTitle(const Scenario& s) const;   // the Outpost's name in the language, else the file's
+    std::string scenarioAbout(const Scenario& s) const;   // what it is: the Outpost's text, else the line its maker wrote and a summary
+    void openScenarioEditor();
+    void drawScenarioEditScreen();
+    void scenarioEditClick(float x, float y);
+    void scenarioSave(bool overwriteConfirmed);
+    void scenarioEditKey();
+    void scenarioEditText(const char* text);
+    void scenarioEditWheel(float x, float y, float wheel);
+    void stopScenarioText();
     MapChoice pendingMap;
     Rng partyRng;
 

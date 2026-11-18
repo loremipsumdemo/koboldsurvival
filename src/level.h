@@ -40,7 +40,8 @@ using LoadProgress = std::function<void(float, const std::string&)>;
 
 // Reads a map into the terrain. On failure the terrain and the running game are left as they were.
 bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress = {});
-void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, bool playerCamp, const LoadProgress& progress = {});
+struct Scenario;
+void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress = {});
 // The same, with what a level file says in place of the random set-up
 void buildLevelFrom(World& world, Terrain& terrain, Rng& rng, unsigned seed, const LevelData& level);
 

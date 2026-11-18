@@ -256,16 +256,9 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         if (canEvacuate(world, target, isAirship(world, target) ? NO_OBJECT : propOccupant(world, target))) {
             out.push_back(MenuAction::Evacuate);
         }
+        // Working a prop by hand (harvesting, crafting). The standing tasks (Auto-Harvest, Auto-Haul) are not here: a citizen's are in its
+        // Behavior tab, set from the Altar.
         if (isWorkProp(use)) out.push_back(MenuAction::Use);
-        // Auto tasks only work on props inside your claim, so they aren't offered on any outside it
-        const Transform* pt = world.get<Transform>(target);
-        if (pt && claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
-            if (yieldsItems(p->kind)) out.push_back(MenuAction::AutoHarvest);
-            if (world.has<Storage>(target) && !propInfo(p->kind).claimsLand && !propInfo(p->kind).wheelbarrow) {
-                out.push_back(MenuAction::AutoHaul);
-            }
-            if (world.has<Storage>(target) && propInfo(p->kind).claimsLand) out.push_back(MenuAction::AutoHaulBones);
-        }
         // A Gate is opened and shut (it stands open); any other lock is locked and unlocked
         if (isGate) {
             if (ownGate(target)) out.push_back(gateShut(world, target) ? MenuAction::OpenGate : MenuAction::CloseGate);
@@ -278,7 +271,7 @@ std::vector<MenuAction> App::menuActionsFor(ObjectId target) {
         // Buildings: supply and build a blueprint of yours; climb a ladder up or down
         if (const Blueprint* bp = world.get<Blueprint>(target); bp && world.has<Owner>(target) && world.get<Owner>(target)->faction == FACTION_PLAYER) {
             // A ghost is not built yet, and a free blueprint builds itself; either may be cancelled
-            if (!bp->ghost && !world.has<FreeBuild>(target)) out.push_back(MenuAction::AutoConstruct);
+            if (!bp->ghost && !world.has<FreeBuild>(target)) out.push_back(MenuAction::Construct);
             out.push_back(MenuAction::CancelBuild);
             if (connectedBlueprints(world, target).size() > 1) out.push_back(MenuAction::CancelAllBuild);
         }
@@ -331,8 +324,11 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::AttackUnprovoked: labels.push_back(lang("UILABEL_ATTACK")); break;
         case MenuAction::Inventory: labels.push_back(lang("UILABEL_INVENTORY")); break;
         case MenuAction::Use: {
+            // Named for what it does: clear debris, harvest a resource, craft at a crafting prop
             const Prop* tp = world.get<Prop>(session.contextMenu.target);
-            labels.push_back(lang(tp && propInfo(tp->kind).debris ? "UILABEL_CLEAR" : "UILABEL_USE"));
+            const PropUse use = tp ? propInfo(tp->kind).use : PropUse::None;
+            labels.push_back(lang(tp && propInfo(tp->kind).debris ? "UILABEL_CLEAR" : use == PropUse::Resource ? "UILABEL_HARVEST"
+                                  : use == PropUse::Crafting ? "UILABEL_CRAFT" : "UILABEL_USE"));
             break;
         }
         case MenuAction::Occupy: labels.push_back(lang("UILABEL_OCCUPY")); break;
@@ -347,13 +343,6 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::Evacuate: labels.push_back(lang("UILABEL_EVACUATE")); break;
         case MenuAction::PickUp: labels.push_back(lang("UILABEL_PICK_UP")); break;
         case MenuAction::PutDown: labels.push_back(lang("UILABEL_PUT_DOWN")); break;
-        case MenuAction::AutoHarvest: labels.push_back(lang("UILABEL_AUTO_HARVEST")); break;
-        case MenuAction::AutoHaul: {
-            const Prop* tp = world.get<Prop>(session.contextMenu.target);
-            labels.push_back(lang(tp && propInfo(tp->kind).claimsLand ? "UILABEL_AUTO_HAUL_LOGS" : "UILABEL_AUTO_HAUL"));
-            break;
-        }
-        case MenuAction::AutoHaulBones: labels.push_back(lang("UILABEL_AUTO_HAUL_BONES")); break;
         case MenuAction::AppeaseGhosts: labels.push_back(lang("UILABEL_APPEASE_GHOSTS")); break;
         case MenuAction::BehaviorGroups: labels.push_back(lang("UILABEL_BEHAVIOR_GROUPS")); break;
         case MenuAction::Schedule: labels.push_back(lang("UILABEL_GROUPS_TAB_SCHEDULE")); break;
@@ -367,7 +356,7 @@ std::vector<std::string> App::contextLabels() {
         case MenuAction::StoreFilter: labels.push_back(lang("UILABEL_STORE_FILTER")); break;
         case MenuAction::CancelBuild: labels.push_back(lang("UILABEL_CANCEL_BUILD")); break;
         case MenuAction::CancelAllBuild: labels.push_back(lang("UILABEL_CANCEL_ALL_BUILD")); break;
-        case MenuAction::AutoConstruct: labels.push_back(lang("UILABEL_AUTO_CONSTRUCT")); break;
+        case MenuAction::Construct: labels.push_back(lang("UILABEL_CONSTRUCT")); break;
         case MenuAction::Climb: labels.push_back(lang("UILABEL_CLIMB_UP")); break;
         case MenuAction::ClimbDown: labels.push_back(lang("UILABEL_CLIMB_DOWN")); break;
         case MenuAction::Disband: labels.push_back(lang("UILABEL_DISBAND")); break;
@@ -542,7 +531,7 @@ bool App::pickWindowAction(MenuAction a, ObjectId target) {
         return true;
     }
     if (a == MenuAction::SeePatron) {
-        openPatrons(altarOwnerOf(world, target), false);
+        openPatrons(altarOwnerOf(world, target));
         return true;
     }
     if (a == MenuAction::SeePerimeter) {
@@ -858,21 +847,15 @@ void App::pickMenuAction(MenuAction a) {
     case MenuAction::BedPrivate:
     case MenuAction::StockStall:
         break;
-    case MenuAction::AutoConstruct: {
-        BehaviorRule add;
-        add.kind = BehaviorKind::AutoConstruct;
-        int given = 0;
-        for (ObjectId u : actors) {
-            Behaviors* b = world.get<Behaviors>(u);
-            if (!b || world.has<Mob>(u) || !addBehavior(b->rules, add)) continue;
-            b->wait = 0.0f;
-            ++given;
-        }
-        if (given == 0) {
-            refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
+    case MenuAction::Construct: {
+        // By hand, like any other order: the units go to this blueprint, bring it what it wants and build it. (A citizen's standing task is
+        // Auto-Construct, in its Behavior tab.)
+        const int started = issueConstructOrder(world, terrain, actors, target);
+        if (started == 0) {
+            refuse(lang("MISC_CONSTRUCT_NOTHING"));
             return;
         }
-        showNotice(langf("MISC_AUTO_CONSTRUCT_SET", { std::to_string(given) }));
+        showNotice(langf("MISC_CONSTRUCT_SET", { std::to_string(started) }));
         playSfx(Sfx::UiOrder);
         return;
     }
@@ -905,47 +888,6 @@ void App::pickMenuAction(MenuAction a) {
         issuePropOrder(world, terrain, climbers, target, PropAction::Climb);
         if (!climbers.empty()) playSfx(Sfx::UiOrder);
         break;
-    }
-    case MenuAction::AutoHarvest:
-    case MenuAction::AutoHaulBones:
-    case MenuAction::AutoHaul: {
-        const PropKind kind = world.get<Prop>(target)->kind;
-        const Transform* pt = world.get<Transform>(target);
-        if (!pt || !claimAt(claimsOf(world), pt->x, pt->z, FACTION_PLAYER)) {
-            refuse(lang("MISC_AUTO_OUTSIDE_CLAIM"));
-            return;
-        }
-        BehaviorRule add;
-        add.kind = a == MenuAction::AutoHarvest ? BehaviorKind::AutoHarvest
-                 : a == MenuAction::AutoHaulBones ? BehaviorKind::AutoHaulBones : BehaviorKind::AutoHaul;
-        add.propKind = idx(kind);
-        if (a != MenuAction::AutoHarvest) add.prop = target;
-        int given = 0;
-        ObjectId haulTo = NO_OBJECT;
-        for (ObjectId u : actors) {
-            Behaviors* b = world.get<Behaviors>(u);
-            if (!b || !addBehavior(b->rules, add)) continue;
-            b->wait = 0.0f;
-            ++given;
-            // Harvesting brings its haul along: to the stockpile (or store) that takes what it yields
-            if (a == MenuAction::AutoHarvest) {
-                if (const ObjectId s = addHaulForHarvest(world, u, idx(kind)); s != NO_OBJECT) haulTo = s;
-            }
-        }
-        if (given == 0) {
-            refuse(langf("MISC_BEHAVIOR_LIST_FULL", { std::to_string(BEHAVIOR_LIMIT) }));
-            return;
-        }
-        if (haulTo != NO_OBJECT) {
-            showNotice(langf("MISC_AUTO_HARVEST_HAUL_SET", { std::to_string(given), lang(propInfo(kind).nameKey),
-                                                             lang(propInfo(world.get<Prop>(haulTo)->kind).nameKey) }));
-            playSfx(Sfx::UiOrder);
-            return;
-        }
-        showNotice(langf(a == MenuAction::AutoHarvest ? "MISC_AUTO_HARVEST_SET" : a == MenuAction::AutoHaulBones ? "MISC_AUTO_HAUL_BONES_SET" : "MISC_AUTO_HAUL_SET",
-                         { std::to_string(given), lang(propInfo(kind).nameKey) }));
-        playSfx(Sfx::UiOrder);
-        return;
     }
     case MenuAction::Destroy:
         issuePropOrder(world, terrain, { actors[0] }, target, PropAction::Destroy);

@@ -9,7 +9,9 @@
 // A unit or a mob of this faction with the parts every entity has: yours, or hostile or neutral by its faction's reputation
 ObjectId makeEntity(World& w, const Transform& at, int faction);
 Dialogue defaultDialogue();
-void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp = true);
+// A new random level: your faction and the others as the scenario (scenario.h) starts them
+struct Scenario;
+void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario);
 // Where a random layout on this ground puts your start and each faction's camp, without building it. setupWorld puts
 // them in the same places, so New Game can show them. cancel, when set, stops it early (an empty plan).
 struct CampPlan {
@@ -42,7 +44,13 @@ FactionLandPlan planFactionLand(Terrain& t, const std::atomic<bool>* cancel = nu
 // Altar), one in the second was eliminated (it has none). A World resource.
 struct FactionLandNotes {
     std::vector<int> nomadic, eliminated;
+    // Where setupWorld put the first of your units (just north of your camp, if you have one): the rest of your party is put there too
+    bool startSet = false;
+    Vec2 start;
 };
+// Puts these units on the nearest free tiles round the Altar of a faction, nearest first: tiles no prop stands on and no other unit has. A
+// faction with no Altar leaves them where they are.
+void placeUnitsRoundAltar(World& w, Terrain& t, int faction, const std::vector<ObjectId>& units);
 
 void ensurePlayerUnits(World& w, Terrain& t, Rng& rng, int count);
 void ensurePlayerMobs(World& w, Terrain& t, Rng& rng, const std::vector<MobKind>& kinds, int firstSlot);

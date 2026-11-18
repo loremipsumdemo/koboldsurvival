@@ -2,6 +2,7 @@
 #include "systems_internal.h"
 #include "build.h"
 #include "camp_kit.h"
+#include "scenario.h"
 #include "squads.h"
 #include "npc_roles.h"
 
@@ -29,8 +30,7 @@ constexpr int CAMP_EXTRA_MIN = 3;
 constexpr int CAMP_EXTRA_MAX = 5;
 constexpr float CAMP_EXTRA_NEAR = 5.0f;
 constexpr float CAMP_EXTRA_FAR = 12.0f;
-constexpr float CAMP_RADIUS_BASE = 4.0f;
-constexpr float CAMP_RADIUS_PER_UNIT = 1.6f;
+constexpr int UNIT_FIND_RING = 40;         // how far out from its camp's Altar a free tile is looked for to put a unit on, in tiles
 
 // Open ground all round, CAMP_ROOM tiles out from the camp's middle, for it to grow into
 bool roomAround(const Terrain& t, float cx, float cz) {
@@ -74,6 +74,56 @@ bool placeNear(const Terrain& t, Vec2 wanted, int maxRing, bool lastResort, Stri
     return lastResort && t.nearestBigLand(wanted, out);
 }
 
+// The nearest tile to (cx, cz) that suits, by how far its middle is: looked for ring by ring out from it, and out as far past the first ring
+// that has one as a nearer tile could be (a ring's corner is further off than the side of the next). It is the same every time, so units
+// fill in round a camp from the middle outwards.
+template <typename Suits>
+bool nearestTileTo(int size, float cx, float cz, int mostRing, Suits suits, GridPos& out) {
+    const int ox = std::clamp((int)std::floor(cx), 0, size - 1), oz = std::clamp((int)std::floor(cz), 0, size - 1);
+    bool found = false;
+    float bestD2 = 0.0f;
+    int last = mostRing;
+    for (int r = 0; r <= last; ++r) {
+        for (int dz = -r; dz <= r; ++dz) {
+            const int stride = (dz == -r || dz == r) ? 1 : std::max(1, 2 * r);   // a ring's top and bottom rows whole, the rows between only their ends
+            for (int dx = -r; dx <= r; dx += stride) {
+                const GridPos g{ ox + dx, oz + dz };
+                if (g.x < 0 || g.y < 0 || g.x >= size || g.y >= size) continue;
+                const float d2 = distSq(g.x + 0.5f, g.y + 0.5f, cx, cz);
+                if ((found && d2 >= bestD2) || !suits(g)) continue;
+                found = true;
+                bestD2 = d2;
+                out = g;
+                last = std::min(mostRing, (int)std::ceil(std::sqrt(bestD2)) + 1);
+            }
+        }
+    }
+    return found;
+}
+
+// The props within reach of (cx, cz) in x and in z: the ones a unit put near it must not stand on
+std::vector<ObjectId> propsAround(World& w, float cx, float cz, float reach) {
+    std::vector<ObjectId> out;
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const Transform* pt = w.get<Transform>(e);
+        if (std::fabs(pt->x - cx) <= reach && std::fabs(pt->z - cz) <= reach) out.push_back(e);
+    }
+    return out;
+}
+
+// Whether a unit put at (x, z) would stand on one of these props, by the same reach a unit is stepped off a prop by
+bool onProp(World& w, const std::vector<ObjectId>& props, float x, float z) {
+    for (ObjectId e : props) {
+        const Transform* pt = w.get<Transform>(e);
+        const PropInfo& info = propInfo(w.get<Prop>(e)->kind);
+        const float dx = x - pt->x, dz = z - pt->z, d2 = dx * dx + dz * dz;
+        const float reach = footprintReach(info.foot) + PROP_BLOCK_RADIUS;
+        if (d2 > reach * reach) continue;
+        if (insideFootprint(info.foot, dx, dz, w.get<Prop>(e)->yaw) || d2 < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS) return true;
+    }
+    return false;
+}
+
 bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
     for (int z = z0; z < z0 + n; ++z) {
         for (int x = x0; x < x0 + n; ++x) {
@@ -81,6 +131,98 @@ bool walkableSquare(const Terrain& t, int x0, int z0, int n) {
         }
     }
     return true;
+}
+
+// Where a faction with no Altar puts one, before anything else, near (cx, cz): the nearest tile within ALTAR_SITE_RANGE tiles that has a block of
+// ALTAR_SITE_BLOCK tiles square of free ground round it (walkable, nothing standing on it) and an Altar's claim clear of every other claim;
+// failing that, the nearest free ground tile there is, clear of the claims if any is. "Nearest" is by the tile's middle. False only if there
+// is no ground to be had.
+bool findAltarSite(World& w, const Terrain& t, float cx, float cz, float& outX, float& outZ) {
+    const int size = t.size();
+    if (size <= 0) return false;
+    const int ox = std::clamp((int)std::floor(cx), 0, size - 1), oz = std::clamp((int)std::floor(cz), 0, size - 1);
+    const int x0 = std::max(0, ox - ALTAR_SITE_RANGE), z0 = std::max(0, oz - ALTAR_SITE_RANGE);
+    const int x1 = std::min(size - 1, ox + ALTAR_SITE_RANGE), z1 = std::min(size - 1, oz + ALTAR_SITE_RANGE);
+    const int gw = x1 - x0 + 1, gh = z1 - z0 + 1;
+    const auto cell = [&](int x, int z) { return (size_t)(z - z0) * (size_t)gw + (size_t)(x - x0); };
+
+    // The tiles that are not free ground: water, cliffs and closed tiles, and the ones under a prop
+    std::vector<unsigned char> notFree((size_t)gw * (size_t)gh, 0);
+    for (int z = z0; z <= z1; ++z) {
+        for (int x = x0; x <= x1; ++x) {
+            if (!t.walkable(x, z)) notFree[cell(x, z)] = 1;
+        }
+    }
+    for (ObjectId e : w.view<Prop, Transform>()) {
+        const Transform* pt = w.get<Transform>(e);
+        const Prop* pr = w.get<Prop>(e);
+        const PropInfo& info = propInfo(pr->kind);
+        const float reach = footprintReach(info.foot) + PROP_BLOCK_RADIUS;
+        const int px0 = std::max(x0, (int)std::floor(pt->x - reach)), px1 = std::min(x1, (int)std::floor(pt->x + reach));
+        const int pz0 = std::max(z0, (int)std::floor(pt->z - reach)), pz1 = std::min(z1, (int)std::floor(pt->z + reach));
+        for (int z = pz0; z <= pz1; ++z) {
+            for (int x = px0; x <= px1; ++x) {
+                const float dx = (float)x + 0.5f - pt->x, dz = (float)z + 0.5f - pt->z, d2 = dx * dx + dz * dz;
+                if (d2 <= reach * reach && (insideFootprint(info.foot, dx, dz, pr->yaw) || d2 < PROP_BLOCK_RADIUS * PROP_BLOCK_RADIUS)) {
+                    notFree[cell(x, z)] = 1;
+                }
+            }
+        }
+    }
+    // Sums of them, to count the tiles of a block that are not free at a glance
+    const size_t sw = (size_t)gw + 1;
+    std::vector<int> sums(sw * ((size_t)gh + 1), 0);
+    for (int z = 0; z < gh; ++z) {
+        for (int x = 0; x < gw; ++x) {
+            sums[(size_t)(z + 1) * sw + (size_t)(x + 1)] = notFree[(size_t)z * (size_t)gw + (size_t)x] + sums[(size_t)z * sw + (size_t)(x + 1)] +
+                                                            sums[(size_t)(z + 1) * sw + (size_t)x] - sums[(size_t)z * sw + (size_t)x];
+        }
+    }
+    const auto blockFree = [&](int bx, int bz, int n) {
+        const int ax = bx - x0, az = bz - z0;
+        if (ax < 0 || az < 0 || ax + n > gw || az + n > gh) return false;
+        const int total = sums[(size_t)(az + n) * sw + (size_t)(ax + n)] - sums[(size_t)az * sw + (size_t)(ax + n)] -
+                          sums[(size_t)(az + n) * sw + (size_t)ax] + sums[(size_t)az * sw + (size_t)ax];
+        return total == 0;
+    };
+
+    const std::vector<Claim> claims = claimsOf(w);
+    const auto claimClear = [&](float px, float pz) {
+        for (const Claim& c : claims) {
+            if (claimsOverlap(px, pz, CLAIM_RADIUS, c.x, c.z, c.radius)) return false;
+        }
+        return true;
+    };
+    // The nearest tile that suits, and how far its middle is
+    const auto nearest = [&](int block, bool wantClear, float& bx, float& bz) {
+        bool found = false;
+        float bestD2 = 0.0f;
+        const int before = block > 1 ? (block - 1) / 2 : 0;   // the tiles of the block on the near side of the tile the Altar is on
+        for (int z = z0; z <= z1; ++z) {
+            for (int x = x0; x <= x1; ++x) {
+                if (notFree[cell(x, z)]) continue;
+                const float px = (float)x + 0.5f, pz = (float)z + 0.5f, d2 = distSq(px, pz, cx, cz);
+                if (found && d2 >= bestD2) continue;
+                if (block > 1 && !blockFree(x - before, z - before, block)) continue;
+                if (wantClear && !claimClear(px, pz)) continue;
+                found = true;
+                bestD2 = d2;
+                bx = px;
+                bz = pz;
+            }
+        }
+        return found;
+    };
+    if (nearest(ALTAR_SITE_BLOCK, true, outX, outZ)) return true;
+    if (nearest(1, true, outX, outZ)) return true;
+    if (nearest(1, false, outX, outZ)) return true;
+    Vec2 land;
+    if (t.nearestBigLand(Vec2{ cx, cz }, land)) {
+        outX = std::floor(land.x) + 0.5f;
+        outZ = std::floor(land.z) + 0.5f;
+        return true;
+    }
+    return false;
 }
 }
 
@@ -130,8 +272,15 @@ struct LevelBuilder {
     std::vector<CampKit> kits;
     bool planning = false;   // only finding where the camps go: no extras, no units
     std::vector<CampPlan> plan;
+    std::map<int, FactionStart> starts;   // what each faction that has a camp was given (scenario.h), by faction
 
     int tileAt(float v) const { return std::clamp((int)std::floor(v), 0, size - 1); }
+
+    // What a faction was given: its start as the scenario made it, or the defaults for one that was not placed with one
+    FactionStart startOfFaction(int faction) const {
+        const auto it = starts.find(faction);
+        return it != starts.end() ? it->second : defaultStart(faction);
+    }
 
     bool tileFree(GridPos g) {
         if (!t.walkable(g.x, g.y)) return false;
@@ -156,16 +305,17 @@ struct LevelBuilder {
         return true;
     }
 
-    CampKit placeCamp(int faction, float cx, float cz, bool needRoom = false) {
+    // altarOnly: just the Altar, with none of the rest of the camp round it. stock: what each stockpile of the camp starts with.
+    CampKit placeCamp(int faction, float cx, float cz, bool needRoom = false, bool altarOnly = false, int stock = KIT_STOCK_DEFAULT) {
         for (int ring = 0; ring <= (int)CAMP_SHIFT; ++ring) {
             const int steps = ring == 0 ? 1 : 8 * ring;
             for (int k = 0; k < steps; ++k) {
                 const float a = TWO_PI * (float)k / (float)steps;
                 const float x = cx + std::cos(a) * (float)ring, z = cz + std::sin(a) * (float)ring;
                 if (x < 8.0f || z < 8.0f || x > size - 8.0f || z > size - 8.0f) continue;
-                if (!clearOfCamps(x, z) || !campKitFits(w, t, x, z)) continue;
+                if (!clearOfCamps(x, z) || !campKitFits(w, t, x, z, altarOnly)) continue;
                 if (needRoom && !roomAround(t, x, z)) continue;
-                CampKit kit = placeCampKit(w, t, faction, x, z, 0.0f);
+                CampKit kit = placeCampKit(w, t, faction, x, z, 0.0f, altarOnly, stock);
                 if (kit.placed) {
                     flagSpots.push_back(Vec2{ kit.x, kit.z });
                     return kit;
@@ -175,7 +325,16 @@ struct LevelBuilder {
         return CampKit{};
     }
 
-    void addCampExtras(int faction, const CampKit& kit) {
+    // The Altar alone, exactly at the tile (x, z) is on
+    CampKit placeAltarAt(int faction, float x, float z) {
+        CampKit kit = placeCampKit(w, t, faction, x, z, 0.0f, true);
+        if (kit.placed) flagSpots.push_back(Vec2{ kit.x, kit.z });
+        return kit;
+    }
+
+    // Props about a camp, CAMP_EXTRA_NEAR to CAMP_EXTRA_FAR tiles from its Altar: `extras` of random kinds (-1: three to five, as the camps of
+    // NPC factions have always had), and each kind of `props` so many times over
+    void addCampExtras(int faction, const CampKit& kit, int extras, const std::vector<std::pair<PropKind, int>>& props) {
         static const PropKind EXTRA_KINDS[] = {
             PropKind::Wagon, PropKind::Barrel, PropKind::Ore, PropKind::Boulder, PropKind::Mushroom, PropKind::Boneheap, PropKind::Stall, PropKind::LockedChest,
             PropKind::Chair, PropKind::Bench, PropKind::Stool, PropKind::Table, PropKind::EndTable, PropKind::RoundTable, PropKind::StandingTorch,
@@ -183,30 +342,51 @@ struct LevelBuilder {
             PropKind::WaterTank, PropKind::WaterPump, PropKind::Forge,
         };
         if (!kit.placed) return;
-        const int want = rng.range(CAMP_EXTRA_MIN, CAMP_EXTRA_MAX);
-        int placed = 0;
-        for (int attempt = 0; attempt < 400 && placed < want; ++attempt) {
-            const float a = rng.unit() * TWO_PI;
-            const float d = CAMP_EXTRA_NEAR + rng.unit() * (CAMP_EXTRA_FAR - CAMP_EXTRA_NEAR);
-            const int gx = tileAt(kit.x + std::cos(a) * d), gz = tileAt(kit.z + std::sin(a) * d);
-            if (!t.walkable(gx, gz)) continue;
-            const float x = gx + 0.5f, z = gz + 0.5f;
-            bool taken = false;
-            for (ObjectId e : w.view<Prop, Transform>()) {
-                const Transform* pt = w.get<Transform>(e);
-                if (std::fabs(pt->x - x) < 0.5f && std::fabs(pt->z - z) < 0.5f) { taken = true; break; }
+        std::vector<PropKind> wanted;
+        const int random = extras >= 0 ? extras : rng.range(CAMP_EXTRA_MIN, CAMP_EXTRA_MAX);
+        for (int i = 0; i < random; ++i) wanted.push_back(EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)]);
+        for (const auto& [kind, n] : props) {
+            for (int i = 0; i < n; ++i) wanted.push_back(kind);
+        }
+        if (wanted.empty()) return;
+        // The props already about the camp, to keep clear of: kept up as more are put down
+        std::vector<Vec2> standing;
+        for (ObjectId e : w.view<Prop, Transform>()) {
+            const Transform* pt = w.get<Transform>(e);
+            if (std::fabs(pt->x - kit.x) <= CAMP_EXTRA_FAR + 2.0f && std::fabs(pt->z - kit.z) <= CAMP_EXTRA_FAR + 2.0f) standing.push_back(Vec2{ pt->x, pt->z });
+        }
+        for (const PropKind kind : wanted) {
+            for (int attempt = 0; attempt < 120; ++attempt) {
+                const float a = rng.unit() * TWO_PI;
+                const float d = CAMP_EXTRA_NEAR + rng.unit() * (CAMP_EXTRA_FAR - CAMP_EXTRA_NEAR);
+                const int gx = tileAt(kit.x + std::cos(a) * d), gz = tileAt(kit.z + std::sin(a) * d);
+                if (!t.walkable(gx, gz)) continue;
+                const float x = gx + 0.5f, z = gz + 0.5f;
+                const bool taken = std::any_of(standing.begin(), standing.end(), [&](const Vec2& p) { return std::fabs(p.x - x) < 0.5f && std::fabs(p.z - z) < 0.5f; });
+                if (taken) continue;
+                putExtra(faction, kind, x, z);
+                standing.push_back(Vec2{ x, z });
+                break;
             }
-            if (taken) continue;
-            const PropKind kind = EXTRA_KINDS[rng.range(0, (int)(sizeof(EXTRA_KINDS) / sizeof(EXTRA_KINDS[0])) - 1)];
-            const PropInfo& info = propInfo(kind);
-            const ObjectId prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, rng.unit() * TWO_PI);
+        }
+    }
+
+    // One prop of this kind at (x, z), the faction's, with what a camp's props start with: a store its stock (a stockpile full of what it
+    // holds, any other some random items) and a lock
+    void putExtra(int faction, PropKind kind, float x, float z) {
+        const PropInfo& info = propInfo(kind);
+        const float yaw = rng.unit() * TWO_PI;
+        ObjectId prop = NO_OBJECT;
+        if (info.built) {
+            prop = placeBuiltProp(w, t, kind, x, z, yaw, faction);
+        } else {
+            prop = makeProp(w, kind, Transform{ x, t.heightAt(x, z), z }, yaw);
             if (info.use != PropUse::Resource) w.add(prop, Owner{ faction });
-            if (info.use == PropUse::Storage) w.add(prop, startingStorage(kind, rng));
             if (info.lockLevel > 0) w.add(prop, Lock{ !(info.perimeter && !info.solid), info.lockLevel, faction });
             else if (info.use == PropUse::Storage) w.add(prop, Lock{ true, BUILT_LOCK_LEVEL, faction });
             claimOwnership(w, prop);
-            ++placed;
         }
+        if (info.use == PropUse::Storage && !fillKitStock(w, prop, kind, startOfFaction(faction).stock)) w.add(prop, startingStorage(kind, rng));
     }
 
     void giveWoodcutting(ObjectId u, const CampKit& kit) {
@@ -254,44 +434,74 @@ struct LevelBuilder {
     }
 
     // Your camp at `at`, if there is to be one
-    void placePlayerCamp(bool playerCamp, Vec2 at) {
-        const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, at.x, at.z) : CampKit{};
-        if (playerKit.placed) kits.push_back(playerKit);
-        if (playerKit.placed) {
-            ObjectId first = NO_OBJECT;
-            for (ObjectId u : w.view<Entity, Commandable>()) {
-                if (first == NO_OBJECT || u < first) first = u;
-            }
-            woodcutters.push_back({ first, playerKit });
+    void placePlayerCamp(bool playerCamp, Vec2 at, const FactionStart& st) {
+        const CampKit playerKit = playerCamp ? placeCamp(FACTION_PLAYER, at.x, at.z, false, st.camp == StartCamp::Altar, st.stock) : CampKit{};
+        if (!playerKit.placed) return;
+        starts[FACTION_PLAYER] = st;
+        kits.push_back(playerKit);
+        addCampExtras(FACTION_PLAYER, playerKit, st.extras, st.props);
+        ObjectId first = NO_OBJECT;
+        for (ObjectId u : w.view<Entity, Commandable>()) {
+            if (first == NO_OBJECT || u < first) first = u;
         }
+        woodcutters.push_back({ first, playerKit });
     }
 
     // A camp of this faction where planFactionLand put it: first with room all round it, then anywhere it fits. False if it will not
-    // go there after all, and the faction is left to be nomadic.
-    bool placeCampFaction(int faction, int units, const FactionLanding& at) {
+    // go there after all, and the faction is left to find a place of its own (settleLandless).
+    bool placeCampFaction(int faction, const FactionStart& st, const FactionLanding& at) {
         CampKit kit;
         bool roomy = false;
         for (const bool needRoom : { true, false }) {
-            kit = placeCamp(faction, at.x, at.z, needRoom);
+            kit = placeCamp(faction, at.x, at.z, needRoom, st.camp == StartCamp::Altar, st.stock);
             if (kit.placed) {
                 roomy = needRoom;
                 break;
             }
         }
         if (!kit.placed) return false;
-        plan.push_back(CampPlan{ faction, kit.x, kit.z, roomy });
-        if (planning) return true;
-        addCampExtras(faction, kit);
-        const ObjectId firstUnit = placeFactionUnits(faction, units, kit.x, kit.z, false);
-        kits.push_back(kit);
-        woodcutters.push_back({ firstUnit, kit });
+        finishCamp(faction, st, kit, roomy);
         return true;
     }
 
-    // A faction with no land of its own: its units together round (x, z), clear of every claim, and no Altar (it keeps camps as it goes)
-    void placeNomadFaction(int faction, int units, float x, float z) {
+    // What a faction does with its camp once it stands: the props about it, its people round it, its animals
+    void finishCamp(int faction, const FactionStart& st, const CampKit& kit, bool roomy) {
+        plan.push_back(CampPlan{ faction, kit.x, kit.z, roomy });
         if (planning) return;
-        placeFactionUnits(faction, units, x, z, true);
+        starts[faction] = st;
+        addCampExtras(faction, kit, st.extras, st.props);
+        const ObjectId firstUnit = placeFactionUnits(faction, st.people(), kit.x, kit.z, false);
+        kits.push_back(kit);
+        woodcutters.push_back({ firstUnit, kit });
+    }
+
+    // A faction with no land of its own puts its Altar down before anything else, at the nearest place with room for one (findAltarSite: a block
+    // of free ground within ALTAR_SITE_RANGE tiles of where it would have been, else the nearest free tile), the whole camp round it if that fits
+    // there and the scenario gave it one, and its people gather round it. False only if there is no ground at all.
+    bool settleLandless(int faction, const FactionStart& st, const FactionLanding& at) {
+        float sx = 0.0f, sz = 0.0f;
+        if (!findAltarSite(w, t, at.x, at.z, sx, sz)) return false;
+        CampKit kit;
+        if (st.camp == StartCamp::Full) {
+            const float ox = std::floor(sx) + 0.5f, oz = std::floor(sz) + 0.5f;
+            if (campKitFits(w, t, ox, oz)) {
+                kit = placeCampKit(w, t, faction, ox, oz, 0.0f, false, st.stock);
+                if (kit.placed) flagSpots.push_back(Vec2{ kit.x, kit.z });
+            }
+        }
+        if (!kit.placed) kit = placeAltarAt(faction, sx, sz);
+        if (!kit.placed) return false;
+        finishCamp(faction, st, kit, false);
+        return true;
+    }
+
+    // A faction with no land and no ground to put an Altar on: its units together round (x, z), clear of every claim, and no Altar (it keeps camps
+    // as it goes)
+    void placeNomadFaction(int faction, const FactionStart& st, float x, float z) {
+        if (planning) return;
+        placeFactionUnits(faction, st.people(), x, z, true);
+        starts[faction] = st;
+        placeCompanions(faction, st, x, z);
         w.resource<FactionLandNotes>().nomadic.push_back(faction);
     }
 
@@ -303,24 +513,24 @@ struct LevelBuilder {
         return true;
     }
 
-    // The units of a faction, together round (cx, cz). Returns the first.
+    // The units of a faction, together round (cx, cz): each on the nearest free tile to it, one that no unit has and no prop stands on, so they
+    // fill in round the Altar. Returns the first.
     ObjectId placeFactionUnits(int faction, int units, float cx, float cz, bool keepClearOfClaims) {
         ObjectId firstUnit = NO_OBJECT;
-        const float radius = CAMP_RADIUS_BASE + CAMP_RADIUS_PER_UNIT * std::sqrt((float)units);
+        const std::vector<ObjectId> around = propsAround(w, cx, cz, UNIT_FIND_RING + 4.0f);
+        const auto standable = [&](GridPos g) {
+            if (!tileFree(g) || (keepClearOfClaims && !outsideClaims(g))) return false;
+            return !onProp(w, around, g.x + 0.5f, g.y + 0.5f);
+        };
         int placed = 0;
-        for (const float reach : { 1.0f, 3.0f, 8.0f }) {
-            const float r = radius * reach;
-            for (int attempt = 0; attempt < 4000 && placed < units; ++attempt) {
-                GridPos g{ rng.range(tileAt(cx - r), tileAt(cx + r)), rng.range(tileAt(cz - r), tileAt(cz + r)) };
-                if (distSq(g.x + 0.5f, g.y + 0.5f, cx, cz) > r * r || !tileFree(g)) continue;
-                if (keepClearOfClaims && !outsideClaims(g)) continue;
-                const ObjectId e = placeUnit(g, faction);
-                if (firstUnit == NO_OBJECT) firstUnit = e;
-                ++placed;
-            }
-            if (placed >= units) break;
+        while (placed < units) {
+            GridPos g{ 0, 0 };
+            if (!nearestTileTo(size, cx, cz, UNIT_FIND_RING, standable, g)) break;
+            const ObjectId e = placeUnit(g, faction);
+            if (firstUnit == NO_OBJECT) firstUnit = e;
+            ++placed;
         }
-        // Still some left: the nearest free tile to the camp, on this land or else the biggest
+        // Still some left (no room within reach of the camp): the nearest free tile to it, on this land or else the biggest
         while (placed < units) {
             Vec2 at;
             const auto fine = [&](int tx, int tz) {
@@ -437,15 +647,33 @@ struct LevelBuilder {
         }
     }
 
+    // The animals that go with a faction that runs itself, as its own: they keep near its camp, as its units patrol. Yours come with your party.
+    void placeCompanions(int faction, const FactionStart& st, float cx, float cz) {
+        if (faction == FACTION_PLAYER) return;
+        for (const auto& [kind, n] : st.mobs) {
+            for (int i = 0; i < n; ++i) {
+                float x = 0.0f, z = 0.0f;
+                bool found = false;
+                for (int tries = 0; tries < 20 && !found; ++tries) {
+                    if (!freeSpot(cx, cz, CAMP_MOB_RADIUS, x, z)) break;
+                    found = clearOfProps(x, z);
+                }
+                if (found) spawnMob(w, t, rng, kind, faction, x, z);
+            }
+        }
+    }
+
     void placeCampMobs() {
         std::vector<MobKind> campKinds;
         for (int k = 1; k <= mobKindCount(); ++k) {
             if (campMobKind((MobKind)k)) campKinds.push_back((MobKind)k);
         }
-        if (campKinds.empty()) return;   // none are made for camps: no animals in them
         for (const CampKit& kit : kits) {
-            if (!kit.placed || kit.faction == FACTION_PLAYER) continue;   // nothing is put in your camp for you
-            for (int i = 0; i < CAMP_MOBS; ++i) {
+            if (!kit.placed) continue;
+            const FactionStart st = startOfFaction(kit.faction);
+            placeCompanions(kit.faction, st, kit.x, kit.z);
+            if (campKinds.empty()) continue;   // none are made for camps: no animals in them
+            for (int i = 0; i < st.caged; ++i) {
                 float x = 0.0f, z = 0.0f;
                 MobKind kind = campKinds[(size_t)rng.range(0, (int)campKinds.size() - 1)];
                 bool found = false;
@@ -537,10 +765,15 @@ struct LevelBuilder {
 };
 }
 
-void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
+void setupWorld(World& w, Terrain& t, Rng& rng, const Scenario& scenario) {
     const FactionLandPlan land = planFactionLand(t);
     const FactionLanding mine = land.slots.empty() ? FactionLanding{} : land.slots[(size_t)playerSlot()];
     const bool campForYou = mine.tier == LandTier::Spread || mine.tier == LandTier::Scattered;
+    // What the scenario gives you: whether you start with a camp, and what is in it
+    const FactionStart yours = scenarioStart(scenario, FACTION_PLAYER);
+    const bool playerCamp = yours.camp != StartCamp::None;
+    // The faction rules it sets, and the shares of Fortified and military its unit counts make, before any faction is settled
+    applyScenarioRules(w, scenario);
 
     // You start where your faction's place on the loop is: just north of your camp, if you have one. Never without units, whatever the land.
     Vec2 spawn = findSpawn(t);
@@ -552,9 +785,11 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
     LevelBuilder b{ w, t, rng, spawn, t.size() };
     FactionLandNotes& notes = w.resource<FactionLandNotes>();
     notes = FactionLandNotes{};
+    notes.start = spawn;
+    notes.startSet = true;
 
     for (int i = 0; i < START_UNIT_COUNT; ++i) spawnPlayerUnit(w, t, rng, spawn, i);
-    b.placePlayerCamp(campForYou && playerCamp, Vec2{ mine.x, mine.z });
+    b.placePlayerCamp(campForYou && playerCamp, Vec2{ mine.x, mine.z }, yours);
     if (!campForYou) notes.nomadic.push_back(FACTION_PLAYER);
 
     // The camps first, then the factions with no land (they keep clear of every camp)
@@ -564,7 +799,8 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
         const FactionDef* f = paletteFaction(slot);
         if (!f) continue;
         const FactionLanding& at = land.slots[(size_t)slot];
-        const bool camped = (at.tier == LandTier::Spread || at.tier == LandTier::Scattered) && b.placeCampFaction(f->id, f->units, at);
+        const bool camped = (at.tier == LandTier::Spread || at.tier == LandTier::Scattered) &&
+                            b.placeCampFaction(f->id, scenarioStart(scenario, f->id), at);
         if (!camped) landless.push_back(slot);
     }
     for (int slot : landless) {
@@ -574,7 +810,9 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
             notes.eliminated.push_back(f->id);
             continue;
         }
-        b.placeNomadFaction(f->id, f->units, at.x, at.z);
+        // A faction with no land of its own still has an Altar: it is the first thing it puts down, at the nearest place with room for one
+        const FactionStart start = scenarioStart(scenario, f->id);
+        if (!b.settleLandless(f->id, start, at)) b.placeNomadFaction(f->id, start, at.x, at.z);
     }
     b.placeResourceNodes();
     b.settleCamps();
@@ -583,6 +821,40 @@ void setupWorld(World& w, Terrain& t, Rng& rng, bool playerCamp) {
     b.placeCampMobs();
     b.placeWildMobs(land.open);
     b.giveFactionPatrols();
+}
+
+void placeUnitsRoundAltar(World& w, Terrain& t, int faction, const std::vector<ObjectId>& units) {
+    ObjectId altar = NO_OBJECT;
+    for (const Claim& c : claimsOf(w)) {
+        if (c.owner == faction && w.has<Transform>(c.altar)) {
+            altar = c.altar;
+            break;
+        }
+    }
+    const Transform* at = altar != NO_OBJECT ? w.get<Transform>(altar) : nullptr;
+    if (!at || units.empty()) return;
+    const float cx = at->x, cz = at->z;
+    const std::vector<ObjectId> around = propsAround(w, cx, cz, UNIT_FIND_RING + 4.0f);
+    // The tiles other units have: those that stay where they are
+    std::vector<GridPos> taken;
+    for (ObjectId e : w.view<Entity, Transform>()) {
+        if (std::find(units.begin(), units.end(), e) != units.end()) continue;
+        const Transform* tr = w.get<Transform>(e);
+        taken.push_back(GridPos{ (int)std::floor(tr->x), (int)std::floor(tr->z) });
+    }
+    for (ObjectId u : units) {
+        Transform* tr = w.get<Transform>(u);
+        if (!tr) continue;
+        const auto standable = [&](GridPos g) {
+            return t.walkable(g.x, g.y) && std::find(taken.begin(), taken.end(), g) == taken.end() && !onProp(w, around, g.x + 0.5f, g.y + 0.5f);
+        };
+        GridPos g{ 0, 0 };
+        if (!nearestTileTo(t.size(), cx, cz, UNIT_FIND_RING, standable, g)) continue;
+        taken.push_back(g);
+        tr->x = g.x + 0.5f;
+        tr->z = g.y + 0.5f;
+        tr->y = t.heightAt(tr->x, tr->z);
+    }
 }
 
 LayoutPlan planRandomLayout(Terrain& t, bool, const std::atomic<bool>* cancel) {
@@ -599,67 +871,12 @@ LayoutPlan planRandomLayout(Terrain& t, bool, const std::atomic<bool>* cancel) {
         if (cancel && cancel->load()) return LayoutPlan{};
         const FactionLanding& at = land.slots[(size_t)slot];
         const FactionDef* f = paletteFaction(slot);
-        if (f && (at.tier == LandTier::Spread || at.tier == LandTier::Scattered)) b.placeCampFaction(f->id, f->units, at);
+        if (f && (at.tier == LandTier::Spread || at.tier == LandTier::Scattered)) b.placeCampFaction(f->id, defaultStart(f->id), at);
     }
     out.spawnX = land.slots[(size_t)playerSlot()].x;
     out.spawnZ = land.slots[(size_t)playerSlot()].z;
     out.camps = b.plan;
     return out;
-}
-
-namespace {
-constexpr float FACTION_CITIZEN_SHARE = 0.4f;
-constexpr int FACTION_ALTAR_SEARCH = 24;   // how far from its units' middle an Altar is looked for, in tiles
-
-// A spot for a new Altar near (cx, cz): open ground, clear of props, and its claim clear of every other claim
-bool altarSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z) {
-    const std::vector<Claim> claims = claimsOf(w);
-    const std::vector<ObjectId> props = w.view<Prop, Transform>();
-    for (int ring = 0; ring <= FACTION_ALTAR_SEARCH; ++ring) {
-        for (int dz = -ring; dz <= ring; ++dz) {
-            for (int dx = -ring; dx <= ring; ++dx) {
-                if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
-                const int gx = (int)std::floor(cx) + dx, gz = (int)std::floor(cz) + dz;
-                if (!t.walkable(gx, gz)) continue;
-                const float px = gx + 0.5f, pz = gz + 0.5f;
-                bool clear = true;
-                for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, CLAIM_RADIUS, c.x, c.z, c.radius);
-                for (size_t i = 0; i < props.size() && clear; ++i) {
-                    const Transform* tr = w.get<Transform>(props[i]);
-                    clear = std::fabs(tr->x - px) >= 1.0f || std::fabs(tr->z - pz) >= 1.0f;
-                }
-                if (!clear) continue;
-                x = px;
-                z = pz;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// A spot near (cx, cz) for a whole camp kit (Altar, campfire, four bedrolls and the rest), its claim clear of every other
-// claim: first with room all round it, then anywhere it fits
-bool campSpot(World& w, const Terrain& t, float cx, float cz, float& x, float& z) {
-    const std::vector<Claim> claims = claimsOf(w);
-    for (const bool needRoom : { true, false }) {
-        for (int ring = 0; ring <= FACTION_ALTAR_SEARCH; ++ring) {
-            for (int dz = -ring; dz <= ring; ++dz) {
-                for (int dx = -ring; dx <= ring; ++dx) {
-                    if (std::max(std::abs(dx), std::abs(dz)) != ring) continue;
-                    const float px = std::floor(cx) + dx + 0.5f, pz = std::floor(cz) + dz + 0.5f;
-                    bool clear = campKitFits(w, t, px, pz) && (!needRoom || roomAround(t, px, pz));
-                    for (const Claim& c : claims) clear = clear && !claimsOverlap(px, pz, CLAIM_RADIUS, c.x, c.z, c.radius);
-                    if (!clear) continue;
-                    x = px;
-                    z = pz;
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
 }
 
 void settleFactionHomes(World& w, Terrain& t) {
@@ -680,26 +897,17 @@ void settleFactionHomes(World& w, Terrain& t) {
         for (const Claim& c : claimsOf(w)) {
             if (c.owner == f.id) altar = c.altar;
         }
-        // A faction that found no land has no Altar: it keeps its camps as it goes
+        // A faction that found no ground for an Altar at all has none: it keeps its camps as it goes
         const std::vector<int>& nomads = w.resource<FactionLandNotes>().nomadic;
         const bool nomadic = std::find(nomads.begin(), nomads.end(), f.id) != nomads.end();
         if (altar == NO_OBJECT && !nomadic) {
+            // A faction with units and no Altar puts one down before anything else, at the nearest place with room for one (a block of free
+            // ground within 100 tiles of its units, else the nearest free ground tile), with the whole camp round it where that fits
             float x = 0.0f, z = 0.0f;
-            const float mx = sx / (float)units.size(), mz = sz / (float)units.size();
-            if (campSpot(w, t, mx, mz, x, z)) {
-                const CampKit kit = placeCampKit(w, t, f.id, x, z, 0.0f);
+            if (findAltarSite(w, t, sx / (float)units.size(), sz / (float)units.size(), x, z)) {
+                CampKit kit = placeCampKit(w, t, f.id, x, z, 0.0f);
+                if (!kit.placed) kit = placeCampKit(w, t, f.id, x, z, 0.0f, true);
                 altar = kit.altar;
-                settleClaimOwnership(w);
-            }
-        }
-        if (altar == NO_OBJECT && !nomadic) {
-            float x = 0.0f, z = 0.0f;
-            if (altarSpot(w, t, sx / (float)units.size(), sz / (float)units.size(), x, z)) {
-                altar = placeBuiltProp(w, t, PropKind::Altar, x, z, 0.0f, f.id);
-                const PropInfo& info = propInfo(PropKind::Altar);
-                if (Storage* st = w.get<Storage>(altar)) {
-                    st->slots[0] = ItemStack{ itemTagged(ITEM_TAG_COMMON_BONES), (int)std::ceil(CAMP_UPKEEP_DAYS * 24.0 / info.fuelHours) };
-                }
                 settleClaimOwnership(w);
             }
         }

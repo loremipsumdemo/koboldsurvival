@@ -124,10 +124,56 @@ UILABEL_BODY_MALE	Male
 UILABEL_BODY_FEMALE	Female
 UILABEL_NEEDS_UNITS	Add at least one unit to start.
 UILABEL_SCENARIO	Scenario
-SCENARIO_VAGABOND_NAME	Vagabond
-SCENARIO_VAGABOND_DESC	A lone wanderer with nothing to their name: no items, no gear, and every stat at level 1.
-SCENARIO_CUSTOM_NAME	Custom Squad
-SCENARIO_CUSTOM_DESC	Build your own squad. It starts with three units, and you can add or remove units and regular mobs, up to 32.
+SCENARIO_SUMMARY	You: {0} military, {1} citizens and {2} mobs. Each other faction: {3} units.
+UILABEL_SCENARIO_ABOUT	About
+UILABEL_SCENARIO_DEFAULT_NAME	My Scenario
+UILABEL_SCENARIO_SCOPE_ALL	All
+UILABEL_SCENARIO_SCOPE_NPC	NPC
+UILABEL_SCENARIO_SCOPE_PLAYER	Player
+UILABEL_SCENARIO_SCOPE_FACTION	Faction
+UILABEL_SCENARIO_SCOPE_ALL_TIP	Every faction, yours too: a setting made here is made for yours and for each of the others.
+UILABEL_SCENARIO_SCOPE_NPC_TIP	Every faction that runs itself, which is all but yours.
+UILABEL_SCENARIO_SCOPE_PLAYER_TIP	Your faction, whichever color you play.
+UILABEL_SCENARIO_SCOPE_FACTION_TIP	One colored faction by itself (when it is not you), over what NPC says. Pick which with the arrows.
+UILABEL_SCENARIO_TAB_UNITS	Units
+UILABEL_SCENARIO_TAB_MOBS	Mobs
+UILABEL_SCENARIO_TAB_PROPS	Props
+UILABEL_SCENARIO_TAB_RULES	Rules
+UILABEL_SCENARIO_MILITARY	Military
+UILABEL_SCENARIO_MILITARY_TIP	Units that roam and fight. Yours are the units you command: you always have at least one.
+UILABEL_SCENARIO_FORTIFIED	Fortified
+UILABEL_SCENARIO_FORTIFIED_TIP	Units that guard the faction's Perimeter. For the factions that run themselves.
+UILABEL_SCENARIO_CITIZENS	Citizens
+UILABEL_SCENARIO_CITIZENS_TIP	Units that stay at the Altar, work and build. Yours start as citizens at your camp when it has an Altar; with none, all of yours are yours to command.
+UILABEL_SCENARIO_CAGED	Caged Animals
+UILABEL_SCENARIO_CAGED_TIP	Wild animals shut in cages in the camp, to tame.
+UILABEL_SCENARIO_CAMP	Camp
+UILABEL_SCENARIO_CAMP_TIP	What the faction starts with: nothing, its Altar alone, or the whole camp (an Altar, a Campfire, Bedrolls, stockpiles, stools and more). A faction that runs itself always has its Altar: with none, it puts one down first, at the nearest place with room for it: a block of 10 x 10 free ground within 100 tiles if there is one, else the nearest free ground.
+UILABEL_SCENARIO_CAMP_NONE	No Camp
+UILABEL_SCENARIO_CAMP_ALTAR	Altar Only
+UILABEL_SCENARIO_CAMP_FULL	Full Camp
+UILABEL_SCENARIO_EXTRAS	Random Props
+UILABEL_SCENARIO_EXTRAS_TIP	How many props of random kinds stand about the camp. Random is three to five, as the camps of the other factions have always had.
+UILABEL_SCENARIO_STOCK	Stockpile Supplies
+UILABEL_SCENARIO_STOCK_TIP	How many logs, stone, iron ingots and iron ore each stockpile of the camp starts with (500 by default). Shift steps by 250.
+UILABEL_SCENARIO_STANDING	Standing With You
+UILABEL_SCENARIO_STANDING_TIP	How a faction that runs itself stands with you at the start, from -100 to 100: at -25 or below its units attack yours on sight, at 50 or above it is your ally. Left alone, it is what the loop of colors says: neighbors are friends, the far side enemies. Shift steps by 25.
+UILABEL_SCENARIO_BY_LOOP	By the Loop
+UILABEL_SCENARIO_RANDOM	Random (3-5)
+UILABEL_SCENARIO_EACH_OWN	Each Faction's Own
+UILABEL_SCENARIO_MIXED	Mixed
+UILABEL_SCENARIO_MOB_TIP	How many of this animal go with the faction. Yours join your party; the others' keep near their camp.
+UILABEL_SCENARIO_PROP_TIP	How many of this prop stand about the camp, 5 to 12 tiles from its Altar.
+UILABEL_SCENARIO_INFO_PLAYER	Your party: {0} units and {1} mobs (at most {2} together)
+UILABEL_SCENARIO_INFO_NPC	Each faction starts with {0} units and {1} mobs
+UILABEL_SCENARIO_INFO_ALL	Each other faction: {0} units. You: {1} units and {2} mobs
+UILABEL_SCENARIO_SAVE	Save Scenario
+UILABEL_SCENARIO_SAVED	Scenarios
+UILABEL_SCENARIO_NEW	New Scenario
+MISC_SCENARIO_NEEDS_NAME	Give the scenario a name first
+MISC_SCENARIO_SAVED	Saved the scenario {0}
+MISC_SCENARIO_DELETE_Q	Delete the scenario {0}?
+MISC_SCENARIO_OVERWRITE_Q	A scenario called {0} is already saved. Write over it?
 MISC_TITLE_KEYS	Select  //  Enter Confirm
 UILABEL_TEMPERAMENT_AVOIDANT	Avoidant
 UILABEL_TEMPERAMENT_PASSIVE	Passive
@@ -231,6 +277,7 @@ UILABEL_LEVELS_HINT	Levels run from 1 to 99.
 MISC_MAP_MISSING	The map for "{0}" is missing
 MISC_MAP_LOAD_FAILED	Map "{0}" could not be loaded: {1}
 UILABEL_WORLD_GENERATION	World Generation
+UILABEL_ADD_CUSTOM_SCENARIO	Scenario Editor
 UILABEL_GEN_LAND	Land
 UILABEL_GEN_CONTINENTS	Continents
 UILABEL_GEN_WARP	Coast warp
@@ -633,6 +680,11 @@ UILABEL_PICKUP	Pickup
 UILABEL_DROP	Drop
 UILABEL_LOOT	Loot
 UILABEL_USE	Use
+UILABEL_CONSTRUCT	Construct
+UILABEL_HARVEST	Harvest
+UILABEL_CRAFT	Craft
+MISC_CONSTRUCT_SET	{0} unit(s) will construct it
+MISC_CONSTRUCT_NOTHING	Nothing to construct with: its materials are not in your stores, or it cannot be built just now
 UILABEL_UNKNOWN_SLOT	Unknown
 MISC_READ_FAILED	Could not read that save
 MISC_PICKUP_SELECT	Select units to pick the item up
@@ -785,12 +837,6 @@ UILABEL_TASK_MOVING	Moving
 UILABEL_TASK_RESTING	Resting
 UILABEL_TASK_FOLLOWING	Following
 UILABEL_TASK_DEFENDING	Defending
-UILABEL_AUTO_HARVEST	Auto-Harvest
-UILABEL_AUTO_HAUL	Auto-Haul
-MISC_AUTO_OUTSIDE_CLAIM	Auto-Harvest and Auto-Haul work only on props inside your faction's claim
-MISC_AUTO_HARVEST_SET	{0} unit(s) will Auto-Harvest: {1}
-MISC_AUTO_HARVEST_HAUL_SET	{0} unit(s) will Auto-Harvest: {1}, and Auto-Haul it to the {2}
-MISC_AUTO_HAUL_SET	{0} unit(s) will Auto-Haul to the {1}
 MISC_BEHAVIOR_LIST_FULL	The behavior list is full ({0} at most)
 MISC_BEHAVIOR_ADDED	Added: {0}
 MISC_BEHAVIOR_SWITCHED_ON	Already on the list, switched on: {0}
@@ -827,13 +873,10 @@ UILABEL_BEHAVIOR_PATROL_SPAWN_TIP	Patrol Spawn: walks about near where it first 
 UILABEL_BEHAVIOR_ROAM_TIP	Roam: wanders the open land, anywhere it can walk outside the claims.
 UILABEL_WAIT_NOT_IN_CLAIM	not inside a claim of its faction
 UILABEL_WAIT_NOWHERE_TO_ROAM	no open ground nearby outside the claims
-UILABEL_AUTO_HAUL_LOGS	Auto-Haul Logs
-UILABEL_AUTO_HAUL_BONES	Auto-Haul Bones
 UILABEL_BEHAVIOR_AUTO_HAUL_LOGS	Auto-Haul Logs: {0}
 UILABEL_BEHAVIOR_AUTO_HAUL_BONES	Auto-Haul Bones: {0}
 UILABEL_BEHAVIOR_AUTO_HAUL_LOGS_TIP	Auto-Haul Logs: takes the fuel the {0} burns from the inventory, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
 UILABEL_BEHAVIOR_AUTO_HAUL_BONES_TIP	Auto-Haul Bones: takes any bones in the inventory to the {0}, for the Ghosts, while it has room and stands inside your faction's claim. An order of yours pauses it; it starts again once the unit has stood idle a few seconds.
-MISC_AUTO_HAUL_BONES_SET	{0} unit(s) will Auto-Haul bones to the {1}
 UILABEL_BEHAVIOR_GROUPS	Behavior Groups
 UILABEL_GROUPS_TITLE	Behavior Groups
 UILABEL_GROUP_NAME	Group {0}
@@ -868,7 +911,6 @@ MISC_AIRSHIP_FULL	{0} can't get on the {1}: it is full
 MISC_FLEES	{0} flees out of reach
 MISC_AIRSHIP_FALLS	{0} falls with the Airship
 MISC_LETS_GO_OF	{0} lets go of the {1}
-UILABEL_AUTO_CONSTRUCT	Auto-Construct
 UILABEL_BEHAVIOR_AUTO_SUPPLY	Auto-Haul Building Materials
 UILABEL_BEHAVIOR_AUTO_SUPPLY_TIP	Auto-Haul Building Materials: an older task that now works as Auto-Construct.
 UILABEL_BEHAVIOR_AUTO_CONSTRUCT	Auto-Construct
@@ -881,7 +923,6 @@ UILABEL_BEHAVIOR_CLEAR_JUNK	Clear Junk
 UILABEL_BEHAVIOR_CLEAR_JUNK_TIP	Clear Junk: clears the junk in your claim, the nearest first: Debris is worked clear, and a Boneheap is broken at once, leaving its bones and what it held on the ground for the haul tasks. Other props marked junk are broken too.
 UILABEL_WAIT_NO_BLUEPRINT	no blueprint needs it
 UILABEL_WAIT_NO_LOGS	no building materials carried or in your stores
-MISC_AUTO_CONSTRUCT_SET	{0} will build your blueprints
 UILABEL_WAIT_NO_STOCKPILE	no stockpile of yours with room for it
 MISC_BED_PUBLIC	Public: anyone may sleep here
 MISC_BED_PRIVATE	Private: for {0} only
@@ -1962,7 +2003,7 @@ UILABEL_WAIT_NO_DANCE_PLACE	No Campfire or Altar of its faction with room to dan
 UILABEL_MOTIVATION_BAR	Motivation {0} / {1}
 UILABEL_MOTIVATION_TIP	Motivation: each unit dancing round your Altars and Campfires gives 1 point for every in-game hour, and it ticks down about 10 an hour. Over {0}, your units walk {1}% faster inside your claims, and your Altar's fire burns bigger. The most it holds is 125, and 25 more for every complete building
 SCENARIO_OUTPOST_NAME	Outpost (Recommended)
-SCENARIO_OUTPOST_DESC	Start with your own camp, set up like the other factions': an Altar, a Campfire, Bedrolls, stockpiles with supplies, caged animals to tame, and as many units as they start with. You can customize your units, but not add or remove them.
+SCENARIO_OUTPOST_DESC	Start with your own camp, set up like the other factions': an Altar, a Campfire, Bedrolls, stockpiles with supplies, and thirty units, as every faction with an Altar starts with: 3 military for you to command, 7 Fortified and 20 citizens who tend the camp. You can customize your units, but not add or remove them. To start another way, make a scenario with Add Custom Scenario on the title screen.
 # Failed pathfinding and failed tasks, in the Information Panel
 UILABEL_TASK_MESSAGES	Task Messages
 UILABEL_FAILED_PATHFINDING	Failed pathfinding
@@ -2012,8 +2053,6 @@ PATRON_15_DESC	A welcoming guardian who makes everyone feel at home.
 PATRON_16_NAME	Nyra Vesper
 PATRON_16_DESC	A mysterious artist who expresses emotions through magic.
 UILABEL_PATRONS_TITLE	Patrons
-UILABEL_PATRON_RANDOM	Random
-UILABEL_PATRON_BUTTON	Patron: {0}
 UILABEL_PATRON_OF	Patron of {0}
 UILABEL_SEE_PATRON	See Patron
 UILABEL_PATRON_DIALOGUE	Patron Dialogue

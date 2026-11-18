@@ -71,6 +71,7 @@ set(SIM_SOURCES
     src/equip.cpp
     src/stats.cpp
     src/party.cpp
+    src/scenario.cpp
     src/useitem.cpp
     src/need_behaviors.cpp
     src/systems.cpp
@@ -173,6 +174,7 @@ add_executable(koboldsurvival
     src/app_faction_rules.cpp
     src/app_faction_info.cpp
     src/app_patron.cpp
+    src/app_scenario.cpp
     src/app_faction_pick.cpp
     src/app_prop_adjust.cpp
     src/app_crafting.cpp
