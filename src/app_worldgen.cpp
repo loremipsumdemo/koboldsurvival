@@ -51,6 +51,7 @@ WorldGenLayout layoutWorldGen(int W, int H, int mapCount, int mapScroll) {
     const float halfW = (side - gap) * 0.5f, btnY = L.preview.y + side + 8.0f * s;
     L.generate = Rect{ L.preview.x, btnY, halfW, btnH };
     L.proceed = Rect{ L.preview.x + halfW + gap, btnY, halfW, btnH };
+    L.mapEditor = Rect{ L.preview.x, btnY + btnH + gap, side, btnH };
 
     L.mapsBox = Rect{ W - m - rightW, m, rightW, H - 2.0f * m };
     const float listRow = 30.0f * s;
@@ -102,6 +103,8 @@ EditorLayout layoutEditor(int W, int H, bool ownUi) {
     L.eraseTool = Rect{ x + half + gap, y, half, btnH };
     y += btnH + gap * 2.0f;
     L.themeTab = Rect{ x, y, w, btnH };
+    y += btnH + gap;
+    L.clean = Rect{ x, y, w, btnH };
     y += btnH + gap;
     const float bottom = L.panel.y + L.panel.h - 10.0f * s;
     L.exit = Rect{ x, bottom - btnH, w, btnH };
@@ -645,6 +648,7 @@ void App::deleteWorldMap() {
         std::filesystem::remove(std::filesystem::u8path(savePreviewPath(levelFilePath(level))), levelEc);
     }
     std::filesystem::remove(std::filesystem::u8path(mapFilePath(name)), ec);
+    std::filesystem::remove(std::filesystem::u8path(mapEditsPath(name)), ec);
     if (!ec && !mapNickname(name).empty()) setMapNickname(name, "");   // a map made later under this name starts with none
     if (ui.generated && ui.generatedName == name) ui.generated = false;
     ui.maps = listMapFiles();
@@ -780,6 +784,7 @@ void App::drawWorldGenScreen() {
     renderer.drawWorldPreview(L.preview);
     renderer.drawButton(L.generate, lang("UILABEL_GEN_GENERATE"), !safeFileName(ui.name).empty());
     renderer.drawButton(L.proceed, lang("UILABEL_GEN_CONTINUE"), ui.generated);
+    renderer.drawButton(L.mapEditor, lang("UILABEL_MAP_EDITOR"), ui.generated);
 
     renderer.drawThemedPanel(L.mapsBox);
     renderer.drawListText(lang("UILABEL_GEN_MAPS"), L.mapsBox.x + 10.0f * s, L.mapsBox.y + 12.0f * s, gray);
@@ -969,6 +974,9 @@ void App::worldGenClick(float x, float y) {
         screen = Screen::Title;
     } else if (L.generate.contains(x, y)) {
         generateWorld();
+    } else if (L.mapEditor.contains(x, y) && ui.generated) {
+        playSfx(Sfx::UiClick);
+        fadeOutThen([this, name = ui.generatedName] { openMapEditor(name); });
     } else if (L.proceed.contains(x, y) && ui.generated) {
         playSfx(Sfx::UiClick);
         fadeOutThen([this, name = ui.generatedName] { openLevelEditor(name); });
@@ -1049,6 +1057,11 @@ bool App::generateWorld(bool confirmed) {
         refuse(err);
         return false;
     }
+    // New ground: edits made to the old ground no longer fit it
+    if (!themeOnly) {
+        std::error_code editsEc;
+        std::filesystem::remove(std::filesystem::u8path(mapEditsPath(name)), editsEc);
+    }
     ui.generated = true;
     ui.generatedName = name;
     ui.maps = listMapFiles();
@@ -1059,6 +1072,7 @@ bool App::generateWorld(bool confirmed) {
 // ---- Level editor
 
 void App::openLevelEditor(const std::string& mapName) {
+    mapEditing = false;
     const std::optional<MapChoice> map = findMap(listMaps(), MAP_SOURCE_FILE, mapName);
     if (!map) {
         refuse(langf("MISC_MAP_MISSING", { mapName }));
@@ -1090,6 +1104,15 @@ void App::openLevelEditor(const std::string& mapName) {
     LevelData loaded;
     if (std::filesystem::exists(std::filesystem::u8path(path)) && readLevelFile(path, loaded, err) && loaded.map == mapName) {
         applyLevel(world, terrain, rng, loaded);
+    } else {
+        // A new level starts with what a regular map has (its camps, resource nodes and wild animals, in the same amounts); Clean Level
+        // empties it. Your own units are not part of a level: its start point says where yours go.
+        buildLevel(world, terrain, rng, (unsigned)std::time(nullptr), outpostScenario());
+        settleFactionHomes(world, terrain);
+        for (ObjectId u : world.view<Entity, Faction>()) {
+            if (world.get<Faction>(u)->id == FACTION_PLAYER && !world.has<Prop>(u)) world.destroy(u);
+        }
+        world.resource<LevelInfo>();
     }
     editor.savedText = levelToText(captureLevel(world, mapName));
     editorFocusCamera();
@@ -1138,6 +1161,10 @@ void App::setEditorTool(EditorTool tool, int picked) {
 }
 
 void App::drawEditorPanel() {
+    if (mapEditing) {
+        drawMapEditorPanel();
+        return;
+    }
     const EditorLayout L = layoutEditor(winW, winH, editor.useOwnUi);
     const float s = uiScaleFor(winH);
     const RGBA white{ 1.0f, 1.0f, 1.0f, 1.0f }, gray{ 0.80f, 0.72f, 0.64f, 1.0f }, gold{ 1.0f, 0.78f, 0.30f, 1.0f };
@@ -1156,6 +1183,7 @@ void App::drawEditorPanel() {
     button(L.spawnTool, lang("UILABEL_EDITOR_SPAWN"), editor.spawn.tool == EditorTool::Spawn);
     button(L.eraseTool, lang("UILABEL_EDITOR_ERASE"), editor.spawn.tool == EditorTool::Erase);
     button(L.themeTab, lang("UILABEL_GEN_TAB_THEME"), editor.spawn.tab == EditorTab::Theme);
+    button(L.clean, lang("UILABEL_EDITOR_CLEAN"), editor.cleanAsk);
     drawSpawnPicker(editor.spawn, L.picker);
     if (editor.spawn.tab == EditorTab::Theme) drawThemePanel(L.themeArea);
     const std::string text = levelToText(captureLevel(world, currentMap.stem));
@@ -1170,9 +1198,35 @@ void App::drawEditorPanel() {
     line(lang("UILABEL_EDITOR_HELP1"), gray);
     line(lang("UILABEL_EDITOR_HELP2"), gray);
     button(L.exit, lang(editor.exitWarned ? "UILABEL_EDITOR_EXIT_SURE" : "UILABEL_EDITOR_EXIT"), false);
+    if (editor.cleanAsk) {
+        // Held down for 3 seconds, the button erases everything placed on the level
+        dimScreen(0.45f);
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, 2);
+        renderer.drawThemedPanel(D.box);
+        renderer.drawUiTextInBox(lang("MISC_EDITOR_CLEAN_Q"), D.lines[0], white);
+        renderer.drawUiTextInBox(lang("MISC_EDITOR_CLEAN_Q2"), D.lines[1], RGBA{ 1.0f, 0.62f, 0.35f, 1.0f });
+        const float fill = deleteHolding ? std::min(1.0f, (float)(SDL_GetTicks() - deleteHoldStart) / (float)DELETE_HOLD_MS) : 0.0f;
+        renderer.drawHoldButton(D.confirm, lang("UILABEL_EDITOR_CLEAN"), fill);
+        renderer.drawButton(D.cancel, lang("UILABEL_CANCEL"), true);
+    }
+}
+
+// Everything placed on the level is erased (the map, and where you start, stay), for an empty level to start from
+void App::cleanLevel() {
+    editorRemember();
+    LevelData d = captureLevel(world, currentMap.stem);
+    d.objects.clear();
+    applyLevel(world, terrain, rng, d);
+    editor.cleanAsk = false;
+    deleteHolding = false;
+    hoverProp = NO_OBJECT;
+    editorEdited();
+    showNotice(lang("MISC_LEVEL_CLEANED"));
+    playSfx(Sfx::Take);
 }
 
 bool App::editorMouseDown() {
+    if (mapEditing) return mapEditorMouseDown();
     const float x = e.button.x, y = e.button.y;
     const EditorLayout L = layoutEditor(winW, winH, editor.useOwnUi);
     if (e.button.button == SDL_BUTTON_LEFT && L.uiToggle.contains(x, y)) {
@@ -1180,6 +1234,19 @@ bool App::editorMouseDown() {
         setEditorTool(EditorTool::None, 0);
         stopEditorName();
         playSfx(Sfx::UiToggle);
+        return true;
+    }
+    if (editor.cleanAsk) {
+        const MapQuestionLayout D = layoutMapQuestion(winW, winH, 2);
+        if (e.button.button == SDL_BUTTON_LEFT && D.confirm.contains(x, y)) {
+            deleteHolding = true;
+            deleteHoldStart = SDL_GetTicks();
+            deleteHoldRect = D.confirm;
+        } else if (D.cancel.contains(x, y) || !D.box.contains(x, y)) {
+            editor.cleanAsk = false;
+            deleteHolding = false;
+            playSfx(Sfx::UiBack);
+        }
         return true;
     }
     if (!editor.useOwnUi) return false;
@@ -1205,6 +1272,11 @@ bool App::editorMouseDown() {
             playSfx(Sfx::UiClick);
         } else if (L.eraseTool.contains(x, y)) {
             setEditorTool(editor.spawn.tool == EditorTool::Erase ? EditorTool::None : EditorTool::Erase, 0);
+            playSfx(Sfx::UiClick);
+        } else if (L.clean.contains(x, y)) {
+            editor.cleanAsk = true;
+            deleteHolding = false;
+            setEditorTool(EditorTool::None, 0);
             playSfx(Sfx::UiClick);
         } else if (L.themeTab.contains(x, y)) {
             editor.spawn.tab = EditorTab::Theme;
@@ -1340,6 +1412,7 @@ void App::editorExit() {
 }
 
 bool App::editorKeyDown() {
+    if (mapEditing) return mapEditorKeyDown();
     const SDL_Keycode k = e.key.key;
     if (editor.editingName) {
         if (k == SDLK_BACKSPACE) popUtf8Char(editor.name);
@@ -1351,6 +1424,14 @@ bool App::editorKeyDown() {
         editor.useOwnUi = !editor.useOwnUi;
         setEditorTool(EditorTool::None, 0);
         playSfx(Sfx::UiToggle);
+        return true;
+    }
+    if (editor.cleanAsk) {
+        if (k == SDLK_ESCAPE) {
+            editor.cleanAsk = false;
+            deleteHolding = false;
+            playSfx(Sfx::UiBack);
+        }
         return true;
     }
     if (k == SDLK_ESCAPE) {

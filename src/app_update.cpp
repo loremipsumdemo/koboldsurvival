@@ -415,6 +415,7 @@ void App::playQueuedSounds() {
 
 void App::update() {
     updateDeleteHold();
+    if (mapEditing) mapEditorUpdate();
     updateSweepHold();
 
     const Uint64 now = SDL_GetTicksNS();
@@ -750,6 +751,7 @@ void App::updateHover() {
         if (planPick.active && screen == Screen::Playing && !panelOpen && !mapOpen && session.dialogueUnit == NO_OBJECT && !mouseOverPanels()) {
             previewPlanPick(bp, claims);
         }
+        if (mapEditing && screen == Screen::Playing) mapEditorPreview(bp);
         renderer.setBuildPreview(std::move(bp));
         renderer.setBuildSelected(session.buildPick);
     }

@@ -90,6 +90,8 @@ public:
     static long long cornerKey(int x, int z) { return (long long)z * 1000003LL + (long long)x; }
     void setCornerHeight(int x, int z, float h);
     void setHeightEdits(const std::unordered_map<long long, float>& edits);
+    // The chunk made again from its source (a source that changes, as the Map Editor's does): the ground held and the chunk drawn both
+    void reloadChunk(int cx, int cz);
     const std::unordered_map<long long, float>& heightEdits() const { return heightEdits_; }
     // The piece of open ground a tile is in, numbered from 1; 0 for closed ground. On a map too big to work them out, all
     // open ground is piece 1.

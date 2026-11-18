@@ -77,7 +77,7 @@ struct NicknameUi {
 struct WorldGenLayout {
     Rect panel, tabWorld, tabTheme, themeArea, nameBox, seedBox, seedRandom, sizeDown, sizeUp, sizeBox, styleDown, styleUp, styleBox, styleAbout;
     std::vector<Rect> bars, stepDown, stepUp;
-    Rect preview, previewLabel, mapsBox, generate, proceed, back;
+    Rect preview, previewLabel, mapsBox, generate, proceed, mapEditor, back;
     std::vector<Rect> mapRows, mapNick, mapDelete;  // a map's row, and beside it the pencil that sets its nickname and the X that asks to delete it
     RowBar mapBar;
 };
@@ -179,12 +179,13 @@ struct LevelEditorUi {
     std::string savedText;
     std::vector<std::string> undo;
     bool exitWarned = false;
+    bool cleanAsk = false;   // the Clean Level question is up: held through 3 seconds, it erases everything placed
     WorldGenSettings map;   // the map being edited, for its theme
     std::string savedMapText;
 };
 
 struct EditorLayout {
-    Rect panel, themeTab, themeArea, nameBox, save, load, spawnTool, eraseTool, exit, status;
+    Rect panel, themeTab, themeArea, nameBox, save, load, spawnTool, eraseTool, clean, exit, status;
     SpawnPickerLayout picker;
     Rect uiToggle;
 };
