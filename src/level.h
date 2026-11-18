@@ -39,7 +39,11 @@ std::string mapDisplayName(const std::string& stem);
 using LoadProgress = std::function<void(float, const std::string&)>;
 
 // Reads a map into the terrain. On failure the terrain and the running game are left as they were.
-bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress = {});
+// edits: for a map made by World Generation, its Map Editor edits (MAP/<name>.edits) are laid over its ground. Given, it is always edited (an empty set
+// if the map has none yet) and is set to the edits the ground is made with, for the Map Editor to change.
+struct MapEdits;
+bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress = {},
+                     std::shared_ptr<MapEdits>* edits = nullptr);
 struct Scenario;
 void buildLevel(World& world, Terrain& terrain, Rng& rng, unsigned seed, const Scenario& scenario, const LoadProgress& progress = {});
 // The same, with what a level file says in place of the random set-up

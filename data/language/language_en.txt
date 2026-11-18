@@ -385,6 +385,55 @@ UILABEL_EDITOR_TITLE	Level Editor: {0}
 UILABEL_EDITOR_USE_GAME_UI	Use Game UI (Tab)
 UILABEL_EDITOR_USE_OWN_UI	Use Editor UI (Tab)
 UILABEL_EDITOR_SPAWN	Spawn Point
+UILABEL_MAP_EDITOR	Map Editor
+UILABEL_MAPED_TITLE	Map Editor: {0}
+UILABEL_MAPED_RAISE	Raise
+UILABEL_MAPED_LOWER	Lower
+UILABEL_MAPED_SMOOTH	Smooth
+UILABEL_MAPED_FLATTEN	Flatten
+UILABEL_MAPED_ROUGHEN	Roughen
+UILABEL_MAPED_PAINT	Paint
+UILABEL_MAPED_UNPAINT	Unpaint
+UILABEL_MAPED_RESTORE	Restore
+UILABEL_MAPED_CIRCLE	Circle
+UILABEL_MAPED_SQUARE	Square
+UILABEL_MAPED_DIAMOND	Diamond
+UILABEL_MAPED_SOFT	Soft
+UILABEL_MAPED_LINEAR	Linear
+UILABEL_MAPED_HARD	Hard
+UILABEL_MAPED_SIZE	Size
+UILABEL_MAPED_STRENGTH	Strength
+UILABEL_MAPED_TEXTURES	Ground Textures
+UILABEL_MAPED_UNDO	Undo
+UILABEL_MAPED_TO_LEVELS	Continue to Level Editor
+UILABEL_MAPED_BACK	Back to World Generation
+UILABEL_MAPED_BACK_SURE	Unsaved edits: click again to save and leave
+UILABEL_MAPED_HELP	Hold the left button on the map to use the brush. [ ] size, Ctrl+Z undo.
+UILABEL_MAPED_UNSAVED	Edits not saved *
+UILABEL_MAPED_SAVED	Edits saved
+MISC_MAPED_HAS_SAVES	{0} has game saves played on it, so its ground can't be edited
+MISC_MAPED_SAVED	Saved the edits to {0}
+UILABEL_BIOME_GRASS	Grass
+UILABEL_BIOME_SAND	Sand
+UILABEL_BIOME_FOREST	Forest
+UILABEL_BIOME_DESERT	Desert
+UILABEL_BIOME_SNOW	Snow
+UILABEL_BIOME_ROCK	Rock
+UILABEL_BIOME_WATER	Water
+UILABEL_BIOME_SHELF	Shelf
+UILABEL_BIOME_BEACH	Beach
+UILABEL_BIOME_SILT	Silt
+UILABEL_BIOME_FROZEN_CLAY	Frozen Clay
+UILABEL_BIOME_CLAY	Clay
+UILABEL_BIOME_GRAVEL	Gravel
+UILABEL_BIOME_ARID_SOIL	Arid Soil
+UILABEL_BIOME_SCREE	Scree
+UILABEL_BIOME_FLOODPLAIN	Floodplain
+UILABEL_BIOME_CLIFF_ROCK	Cliff Rock
+UILABEL_EDITOR_CLEAN	Clean Level
+MISC_EDITOR_CLEAN_Q	Erase everything placed on this level?
+MISC_EDITOR_CLEAN_Q2	Hold the button for 3 seconds. The map stays; the level starts empty.
+MISC_LEVEL_CLEANED	Level cleaned: nothing is placed
 UILABEL_EDITOR_ERASE	Erase
 UILABEL_EDITOR_ENTITIES	Entities
 UILABEL_EDITOR_PROPS	Props
@@ -1298,6 +1347,7 @@ UILABEL_FACTION_NAME_TIP	Click to rename your faction. Leave it empty for its co
 UILABEL_FACTION_NAME_HINT	Name your faction (empty: {0})
 UILABEL_FACTION_COLOR_BUTTON	Faction: {0}
 UILABEL_FACTION_COLOR_RANDOM	Random
+UILABEL_FACTION_COLOR_PATRON	Patron: {0}
 UILABEL_FACTION_COLOR_ALLIES	Allies: {0}
 UILABEL_FACTION_COLOR_ENEMIES	Enemies: {0}
 UILABEL_FACTION_COLOR_TIP	The colors sit on a loop. A faction's neighbors on it are its closest allies, and the faction opposite is its bitterest enemy. Each faction has its own color, and the 15 you do not pick are run by others.

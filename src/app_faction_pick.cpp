@@ -143,10 +143,19 @@ void App::drawFactionPick() {
         if (c.contains(mx, my)) hover = (int)i;
         renderer.drawRect(Rect{ c.x - 3.0f * s, c.y - 3.0f * s, c.w + 6.0f * s, c.h + 6.0f * s }, on ? gold : RGBA{ 0.30f, 0.20f, 0.35f, 1.0f });
         renderer.drawRect(c, RGBA{ f->color.r, f->color.g, f->color.b, 1.0f });
+        // Its patron's portrait on the left, tinted by the color
+        int patron = -1;
+        for (size_t p = 0; p < patrons().size(); ++p) {
+            if (patrons()[p].id == f->patron) patron = (int)p;
+        }
+        const Rect pic{ c.x, c.y, c.h, c.h };
+        if (patron >= 0) renderer.drawPatronPicture(patron, pic, patronTintOf(f->color));
         if (hover == (int)i && !on) renderer.drawRect(c, RGBA{ 1.0f, 1.0f, 1.0f, 0.16f });
         const RGBA ink = textOn(f->color);
-        const std::string name = renderer.fitListText(colorName(*f), c.w - 8.0f * s);
-        renderer.drawListText(name, c.x + (c.w - renderer.listTextWidth(name)) * 0.5f, c.y + (c.h - textH) * 0.5f, ink);
+        const float nameW = c.w - (patron >= 0 ? c.h : 0.0f) - 8.0f * s;
+        const std::string name = renderer.fitListText(colorName(*f), nameW);
+        const float nameX = c.x + (patron >= 0 ? c.h : 0.0f) + (nameW + 8.0f * s - renderer.listTextWidth(name)) * 0.5f;
+        renderer.drawListText(name, nameX, c.y + (c.h - textH) * 0.5f, ink);
     }
     float hy = L.hint.y;
     for (const std::string& ln : renderer.wrapListText(lang("UILABEL_FACTION_COLOR_TIP"), L.hint.w)) {
@@ -168,6 +177,9 @@ void App::drawFactionPick() {
     }
     std::vector<std::pair<std::string, RGBA>> lines;
     lines.push_back({ lang(f->nameKey), gold });
+    for (const PatronInfo& p : patrons()) {
+        if (p.id == f->patron) lines.push_back({ langf("UILABEL_FACTION_COLOR_PATRON", { lang(p.nameKey) }), theme::TEXT });
+    }
     const float textW = 260.0f * s;
     for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ALLIES", { allies }), textW)) lines.push_back({ ln, theme::OK_TEXT });
     for (const std::string& ln : renderer.wrapListText(langf("UILABEL_FACTION_COLOR_ENEMIES", { enemies }), textW)) lines.push_back({ ln, theme::BAD });

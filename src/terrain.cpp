@@ -266,6 +266,22 @@ void Terrain::refreshCorner(int x, int z) {
     }
 }
 
+void Terrain::reloadChunk(int cx, int cz) {
+    if (cx < 0 || cz < 0 || cx >= cps_ || cz >= cps_) return;
+    const size_t id = (size_t)cz * cps_ + cx;
+    if (ground_[id]) {
+        ground_[id].reset();
+        groundHeld_.erase(std::remove(groundHeld_.begin(), groundHeld_.end(), (int)id), groundHeld_.end());
+    }
+    if (chunks_[id]) {
+        auto c = std::make_unique<ChunkData>();
+        if (!source_->fill(cx, cz, *c)) *c = emptyChunk(cx, cz);
+        applyEdits(cx, cz, c->heights);
+        c->version = nextVersion_++;
+        chunks_[id] = std::move(c);
+    }
+}
+
 void Terrain::setCornerHeight(int x, int z, float h) {
     if (x < 0 || z < 0 || x > size_ || z > size_) return;
     heightEdits_[cornerKey(x, z)] = h;

@@ -119,6 +119,7 @@ set(SIM_SOURCES
     src/chunk_source.cpp
     src/map_theme.cpp
     src/world_gen.cpp
+    src/map_edits.cpp
     src/overview.cpp
     src/camera_limit.cpp
     src/level_file.cpp
@@ -175,6 +176,7 @@ add_executable(koboldsurvival
     src/app_faction_info.cpp
     src/app_patron.cpp
     src/app_scenario.cpp
+    src/app_map_editor.cpp
     src/app_faction_pick.cpp
     src/app_prop_adjust.cpp
     src/app_crafting.cpp

@@ -54,6 +54,7 @@
 #include "party_ui.h"
 #include "scenario.h"
 #include "scenario_ui.h"
+#include "map_editor_ui.h"
 #include "need_behaviors.h"
 #include "build.h"
 #include "claims.h"
@@ -165,6 +166,9 @@ struct AppSession {
     std::vector<std::pair<ObjectId, Transform>> simBefore;
     std::vector<std::pair<ObjectId, Transform>> simTrue;
 };
+
+// A patron portrait's tint for a faction color (app_patron.cpp)
+RGBA patronTintOf(const FactionColor& c, float k = 1.0f, float a = 1.0f);
 
 struct App : AppSession {
     int init();
@@ -312,6 +316,21 @@ struct App : AppSession {
     bool editorLoad();
     bool editorDirty();
     void editorExit();
+    // The Map Editor (app_map_editor.cpp), which is the Level Editor's screen with the terrain brushes in its panel
+    bool mapEditing = false;
+    MapEditorUi mapEdit;
+    void openMapEditor(const std::string& mapName);
+    void mapEditorReload(int x0, int z0, int x1, int z1);
+    void mapEditorApply(float cx, float cz);
+    void mapEditorEndStroke();
+    void mapEditorUndo();
+    bool mapEditorSave();
+    void mapEditorUpdate();
+    void mapEditorPreview(BuildPreview& bp);
+    void drawMapEditorPanel();
+    bool mapEditorMouseDown();
+    bool mapEditorKeyDown();
+    void cleanLevel();
     bool editorKeyDown();
 
     WorldGenUi worldGenUi;

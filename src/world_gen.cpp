@@ -57,6 +57,9 @@ int ridged(int x, int z, int period, int octaves, uint32_t seed) {
     return 32767 - std::min(32767, 2 * std::abs(layered(x, z, period, octaves, seed)));
 }
 
+// How many times faster than a 1024 map's a bigger map's land rises as a share of its continent, so that its slopes keep the same size in tiles
+int reliefReach(int size) { return std::clamp(size / 1024, 1, 16); }
+
 constexpr int SLOPE_LIMIT = 900;   // the most a walkable tile's corners may differ, in thousandths of a tile
 
 // How far in from the map's edge a walled map's wall reaches, in tiles, and how much it rises each tile
@@ -269,7 +272,7 @@ int WorldGenerator::styledHeight(int x, int z) const {
     }
     case MapStyle::Archipelago: {
         const int c = layered(wx, wz, std::max(64, s_.size * (110 - s_.continents) / 900), 3, seed + 1) + (s_.land - 62) * 400;
-        h = c <= 0 ? std::max(c * 2, -14000) : 100 + std::min(c, 6000) * 500 / 3000 + (detail + 8000) / 6 + small;
+        h = c <= 0 ? std::max(c * 2, -14000) : 100 + std::min(c * reliefReach(s_.size), 6000) * 500 / 3000 + (detail + 8000) / 6 + small;
         // The sea all around the edge
         const int edge = std::min({ x, z, s_.size - x, s_.size - z }), band = std::max(32, s_.size / 12);
         if (edge < band && h > -800) h = std::min(h, h * edge / band - 3000 * (band - edge) / band);
@@ -352,14 +355,20 @@ int WorldGenerator::overworldHeight(int x, int z) const {
     if (above <= 0) return std::max(above * 3 / 2, -24000);
 
     // Rises quickly off the shore, so low ground is only ever at the coast
-    int64_t h = 100 + std::min(above, 3000) * 1100 / 3000 + std::min(above, 16000) * 2000 / 16000;
-    const int inland = std::min(above, 2000);
+    // The rises are measured in tiles, not in shares of a continent: on a bigger map a continent is wider, so the same rise from the shore
+    // is reached over a shorter share of it (reach), and the relief is what a 1024 map has, not that stretched flat
+    const int reach = reliefReach(s_.size);
+    const int64_t up = (int64_t)above * reach;
+    int64_t h = 100 + std::min<int64_t>(up, 3000) * 1100 / 3000 + std::min<int64_t>(up, 16000) * 2000 / 16000;
+    const int inland = (int)std::min<int64_t>(up, 2000);
     h += (int64_t)(layered(wx, wz, 96, 4, seed + 2) + 32768) * s_.hills * 40 / 65536 * inland / 2000;
     const int range = layered(x, z, std::max(256, s_.size / 4), 2, seed + 3) - 3000;
     if (range > 0) {
         const int64_t ridge = ridged(wx, wz, 128, 5, seed + 4);
         h += ((int64_t)std::min(range, 16000) * ridge >> 15) * s_.mountains * 5 * inland / 2000 / 1000 * 6;
     }
+    // Hills of the middle sizes, which a big map would otherwise lack between its continents and its small detail
+    if (reach > 1) h += (int64_t)(layered(wx, wz, std::min(s_.size / 16, 1536), 3, seed + 7) + 32768) * s_.hills * 30 / 65536 * inland / 2000;
     h += (int64_t)layered(x, z, 8, 2, seed + 5) * 120 / 32768 * inland / 2000;
     return (int)std::max<int64_t>(h, 1);
 }

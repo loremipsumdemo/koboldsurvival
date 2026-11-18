@@ -6,6 +6,11 @@ using namespace play;
 // Patrons (patrons.h): the Patron Dialogue banner at the top middle of the screen, and the window of all of them (See Patron on an Altar's
 // menu). A patron comes with its faction and is not picked: its portrait is tinted by the faction's color.
 
+RGBA patronTintOf(const FactionColor& c, float k, float a) {
+    const auto toward = [&](float v) { return k * (1.0f - 0.7f * (1.0f - v)); };   // 0.7: not all the way, so a dark color keeps the face plain
+    return RGBA{ toward(c.r), toward(c.g), toward(c.b), a };
+}
+
 namespace {
 constexpr Uint64 CHAT_STEP_MS = 4000;     // a line has been up this long before the next comes, and the banner fades this long after the last
 constexpr double CHAT_SAME_SECONDS = 3600.0;   // game time: the same event between the same two factions (either way round) is spoken of once an hour
@@ -19,9 +24,7 @@ constexpr float PATRON_TINT = 0.7f;
 // banner) and as see-through as a (a line fading in or out)
 RGBA patronTint(int faction, float k = 1.0f, float a = 1.0f) {
     if (faction < 0 || !findFaction(faction)) return RGBA{ k, k, k, a };
-    const FactionColor c = factionColor(faction);
-    const auto toward = [&](float v) { return k * (1.0f - PATRON_TINT * (1.0f - v)); };
-    return RGBA{ toward(c.r), toward(c.g), toward(c.b), a };
+    return patronTintOf(factionColor(faction), k, a);
 }
 
 struct PatronLayout {

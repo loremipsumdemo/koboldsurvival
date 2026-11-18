@@ -1,5 +1,6 @@
 #include "level.h"
 #include "level_file.h"
+#include "map_edits.h"
 #include "scenario.h"
 #include "world_gen.h"
 #include "systems.h"
@@ -9,13 +10,18 @@
 
 using namespace play;
 
-bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress) {
+bool loadLevelGround(const MapChoice& c, Terrain& terrain, Renderer& renderer, std::string& err, const LoadProgress& progress,
+                     std::shared_ptr<MapEdits>* editsOut) {
     LoadStages stages(progress);
     stages.stage(0.0f, "LOADING_MAP");
     if (c.source == MAP_SOURCE_FILE) {
         WorldGenSettings settings;
         if (!readMapFile(c.path, settings, err)) return false;
-        terrain.open(generatedChunkSource(settings));
+        auto made = std::make_shared<MapEdits>();
+        const bool have = readMapEdits(mapEditsPath(c.stem), *made) && !made->empty();
+        if (have || editsOut) terrain.open(editedSource(generatedChunkSource(settings), made));
+        else terrain.open(generatedChunkSource(settings));
+        if (editsOut) *editsOut = made;
     } else if (!terrain.openWorld(c.path, err)) {
         return false;
     }
