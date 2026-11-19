@@ -4,6 +4,35 @@
 
 Kobold Survival is a 3D real-time colony and squad game for Windows, written in C++17 with SDL3 and OpenGL 3.3. You lead a faction of kobolds. You command its military directly, citizens work your camp from task lists you set, and Fortified units guard its Perimeter. Fifteen other factions, wild animals and bosses share a procedurally generated world.
 
+1. [Hardware requirements](#hardware-requirements)
+2. [Building](#building)
+3. [Controls](#controls)
+4. [Making maps and levels](#making-maps-and-levels)
+5. [Development](#development)
+6. [License](#license)
+
+## Hardware requirements
+
+These are the recommended minimums. The game is made on a low-spec machine, so this is the hardware it is tested on.
+
+| | Recommended minimum |
+| --- | --- |
+| OS | Windows 11 |
+| CPU | Intel Core i5-6600 (4 cores) |
+| Graphics | Intel HD Graphics 530, OpenGL 3.3 |
+| RAM | 16 GB installed (the game itself peaked at about 0.5 GB) |
+| Disk | About 100 MB for the game, plus your saves and maps |
+
+Measured on that machine at 2560x1440 on a 32768-tile map, in a short test with few units:
+
+| Render scale | Frame rate |
+| --- | --- |
+| 100% | 52 to 62 FPS |
+| 75% | 74 to 95 FPS |
+| 50% | 119 to 161 FPS |
+
+The ground and water drawing is the limit on integrated graphics, so lowering the render scale in Settings > Graphics gives the most speed. Slower hardware than this has not been tried.
+
 ## Building
 
 You need:
